@@ -1,0 +1,5 @@
+-r requirements-rabbitmq.txt
+
+# Testing
+pytest
+pytest-cov
