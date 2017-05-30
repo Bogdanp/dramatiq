@@ -5,7 +5,8 @@ global_broker = None
 
 
 def get_broker():
-    """Get the global broker instance.
+    """Get the global broker instance.  If no global broker is set,
+    this initializes a RabbitmqBroker and returns that.
     """
     global global_broker
     if global_broker is None:
@@ -16,6 +17,9 @@ def get_broker():
 
 def set_broker(broker):
     """Configure the global broker instance.
+
+    Parameters:
+      broker(Broker)
     """
     global global_broker
     global_broker = broker
@@ -30,7 +34,7 @@ class Broker:
     """
 
     def __init__(self, middleware=None):
-        self.logger = logging.getLogger("Broker")
+        self.logger = logging.getLogger(type(self).__name__)
         self.middleware = middleware or []
 
     def _emit_before(self, signal, *args, **kwargs):
