@@ -40,6 +40,6 @@ class Middleware:
         """Called before a message is processed.
         """
 
-    def after_process_message(self, message, result=None, exception=None):
+    def after_process_message(self, message, *, result=None, exception=None):
         """Called after a message has been processed.
         """
