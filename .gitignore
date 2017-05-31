@@ -1,4 +1,7 @@
 /.cache
 /.coverage
+/build
+/dist
+/*.egg-info
 /htmlcov
 __pycache__

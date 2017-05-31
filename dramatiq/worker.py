@@ -15,7 +15,7 @@ class Worker(Middleware):
     There should be at most one worker instance per process.
     """
 
-    def __init__(self, broker, worker_threads=8, wait_timeout=5):
+    def __init__(self, broker, wait_timeout=5, worker_threads=8):
         self.broker = broker
         self.wait_timeout = wait_timeout
         self.work_queue = Queue()
@@ -67,12 +67,12 @@ class _Consumer(Thread):
         self.work_queue.put((message, ack_id))
 
     def run(self):
-        self.logger.info("Starting...")
+        self.logger.debug("Starting...")
         self.consumer.start()
-        self.logger.info("Stopped.")
+        self.logger.debug("Stopped.")
 
     def stop(self):
-        self.logger.info("Stopping consumer %r...", self)
+        self.logger.debug("Stopping consumer %r...", self)
         self.consumer.stop()
 
 
@@ -87,7 +87,7 @@ class _Worker(Thread):
         self.logger = logging.getLogger("Worker")
 
     def run(self):
-        self.logger.info("Running...")
+        self.logger.debug("Running...")
         while self.running:
             try:
                 self.logger.debug("Waiting for message...")
@@ -99,10 +99,10 @@ class _Worker(Thread):
                 self.logger.debug("Reached wait timeout...")
 
             except Exception:
-                self.logger.warning("An unhandled exception occurred while processing a message.", exc_info=True)
+                self.logger.warning("An unhandled exception occurred while processing a message.", exc_debug=True)
 
-        self.logger.info("Stopped.")
+        self.logger.debug("Stopped.")
 
     def stop(self):
-        self.logger.info("Stopping worker %r...", self)
+        self.logger.debug("Stopping worker %r...", self)
         self.running = False
