@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from itertools import chain
 from queue import Queue, Empty
@@ -15,9 +16,10 @@ class Worker(Middleware):
     There should be at most one worker instance per process.
     """
 
-    def __init__(self, broker, worker_threads=8):
+    def __init__(self, broker, worker_threads=8, get_timeout=30):
         self.broker = broker
         self.work_queue = Queue()
+        self.get_timeout = get_timeout
 
         self.consumers = []
         for queue_name in broker.get_declared_queues():
@@ -34,8 +36,7 @@ class Worker(Middleware):
         self.consumers.append(consumer)
 
     def add_worker(self):
-        worker_id = len(self.workers)
-        worker = _Worker(self.broker, self.work_queue, worker_id)
+        worker = _Worker(self.broker, self.work_queue, self.get_timeout)
         worker.start()
         self.workers.append(worker)
 
@@ -50,7 +51,7 @@ class Worker(Middleware):
             thread.join(timeout=timeout)
 
     def __str__(self):
-        return f"Worker#{self.worker_id}({self.broker!r})"
+        return f"Worker({self.broker!r})"
 
 
 class _Consumer(Thread):
@@ -78,21 +79,21 @@ class _Consumer(Thread):
 
 
 class _Worker(Thread):
-    def __init__(self, broker, work_queue, worker_id):
+    def __init__(self, broker, work_queue, get_timeout):
         super().__init__(daemon=True)
 
         self.running = True
         self.broker = broker
-        self.worker_id = worker_id
         self.work_queue = work_queue
-        self.logger = logging.getLogger(f"Worker#{worker_id}")
+        self.get_timeout = get_timeout
+        self.logger = logging.getLogger(f"Worker#{uuid.uuid4()}")
 
     def run(self):
         self.logger.info("Running...")
         while self.running:
             try:
                 self.logger.debug("Waiting for message...")
-                message, ack_id = self.work_queue.get(timeout=5)
+                message, ack_id = self.work_queue.get(timeout=self.get_timeout)
                 self.broker.process_message(message, ack_id)
             except Empty:
                 pass

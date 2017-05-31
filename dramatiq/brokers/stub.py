@@ -83,7 +83,7 @@ class StubConsumer(Consumer):
         self.running = True
         while self.running:
             try:
-                data = self.queue.get(timeout=5)
+                data = self.queue.get(timeout=0.1)
                 message = Message.decode(data)
                 self.on_message(message, str(uuid.uuid4()))
             except Empty:

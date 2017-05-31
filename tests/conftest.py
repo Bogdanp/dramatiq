@@ -18,6 +18,6 @@ def stub_broker():
 
 @pytest.fixture()
 def stub_worker(stub_broker):
-    worker = Worker(stub_broker)
+    worker = Worker(stub_broker, get_timeout=0.1)
     yield worker
     worker.stop()
