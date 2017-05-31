@@ -2,7 +2,6 @@ import dramatiq
 import logging
 import random
 import sys
-import time
 
 
 logging.basicConfig(
@@ -11,7 +10,7 @@ logging.basicConfig(
 )
 
 
-@dramatiq.actor
+@dramatiq.actor(actor_name="add")
 def add(x, y):
     print(x + y)
 

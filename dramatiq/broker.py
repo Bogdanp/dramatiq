@@ -152,6 +152,7 @@ class Broker:
             self._emit_after("process_message", message, result=res)
 
         except BaseException as e:
+            self.logger.warning("Failed to process message %r with unhandled exception.", message, exc_info=True)
             self._emit_after("process_message", message, exception=e)
 
         finally:
