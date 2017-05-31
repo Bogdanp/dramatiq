@@ -142,7 +142,7 @@ class Broker:
             self._emit_after("process_message", message, exception=e)
 
         finally:
-            self.logger.info("Acknowledging message %r with %r.", message, ack_id)
+            self.logger.debug("Acknowledging message %r.", message.message_id)
             self._emit_before("acknowledge", message, ack_id)
             self.acknowledge(message.queue_name, ack_id)
             self._emit_after("acknowledge", message, ack_id)

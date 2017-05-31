@@ -1,5 +1,4 @@
 import logging
-import uuid
 
 from itertools import chain
 from queue import Queue, Empty
@@ -16,10 +15,10 @@ class Worker(Middleware):
     There should be at most one worker instance per process.
     """
 
-    def __init__(self, broker, worker_threads=8, get_timeout=30):
+    def __init__(self, broker, worker_threads=8, wait_timeout=30):
         self.broker = broker
         self.work_queue = Queue()
-        self.get_timeout = get_timeout
+        self.wait_timeout = wait_timeout
 
         self.consumers = []
         for queue_name in broker.get_declared_queues():
@@ -36,7 +35,7 @@ class Worker(Middleware):
         self.consumers.append(consumer)
 
     def add_worker(self):
-        worker = _Worker(self.broker, self.work_queue, self.get_timeout)
+        worker = _Worker(self.broker, self.work_queue, self.wait_timeout)
         worker.start()
         self.workers.append(worker)
 
@@ -50,9 +49,6 @@ class Worker(Middleware):
         for thread in chain(self.consumers, self.workers):
             thread.join(timeout=timeout)
 
-    def __str__(self):
-        return f"Worker({self.broker!r})"
-
 
 class _Consumer(Thread):
     def __init__(self, broker, work_queue, queue_name):
@@ -65,39 +61,46 @@ class _Consumer(Thread):
         self.logger = logging.getLogger(f"Consumer({queue_name!r})")
 
     def on_message(self, message, ack_id):
-        self.logger.debug("Received message %r with ack id %r.", message, ack_id)
+        self.logger.debug("Pushing message %r onto work queue.", message.message_id)
         self.work_queue.put((message, ack_id))
 
     def run(self):
         self.logger.info("Starting...")
         self.consumer.start()
+        self.logger.info("Stopped.")
 
     def stop(self):
-        self.logger.info("Stopping...")
+        self.logger.info("Stopping consumer %r...", self)
         self.consumer.stop()
-        self.logger.info("Stopped.")
 
 
 class _Worker(Thread):
-    def __init__(self, broker, work_queue, get_timeout):
+    def __init__(self, broker, work_queue, wait_timeout):
         super().__init__(daemon=True)
 
         self.running = True
         self.broker = broker
         self.work_queue = work_queue
-        self.get_timeout = get_timeout
-        self.logger = logging.getLogger(f"Worker#{uuid.uuid4()}")
+        self.wait_timeout = wait_timeout
+        self.logger = logging.getLogger("Worker")
 
     def run(self):
         self.logger.info("Running...")
         while self.running:
             try:
                 self.logger.debug("Waiting for message...")
-                message, ack_id = self.work_queue.get(timeout=self.get_timeout)
+                message, ack_id = self.work_queue.get(timeout=self.wait_timeout)
+                self.logger.debug("Received message %s with id %r.", message, message.message_id)
                 self.broker.process_message(message, ack_id)
+
             except Empty:
-                pass
+                self.logger.debug("Reached wait timeout...")
+
+            except Exception:
+                self.logger.warning("An unhandled exception occurred while processing a message.", exc_info=True)
+
+        self.logger.info("Stopped.")
 
     def stop(self):
-        self.logger.info("Shutting down...")
+        self.logger.info("Stopping worker %r...", self)
         self.running = False

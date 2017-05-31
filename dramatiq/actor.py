@@ -83,5 +83,8 @@ class Actor:
         """
         return self.fn(*args, **kwargs)
 
-    def __str__(self):
+    def __repr__(self):  # pragma: no cover
         return f"Actor({self.fn!r}, queue_name={self.queue_name!r}, actor_name={self.actor_name!r})"
+
+    def __str__(self):  # pragma: no cover
+        return f"Actor({self.actor_name!r})"

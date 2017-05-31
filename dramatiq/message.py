@@ -39,3 +39,11 @@ class Message(namedtuple("Message", (
         """Convert this message to a JSON bytestring.
         """
         return json.dumps(self._asdict(), separators=(",", ":"))
+
+    def __str__(self):
+        params = ", ".join(repr(arg) for arg in self.args)
+        if self.kwargs:
+            params += ", " if params else ""
+            params += ", ".join(f"{name}={value!r}" for name, value in self.kwargs.items())
+
+        return f"{self.actor_name}({params})"
