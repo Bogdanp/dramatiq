@@ -65,3 +65,22 @@ def test_actors_can_perform_work(stub_broker, stub_worker):
 
     # I expect the database to be populated
     assert len(database) == 100
+
+
+def test_actors_can_perform_work_with_kwargs(stub_broker, stub_worker):
+    # Given that I have a database
+    results = []
+
+    # Given that I have an actor
+    @dramatiq.actor
+    def add(x, y):
+        results.append(x + y)
+
+    # If I send it a message with kwargs
+    add.send(x=1, y=2)
+
+    # Then join on the queue
+    stub_broker.join(add.queue_name)
+
+    # I expect the database to be populated
+    assert results == [3]

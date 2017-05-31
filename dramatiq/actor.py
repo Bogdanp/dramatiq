@@ -1,5 +1,3 @@
-from functools import partial
-
 from .broker import get_broker
 from .message import Message
 
@@ -16,9 +14,12 @@ def actor(fn=None, *, queue_name="default", actor_name=None, broker=None):
     Returns:
       Actor
     """
-    actor_name = actor_name or f"{fn.__module__}.{fn.__name__}"
-    broker = broker or get_broker()
-    decorator = partial(Actor, queue_name=queue_name, actor_name=actor_name, broker=broker)
+    def decorator(fn):
+        nonlocal actor_name, broker
+        actor_name = actor_name or f"{fn.__module__}.{fn.__name__}"
+        broker = broker or get_broker()
+        return Actor(fn, queue_name=queue_name, actor_name=actor_name, broker=broker)
+
     if fn is None:
         return decorator
     return decorator(fn)

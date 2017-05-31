@@ -2,19 +2,13 @@ import uuid
 
 from queue import Queue, Empty
 
-from ..broker import Broker, Consumer, ActorNotFound, QueueNotFound
+from ..broker import Broker, Consumer, QueueNotFound
 from ..message import Message
 
 
 class StubBroker(Broker):
     """A broker that can be used within unit tests.
     """
-
-    def __init__(self, middleware=None):
-        super().__init__(middleware=middleware)
-
-        self.actors = {}
-        self.queues = {}
 
     def acknowledge(self, queue_name, ack_id):
         try:
@@ -24,12 +18,6 @@ class StubBroker(Broker):
             self._emit_after("acknowledge", queue_name, ack_id)
         except KeyError:
             raise QueueNotFound(queue_name)
-
-    def declare_actor(self, actor):
-        self._emit_before("declare_actor", actor)
-        self.declare_queue(actor.queue_name)
-        self.actors[actor.actor_name] = actor
-        self._emit_after("declare_actor", actor)
 
     def declare_queue(self, queue_name):
         if queue_name not in self.queues:
@@ -42,21 +30,12 @@ class StubBroker(Broker):
         self.queues[message.queue_name].put(message.encode())
         self._emit_after("enqueue", message)
 
-    def get_actor(self, actor_name):
-        try:
-            return self.actors[actor_name]
-        except KeyError:
-            raise ActorNotFound(actor_name)
-
     def get_consumer(self, queue_name, on_message):
         try:
             queue = self.queues[queue_name]
-            return StubConsumer(queue, on_message)
+            return _StubConsumer(queue, on_message)
         except KeyError:
             raise QueueNotFound(queue_name)
-
-    def get_declared_queues(self):
-        return self.queues.keys()
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be processed.
@@ -73,7 +52,7 @@ class StubBroker(Broker):
             raise QueueNotFound(queue_name)
 
 
-class StubConsumer(Consumer):
+class _StubConsumer(Consumer):
     def __init__(self, queue, on_message):
         self.running = False
         self.queue = queue

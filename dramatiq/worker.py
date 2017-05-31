@@ -15,19 +15,11 @@ class Worker(Middleware):
     There should be at most one worker instance per process.
     """
 
-    def __init__(self, broker, worker_threads=8, wait_timeout=30):
+    def __init__(self, broker, worker_threads=8, wait_timeout=5):
         self.broker = broker
-        self.work_queue = Queue()
         self.wait_timeout = wait_timeout
-
-        self.consumers = []
-        for queue_name in broker.get_declared_queues():
-            self.add_consumer(queue_name)
-        self.broker.add_middleware(self)
-
-        self.workers = []
-        for _ in range(worker_threads):
-            self.add_worker()
+        self.work_queue = Queue()
+        self.worker_threads = worker_threads
 
     def add_consumer(self, queue_name):
         consumer = _Consumer(self.broker, self.work_queue, queue_name)
@@ -41,6 +33,16 @@ class Worker(Middleware):
 
     def after_declare_queue(self, queue_name):
         self.add_consumer(queue_name)
+
+    def start(self):
+        self.consumers = []
+        for queue_name in self.broker.get_declared_queues():
+            self.add_consumer(queue_name)
+        self.broker.add_middleware(self)
+
+        self.workers = []
+        for _ in range(self.worker_threads):
+            self.add_worker()
 
     def stop(self, timeout=5):
         for thread in chain(self.consumers, self.workers):

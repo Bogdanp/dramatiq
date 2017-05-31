@@ -36,6 +36,8 @@ class Broker:
     def __init__(self, middleware=None):
         self.logger = logging.getLogger(type(self).__name__)
         self.middleware = middleware or []
+        self.actors = {}
+        self.queues = {}
 
     def _emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
@@ -65,6 +67,11 @@ class Broker:
         """
         raise NotImplementedError
 
+    def close(self):
+        """Stop this broker.
+        """
+        raise NotImplementedError
+
     def declare_actor(self, actor):  # pragma: no cover
         """Declare a new actor on this broker.  Declaring an Actor
         twice replaces the first actor with the second by name.
@@ -72,7 +79,10 @@ class Broker:
         Parameters:
           actor(Actor)
         """
-        raise NotImplementedError
+        self._emit_before("declare_actor", actor)
+        self.declare_queue(actor.queue_name)
+        self.actors[actor.actor_name] = actor
+        self._emit_after("declare_actor", actor)
 
     def declare_queue(self, queue_name):  # pragma: no cover
         """Declare a queue on this broker.  This method must be
@@ -100,7 +110,10 @@ class Broker:
         Returns:
           Actor: The actor.
         """
-        raise NotImplementedError
+        try:
+            return self.actors[actor_name]
+        except KeyError:
+            raise ActorNotFound(actor_name)
 
     def get_consumer(self, queue_name, on_message):  # pragma: no cover
         """Get an object that consumes messages from the queue and
@@ -123,7 +136,7 @@ class Broker:
     def get_declared_queues(self):  # pragma: no cover
         """Returns a list of all the named queues declared on this broker.
         """
-        raise NotImplementedError
+        return self.queues.keys()
 
     def process_message(self, message, ack_id):
         """Process a message and then acknowledge it.
