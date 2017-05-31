@@ -13,6 +13,16 @@ def test_actors_can_be_defined(stub_broker):
     assert isinstance(add, dramatiq.Actor)
 
 
+def test_actors_can_be_named(stub_broker):
+    # Given that I've decorated a function with @actor and named it explicitly
+    @dramatiq.actor(actor_name="foo")
+    def add(x, y):
+        return x + y
+
+    # I expect the returned function to have that name
+    assert add.actor_name == "foo"
+
+
 def test_actors_can_be_called(stub_broker):
     # Given that I have an actor
     @dramatiq.actor
