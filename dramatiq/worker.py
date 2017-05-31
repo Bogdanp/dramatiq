@@ -20,14 +20,15 @@ class Worker(Middleware):
         self.wait_timeout = wait_timeout
         self.work_queue = Queue()
         self.worker_threads = worker_threads
+        self.logger = logging.getLogger("Worker")
 
     def add_consumer(self, queue_name):
-        consumer = _Consumer(self.broker, self.work_queue, queue_name)
+        consumer = _ConsumerThread(self.broker, self.work_queue, queue_name)
         consumer.start()
         self.consumers.append(consumer)
 
     def add_worker(self):
-        worker = _Worker(self.broker, self.work_queue, self.wait_timeout)
+        worker = _WorkerThread(self.broker, self.work_queue, self.wait_timeout)
         worker.start()
         self.workers.append(worker)
 
@@ -45,6 +46,7 @@ class Worker(Middleware):
             self.add_worker()
 
     def stop(self, timeout=5):
+        self.logger.info("Shutting down...")
         for thread in chain(self.consumers, self.workers):
             thread.stop()
 
@@ -52,7 +54,7 @@ class Worker(Middleware):
             thread.join(timeout=timeout)
 
 
-class _Consumer(Thread):
+class _ConsumerThread(Thread):
     def __init__(self, broker, work_queue, queue_name):
         super().__init__(daemon=True)
 
@@ -60,7 +62,7 @@ class _Consumer(Thread):
         self.consumer = broker.get_consumer(queue_name, self.on_message)
         self.queue_name = queue_name
         self.work_queue = work_queue
-        self.logger = logging.getLogger(f"Consumer({queue_name!r})")
+        self.logger = logging.getLogger(f"ConsumerThread({queue_name!r})")
 
     def on_message(self, message, ack_id):
         self.logger.debug("Pushing message %r onto work queue.", message.message_id)
@@ -76,7 +78,7 @@ class _Consumer(Thread):
         self.consumer.stop()
 
 
-class _Worker(Thread):
+class _WorkerThread(Thread):
     def __init__(self, broker, work_queue, wait_timeout):
         super().__init__(daemon=True)
 
@@ -84,7 +86,7 @@ class _Worker(Thread):
         self.broker = broker
         self.work_queue = work_queue
         self.wait_timeout = wait_timeout
-        self.logger = logging.getLogger("Worker")
+        self.logger = logging.getLogger("WorkerThread")
 
     def run(self):
         self.logger.debug("Running...")
