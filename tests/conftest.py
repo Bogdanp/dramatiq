@@ -28,7 +28,7 @@ def rabbitmq_broker():
 
 @pytest.fixture()
 def stub_worker(stub_broker):
-    worker = Worker(stub_broker, wait_timeout=0.1)
+    worker = Worker(stub_broker, worker_timeout=0.1)
     worker.start()
     yield worker
     worker.stop()

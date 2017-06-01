@@ -7,7 +7,7 @@ from threading import Thread
 from .middleware import Middleware
 
 
-class Worker(Middleware):
+class Worker:
     """Consumes messages off of all declared queues on a worker and
     distributes those messages to individual worker threads so that
     actors may process them.
@@ -15,87 +15,99 @@ class Worker(Middleware):
     There should be at most one worker instance per process.
     """
 
-    def __init__(self, broker, wait_timeout=5, worker_threads=8):
+    def __init__(self, broker, worker_timeout=5, worker_threads=8):
         self.broker = broker
-        self.wait_timeout = wait_timeout
+        self.consumers = {}
+        self.workers = []
         self.work_queue = Queue()
+        self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
         self.logger = logging.getLogger("Worker")
 
     def add_consumer(self, queue_name):
-        consumer = _ConsumerThread(self.broker, self.work_queue, queue_name)
-        consumer.start()
-        self.consumers.append(consumer)
+        if queue_name not in self.consumers:
+            consumer = _ConsumerThread(self.broker, self.work_queue, queue_name)
+            consumer.start()
+
+            self.consumers[queue_name] = consumer
 
     def add_worker(self):
-        worker = _WorkerThread(self.broker, self.work_queue, self.wait_timeout)
+        worker = _WorkerThread(self.broker, self.work_queue, self.worker_timeout)
         worker.start()
         self.workers.append(worker)
 
-    def after_declare_queue(self, queue_name):
-        self.add_consumer(queue_name)
-
     def start(self):
-        self.consumers = []
-        for queue_name in self.broker.get_declared_queues():
-            self.add_consumer(queue_name)
-        self.broker.add_middleware(self)
-
-        self.workers = []
+        worker_middleware = _WorkerMiddleware(self)
+        self.broker.add_middleware(worker_middleware)
         for _ in range(self.worker_threads):
             self.add_worker()
 
     def stop(self, timeout=5):
         self.logger.info("Shutting down...")
-        for thread in chain(self.consumers, self.workers):
+        for thread in chain(self.consumers.values(), self.workers):
             thread.stop()
 
-        for thread in chain(self.consumers, self.workers):
+        for thread in chain(self.consumers.values(), self.workers):
             thread.join(timeout=timeout)
+
+
+class _WorkerMiddleware(Middleware):
+    def __init__(self, worker):
+        self.worker = worker
+
+    def after_declare_queue(self, queue_name):
+        self.worker.add_consumer(queue_name)
 
 
 class _ConsumerThread(Thread):
     def __init__(self, broker, work_queue, queue_name):
         super().__init__(daemon=True)
 
+        self.running = True
         self.broker = broker
-        self.consumer = broker.get_consumer(queue_name, self.on_message)
+        self.consumer = broker.consume(queue_name)
         self.queue_name = queue_name
         self.work_queue = work_queue
         self.logger = logging.getLogger(f"ConsumerThread({queue_name!r})")
 
-    def on_message(self, message, ack_id):
-        self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-        self.work_queue.put((message, ack_id))
-
     def run(self):
-        self.logger.debug("Starting...")
-        self.consumer.start()
-        self.logger.debug("Stopped.")
+        self.logger.debug("Running consumer thread...")
+        self.running = True
+        for message in self.consumer:
+            if message is not None:
+                self.logger.debug("Pushing message %r onto work queue.", message.message_id)
+                self.work_queue.put(message)
+
+            if not self.running:
+                break
+
+        self.logger.debug("Closing consumer...")
+        self.consumer.close()
+        self.logger.debug("Consumer thread stopped.")
 
     def stop(self):
-        self.logger.debug("Stopping consumer %r...", self)
-        self.consumer.stop()
+        self.logger.debug("Stopping consumer thread...")
+        self.running = False
 
 
 class _WorkerThread(Thread):
-    def __init__(self, broker, work_queue, wait_timeout):
+    def __init__(self, broker, work_queue, worker_timeout):
         super().__init__(daemon=True)
 
         self.running = True
         self.broker = broker
         self.work_queue = work_queue
-        self.wait_timeout = wait_timeout
+        self.worker_timeout = worker_timeout
         self.logger = logging.getLogger("WorkerThread")
 
     def run(self):
-        self.logger.debug("Running...")
+        self.logger.debug("Running worker thread...")
         while self.running:
             try:
                 self.logger.debug("Waiting for message...")
-                message, ack_id = self.work_queue.get(timeout=self.wait_timeout)
+                message = self.work_queue.get(timeout=self.worker_timeout)
                 self.logger.debug("Received message %s with id %r.", message, message.message_id)
-                self.broker.process_message(message, ack_id)
+                self.broker.process_message(message)
 
             except Empty:
                 self.logger.debug("Reached wait timeout...")
@@ -103,8 +115,8 @@ class _WorkerThread(Thread):
             except Exception:
                 self.logger.warning("An unhandled exception occurred while processing a message.", exc_debug=True)
 
-        self.logger.debug("Stopped.")
+        self.logger.debug("Worker thread stopped.")
 
     def stop(self):
-        self.logger.debug("Stopping worker %r...", self)
+        self.logger.debug("Stopping worker thread...")
         self.running = False

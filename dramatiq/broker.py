@@ -55,20 +55,28 @@ class Broker:
         """
         self.middleware.append(middleware)
 
-    def acknowledge(self, queue_name, ack_id):  # pragma: no cover
-        """Acknowledge that a message is done processing.
+        for actor_name in self.get_declared_actors():
+            middleware.after_declare_actor(actor_name)
+
+        for queue_name in self.get_declared_queues():
+            middleware.after_declare_queue(queue_name)
+
+    def close(self):
+        """Close this broker and perform any necessary cleanup actions.
+        """
+
+    def consume(self, queue_name, timeout=30):  # pragma: no cover
+        """Get an iterator that consumes messages off of the queue.
 
         Raises:
           QueueNotFound: If the given queue was never declared.
 
         Parameters:
-          queue_name(str): The name of the queue the message was received on.
-          ack_id(str): The acknowledgement nonce for a particular message.
-        """
-        raise NotImplementedError
+          queue_name(str): The name of the queue to consume messages off of.
+          timeout(int)
 
-    def close(self):
-        """Stop this broker.
+        Returns:
+          Consumer
         """
         raise NotImplementedError
 
@@ -115,35 +123,21 @@ class Broker:
         except KeyError:
             raise ActorNotFound(actor_name)
 
-    def get_consumer(self, queue_name, on_message):  # pragma: no cover
-        """Get an object that consumes messages from the queue and
-        calls on_message for every message that it finds.
-
-        Raises:
-          QueueNotFound: If the given queue was never declared.
-
-        Parameters:
-          queue_name(str): The name of the queue to consume messages off of.
-          on_message(callable): A function to be called whenever a
-            message is received.  The function must take two parameters:
-            a Message object and an ack_id.
-
-        Returns:
-          Consumer: A consumer object.
+    def get_declared_actors(self):  # pragma: no cover
+        """Returns a list of all the named actors declared on this broker.
         """
-        raise NotImplementedError
+        return self.actors.keys()
 
     def get_declared_queues(self):  # pragma: no cover
         """Returns a list of all the named queues declared on this broker.
         """
         return self.queues.keys()
 
-    def process_message(self, message, ack_id):
+    def process_message(self, message):
         """Process a message and then acknowledge it.
 
         Parameters:
           message(Message)
-          ack_id(str)
         """
         try:
             self._emit_before("process_message", message)
@@ -157,36 +151,21 @@ class Broker:
 
         finally:
             self.logger.debug("Acknowledging message %r.", message.message_id)
-            self._emit_before("acknowledge", message, ack_id)
-            self.acknowledge(message.queue_name, ack_id)
-            self._emit_after("acknowledge", message, ack_id)
+            self._emit_before("acknowledge", message)
+            message.acknowledge()
+            self._emit_after("acknowledge", message)
 
 
 class Consumer:
-    """Base class for consumer objects.
+    """Consumers iterate over messages on a queue.
     """
 
-    def start(self):  # pragma: no cover
-        """Start this consumer.
-        """
+    def __iter__(self):
+        return self
+
+    def __next__(self):
         raise NotImplementedError
 
-    def stop(self):  # pragma: no cover
-        """Stop this consumer.
+    def close(self):
+        """Close this consumer and perform any necessary cleanup actions.
         """
-        raise NotImplementedError
-
-
-class BrokerError(Exception):
-    """Base class for broker-related errors.
-    """
-
-
-class ActorNotFound(BrokerError):
-    """Raised when a message is sent to an actor that hasn't been declared.
-    """
-
-
-class QueueNotFound(BrokerError):
-    """Raised when a message is sent to an queue that hasn't been declared.
-    """

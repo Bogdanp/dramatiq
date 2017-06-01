@@ -4,11 +4,11 @@ class Middleware:
     subset of hooks they like.
     """
 
-    def before_acknowledge(self, queue_name, ack_id):
+    def before_acknowledge(self, queue_name):
         """Called before a message is acknowledged.
         """
 
-    def after_acknowledge(self, queue_name, ack_id):
+    def after_acknowledge(self, queue_name):
         """Called after a message has been acknowledged.
         """
 

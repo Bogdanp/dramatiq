@@ -5,7 +5,7 @@ import sys
 
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARN,
     format="[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s",
 )
 
