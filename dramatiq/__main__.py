@@ -2,8 +2,8 @@ import argparse
 import importlib
 import logging
 import multiprocessing
-import multiprocessing.managers
-import multiprocessing.pool
+import os
+import signal
 import sys
 import time
 
@@ -47,11 +47,11 @@ def parse_arguments():
         help="additional python modules to import",
     )
     parser.add_argument(
-        "-p", default=cpus, type=int,
+        "--processes", "-p", default=cpus, type=int,
         help=f"the number of worker processes to run (default: {cpus})",
     )
     parser.add_argument(
-        "-t", default=8, type=int,
+        "--threads", "-t", default=8, type=int,
         help="the number of worker threads per process (default: 8)",
     )
     parser.add_argument("--version", action="version", version=__version__)
@@ -64,40 +64,60 @@ def worker_process(broker, modules, worker_threads):
     for module in modules:
         importlib.import_module(module)
 
+    logger = logging.getLogger("WorkerProcess")
     worker = Worker(broker, worker_threads=worker_threads)
     worker.start()
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        worker.stop()
-        broker.close()
+    def sighandler(signum, frame):
+        nonlocal running
+        if not running:
+            logger.warn("Murdering worker process...")
+            sys.exit(1)
+
+        logger.info("Shutting worker process down gracefully...")
+        running = False
+
+    os.setsid()
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, sighandler)
+
+    running = True
+    while running:
+        time.sleep(1)
+
+    worker.stop()
+    broker.close()
 
 
 def main():
     args = parse_arguments()
     level = verbosity.get(args.verbose, logging.DEBUG)
+    logger = logging.getLogger("MainProcess")
     logging.basicConfig(level=level, format=logformat)
 
-    with multiprocessing.pool.Pool(processes=args.processes) as pool:
-        futures = []
-        for _ in range(args.processes):
-            future = pool.apply_async(worker_process, args=(args.broker, args.modules, args.threads))
-            futures.append(future)
+    worker_processes = []
+    for _ in range(args.processes):
+        pid = os.fork()
+        if pid != 0:
+            worker_processes.append(pid)
+            continue
 
-        for future in futures:
+        return worker_process(args.broker, args.modules, args.threads)
+
+    def sighandler(signum, frame):
+        nonlocal worker_processes
+        logger.info("Stopping worker processes...")
+        for pid in worker_processes:
             try:
-                future.get()
-
-            except KeyboardInterrupt:
+                os.kill(pid, signal.SIGTERM)
+            except OSError:
                 pass
 
-            except BaseException as e:
-                logging.critical(e)
-                return 1
+    signal.signal(signal.SIGINT, sighandler)
+    signal.signal(signal.SIGTERM, sighandler)
+    for pid in worker_processes:
+        os.waitpid(pid, 0)
 
-    pool.join()
     return 0
 
 
