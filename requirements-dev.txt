@@ -1,5 +1,8 @@
 -r requirements-rabbitmq.txt
 
+# Misc
+bumpversion
+
 # Testing
 pytest
 pytest-cov
