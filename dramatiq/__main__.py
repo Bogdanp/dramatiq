@@ -25,15 +25,18 @@ verbosity = {
 
 
 def import_broker(value):
-    module, name = value, None
+    modname, varname = value, None
     if ":" in value:
-        module, name = value.split(":", 1)
+        modname, varname = value.split(":", 1)
 
-    module = importlib.import_module(module)
-    if name is not None:
-        broker = getattr(module, name, None)
+    module = importlib.import_module(modname)
+    if varname is not None:
+        if not hasattr(module, varname):
+            raise ImportError(f"Module {modname!r} does not define a {varname!r} variable.")
+
+        broker = getattr(module, varname)
         if not isinstance(broker, Broker):
-            raise ImportError(f"{value!r} is not a Broker")
+            raise ImportError(f"Variable {varname!r} from module {modname!r} is not a Broker.")
         return broker
     return get_broker()
 
@@ -83,6 +86,9 @@ def worker_process(args, worker_id, logging_fd):
 
         worker = Worker(broker, worker_threads=args.threads)
         worker.start()
+    except ImportError as e:
+        logger.critical(e)
+        return os._exit(1)
     except ConnectionError as e:
         logger.critical("Broker connection failed. %s", e)
         return os._exit(1)
