@@ -2,7 +2,7 @@ import pika
 
 from threading import local
 
-from ..broker import Broker, Consumer
+from ..broker import Broker, Consumer, MessageProxy
 from ..errors import ConnectionClosed
 from ..message import Message
 
@@ -112,7 +112,7 @@ class _RabbitmqConsumer(Consumer):
         self.connection.close()
 
 
-class _RabbitmqMessage:
+class _RabbitmqMessage(MessageProxy):
     def __init__(self, channel, message, tag):
         self._channel = channel
         self._message = message
@@ -120,9 +120,3 @@ class _RabbitmqMessage:
 
     def acknowledge(self):
         self._channel.basic_ack(self._tag)
-
-    def __getattr__(self, name):
-        return getattr(self._message, name)
-
-    def __str__(self):
-        return str(self._message)

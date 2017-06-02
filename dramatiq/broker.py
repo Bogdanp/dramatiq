@@ -171,3 +171,22 @@ class Consumer:
     def close(self):
         """Close this consumer and perform any necessary cleanup actions.
         """
+
+
+class MessageProxy:
+    """Base class for messages returned by :meth:`Broker.consume`.
+    """
+
+    def __init__(self, message):
+        self._message = message
+
+    def acknowledge(self):
+        """Acknowledge that this message has been procesed.
+        """
+        raise NotImplementedError
+
+    def __getattr__(self, name):
+        return getattr(self._message, name)
+
+    def __str__(self):
+        return str(self._message)

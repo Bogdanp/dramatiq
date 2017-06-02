@@ -1,6 +1,6 @@
 from queue import Queue, Empty
 
-from ..broker import Broker, Consumer
+from ..broker import Broker, Consumer, MessageProxy
 from ..errors import QueueNotFound
 from ..message import Message
 
@@ -59,16 +59,10 @@ class _StubConsumer(Consumer):
             return None
 
 
-class _StubMessage:
+class _StubMessage(MessageProxy):
     def __init__(self, message, queue):
-        self._message = message
+        super().__init__(message)
         self._queue = queue
 
     def acknowledge(self):
         self._queue.task_done()
-
-    def __getattr__(self, name):
-        return getattr(self._message, name)
-
-    def __str__(self):
-        return str(self._message)
