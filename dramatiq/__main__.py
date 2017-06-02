@@ -110,14 +110,14 @@ def worker_process(args, worker_id, logging_fd):
 
 def main():
     args = parse_arguments()
-    worker_pipes = {}
+    worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):
         read_fd, write_fd = os.pipe()
         pid = os.fork()
         if pid != 0:
             os.close(write_fd)
-            worker_pipes[worker_id] = os.fdopen(read_fd)
+            worker_pipes.append(os.fdopen(read_fd))
             worker_processes.append(pid)
             continue
 
@@ -130,7 +130,7 @@ def main():
     def watch(worker_pipes):
         nonlocal running
         selector = selectors.DefaultSelector()
-        for pipe in worker_pipes.values():
+        for pipe in worker_pipes:
             selector.register(pipe, selectors.EVENT_READ)
 
         while running:
@@ -157,6 +157,9 @@ def main():
 
     running = False
     watcher.join()
+    for pipe in worker_pipes:
+        pipe.close()
+
     return 0
 
 
