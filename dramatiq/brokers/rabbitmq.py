@@ -3,6 +3,7 @@ import pika
 from threading import local
 
 from ..broker import Broker, Consumer
+from ..errors import ConnectionClosed
 from ..message import Message
 
 
@@ -44,20 +45,27 @@ class RabbitmqBroker(Broker):
         return channel
 
     def close(self):
-        self.logger.info("Closing connection...")
+        self.logger.info("Closing connections...")
         for connection in self.connections:
-            connection.close()
-        self.logger.info("Connection closed.")
+            try:
+                connection.close()
+            except pika.exceptions.ConnectionClosed as e:
+                pass
+
+        self.logger.info("Connections closed.")
 
     def consume(self, queue_name, timeout=5):
         return _RabbitmqConsumer(self.parameters, queue_name, timeout)
 
     def declare_queue(self, queue_name):
-        if queue_name not in self.queues:
-            self._emit_before("declare_queue", queue_name)
-            self.channel.queue_declare(queue=queue_name, durable=True)
-            self.queues.add(queue_name)
-            self._emit_after("declare_queue", queue_name)
+        try:
+            if queue_name not in self.queues:
+                self._emit_before("declare_queue", queue_name)
+                self.channel.queue_declare(queue=queue_name, durable=True)
+                self.queues.add(queue_name)
+                self._emit_after("declare_queue", queue_name)
+        except pika.exceptions.ConnectionClosed as e:
+            raise ConnectionClosed(e)
 
     def enqueue(self, message):
         self.logger.info("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
@@ -76,22 +84,28 @@ class RabbitmqBroker(Broker):
 
 class _RabbitmqConsumer(Consumer):
     def __init__(self, parameters, queue_name, timeout):
-        self.connection = pika.BlockingConnection(parameters=parameters)
-        self.channel = self.connection.channel()
-        self.channel.basic_qos(prefetch_count=1)
-        self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout)
+        try:
+            self.connection = pika.BlockingConnection(parameters=parameters)
+            self.channel = self.connection.channel()
+            self.channel.basic_qos(prefetch_count=1)
+            self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout)
+        except pika.exceptions.ConnectionClosed as e:
+            raise ConnectionClosed(e)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        frame = next(self.iterator)
-        if frame is None:
-            return None
+        try:
+            frame = next(self.iterator)
+            if frame is None:
+                return None
 
-        method, properties, body = frame
-        message = Message.decode(body)
-        return _RabbitmqMessage(self.channel, message, method.delivery_tag)
+            method, properties, body = frame
+            message = Message.decode(body)
+            return _RabbitmqMessage(self.channel, message, method.delivery_tag)
+        except pika.exceptions.ConnectionClosed as e:
+            raise ConnectionClosed(e)
 
     def close(self):
         self.channel.cancel()

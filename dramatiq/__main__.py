@@ -8,7 +8,7 @@ import signal
 import sys
 import time
 
-from dramatiq import __version__, Broker, Worker, get_broker
+from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker
 from threading import Thread
 
 #: The number of available cpus.
@@ -33,7 +33,7 @@ def import_broker(value):
     if name is not None:
         broker = getattr(module, name, None)
         if not isinstance(broker, Broker):
-            raise TypeError(f"{value!r} is not a broker instance")
+            raise ImportError(f"{value!r} is not a Broker")
         return broker
     return get_broker()
 
@@ -70,18 +70,22 @@ def setup_parent_logging(args):
 def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
-    return logging.getLogger(f"Worker({worker_id})")
+    return logging.getLogger(f"WorkerProcess({worker_id})")
 
 
 def worker_process(args, worker_id, logging_fd):
-    broker = import_broker(args.broker)
-    for module in args.modules:
-        importlib.import_module(module)
+    try:
+        logging_pipe = os.fdopen(logging_fd, "w")
+        logger = setup_worker_logging(args, worker_id, logging_pipe)
+        broker = import_broker(args.broker)
+        for module in args.modules:
+            importlib.import_module(module)
 
-    logging_pipe = os.fdopen(logging_fd, "w")
-    logger = setup_worker_logging(args, worker_id, logging_pipe)
-    worker = Worker(broker, worker_threads=args.threads)
-    worker.start()
+        worker = Worker(broker, worker_threads=args.threads)
+        worker.start()
+    except ConnectionError as e:
+        logger.critical("Broker connection failed. %s", e)
+        return os._exit(1)
 
     def sighandler(signum, frame):
         nonlocal running
@@ -90,7 +94,7 @@ def worker_process(args, worker_id, logging_fd):
             running = False
         else:
             logger.warn("Killing worker process...")
-            os._exit(1)
+            return os._exit(1)
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, sighandler)
@@ -144,7 +148,7 @@ def main():
             try:
                 os.kill(pid, signal.SIGTERM)
             except OSError:
-                pass
+                logger.warning("Failed to terminate child process.", exc_info=True)
 
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)

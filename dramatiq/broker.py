@@ -1,5 +1,7 @@
 import logging
 
+from .errors import ActorNotFound
+
 #: The global broker instance.
 global_broker = None
 

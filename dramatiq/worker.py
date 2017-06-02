@@ -1,9 +1,11 @@
 import logging
+import time
 
 from itertools import chain
 from queue import Queue, Empty
 from threading import Thread
 
+from .errors import ConnectionClosed
 from .middleware import Middleware
 
 
@@ -65,21 +67,32 @@ class _ConsumerThread(Thread):
 
         self.running = True
         self.broker = broker
-        self.consumer = broker.consume(queue_name)
         self.queue_name = queue_name
         self.work_queue = work_queue
         self.logger = logging.getLogger(f"ConsumerThread({queue_name})")
 
-    def run(self):
-        self.logger.debug("Running consumer thread...")
-        self.running = True
-        for message in self.consumer:
-            if message is not None:
-                self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-                self.work_queue.put(message)
+    def run(self, attempts=0):
+        try:
+            self.logger.debug("Running consumer thread...")
+            self.consumer = self.broker.consume(self.queue_name)
+            self.running = True
 
-            if not self.running:
-                break
+            # Reset the attempts counter since we presumably got a
+            # working connection.
+            attempts = 0
+            for message in self.consumer:
+                if message is not None:
+                    self.logger.debug("Pushing message %r onto work queue.", message.message_id)
+                    self.work_queue.put(message)
+
+                if not self.running:
+                    break
+        except ConnectionClosed:
+            delay = min(0.5 * attempts ** 2, 10)
+            self.logger.warning("Connection error encountered. Waiting for %.02f before restarting...", delay)
+
+            time.sleep(delay)
+            return self.run(attempts=attempts + 1)
 
         self.logger.debug("Closing consumer...")
         self.consumer.close()
