@@ -4,7 +4,7 @@ Simple task queueing for Python.
 
 ## Installation
 
-    pip install dramatiq
+    pip install dramatiq[rabbitmq]
 
 ## License
 
