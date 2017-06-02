@@ -3,17 +3,19 @@ import importlib
 import logging
 import multiprocessing
 import os
+import selectors
 import signal
 import sys
 import time
 
 from dramatiq import __version__, Broker, Worker, get_broker
+from threading import Thread
 
 #: The number of available cpus.
 cpus = multiprocessing.cpu_count()
 
 #: The logging format.
-logformat = "[%(asctime)s] [%(processName)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
+logformat = "[%(asctime)s] [PID %(process)d] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 
 #: The logging verbosity levels.
 verbosity = {
@@ -59,25 +61,37 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def worker_process(broker, modules, worker_threads):
-    broker = import_broker(broker)
-    for module in modules:
+def setup_parent_logging(args):
+    level = verbosity.get(args.verbose, logging.DEBUG)
+    logging.basicConfig(level=level, format=logformat, stream=sys.stderr)
+    return logging.getLogger("MainProcess")
+
+
+def setup_worker_logging(args, worker_id, logging_pipe):
+    level = verbosity.get(args.verbose, logging.DEBUG)
+    logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
+    return logging.getLogger(f"Worker({worker_id})")
+
+
+def worker_process(args, worker_id, logging_fd):
+    broker = import_broker(args.broker)
+    for module in args.modules:
         importlib.import_module(module)
 
-    logger = logging.getLogger("WorkerProcess")
-    worker = Worker(broker, worker_threads=worker_threads)
+    logging_pipe = os.fdopen(logging_fd, "w")
+    logger = setup_worker_logging(args, worker_id, logging_pipe)
+    worker = Worker(broker, worker_threads=args.threads)
     worker.start()
 
     def sighandler(signum, frame):
         nonlocal running
-        if not running:
-            logger.warn("Murdering worker process...")
-            sys.exit(1)
+        if running:
+            logger.info("Stopping worker process...")
+            running = False
+        else:
+            logger.warn("Killing worker process...")
+            os._exit(1)
 
-        logger.info("Shutting worker process down gracefully...")
-        running = False
-
-    os.setsid()
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, sighandler)
 
@@ -87,22 +101,41 @@ def worker_process(broker, modules, worker_threads):
 
     worker.stop()
     broker.close()
+    logging_pipe.close()
 
 
 def main():
     args = parse_arguments()
-    level = verbosity.get(args.verbose, logging.DEBUG)
-    logger = logging.getLogger("MainProcess")
-    logging.basicConfig(level=level, format=logformat)
-
+    worker_pipes = {}
     worker_processes = []
-    for _ in range(args.processes):
+    for worker_id in range(args.processes):
+        read_fd, write_fd = os.pipe()
         pid = os.fork()
         if pid != 0:
+            os.close(write_fd)
+            worker_pipes[worker_id] = os.fdopen(read_fd)
             worker_processes.append(pid)
             continue
 
-        return worker_process(args.broker, args.modules, args.threads)
+        os.close(read_fd)
+        return worker_process(args, worker_id, write_fd)
+
+    logger = setup_parent_logging(args)
+    running = True
+
+    def watch(worker_pipes):
+        nonlocal running
+        selector = selectors.DefaultSelector()
+        for pipe in worker_pipes.values():
+            selector.register(pipe, selectors.EVENT_READ)
+
+        while running:
+            events = selector.select()
+            for key, mask in events:
+                sys.stderr.write(key.fileobj.readline())
+
+    watcher = Thread(target=watch, args=(worker_pipes,), daemon=True)
+    watcher.start()
 
     def sighandler(signum, frame):
         nonlocal worker_processes
@@ -118,6 +151,8 @@ def main():
     for pid in worker_processes:
         os.waitpid(pid, 0)
 
+    running = False
+    watcher.join()
     return 0
 
 

@@ -3,16 +3,12 @@ import logging
 import random
 import sys
 
-
-logging.basicConfig(
-    level=logging.WARN,
-    format="[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s",
-)
+logger = logging.getLogger("example")
 
 
 @dramatiq.actor(actor_name="add")
 def add(x, y):
-    print(x + y)
+    logger.info("The sum of %d and %d is %d.", x, y, x + y)
 
 
 def main(args):

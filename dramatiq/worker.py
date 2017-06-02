@@ -22,7 +22,7 @@ class Worker:
         self.work_queue = Queue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
-        self.logger = logging.getLogger("Worker")
+        self.logger = logging.getLogger("WorkerProcess")
 
     def add_consumer(self, queue_name):
         if queue_name not in self.consumers:
@@ -68,7 +68,7 @@ class _ConsumerThread(Thread):
         self.consumer = broker.consume(queue_name)
         self.queue_name = queue_name
         self.work_queue = work_queue
-        self.logger = logging.getLogger(f"ConsumerThread({queue_name!r})")
+        self.logger = logging.getLogger(f"ConsumerThread({queue_name})")
 
     def run(self):
         self.logger.debug("Running consumer thread...")
