@@ -69,3 +69,6 @@ class _StubMessage:
 
     def __getattr__(self, name):
         return getattr(self._message, name)
+
+    def __str__(self):
+        return str(self._message)
