@@ -139,7 +139,7 @@ class Broker:
         """Process a message and then acknowledge it.
 
         Parameters:
-          message(Message)
+          message(MessageProxy)
         """
         try:
             self._emit_before("process_message", message)
@@ -162,10 +162,16 @@ class Consumer:
     """Consumers iterate over messages on a queue.
     """
 
-    def __iter__(self):
+    def __iter__(self):  # pragma: no cover
         return self
 
-    def __next__(self):
+    def __next__(self):  # pragma: no cover
+        """Retrieve the next message off of the queue.  This method
+        blocks until a message becomes available.
+
+        Returns:
+          MessageProxy
+        """
         raise NotImplementedError
 
     def close(self):
@@ -180,7 +186,7 @@ class MessageProxy:
     def __init__(self, message):
         self._message = message
 
-    def acknowledge(self):
+    def acknowledge(self):  # pragma: no cover
         """Acknowledge that this message has been procesed.
         """
         raise NotImplementedError

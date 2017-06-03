@@ -126,7 +126,10 @@ class _WorkerThread(Thread):
                 self.logger.debug("Reached wait timeout...")
 
             except Exception:
-                self.logger.warning("An unhandled exception occurred while processing a message.", exc_debug=True)
+                self.logger.warning(
+                    "An unhandled exception occurred while processing message %r.",
+                    message.message_id, exc_debug=True,
+                )
 
         self.logger.debug("Worker thread stopped.")
 
