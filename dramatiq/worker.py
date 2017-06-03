@@ -15,13 +15,21 @@ class Worker:
     actors may process them.
 
     There should be at most one worker instance per process.
+
+    Parameters:
+      broker(Broker)
+      worker_timeout(int): The number of milliseconds workers should
+        wake up after if the queue is idle.
+      worker_threads(int): The number of worker threads to spawn.
+      work_factor(int): The max number of messages to load into memory
+        per worker thread pending processing.
     """
 
-    def __init__(self, broker, worker_timeout=5, worker_threads=8):
+    def __init__(self, broker, *, worker_timeout=5000, worker_threads=8, work_factor=10000):
         self.broker = broker
         self.consumers = {}
         self.workers = []
-        self.work_queue = Queue()
+        self.work_queue = Queue(maxsize=work_factor * worker_threads)
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
         self.logger = get_logger(__name__, type(self))
@@ -118,7 +126,7 @@ class _WorkerThread(Thread):
         while self.running:
             try:
                 self.logger.debug("Waiting for message...")
-                message = self.work_queue.get(timeout=self.worker_timeout)
+                message = self.work_queue.get(timeout=self.worker_timeout / 1000)
                 self.logger.debug("Received message %s with id %r.", message, message.message_id)
                 self.broker.process_message(message)
 

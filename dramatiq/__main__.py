@@ -59,6 +59,10 @@ def parse_arguments():
         "--threads", "-t", default=8, type=int,
         help="the number of worker threads per process (default: 8)",
     )
+    parser.add_argument(
+        "--work-factor", "-f", default=10000, type=int,
+        help="the max number of messages to load into memory per worker thread (default: 10000)",
+    )
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     return parser.parse_args()
@@ -73,6 +77,7 @@ def setup_parent_logging(args):
 def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
+    logging.getLogger("pika").setLevel(logging.ERROR)
     return get_logger("dramatiq", f"WorkerProcess({worker_id})")
 
 
@@ -84,7 +89,11 @@ def worker_process(args, worker_id, logging_fd):
         for module in args.modules:
             importlib.import_module(module)
 
-        worker = Worker(broker, worker_threads=args.threads)
+        worker = Worker(
+            broker,
+            worker_threads=args.threads,
+            work_factor=args.work_factor,
+        )
         worker.start()
     except ImportError as e:
         logger.critical(e)
@@ -102,6 +111,7 @@ def worker_process(args, worker_id, logging_fd):
             logger.warning("Killing worker process...")
             return os._exit(1)
 
+    logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, sighandler)
 
