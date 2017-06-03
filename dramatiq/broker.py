@@ -1,9 +1,8 @@
-import logging
-
 from functools import reduce
 from operator import ior
 
 from .errors import ActorNotFound
+from .logging import get_logger
 from .middleware import Retries
 
 #: The global broker instance.
@@ -43,7 +42,7 @@ class Broker:
     """
 
     def __init__(self, middleware=None):
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = get_logger(__name__, type(self))
         self.middleware = middleware or [mw() for mw in default_middleware]
         self.actor_options = reduce(ior, (mw.actor_options for mw in self.middleware), set())
         self.actors = {}
@@ -67,10 +66,10 @@ class Broker:
         self.actor_options |= middleware.actor_options
 
         for actor_name in self.get_declared_actors():
-            middleware.after_declare_actor(actor_name)
+            middleware.after_declare_actor(self, actor_name)
 
         for queue_name in self.get_declared_queues():
-            middleware.after_declare_queue(queue_name)
+            middleware.after_declare_queue(self, queue_name)
 
     def close(self):
         """Close this broker and perform any necessary cleanup actions.

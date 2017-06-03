@@ -8,7 +8,7 @@ import signal
 import sys
 import time
 
-from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker
+from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker, get_logger
 from threading import Thread
 
 #: The number of available cpus.
@@ -67,13 +67,13 @@ def parse_arguments():
 def setup_parent_logging(args):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=sys.stderr)
-    return logging.getLogger("MainProcess")
+    return get_logger("dramatiq", "MainProcess")
 
 
 def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
-    return logging.getLogger(f"WorkerProcess({worker_id})")
+    return get_logger("dramatiq", f"WorkerProcess({worker_id})")
 
 
 def worker_process(args, worker_id, logging_fd):

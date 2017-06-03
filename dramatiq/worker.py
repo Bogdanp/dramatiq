@@ -1,4 +1,3 @@
-import logging
 import time
 
 from itertools import chain
@@ -6,6 +5,7 @@ from queue import Queue, Empty
 from threading import Thread
 
 from .errors import ConnectionClosed
+from .logging import get_logger
 from .middleware import Middleware
 
 
@@ -24,7 +24,7 @@ class Worker:
         self.work_queue = Queue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
-        self.logger = logging.getLogger("WorkerProcess")
+        self.logger = get_logger(__name__, type(self))
 
     def add_consumer(self, queue_name):
         if queue_name not in self.consumers:
@@ -69,7 +69,7 @@ class _ConsumerThread(Thread):
         self.broker = broker
         self.queue_name = queue_name
         self.work_queue = work_queue
-        self.logger = logging.getLogger(f"ConsumerThread({queue_name})")
+        self.logger = get_logger(__name__, f"ConsumerThread({queue_name})")
 
     def run(self, attempts=0):
         try:
@@ -111,7 +111,7 @@ class _WorkerThread(Thread):
         self.broker = broker
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
-        self.logger = logging.getLogger("WorkerThread")
+        self.logger = get_logger(__name__, "WorkerThread")
 
     def run(self):
         self.logger.debug("Running worker thread...")

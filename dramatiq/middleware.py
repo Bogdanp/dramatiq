@@ -1,7 +1,7 @@
-import logging
-
 from random import uniform
 from time import time
+
+from .logging import get_logger
 
 
 class Middleware:
@@ -12,8 +12,7 @@ class Middleware:
 
     @property
     def actor_options(self):
-        """The set of options that may be set on each actor to
-        configure interactions with this middleware.
+        """The set of options that may be configured on each actor.
         """
         return set()
 
@@ -62,15 +61,6 @@ class Retries(Middleware):
     """Middleware that automatically retries failed tasks with
     exponential backoff.
 
-    Note:
-      All paramters can be overwritten on a per-actor basis.
-
-    Example:
-
-      @dramatiq.actor(max_backoff=2000):
-      def some_fn():
-        pass
-
     Parameters:
       max_age(int): The maximum task age in milliseconds.
       max_retires(int): The maximum number of times tasks can be retried.
@@ -81,12 +71,15 @@ class Retries(Middleware):
     """
 
     def __init__(self, *, max_age=None, max_retries=None, min_backoff=2000, max_backoff=3600000):
-        self.logger = logging.getLogger("Retries")
+        self.logger = get_logger(__name__, type(self))
         self.max_age = max_age
         self.max_retries = max_retries
         self.min_backoff = min_backoff
         self.max_backoff = max_backoff
-        self.actor_options = set([
+
+    @property
+    def actor_options(self):
+        return set([
             "max_age",
             "max_retries",
             "min_backoff",
