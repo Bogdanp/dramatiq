@@ -2,14 +2,15 @@ from .broker import get_broker
 from .message import Message
 
 
-def actor(fn=None, *, queue_name="default", actor_name=None, broker=None):
+def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **options):
     """Declare an Actor.
 
     Parameters:
       fn(callable)
-      queue_name(str)
       actor_name(str)
+      queue_name(str)
       broker(Broker)
+      \**options(dict)
 
     Returns:
       Actor
@@ -18,7 +19,14 @@ def actor(fn=None, *, queue_name="default", actor_name=None, broker=None):
         nonlocal actor_name, broker
         actor_name = actor_name or f"{fn.__module__}.{fn.__name__}"
         broker = broker or get_broker()
-        return Actor(fn, queue_name=queue_name, actor_name=actor_name, broker=broker)
+        options_delta = set(options) - broker.actor_options
+        if options_delta:
+            raise ValueError(
+                f"The following actor options are undefined: {', '.join(options_delta)}. "
+                "Did you forget to add a middleware to your Broker?"
+            )
+
+        return Actor(fn, actor_name=actor_name, queue_name=queue_name, broker=broker, options=options)
 
     if fn is None:
         return decorator
@@ -26,11 +34,12 @@ def actor(fn=None, *, queue_name="default", actor_name=None, broker=None):
 
 
 class Actor:
-    def __init__(self, fn, *, broker, queue_name, actor_name):
+    def __init__(self, fn, *, broker, actor_name, queue_name, options):
         self.fn = fn
         self.broker = broker
-        self.queue_name = queue_name
         self.actor_name = actor_name
+        self.queue_name = queue_name
+        self.options = options
         self.broker.declare_actor(self)
 
     def send(self, *args, **kwargs):

@@ -67,16 +67,17 @@ class RabbitmqBroker(Broker):
         except pika.exceptions.ConnectionClosed as e:
             raise ConnectionClosed(e)
 
-    def enqueue(self, message):
+    def enqueue(self, message, *, delay=None):
+        # TODO: Implement delay.
         self.logger.info("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
-        self._emit_before("enqueue", message)
+        self._emit_before("enqueue", message, delay)
         self.channel.publish(
             exchange="",
             routing_key=message.queue_name,
             body=message.encode(),
             properties=_properties,
         )
-        self._emit_after("enqueue", message)
+        self._emit_after("enqueue", message, delay)
 
     def get_declared_queues(self):
         return self.queues

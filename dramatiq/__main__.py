@@ -99,7 +99,7 @@ def worker_process(args, worker_id, logging_fd):
             logger.info("Stopping worker process...")
             running = False
         else:
-            logger.warn("Killing worker process...")
+            logger.warning("Killing worker process...")
             return os._exit(1)
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)

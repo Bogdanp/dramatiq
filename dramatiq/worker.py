@@ -57,7 +57,7 @@ class _WorkerMiddleware(Middleware):
     def __init__(self, worker):
         self.worker = worker
 
-    def after_declare_queue(self, queue_name):
+    def after_declare_queue(self, broker, queue_name):
         self.worker.add_consumer(queue_name)
 
 
@@ -128,7 +128,7 @@ class _WorkerThread(Thread):
             except Exception:
                 self.logger.warning(
                     "An unhandled exception occurred while processing message %r.",
-                    message.message_id, exc_debug=True,
+                    message.message_id, exc_info=True,
                 )
 
         self.logger.debug("Worker thread stopped.")

@@ -1,9 +1,16 @@
 import logging
 
+from functools import reduce
+from operator import ior
+
 from .errors import ActorNotFound
+from .middleware import Retries
 
 #: The global broker instance.
 global_broker = None
+
+#: The list of middleware that are enabled by default.
+default_middleware = [Retries]
 
 
 def get_broker():
@@ -37,17 +44,18 @@ class Broker:
 
     def __init__(self, middleware=None):
         self.logger = logging.getLogger(type(self).__name__)
-        self.middleware = middleware or []
+        self.middleware = middleware or [mw() for mw in default_middleware]
+        self.actor_options = reduce(ior, (mw.actor_options for mw in self.middleware), set())
         self.actors = {}
         self.queues = {}
 
     def _emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
-            getattr(middleware, f"before_{signal}")(*args, **kwargs)
+            getattr(middleware, f"before_{signal}")(self, *args, **kwargs)
 
     def _emit_after(self, signal, *args, **kwargs):
         for middleware in reversed(self.middleware):
-            getattr(middleware, f"after_{signal}")(*args, **kwargs)
+            getattr(middleware, f"after_{signal}")(self, *args, **kwargs)
 
     def add_middleware(self, middleware):
         """Add a middleware object to this broker.
@@ -56,6 +64,7 @@ class Broker:
           middleware(Middleware)
         """
         self.middleware.append(middleware)
+        self.actor_options |= middleware.actor_options
 
         for actor_name in self.get_declared_actors():
             middleware.after_declare_actor(actor_name)
@@ -103,11 +112,12 @@ class Broker:
         """
         raise NotImplementedError
 
-    def enqueue(self, message):  # pragma: no cover
+    def enqueue(self, message, *, delay=None):  # pragma: no cover
         """Enqueue a message on this broker.
 
         Parameters:
-          message(Message)
+          message(Message): The message to enqueue.
+          delay(int): The number of milliseconds to delay the message for.
         """
         raise NotImplementedError
 

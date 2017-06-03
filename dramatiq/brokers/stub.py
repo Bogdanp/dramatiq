@@ -1,4 +1,6 @@
+from collections import defaultdict
 from queue import Queue, Empty
+from threading import Timer
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..errors import QueueNotFound
@@ -8,6 +10,11 @@ from ..message import Message
 class StubBroker(Broker):
     """A broker that can be used within unit tests.
     """
+
+    def __init__(self, middleware=None):
+        super().__init__(middleware)
+
+        self.timers_by_queue = defaultdict(list)
 
     def consume(self, queue_name, timeout=0.1):
         try:
@@ -22,10 +29,20 @@ class StubBroker(Broker):
             self.queues[queue_name] = Queue()
             self._emit_after("declare_queue", queue_name)
 
-    def enqueue(self, message):
-        self._emit_before("enqueue", message)
+    def enqueue(self, message, *, delay=None):
+        self._emit_before("enqueue", message, delay)
+
+        if delay is not None:
+            timer = Timer(delay / 1000, self._enqueue, args=(message,))
+            timer.start()
+            self.timers_by_queue[message.queue_name].append(timer)
+        else:
+            self._enqueue(message)
+
+        self._emit_after("enqueue", message, delay)
+
+    def _enqueue(self, message):
         self.queues[message.queue_name].put(message.encode())
-        self._emit_after("enqueue", message)
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be processed.
@@ -38,6 +55,12 @@ class StubBroker(Broker):
         """
         try:
             self.queues[queue_name].join()
+
+            timers = self.timers_by_queue[queue_name]
+            while timers:
+                timer = timers.pop(0)
+                timer.join()
+                self.queues[queue_name].join()
         except KeyError:
             raise QueueNotFound(queue_name)
 
