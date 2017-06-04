@@ -1,7 +1,7 @@
 from random import uniform
-from time import time
 
 from ..logging import get_logger
+from .common import current_millis
 from .middleware import Middleware
 
 
@@ -46,7 +46,7 @@ class Retries(Middleware):
             self.logger.warning("Retries exceeded for message %r.", message.message_id)
             return
 
-        if max_age is not None and int(time() * 1000) - message.message_timestamp >= max_age:
+        if max_age is not None and current_millis() - message.message_timestamp >= max_age:
             self.logger.warning("Message %r has exceeded its age limit.", message.message_id)
             return
 

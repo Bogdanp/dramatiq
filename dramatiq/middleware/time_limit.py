@@ -1,19 +1,15 @@
 import ctypes
 import signal
-import time
 import threading
 
 from ..logging import get_logger
+from .common import current_millis
 from .middleware import Middleware
 
 
-def current_millis():
-    return int(time.time() * 1000)
-
-
 class TimeLimitExceeded(BaseException):
-    """Raised asynchronously inside worker threads when tasks exceed
-    their limits.
+    """Raised asynchronously inside worker threads when actors exceed
+    their time limits.
 
     This is intentionally *not* a subclass of DramatiqError to avoid
     it being caught unintentionally.
@@ -21,19 +17,19 @@ class TimeLimitExceeded(BaseException):
 
 
 class TimeLimit(Middleware):
-    """Middleware that cancels tasks if the run for too long.
+    """Middleware that cancels actors that run for too long.
 
     Note:
       This works by setting an async exception in the worker thread
-      that runs the task.  This means that the exception will only get
+      that runs the actor.  This means that the exception will only get
       called the next time that thread acquires the GIL.  Concretely,
       this means that this middleware can't cancel system calls.
 
     Parameters:
-      time_limit(int): The maximum number of milliseconds tasks may
+      time_limit(int): The maximum number of milliseconds actors may
         run for.
       interval(int): The interval (in milliseconds) with which to
-        check for tasks that have exceeded the limit.
+        check for actors that have exceeded the limit.
     """
 
     def __init__(self, *, time_limit=600000, interval=1000):
