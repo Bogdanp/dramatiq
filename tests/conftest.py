@@ -16,14 +16,16 @@ logging.getLogger("pika").setLevel(logging.WARN)
 def stub_broker():
     broker = StubBroker()
     dramatiq.set_broker(broker)
-    return broker
+    yield broker
+    broker.close()
 
 
 @pytest.fixture()
 def rabbitmq_broker():
     broker = RabbitmqBroker()
     dramatiq.set_broker(broker)
-    return broker
+    yield broker
+    broker.close()
 
 
 @pytest.fixture()
