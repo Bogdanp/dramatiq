@@ -37,7 +37,7 @@ for extra in extras:
 setup(
     name="dramatiq",
     version=version,
-    packages=["dramatiq", "dramatiq.brokers"],
+    packages=["dramatiq", "dramatiq.brokers", "dramatiq.middleware"],
     install_requires=dependencies,
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
