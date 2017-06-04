@@ -47,7 +47,7 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
     rabbitmq_broker.join(rabbitmq_random_queue)
 
     # I expect backoff time to have passed between sucess and failure
-    assert 500 <= success_time - failure_time <= 1000
+    assert 500 <= success_time - failure_time <= 1500
 
 
 def test_rabbitmq_actors_can_have_their_messages_delayed(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
