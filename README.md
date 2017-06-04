@@ -5,7 +5,8 @@
 [![Code Climate](https://codeclimate.com/github/Bogdanp/dramatiq/badges/gpa.svg)](https://codeclimate.com/github/Bogdanp/dramatiq)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 
-*dramatiq* is a task queueing library for Python with a focus on simplicity, correctness and performance.
+**dramatiq** is a task queueing library for Python with a focus on
+simplicity, correctness and performance.
 
 Here's what it looks like:
 
@@ -31,7 +32,9 @@ send_welcome_email.send(new_user.id)
 
 ## License
 
-Please see [LICENSE][license] for licensing details.
+dramatiq is licensed under the AGPL.  Please see [LICENSE][license]
+for licensing details.  Commercial licensing options are available
+upon request.
 
 
 [license]: https://github.com/Bogdanp/dramatiq/blob/master/LICENSE
