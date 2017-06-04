@@ -17,12 +17,12 @@ def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **opti
     """
     def decorator(fn):
         nonlocal actor_name, broker
-        actor_name = actor_name or f"{fn.__module__}.{fn.__name__}"
+        actor_name = actor_name or fn.__name__
         broker = broker or get_broker()
-        options_delta = set(options) - broker.actor_options
-        if options_delta:
+        invalid_options = set(options) - broker.actor_options
+        if invalid_options:
             raise ValueError(
-                f"The following actor options are undefined: {', '.join(options_delta)}. "
+                f"The following actor options are undefined: {', '.join(invalid_options)}. "
                 "Did you forget to add a middleware to your Broker?"
             )
 

@@ -6,7 +6,7 @@ import sys
 logger = logging.getLogger("example")
 
 
-@dramatiq.actor(actor_name="add")
+@dramatiq.actor
 def add(x, y):
     logger.info("The sum of %d and %d is %d.", x, y, x + y)
 
