@@ -168,4 +168,4 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     stub_broker.join(do_work.queue_name)
 
     # I expect successes
-    assert sum(attempts) >= 2
+    assert sum(attempts) >= 1
