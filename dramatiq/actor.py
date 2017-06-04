@@ -1,5 +1,10 @@
+import re
+
 from .broker import get_broker
 from .message import Message
+
+#: The regular expression that represents valid queue names.
+_queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_-]*")
 
 
 def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **options):
@@ -18,6 +23,12 @@ def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **opti
     def decorator(fn):
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
+        if not _queue_name_re.fullmatch(queue_name):
+            raise ValueError(
+                "Queue names must start with a letter or an underscore followed "
+                "by any number of letters, digits, dashes or underscores."
+            )
+
         broker = broker or get_broker()
         invalid_options = set(options) - broker.actor_options
         if invalid_options:
