@@ -119,7 +119,7 @@ def worker_process(args, worker_id, logging_fd):
         logger.critical("Broker connection failed. %s", e)
         return os._exit(1)
 
-    def sighandler(signum, frame):
+    def termhandler(signum, frame):
         nonlocal running
         if running:
             logger.info("Stopping worker process...")
@@ -135,7 +135,7 @@ def worker_process(args, worker_id, logging_fd):
 
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGTERM, termhandler)
     signal.signal(signal.SIGHUP, huphandler)
 
     running = True
@@ -189,22 +189,22 @@ def main():
 
     def sighandler(signum, frame):
         nonlocal worker_processes
-        logger.info("Stopping worker processes...")
+        signum = {
+            signal.SIGINT: signal.SIGTERM,
+            signal.SIGTERM: signal.SIGTERM,
+            signal.SIGHUP: signal.SIGHUP,
+        }[signum]
+
+        logger.info("Sending %r to worker processes...", signum.name)
         for pid in worker_processes:
             try:
-                os.kill(pid, signal.SIGTERM)
+                os.kill(pid, signum)
             except OSError:
-                logger.warning("Failed to terminate child process.", exc_info=True)
-
-    def huphandler(signum, frame):
-        nonlocal worker_processes
-        logger.info("Reloading worker processes...")
-        for pid in worker_processes:
-            os.kill(pid, signal.SIGHUP)
+                logger.warning("Failed to send %r to child process.", signum.name, exc_info=True)
 
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
-    signal.signal(signal.SIGHUP, huphandler)
+    signal.signal(signal.SIGHUP, sighandler)
     for pid in worker_processes:
         os.waitpid(pid, 0)
 
