@@ -1,10 +1,4 @@
 import dramatiq
-import time
-
-
-def count_messages(rabbitmq_broker, queue_name):
-    res = rabbitmq_broker.channel.queue_declare(queue=queue_name, durable=True)
-    return res.method.message_count
 
 
 def test_actors_can_be_sent_messages_over_rabbitmq(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
@@ -21,8 +15,7 @@ def test_actors_can_be_sent_messages_over_rabbitmq(rabbitmq_broker, rabbitmq_ran
         assert put.send(f"key-{i}", i)
 
     # And I give the workers time to process the messages
-    while count_messages(rabbitmq_broker, rabbitmq_random_queue) > 0:
-        time.sleep(1)
+    rabbitmq_broker.join(rabbitmq_random_queue)
 
     # I expect the database to be populated
     assert len(database) == 100

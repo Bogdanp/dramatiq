@@ -1,4 +1,5 @@
 import pika
+import time
 
 from threading import local
 
@@ -81,6 +82,27 @@ class RabbitmqBroker(Broker):
 
     def get_declared_queues(self):
         return self.queues
+
+    def join(self, queue_name, timeout=1000):
+        """Wait for all the messages on the given queue to be
+        processed.  This method is only meant to be used in tests to
+        wait for all the messages in a queue to be processed.
+
+        Note:
+          This method doesn't wait for unacked messages so it may not
+          be completely reliable.  Use the stub broker in your unit
+          tests and only use this for simple integration tests.
+
+        Parameters:
+          queue_name(str)
+          timeout(int)
+        """
+        while True:
+            res = self.channel.queue_declare(queue=queue_name, durable=True)
+            if res.method.message_count == 0:
+                return
+
+            time.sleep(timeout / 1000)
 
 
 class _RabbitmqConsumer(Consumer):

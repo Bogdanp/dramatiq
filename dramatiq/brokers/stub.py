@@ -45,7 +45,9 @@ class StubBroker(Broker):
         self.queues[message.queue_name].put(message.encode())
 
     def join(self, queue_name):
-        """Wait for all the messages on the given queue to be processed.
+        """Wait for all the messages on the given queue to be
+        processed.  This method is only meant to be used in tests
+        to wait for all the messages in a queue to be processed.
 
         Raises:
           QueueNotFound: If the given queue was never declared.
