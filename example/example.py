@@ -1,3 +1,4 @@
+import argparse
 import dramatiq
 import logging
 import random
@@ -12,7 +13,10 @@ def add(x, y):
 
 
 def main(args):
-    while True:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("count", type=int, help="the number of messages to enqueue")
+    args = parser.parse_args()
+    for _ in range(args.count):
         add.send(random.randint(0, 1000), random.randint(0, 1000))
 
 

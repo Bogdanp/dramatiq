@@ -66,5 +66,8 @@ def test_rabbitmq_actors_can_have_their_messages_delayed(rabbitmq_broker, rabbit
     # Then join on the queue
     rabbitmq_broker.join(rabbitmq_random_queue)
 
+    # And give the task some time to process
+    time.sleep(0.1)
+
     # I expect that message to have been processed at least delayed milliseconds later
     assert run_time - start_time >= 1000

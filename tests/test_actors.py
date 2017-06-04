@@ -1,5 +1,6 @@
 import dramatiq
 import pytest
+import time
 
 from dramatiq import Message
 
@@ -188,3 +189,25 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
 
     # I expect successes
     assert sum(attempts) >= 1
+
+
+def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
+    # Given that I have a database
+    attempts, successes = [], []
+
+    # And an actor with a time limit
+    @dramatiq.actor(max_retries=0, time_limit=1000)
+    def do_work():
+        attempts.append(1)
+        time.sleep(2)
+        successes.append(1)
+
+    # If I send it a message
+    do_work.send()
+
+    # Then join on the queue
+    stub_broker.join(do_work.queue_name)
+
+    # I expect it to fail
+    assert sum(attempts) == 1
+    assert sum(successes) == 0

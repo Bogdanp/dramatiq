@@ -3,13 +3,13 @@ from operator import ior
 
 from .errors import ActorNotFound
 from .logging import get_logger
-from .middleware import Retries
+from .middleware import Retries, TimeLimit
 
 #: The global broker instance.
 global_broker = None
 
 #: The list of middleware that are enabled by default.
-default_middleware = [Retries]
+default_middleware = [TimeLimit, Retries]
 
 
 def get_broker():
