@@ -45,6 +45,25 @@ def test_actors_can_be_named(stub_broker):
     assert add.actor_name == "foo"
 
 
+def test_actors_can_be_assigned_custom_queues(stub_broker):
+    # Given that I've decorated a function with @actor and given it an explicit queue
+    @dramatiq.actor(queue_name="foo")
+    def foo():
+        pass
+
+    # I expect the returned function to use that queue
+    assert foo.queue_name == "foo"
+
+
+def test_actors_fail_given_invalid_queue_names(stub_broker):
+    # If I define an actor with an invalid queue name
+    # I expect a ValueError to be raised
+    with pytest.raises(ValueError):
+        @dramatiq.actor(queue_name="$2@!@#")
+        def foo():
+            pass
+
+
 def test_actors_can_be_called(stub_broker):
     # Given that I have an actor
     @dramatiq.actor

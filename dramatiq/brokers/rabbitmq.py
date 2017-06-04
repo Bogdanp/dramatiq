@@ -8,7 +8,23 @@ from ..errors import ConnectionClosed
 from ..message import Message
 
 
+#: Default properties for enqueued messages.
 _properties = pika.BasicProperties(delivery_mode=2)
+
+
+def _dq_name(queue_name):
+    """Returns the delayed queue name for a given queue.
+    """
+    return f"{queue_name}.DQ"
+
+
+def _dq_arguments(queue_name):
+    """Returns the delayed queue arguments for a given queue.
+    """
+    return {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": queue_name,
+    }
 
 
 class RabbitmqBroker(Broker):
@@ -63,22 +79,33 @@ class RabbitmqBroker(Broker):
             if queue_name not in self.queues:
                 self._emit_before("declare_queue", queue_name)
                 self.channel.queue_declare(queue=queue_name, durable=True)
+                self.channel.queue_declare(queue=_dq_name(queue_name), durable=True, arguments=_dq_arguments(queue_name))  # noqa
                 self.queues.add(queue_name)
                 self._emit_after("declare_queue", queue_name)
         except pika.exceptions.ConnectionClosed as e:
             raise ConnectionClosed(e)
 
     def enqueue(self, message, *, delay=None):
-        # TODO: Implement delay.
         self.logger.info("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
         self._emit_before("enqueue", message, delay)
+
+        if delay is not None:
+            self._enqueue(_dq_name(message.queue_name), message, properties=pika.BasicProperties(
+                delivery_mode=2,
+                expiration=str(delay),
+            ))
+        else:
+            self._enqueue(message.queue_name, message)
+
+        self._emit_after("enqueue", message, delay)
+
+    def _enqueue(self, queue_name, message, *, properties=_properties):
         self.channel.publish(
             exchange="",
-            routing_key=message.queue_name,
+            routing_key=queue_name,
             body=message.encode(),
-            properties=_properties,
+            properties=properties,
         )
-        self._emit_after("enqueue", message, delay)
 
     def get_declared_queues(self):
         return self.queues
@@ -98,8 +125,13 @@ class RabbitmqBroker(Broker):
           timeout(int)
         """
         while True:
-            res = self.channel.queue_declare(queue=queue_name, durable=True)
-            if res.method.message_count == 0:
+            response = self.channel.queue_declare(queue=queue_name, durable=True)
+            total_messages = response.method.message_count
+
+            response = self.channel.queue_declare(queue=_dq_name(queue_name), durable=True, arguments=_dq_arguments(queue_name))  # noqa
+            total_messages += response.method.message_count
+
+            if total_messages == 0:
                 return
 
             time.sleep(timeout / 1000)

@@ -66,9 +66,9 @@ class Actor:
         Returns:
           Message: The enqueued message.
         """
-        return self.send_with_options(args, kwargs)
+        return self.send_with_options(args=args, kwargs=kwargs)
 
-    def send_with_options(self, args, kwargs, **options):
+    def send_with_options(self, *, args=None, kwargs=None, delay=None, **options):
         """Asynchronously send a message to this actor, along with an
         arbitrary set of processing options for the broker and
         middleware.
@@ -85,11 +85,11 @@ class Actor:
         message = Message(
             queue_name=self.queue_name,
             actor_name=self.actor_name,
-            args=args, kwargs=kwargs,
+            args=args or (), kwargs=kwargs or {},
             options=options,
         )
 
-        self.broker.enqueue(message)
+        self.broker.enqueue(message, delay=delay)
         return message
 
     def __call__(self, *args, **kwargs):
