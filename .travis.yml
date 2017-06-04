@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.6"
+  - "3.6-dev"
+  - "3.7-dev"
+sudo: required
+services:
+  - rabbitmq
+install:
+  - pip install -r requirements-dev.txt
+script:
+  - py.test

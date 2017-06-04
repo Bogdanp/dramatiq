@@ -50,10 +50,10 @@ class Retries(Middleware):
             self.logger.warning("Message %r has exceeded its age limit.", message.message_id)
             return
 
+        message.options["retries"] += 1
         min_backoff = actor.options.get("min_backoff", self.min_backoff)
         max_backoff = actor.options.get("max_backoff", self.max_backoff)
         delay = min(min_backoff * 2 ** retries, max_backoff) / 2
         delay = int(delay + uniform(0, delay))
         self.logger.info("Retrying message %r in %d milliseconds.", message.message_id, delay)
-        message.options["retries"] += 1
         broker.enqueue(message, delay=delay)
