@@ -16,7 +16,7 @@ class TimeLimitExceeded(BaseException):
     their limits.
 
     This is intentionally *not* a subclass of DramatiqError to avoid
-    it being caught unintentionally.
+    it getting caught unintentionally.
     """
 
 
@@ -67,6 +67,3 @@ class TimeLimit(Middleware):
         actor = broker.get_actor(message.actor_name)
         deadline = current_millis() + actor.options.get("time_limit", self.time_limit)
         self.threads[threading.get_ident()] = deadline
-
-    def after_process_message(self, broker, message, *, result=None, exception=None):
-        del self.threads[threading.get_ident()]
