@@ -1,7 +1,7 @@
 import time
 
 from itertools import chain
-from queue import Queue, Empty
+from queue import PriorityQueue, Empty
 from threading import Thread
 
 from .errors import ConnectionClosed
@@ -29,7 +29,7 @@ class Worker:
         self.broker = broker
         self.consumers = {}
         self.workers = []
-        self.work_queue = Queue(maxsize=work_factor * worker_threads)
+        self.work_queue = PriorityQueue(maxsize=work_factor * worker_threads)
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
         self.logger = get_logger(__name__, type(self))
@@ -73,7 +73,7 @@ class _ConsumerThread(Thread):
     def __init__(self, broker, work_queue, queue_name):
         super().__init__(daemon=True)
 
-        self.running = True
+        self.running = False
         self.broker = broker
         self.queue_name = queue_name
         self.work_queue = work_queue
@@ -90,8 +90,9 @@ class _ConsumerThread(Thread):
             attempts = 0
             for message in self.consumer:
                 if message is not None:
+                    actor = self.broker.get_actor(message.actor_name)
                     self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-                    self.work_queue.put(message)
+                    self.work_queue.put((actor.priority, message))
 
                 if not self.running:
                     break
@@ -115,7 +116,7 @@ class _WorkerThread(Thread):
     def __init__(self, broker, work_queue, worker_timeout):
         super().__init__(daemon=True)
 
-        self.running = True
+        self.running = False
         self.broker = broker
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
@@ -123,10 +124,11 @@ class _WorkerThread(Thread):
 
     def run(self):
         self.logger.debug("Running worker thread...")
+        self.running = True
         while self.running:
             try:
                 self.logger.debug("Waiting for message...")
-                message = self.work_queue.get(timeout=self.worker_timeout / 1000)
+                _, message = self.work_queue.get(timeout=self.worker_timeout / 1000)
                 self.logger.debug("Received message %s with id %r.", message, message.message_id)
                 self.broker.process_message(message)
 

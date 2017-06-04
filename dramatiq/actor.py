@@ -7,13 +7,14 @@ from .message import Message
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_-]*")
 
 
-def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **options):
+def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=None, **options):
     """Declare an Actor.
 
     Parameters:
       fn(callable)
       actor_name(str)
       queue_name(str)
+      priority(int)
       broker(Broker)
       \**options(dict)
 
@@ -37,7 +38,10 @@ def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **opti
                 "Did you forget to add a middleware to your Broker?"
             )
 
-        return Actor(fn, actor_name=actor_name, queue_name=queue_name, broker=broker, options=options)
+        return Actor(
+            fn, actor_name=actor_name, queue_name=queue_name,
+            priority=priority, broker=broker, options=options,
+        )
 
     if fn is None:
         return decorator
@@ -45,11 +49,12 @@ def actor(fn=None, *, actor_name=None, queue_name="default", broker=None, **opti
 
 
 class Actor:
-    def __init__(self, fn, *, broker, actor_name, queue_name, options):
+    def __init__(self, fn, *, broker, actor_name, queue_name, priority, options):
         self.fn = fn
         self.broker = broker
         self.actor_name = actor_name
         self.queue_name = queue_name
+        self.priority = priority
         self.options = options
         self.broker.declare_actor(self)
 

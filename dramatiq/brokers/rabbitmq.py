@@ -62,14 +62,14 @@ class RabbitmqBroker(Broker):
         return channel
 
     def close(self):
-        self.logger.info("Closing connections...")
+        self.logger.debug("Closing connections...")
         for connection in self.connections:
             try:
                 connection.close()
             except pika.exceptions.ConnectionClosed as e:
                 pass
 
-        self.logger.info("Connections closed.")
+        self.logger.debug("Connections closed.")
 
     def consume(self, queue_name, timeout=5):
         return _RabbitmqConsumer(self.parameters, queue_name, timeout)
@@ -86,7 +86,7 @@ class RabbitmqBroker(Broker):
             raise ConnectionClosed(e)
 
     def enqueue(self, message, *, delay=None):
-        self.logger.info("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
+        self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
         self._emit_before("enqueue", message, delay)
 
         if delay is not None:
