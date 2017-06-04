@@ -205,3 +205,21 @@ class MessageProxy:
 
     def __str__(self):
         return str(self._message)
+
+    def __lt__(self, other):
+        return self._message < other._message
+
+    def __le__(self, other):
+        return self._message <= other._message
+
+    def __gt__(self, other):
+        return self._message > other._message
+
+    def __ge__(self, other):
+        return self._message >= other._message
+
+    def __eq__(self, other):
+        return self._message == other._message
+
+    def __ne__(self, other):
+        return self._message != other._message
