@@ -1,4 +1,4 @@
-class DramatiqError(Exception):
+class DramatiqError(Exception):  # pragma: no cover
     """Base class for all dramatiq errors.
     """
 

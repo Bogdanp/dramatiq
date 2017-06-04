@@ -7,6 +7,8 @@ import selectors
 import signal
 import sys
 import time
+import watchdog.events
+import watchdog.observers
 
 from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker, get_logger
 from threading import Thread
@@ -37,8 +39,14 @@ def import_broker(value):
         broker = getattr(module, varname)
         if not isinstance(broker, Broker):
             raise ImportError(f"Variable {varname!r} from module {modname!r} is not a Broker.")
-        return broker
-    return get_broker()
+        return module, broker
+    return module, get_broker()
+
+
+def folder_path(value):
+    if not os.path.isdir(value):
+        raise argparse.ArgumentError(f"{value!r} is not a valid directory")
+    return os.path.abspath(value)
 
 
 def parse_arguments():
@@ -63,6 +71,13 @@ def parse_arguments():
         "--work-factor", "-f", default=10000, type=int,
         help="the max number of messages to load into memory per worker thread (default: 10000)",
     )
+    parser.add_argument(
+        "--watch", type=folder_path,
+        help=(
+            "watch a directory and reload the workers when any source files "
+            "change (this feature must only be used during development)"
+        )
+    )
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     return parser.parse_args()
@@ -85,9 +100,11 @@ def worker_process(args, worker_id, logging_fd):
     try:
         logging_pipe = os.fdopen(logging_fd, "w")
         logger = setup_worker_logging(args, worker_id, logging_pipe)
-        broker = import_broker(args.broker)
+        module, broker = import_broker(args.broker)
+
+        modules = [module]
         for module in args.modules:
-            importlib.import_module(module)
+            modules.append(importlib.import_module(module))
 
         worker = Worker(
             broker,
@@ -111,9 +128,15 @@ def worker_process(args, worker_id, logging_fd):
             logger.warning("Killing worker process...")
             return os._exit(1)
 
+    def huphandler(signum, frame):
+        logger.info("Reloading all modules...")
+        for module in modules:
+            importlib.reload(module)
+
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGHUP, huphandler)
 
     running = True
     while running:
@@ -141,9 +164,16 @@ def main():
         return worker_process(args, worker_id, write_fd)
 
     logger = setup_parent_logging(args)
+    logger.info(f"Dramatiq {__version__!r} is booting up.")
     running = True
 
-    def watch(worker_pipes):
+    if args.watch:
+        file_event_handler = SourceChangesHandler(patterns=["*.py"])
+        file_watcher = watchdog.observers.Observer()
+        file_watcher.schedule(file_event_handler, args.watch, recursive=True)
+        file_watcher.start()
+
+    def watch_logs(worker_pipes):
         nonlocal running
         selector = selectors.DefaultSelector()
         for pipe in worker_pipes:
@@ -154,8 +184,8 @@ def main():
             for key, mask in events:
                 sys.stderr.write(key.fileobj.readline())
 
-    watcher = Thread(target=watch, args=(worker_pipes,), daemon=True)
-    watcher.start()
+    log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
+    log_watcher.start()
 
     def sighandler(signum, frame):
         nonlocal worker_processes
@@ -166,17 +196,33 @@ def main():
             except OSError:
                 logger.warning("Failed to terminate child process.", exc_info=True)
 
+    def huphandler(signum, frame):
+        nonlocal worker_processes
+        logger.info("Reloading worker processes...")
+        for pid in worker_processes:
+            os.kill(pid, signal.SIGHUP)
+
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGHUP, huphandler)
     for pid in worker_processes:
         os.waitpid(pid, 0)
 
     running = False
-    watcher.join()
+    if args.watch:
+        file_watcher.stop()
+        file_watcher.join()
+
+    log_watcher.join()
     for pipe in worker_pipes:
         pipe.close()
 
     return 0
+
+
+class SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):
+    def on_any_event(self, event):
+        os.kill(os.getpid(), signal.SIGHUP)
 
 
 if __name__ == "__main__":
