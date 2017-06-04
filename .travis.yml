@@ -1,12 +1,14 @@
 language: python
+sudo: required
 python:
   - "3.6"
   - "3.6-dev"
   - "3.7-dev"
-sudo: required
 services:
   - rabbitmq
 install:
-  - pip install -r requirements-dev.txt
+  - pip install -r requirements-dev.txt codeclimate-test-reporter
 script:
-  - py.test
+  - py.test -sv
+after_success:
+  - CODECLIMATE_REPO_TOKEN=27f6c9909e005594354ce88fdddb48b12205bb038725d7c94581bad3b751e15c codeclimate-test-reporter

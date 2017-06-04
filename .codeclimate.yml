@@ -1,0 +1,14 @@
+engines:
+  duplication:
+    enabled: false
+  fixme:
+    enabled: true
+  pep8:
+    enabled: true
+  radon:
+    enabled: true
+    config:
+      threshold: "C"
+ratings:
+  paths:
+  - "**.py"
