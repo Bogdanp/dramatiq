@@ -1,6 +1,7 @@
 import dramatiq
 import logging
 import pytest
+import subprocess
 import uuid
 
 from dramatiq import Worker
@@ -52,3 +53,26 @@ def rabbitmq_random_queue(rabbitmq_broker):
     rabbitmq_broker.channel.queue_delete(queue_name)
     rabbitmq_broker.channel.queue_delete(_dq_name(queue_name))
     rabbitmq_broker.channel.queue_delete(_xq_name(queue_name))
+
+
+@pytest.fixture
+def info_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    yield
+    logger.setLevel(logging.DEBUG)
+
+
+@pytest.fixture
+def start_cli():
+    proc = None
+
+    def run(broker_module):
+        nonlocal proc
+        proc = subprocess.Popen(["python", "-m", "dramatiq", broker_module])
+
+    yield run
+
+    if proc is not None:
+        proc.terminate()
+        proc.wait()

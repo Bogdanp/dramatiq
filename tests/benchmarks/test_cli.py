@@ -1,29 +1,39 @@
 import dramatiq
 import dramatiq.brokers
-import logging
-import subprocess
 
 broker = dramatiq.brokers.RabbitmqBroker()
 
 
-@dramatiq.actor(queue_name="throughput", broker=broker)
+@dramatiq.actor(queue_name="benchmark-throughput", broker=broker)
 def throughput():
     pass
 
 
-def test_rabbitmq_process_100k_messages_with_cli(benchmark):
+@dramatiq.actor(queue_name="benchmark-sum", broker=broker)
+def sum_all(xs):
+    sum(xs)
+
+
+def test_rabbitmq_process_100k_messages_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 100k messages into RabbitMQ
-    def load_messages():
+    def setup():
         for _ in range(100000):
             throughput.send()
 
-    # I expect processing those messages with the CLI to be consistently fast
-    def process_messages():
-        proc = subprocess.Popen(["python", "-m", "dramatiq", "tests.benchmarks.test_cli:broker"])
-        broker.join(throughput.queue_name)
-        proc.terminate()
-        proc.wait()
+        start_cli("tests.benchmarks.test_cli:broker")
 
-    logging.getLogger().setLevel(logging.INFO)
-    benchmark.pedantic(process_messages, setup=load_messages)
-    logging.getLogger().setLevel(logging.DEBUG)
+    # I expect processing those messages with the CLI to be consistently fast
+    benchmark.pedantic(broker.join, args=(throughput.queue_name,), setup=setup)
+
+
+def test_rabbitmq_process_100k_sums_with_cli(benchmark, info_logging, start_cli):
+    # Given that I've loaded 100k messages into RabbitMQ
+    def setup():
+        numbers = [i for i in range(100)]
+        for _ in range(100000):
+            sum_all.send(numbers)
+
+        start_cli("tests.benchmarks.test_cli:broker")
+
+    # I expect processing those messages with the CLI to be consistently fast
+    benchmark.pedantic(broker.join, args=(sum_all.queue_name,), setup=setup)
