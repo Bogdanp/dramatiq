@@ -47,18 +47,25 @@ class Worker:
         self.workers.append(worker)
 
     def start(self):
+        self.broker.emit_before("worker_boot", self)
+
         worker_middleware = _WorkerMiddleware(self)
         self.broker.add_middleware(worker_middleware)
         for _ in range(self.worker_threads):
             self.add_worker()
 
+        self.broker.emit_after("worker_boot", self)
+
     def stop(self, timeout=5):
+        self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
         for thread in chain(self.consumers.values(), self.workers):
             thread.stop()
 
         for thread in chain(self.consumers.values(), self.workers):
             thread.join(timeout=timeout)
+
+        self.broker.emit_after("worker_shutdown", self)
 
 
 class _WorkerMiddleware(Middleware):
