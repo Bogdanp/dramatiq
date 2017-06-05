@@ -11,12 +11,16 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
     """Declare an Actor.
 
     Parameters:
-      fn(callable)
-      actor_name(str)
-      queue_name(str)
-      priority(int)
-      broker(Broker)
-      \**options(dict)
+      fn(callable): The function to wrap.
+      actor_name(str): The name of the actor.
+      queue_name(str): The name of the queue to use.
+      priority(int): The actor's global priority.  If two tasks have
+        been pulled on a worker concurrently and one has a higher
+        priority than the other then it will be processed first.
+        Lower numbers represent higher priorities.
+      broker(Broker): The broker to use with this actor.
+      \**options(dict): Arbitrary options that vary with the set of
+        middleware that you use.  See ``get_broker().actor_options``.
 
     Returns:
       Actor
@@ -49,6 +53,10 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
 
 
 class Actor:
+    """Thin wrapper around callable that stores metadata about how
+    they should be executed asynchronously.
+    """
+
     def __init__(self, fn, *, broker, actor_name, queue_name, priority, options):
         self.fn = fn
         self.broker = broker

@@ -12,13 +12,13 @@ class Retries(Middleware):
     Parameters:
       max_age(int): The maximum task age in milliseconds.
       max_retires(int): The maximum number of times tasks can be retried.
-      min_backoff(int): The minimum amount of backoff (in
-        milliseconds) to apply to retried tasks.
-      max_backoff(int): The maximum amount of backoff (in
-        milliseconds) to apply to retried tasks.
+      min_backoff(int): The minimum amount of backoff milliseconds to
+        apply to retried tasks.  Defaults to 15 seconds.
+      max_backoff(int): The maximum amount of backoff milliseconds to
+        apply to retried tasks.  Defaults to 30 days.
     """
 
-    def __init__(self, *, max_age=None, max_retries=None, min_backoff=2000, max_backoff=3600000):
+    def __init__(self, *, max_age=None, max_retries=None, min_backoff=15000, max_backoff=2592000000):
         self.logger = get_logger(__name__, type(self))
         self.max_age = max_age
         self.max_retries = max_retries
@@ -44,10 +44,12 @@ class Retries(Middleware):
         retries = message.options.setdefault("retries", 0)
         if max_retries is not None and retries >= max_retries:
             self.logger.warning("Retries exceeded for message %r.", message.message_id)
+            message.fail()
             return
 
         if max_age is not None and current_millis() - message.message_timestamp >= max_age:
             self.logger.warning("Message %r has exceeded its age limit.", message.message_id)
+            message.fail()
             return
 
         message.options["retries"] += 1

@@ -5,7 +5,7 @@ import uuid
 
 from dramatiq import Worker
 from dramatiq.brokers import RabbitmqBroker, StubBroker
-from dramatiq.brokers.rabbitmq import _dq_name
+from dramatiq.brokers.rabbitmq import _dq_name, _xq_name
 
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
@@ -51,3 +51,4 @@ def rabbitmq_random_queue(rabbitmq_broker):
     yield queue_name
     rabbitmq_broker.channel.queue_delete(queue_name)
     rabbitmq_broker.channel.queue_delete(_dq_name(queue_name))
+    rabbitmq_broker.channel.queue_delete(_xq_name(queue_name))

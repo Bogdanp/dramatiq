@@ -25,12 +25,12 @@ class StubBroker(Broker):
 
     def declare_queue(self, queue_name):
         if queue_name not in self.queues:
-            self._emit_before("declare_queue", queue_name)
+            self.emit_before("declare_queue", queue_name)
             self.queues[queue_name] = Queue()
-            self._emit_after("declare_queue", queue_name)
+            self.emit_after("declare_queue", queue_name)
 
     def enqueue(self, message, *, delay=None):
-        self._emit_before("enqueue", message, delay)
+        self.emit_before("enqueue", message, delay)
 
         if delay is not None:
             timer = Timer(delay / 1000, self._enqueue, args=(message,))
@@ -39,7 +39,7 @@ class StubBroker(Broker):
         else:
             self._enqueue(message)
 
-        self._emit_after("enqueue", message, delay)
+        self.emit_after("enqueue", message, delay)
 
     def _enqueue(self, message):
         self.queues[message.queue_name].put(message.encode())
@@ -90,4 +90,7 @@ class _StubMessage(MessageProxy):
         self._queue = queue
 
     def acknowledge(self):
+        self._queue.task_done()
+
+    def reject(self):
         self._queue.task_done()

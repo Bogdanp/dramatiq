@@ -71,3 +71,20 @@ def test_rabbitmq_actors_can_have_their_messages_delayed(rabbitmq_broker, rabbit
 
     # I expect that message to have been processed at least delayed milliseconds later
     assert run_time - start_time >= 1000
+
+
+def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
+    # Given that I have an actor that always fails
+    @dramatiq.actor(max_retries=0, queue_name=rabbitmq_random_queue)
+    def do_work():
+        raise RuntimeError("failed")
+
+    # If I send it a message
+    do_work.send()
+
+    # Then join on its queue
+    rabbitmq_broker.join(rabbitmq_random_queue)
+
+    # I expect the message to get moved to the dead letter queue
+    _, _, xq_count = rabbitmq_broker.get_queue_message_counts(rabbitmq_random_queue)
+    assert xq_count == 1

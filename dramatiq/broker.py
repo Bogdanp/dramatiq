@@ -48,11 +48,11 @@ class Broker:
         self.actors = {}
         self.queues = {}
 
-    def _emit_before(self, signal, *args, **kwargs):
+    def emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
             getattr(middleware, f"before_{signal}")(self, *args, **kwargs)
 
-    def _emit_after(self, signal, *args, **kwargs):
+    def emit_after(self, signal, *args, **kwargs):
         for middleware in reversed(self.middleware):
             getattr(middleware, f"after_{signal}")(self, *args, **kwargs)
 
@@ -97,10 +97,10 @@ class Broker:
         Parameters:
           actor(Actor)
         """
-        self._emit_before("declare_actor", actor)
+        self.emit_before("declare_actor", actor)
         self.declare_queue(actor.queue_name)
         self.actors[actor.actor_name] = actor
-        self._emit_after("declare_actor", actor)
+        self.emit_after("declare_actor", actor)
 
     def declare_queue(self, queue_name):  # pragma: no cover
         """Declare a queue on this broker.  This method must be
@@ -151,20 +151,27 @@ class Broker:
           message(MessageProxy)
         """
         try:
-            self._emit_before("process_message", message)
+            self.emit_before("process_message", message)
             actor = self.get_actor(message.actor_name)
             res = actor(*message.args, **message.kwargs)
-            self._emit_after("process_message", message, result=res)
+            self.emit_after("process_message", message, result=res)
 
         except BaseException as e:
             self.logger.warning("Failed to process message %r with unhandled exception.", message, exc_info=True)
-            self._emit_after("process_message", message, exception=e)
+            self.emit_after("process_message", message, exception=e)
 
         finally:
-            self.logger.debug("Acknowledging message %r.", message.message_id)
-            self._emit_before("acknowledge", message)
-            message.acknowledge()
-            self._emit_after("acknowledge", message)
+            if message._failed:
+                self.logger.debug("Rejecting message %r.", message.message_id)
+                self.emit_before("reject", message)
+                message.reject()
+                self.emit_after("reject", message)
+
+            else:
+                self.logger.debug("Acknowledging message %r.", message.message_id)
+                self.emit_before("acknowledge", message)
+                message.acknowledge()
+                self.emit_after("acknowledge", message)
 
 
 class Consumer:
@@ -194,9 +201,20 @@ class MessageProxy:
 
     def __init__(self, message):
         self._message = message
+        self._failed = False
 
     def acknowledge(self):  # pragma: no cover
         """Acknowledge that this message has been procesed.
+        """
+        raise NotImplementedError
+
+    def fail(self):
+        """Mark this message for rejection.
+        """
+        self._failed = True
+
+    def reject(self):  # pragma: no cover
+        """Reject this message, moving it to the dead letter queue.
         """
         raise NotImplementedError
 
