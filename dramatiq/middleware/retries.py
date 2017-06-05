@@ -1,3 +1,5 @@
+import traceback
+
 from random import uniform
 
 from ..logging import get_logger
@@ -53,6 +55,7 @@ class Retries(Middleware):
             return
 
         message.options["retries"] += 1
+        message.options["traceback"] = traceback.format_exc(limit=30)
         min_backoff = actor.options.get("min_backoff", self.min_backoff)
         max_backoff = actor.options.get("max_backoff", self.max_backoff)
         delay = min(min_backoff * 2 ** retries, max_backoff) / 2
