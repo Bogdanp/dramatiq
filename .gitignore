@@ -1,5 +1,7 @@
+/.benchmarks
 /.cache
 /.coverage
+/benchmark*.svg
 /build
 /dist
 /*.egg-info

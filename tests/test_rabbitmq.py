@@ -6,7 +6,7 @@ def current_millis():
     return int(time.time() * 1000)
 
 
-def test_actors_can_be_sent_messages_over_rabbitmq(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
+def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
     # Given that I have a database
     database = {}
 
