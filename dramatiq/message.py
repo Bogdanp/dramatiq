@@ -33,12 +33,12 @@ class Message(namedtuple("Message", (
     def decode(cls, data):
         """Convert a bytestring to a Message.
         """
-        return cls(**json.loads(data))
+        return cls(**json.loads(data.decode("utf-8")))
 
     def encode(self):
         """Convert this message to a JSON bytestring.
         """
-        return json.dumps(self._asdict(), separators=(",", ":"))
+        return json.dumps(self._asdict(), separators=(",", ":")).encode("utf-8")
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)
