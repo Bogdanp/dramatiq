@@ -1,5 +1,6 @@
 -r requirements.txt
 -r requirements-rabbitmq.txt
+-r requirements-watch.txt
 
 # Misc
 bumpversion

@@ -27,7 +27,7 @@ def parse_dependencies(filename):
 
 dependencies = list(parse_dependencies("requirements.txt"))
 
-extras = ("rabbitmq",)
+extras = ("rabbitmq", "watch")
 extra_dependencies = {}
 for extra in extras:
     filename = "requirements-{}.txt".format(extra)

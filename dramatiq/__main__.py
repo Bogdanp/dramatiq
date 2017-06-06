@@ -7,11 +7,17 @@ import selectors
 import signal
 import sys
 import time
-import watchdog.events
-import watchdog.observers
 
 from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker, get_logger
 from threading import Thread
+
+try:
+    import watchdog.events
+    import watchdog.observers
+
+    HAS_WATCHDOG = True
+except ImportError:
+    HAS_WATCHDOG = False
 
 #: The number of available cpus.
 cpus = multiprocessing.cpu_count()
@@ -71,13 +77,16 @@ def parse_arguments():
         "--work-factor", "-f", default=10000, type=int,
         help="the max number of messages to load into memory per worker thread (default: 10000)",
     )
-    parser.add_argument(
-        "--watch", type=folder_path,
-        help=(
-            "watch a directory and reload the workers when any source files "
-            "change (this feature must only be used during development)"
+
+    if HAS_WATCHDOG:
+        parser.add_argument(
+            "--watch", type=folder_path,
+            help=(
+                "watch a directory and reload the workers when any source files "
+                "change (this feature must only be used during development)"
+            )
         )
-    )
+
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     return parser.parse_args()
@@ -167,7 +176,7 @@ def main():
     logger.info(f"Dramatiq {__version__!r} is booting up.")
     running = True
 
-    if args.watch:
+    if HAS_WATCHDOG and args.watch:
         file_event_handler = SourceChangesHandler(patterns=["*.py"])
         file_watcher = watchdog.observers.Observer()
         file_watcher.schedule(file_event_handler, args.watch, recursive=True)
@@ -209,7 +218,7 @@ def main():
         os.waitpid(pid, 0)
 
     running = False
-    if args.watch:
+    if HAS_WATCHDOG and args.watch:
         file_watcher.stop()
         file_watcher.join()
 
@@ -220,9 +229,10 @@ def main():
     return 0
 
 
-class SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):
-    def on_any_event(self, event):
-        os.kill(os.getpid(), signal.SIGHUP)
+if HAS_WATCHDOG:
+    class SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):
+        def on_any_event(self, event):
+            os.kill(os.getpid(), signal.SIGHUP)
 
 
 if __name__ == "__main__":
