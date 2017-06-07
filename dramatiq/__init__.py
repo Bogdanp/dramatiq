@@ -6,4 +6,4 @@ from .message import Message  # noqa
 from .middleware import Middleware, Retries  # noqa
 from .worker import Worker  # noqa
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
