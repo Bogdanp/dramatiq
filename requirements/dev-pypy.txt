@@ -1,0 +1,3 @@
+-r common.txt
+-r rabbitmq.txt
+-r test.txt

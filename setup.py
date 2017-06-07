@@ -1,6 +1,13 @@
+import os
+
 from setuptools import setup
 
-with open("dramatiq/__init__.py", "r") as f:
+
+def rel(*xs):
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)), *xs)
+
+
+with open(rel("dramatiq", "__init__.py"), "r") as f:
     version_marker = "__version__ = "
     for line in f:
         if line.startswith(version_marker):
@@ -12,7 +19,7 @@ with open("dramatiq/__init__.py", "r") as f:
 
 
 def parse_dependencies(filename):
-    with open(filename) as reqs:
+    with open(rel("requirements", filename)) as reqs:
         for line in reqs:
             line = line.strip()
             if line.startswith("#"):
@@ -25,12 +32,12 @@ def parse_dependencies(filename):
                 yield line
 
 
-dependencies = list(parse_dependencies("requirements.txt"))
+dependencies = list(parse_dependencies("common.txt"))
 
 extras = ("rabbitmq", "watch")
 extra_dependencies = {}
 for extra in extras:
-    filename = "requirements-{}.txt".format(extra)
+    filename = "{}.txt".format(extra)
     extra_dependencies[extra] = list(parse_dependencies(filename))
 
 

@@ -1,7 +1,3 @@
--r requirements.txt
--r requirements-rabbitmq.txt
--r requirements-watch.txt
-
 # Misc
 bumpversion
 
@@ -10,3 +6,4 @@ pygal==2.0  # Version pin is needed for pytest-benchmark
 pytest
 pytest-benchmark[histogram]
 pytest-cov
+tox

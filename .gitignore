@@ -1,6 +1,7 @@
 /.benchmarks
 /.cache
 /.coverage
+/.tox
 /benchmark*.svg
 /build
 /dist

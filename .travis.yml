@@ -7,8 +7,8 @@ python:
 services:
   - rabbitmq
 install:
-  - pip install -r requirements-dev.txt codeclimate-test-reporter
+  - pip install codeclimate-test-reporter tox-travis
 script:
-  - py.test -sv
+  - tox
 after_success:
   - CODECLIMATE_REPO_TOKEN=27f6c9909e005594354ce88fdddb48b12205bb038725d7c94581bad3b751e15c codeclimate-test-reporter
