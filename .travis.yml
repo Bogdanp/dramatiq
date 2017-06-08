@@ -4,9 +4,11 @@ python:
   - "3.6"
   - "3.6-dev"
   - "3.7-dev"
-  - "pypy3.5-5.7.1-beta"
+  - "pypy3"
 services:
   - rabbitmq
+before_install:
+  - "if [[ $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then deactivate && wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-5.7.1-beta-linux_x86_64-portable.tar.bz2 && tar -jxvf pypy3.5-5.7.1-beta-linux_x86_64-portable.tar.bz2 && echo 'Setting up aliases...' && cd pypy3.5-5.7.1-beta-linux_x86_64-portable/bin/ && export PATH=$PWD:$PATH && ln -s pypy3 python && echo 'Setting up pip...' && ./pypy3 -m ensurepip && ln -s pip3 pip ; fi"
 install:
   - pip install codeclimate-test-reporter tox-travis
 script:
