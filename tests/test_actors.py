@@ -1,8 +1,12 @@
 import dramatiq
+import platform
 import pytest
 import time
 
 from dramatiq import Message
+
+
+_current_platform = platform.python_implementation()
 
 
 def test_actors_can_be_defined(stub_broker):
@@ -191,6 +195,7 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     assert sum(attempts) >= 1
 
 
+@pytest.mark.skipif(_current_platform == "PyPy", reason="Time limits are not supported under PyPy.")
 def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
     attempts, successes = [], []

@@ -1,10 +1,15 @@
 import ctypes
+import platform
 import signal
 import threading
+import warnings
 
 from ..logging import get_logger
 from .common import current_millis
 from .middleware import Middleware
+
+_current_platform = platform.python_implementation()
+_supported_platforms = {"CPython"}
 
 
 class TimeLimitExceeded(BaseException):
@@ -41,19 +46,32 @@ class TimeLimit(Middleware):
         signal.setitimer(signal.ITIMER_REAL, interval / 1000, interval / 1000)
         signal.signal(signal.SIGALRM, self._handle)
 
+        if _current_platform not in _supported_platforms:  # pragma: no cover
+            warnings.warn(
+                f"TimeLimit cannot kill threads on your current platform ({_current_platform!r}).",
+                category=RuntimeWarning, stacklevel=2,
+            )
+
     def _handle(self, signum, mask):
         current_time = current_millis()
         for thread_id, deadline in self.threads.items():
             if current_time >= deadline:
                 self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
-                thread_id = ctypes.c_long(thread_id)
-                exception = ctypes.py_object(TimeLimitExceeded)
-                count = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, exception)
-                if count == 0:  # pragma: no cover
-                    self.logger.critical("Failed to set exception in worker thread.")
-                elif count > 1:  # pragma: no cover
-                    self.logger.critical("Exception was set in multiple threads.  Undoing...")
-                    ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.c_long(0))
+                if _current_platform == "CPython":
+                    self._kill_thread_cpython(thread_id)
+                else:
+                    self.logger.critical("Cannot kill threads on platform %r.", _current_platform)
+
+    # TODO: Figure out how to kill threads under PyPy.
+    def _kill_thread_cpython(self, thread_id):
+        thread_id = ctypes.c_long(thread_id)
+        exception = ctypes.py_object(TimeLimitExceeded)
+        count = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, exception)
+        if count == 0:  # pragma: no cover
+            self.logger.critical("Failed to set exception in worker thread.")
+        elif count > 1:  # pragma: no cover
+            self.logger.critical("Exception was set in multiple threads.  Undoing...")
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.c_long(0))
 
     @property
     def actor_options(self):
