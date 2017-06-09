@@ -104,25 +104,19 @@ class RabbitmqBroker(Broker):
         self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
         self.emit_before("enqueue", message, delay)
 
+        queue_name = message.queue_name
+        properties = pika.BasicProperties(delivery_mode=2)
         if delay is not None:
-            self._enqueue(_dq_name(message.queue_name), message, properties=pika.BasicProperties(
-                delivery_mode=2,
-                expiration=str(delay),
-            ))
-        else:
-            self._enqueue(message.queue_name, message, properties=pika.BasicProperties(
-                delivery_mode=2,
-            ))
+            queue_name = _dq_name(queue_name)
+            properties.expiration = str(delay)
 
-        self.emit_after("enqueue", message, delay)
-
-    def _enqueue(self, queue_name, message, *, properties):
         self.channel.publish(
             exchange="",
             routing_key=queue_name,
             body=message.encode(),
             properties=properties,
         )
+        self.emit_after("enqueue", message, delay)
 
     def get_declared_queues(self):
         return self.queues
