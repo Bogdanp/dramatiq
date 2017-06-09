@@ -119,7 +119,7 @@ class RabbitmqBroker(Broker):
         self.emit_after("enqueue", message, delay)
 
     def get_declared_queues(self):
-        return self.queues
+        return self.queues.copy()
 
     def get_queue_message_counts(self, queue_name):
         queue_response = self._declare_queue(queue_name)
