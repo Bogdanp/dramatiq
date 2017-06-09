@@ -1,6 +1,3 @@
-from functools import reduce
-from operator import ior
-
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import Retries, TimeLimit
@@ -38,15 +35,20 @@ class Broker:
 
     Parameters:
       middleware(list[Middleware]): The set of middleware that apply
-        to this broker.
+        to this broker.  If you supply this parameter, you are
+        expected to declare *all* middleware.  Most of the time,
+        you'll want to use :meth:`.add_middleware` instead.
     """
 
     def __init__(self, middleware=None):
         self.logger = get_logger(__name__, type(self))
-        self.middleware = middleware or [mw() for mw in default_middleware]
-        self.actor_options = reduce(ior, (mw.actor_options for mw in self.middleware), set())
         self.actors = {}
         self.queues = {}
+
+        self.middleware = middleware or [m() for m in default_middleware]
+        self.actor_options = set()
+        for middleware in self.middleware:
+            self.actor_options |= middleware.actor_options
 
     def emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
