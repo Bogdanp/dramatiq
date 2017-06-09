@@ -142,7 +142,7 @@ class _WorkerThread(Thread):
             except Empty:
                 self.logger.debug("Reached wait timeout...")
 
-            except Exception:
+            except BaseException:
                 self.logger.warning(
                     "An unhandled exception occurred while processing message %r.",
                     message.message_id, exc_info=True,
