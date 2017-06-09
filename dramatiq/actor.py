@@ -53,7 +53,7 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
 
 
 class Actor:
-    """Thin wrapper around callable that stores metadata about how
+    """Thin wrapper around callables that stores metadata about how
     they should be executed asynchronously.
     """
 
