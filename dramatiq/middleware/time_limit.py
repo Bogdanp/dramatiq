@@ -4,8 +4,8 @@ import signal
 import threading
 import warnings
 
+from ..common import current_millis
 from ..logging import get_logger
-from .common import current_millis
 from .middleware import Middleware
 
 _current_platform = platform.python_implementation()

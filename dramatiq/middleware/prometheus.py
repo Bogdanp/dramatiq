@@ -7,8 +7,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from threading import Thread
 
+from ..common import current_millis
 from ..logging import get_logger
-from .common import current_millis
 from .middleware import Middleware
 
 #: The path to the file to use to race Exposition servers against one another.

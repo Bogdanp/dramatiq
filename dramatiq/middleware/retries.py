@@ -2,8 +2,8 @@ import traceback
 
 from random import uniform
 
+from ..common import current_millis
 from ..logging import get_logger
-from .common import current_millis
 from .middleware import Middleware
 
 
