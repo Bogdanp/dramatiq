@@ -4,6 +4,7 @@ from itertools import chain
 from queue import PriorityQueue, Empty
 from threading import Thread
 
+from .common import join_all
 from .errors import ConnectionClosed
 from .logging import get_logger
 from .middleware import Middleware
@@ -64,8 +65,7 @@ class Worker:
 
         self.logger.debug("Consumers and workers stopped.")
         self.logger.debug("Waiting for consumers and workers to stop...")
-        for thread in chain(self.consumers.values(), self.workers):
-            thread.join(timeout=timeout / 1000)
+        join_all(chain(self.consumers.values(), self.workers), timeout)
 
         self.logger.debug("Consumers and workers joined.")
         self.logger.debug("Closing channels...")
