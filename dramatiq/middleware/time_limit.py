@@ -43,19 +43,10 @@ class TimeLimit(Middleware):
         self.threads = {}
         self.logger = get_logger(__name__, type(self))
 
-        signal.setitimer(signal.ITIMER_REAL, interval / 1000, interval / 1000)
-        signal.signal(signal.SIGALRM, self._handle)
-
-        if _current_platform not in _supported_platforms:  # pragma: no cover
-            warnings.warn(
-                f"TimeLimit cannot kill threads on your current platform ({_current_platform!r}).",
-                category=RuntimeWarning, stacklevel=2,
-            )
-
     def _handle(self, signum, mask):
         current_time = current_millis()
         for thread_id, deadline in self.threads.items():
-            if current_time >= deadline:
+            if deadline and current_time >= deadline:
                 self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
                 if _current_platform == "CPython":
                     self._kill_thread_cpython(thread_id)
@@ -77,10 +68,21 @@ class TimeLimit(Middleware):
     def actor_options(self):
         return set(["time_limit"])
 
+    def after_process_boot(self, broker):
+        self.logger.debug("Setting up timers...")
+        signal.setitimer(signal.ITIMER_REAL, self.interval / 1000, self.interval / 1000)
+        signal.signal(signal.SIGALRM, self._handle)
+
+        if _current_platform not in _supported_platforms:  # pragma: no cover
+            warnings.warn(
+                f"TimeLimit cannot kill threads on your current platform ({_current_platform!r}).",
+                category=RuntimeWarning, stacklevel=2,
+            )
+
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
         deadline = current_millis() + actor.options.get("time_limit", self.time_limit)
         self.threads[threading.get_ident()] = deadline
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        del self.threads[threading.get_ident()]
+        self.threads[threading.get_ident()] = None

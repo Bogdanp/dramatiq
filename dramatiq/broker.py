@@ -1,12 +1,12 @@
 from .errors import ActorNotFound
 from .logging import get_logger
-from .middleware import Retries, TimeLimit
+from .middleware import Prometheus, Retries, TimeLimit
 
 #: The global broker instance.
 global_broker = None
 
 #: The list of middleware that are enabled by default.
-default_middleware = [TimeLimit, Retries]
+default_middleware = [Prometheus, TimeLimit, Retries]
 
 
 def get_broker():
@@ -77,7 +77,7 @@ class Broker:
         """Close this broker and perform any necessary cleanup actions.
         """
 
-    def consume(self, queue_name, timeout=30):  # pragma: no cover
+    def consume(self, queue_name, prefetch=1, timeout=30):  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
 
         Raises:
@@ -85,6 +85,7 @@ class Broker:
 
         Parameters:
           queue_name(str): The name of the queue to consume messages off of.
+          prefetch(int): The number of messages to prefetch per consumer.
           timeout(int)
 
         Returns:

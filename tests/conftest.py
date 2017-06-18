@@ -17,6 +17,7 @@ logging.getLogger("pika").setLevel(logging.WARN)
 @pytest.fixture()
 def stub_broker():
     broker = StubBroker()
+    broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
     broker.close()
@@ -25,6 +26,7 @@ def stub_broker():
 @pytest.fixture()
 def rabbitmq_broker():
     broker = RabbitmqBroker()
+    broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
     broker.close()

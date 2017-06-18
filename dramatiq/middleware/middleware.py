@@ -58,6 +58,10 @@ class Middleware:
         """Called after a message has been processed.
         """
 
+    def after_process_boot(self, broker):
+        """Called immediately after subprocess start up.
+        """
+
     def before_worker_boot(self, broker, worker):
         """Called before the worker processes starts up.
         """

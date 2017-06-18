@@ -28,7 +28,7 @@ send_welcome_email.send(new_user.id)
 
 ## Installation
 
-    pip install dramatiq[rabbitmq]
+    pip install dramatiq[rabbitmq, watch]
 
 ## License
 

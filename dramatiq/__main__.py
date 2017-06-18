@@ -73,10 +73,6 @@ def parse_arguments():
         "--threads", "-t", default=8, type=int,
         help="the number of worker threads per process (default: 8)",
     )
-    parser.add_argument(
-        "--work-factor", "-f", default=10000, type=int,
-        help="the max number of messages to load into memory per worker thread (default: 10000)",
-    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -110,16 +106,13 @@ def worker_process(args, worker_id, logging_fd):
         logging_pipe = os.fdopen(logging_fd, "w")
         logger = setup_worker_logging(args, worker_id, logging_pipe)
         module, broker = import_broker(args.broker)
+        broker.emit_after("process_boot")
 
         modules = [module]
         for module in args.modules:
             modules.append(importlib.import_module(module))
 
-        worker = Worker(
-            broker,
-            worker_threads=args.threads,
-            work_factor=args.work_factor,
-        )
+        worker = Worker(broker, worker_threads=args.threads)
         worker.start()
     except ImportError as e:
         logger.critical(e)

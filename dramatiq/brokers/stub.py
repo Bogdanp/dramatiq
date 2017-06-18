@@ -16,7 +16,7 @@ class StubBroker(Broker):
 
         self.timers_by_queue = defaultdict(list)
 
-    def consume(self, queue_name, timeout=0.1):
+    def consume(self, queue_name, prefetch=1, timeout=0.1):
         try:
             queue = self.queues[queue_name]
             return _StubConsumer(queue, timeout)

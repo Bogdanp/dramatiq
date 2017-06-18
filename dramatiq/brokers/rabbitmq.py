@@ -64,12 +64,12 @@ class RabbitmqBroker(Broker):
                 if connection.is_open:
                     connection.close()
             except pika.exceptions.ConnectionClosed:
-                self.logger.warning("Encountered an error while closing connection.", exc_info=True)
+                self.logger.debug("Encountered an error while closing connection.", exc_info=True)
 
         self.logger.debug("Connections closed.")
 
-    def consume(self, queue_name, timeout=5):
-        return _RabbitmqConsumer(self.parameters, queue_name, timeout)
+    def consume(self, queue_name, prefetch=1, timeout=5):
+        return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):
         try:
@@ -153,11 +153,11 @@ class RabbitmqBroker(Broker):
 
 
 class _RabbitmqConsumer(Consumer):
-    def __init__(self, parameters, queue_name, timeout):
+    def __init__(self, parameters, queue_name, prefetch, timeout):
         try:
             self.connection = pika.BlockingConnection(parameters=parameters)
             self.channel = self.connection.channel()
-            self.channel.basic_qos(prefetch_count=1)
+            self.channel.basic_qos(prefetch_count=prefetch)
             self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout)
         except pika.exceptions.ConnectionClosed as e:
             raise ConnectionClosed(e)
