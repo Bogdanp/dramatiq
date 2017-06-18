@@ -58,13 +58,23 @@ class Worker:
     def stop(self, timeout=5):
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
+        self.logger.debug("Stopping consumers and workers...")
         for thread in chain(self.consumers.values(), self.workers):
             thread.stop()
 
+        self.logger.debug("Consumers and workers stopped.")
+        self.logger.debug("Waiting for consumers and workers to stop...")
         for thread in chain(self.consumers.values(), self.workers):
             thread.join(timeout=timeout)
 
+        self.logger.debug("Consumers and workers joined.")
+        self.logger.debug("Closing channels...")
+        for thread in self.consumers.values():
+            thread.close()
+
+        self.logger.debug("Channels closed.")
         self.broker.emit_after("worker_shutdown", self)
+        self.logger.info("Worker has been shut down.")
 
 
 class _WorkerMiddleware(Middleware):
@@ -81,6 +91,7 @@ class _ConsumerThread(Thread):
 
         self.running = False
         self.broker = broker
+        self.consumer = None
         self.queue_name = queue_name
         self.work_prefetch = work_prefetch
         self.work_queue = work_queue
@@ -90,8 +101,8 @@ class _ConsumerThread(Thread):
         try:
             self.logger.debug("Running consumer thread...")
             self.consumer = self.broker.consume(
-                self.queue_name,
-                prefetch=self.work_prefetch
+                queue_name=self.queue_name,
+                prefetch=self.work_prefetch,
             )
             self.running = True
 
@@ -113,13 +124,16 @@ class _ConsumerThread(Thread):
             time.sleep(delay)
             return self.run(attempts=attempts + 1)
 
-        self.logger.debug("Closing consumer...")
-        self.consumer.close()
         self.logger.debug("Consumer thread stopped.")
 
     def stop(self):
         self.logger.debug("Stopping consumer thread...")
         self.running = False
+
+    def close(self):
+        if self.consumer:
+            self.logger.debug("Closing consumer...")
+            self.consumer.close()
 
 
 class _WorkerThread(Thread):
