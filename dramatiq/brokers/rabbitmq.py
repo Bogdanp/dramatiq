@@ -68,7 +68,7 @@ class RabbitmqBroker(Broker):
 
         self.logger.debug("Connections closed.")
 
-    def consume(self, queue_name, prefetch=1, timeout=5):
+    def consume(self, queue_name, prefetch=1, timeout=5000):
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):
@@ -158,7 +158,7 @@ class _RabbitmqConsumer(Consumer):
             self.connection = pika.BlockingConnection(parameters=parameters)
             self.channel = self.connection.channel()
             self.channel.basic_qos(prefetch_count=prefetch)
-            self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout)
+            self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
         except pika.exceptions.ConnectionClosed as e:
             raise ConnectionClosed(e)
 

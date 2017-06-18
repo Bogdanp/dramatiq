@@ -55,7 +55,7 @@ class Worker:
 
         self.broker.emit_after("worker_boot", self)
 
-    def stop(self, timeout=5):
+    def stop(self, timeout=5000):
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
         self.logger.debug("Stopping consumers and workers...")
@@ -65,7 +65,7 @@ class Worker:
         self.logger.debug("Consumers and workers stopped.")
         self.logger.debug("Waiting for consumers and workers to stop...")
         for thread in chain(self.consumers.values(), self.workers):
-            thread.join(timeout=timeout)
+            thread.join(timeout=timeout / 1000)
 
         self.logger.debug("Consumers and workers joined.")
         self.logger.debug("Closing channels...")

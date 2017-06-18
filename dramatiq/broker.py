@@ -77,7 +77,7 @@ class Broker:
         """Close this broker and perform any necessary cleanup actions.
         """
 
-    def consume(self, queue_name, prefetch=1, timeout=30):  # pragma: no cover
+    def consume(self, queue_name, prefetch=1, timeout=30000):  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
 
         Raises:
@@ -86,7 +86,7 @@ class Broker:
         Parameters:
           queue_name(str): The name of the queue to consume messages off of.
           prefetch(int): The number of messages to prefetch per consumer.
-          timeout(int)
+          timeout(int): The amount of time in milliseconds to idle for.
 
         Returns:
           Consumer
