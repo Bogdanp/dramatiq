@@ -1,0 +1,4 @@
+-r ../requirements/dev.txt
+
+# Sphinx
+sphinx>=1.3

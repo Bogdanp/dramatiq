@@ -4,6 +4,7 @@
 [![Test Coverage](https://codeclimate.com/github/Bogdanp/dramatiq/badges/coverage.svg)](https://codeclimate.com/github/Bogdanp/dramatiq/coverage)
 [![Code Climate](https://codeclimate.com/github/Bogdanp/dramatiq/badges/gpa.svg)](https://codeclimate.com/github/Bogdanp/dramatiq)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
+[![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.defn.io)
 
 **dramatiq** is a task queueing library for Python with a focus on
 simplicity, reliability and performance.
@@ -28,7 +29,11 @@ send_welcome_email.send(new_user.id)
 
 ## Installation
 
-    pip install dramatiq[rabbitmq, watch]
+    pip install -U dramatiq[rabbitmq, watch]
+
+## Documentation
+
+Documentation is available at http://dramatiq.defn.io.
 
 ## License
 
