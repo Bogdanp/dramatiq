@@ -38,10 +38,10 @@ class TimeLimit(Middleware):
     """
 
     def __init__(self, *, time_limit=600000, interval=1000):
+        self.logger = get_logger(__name__, type(self))
         self.time_limit = time_limit
         self.interval = interval
         self.threads = {}
-        self.logger = get_logger(__name__, type(self))
 
     def _handle(self, signum, mask):
         current_time = current_millis()

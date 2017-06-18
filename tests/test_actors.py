@@ -3,7 +3,7 @@ import platform
 import pytest
 import time
 
-from dramatiq import Message
+from dramatiq import Message, Worker
 
 
 _current_platform = platform.python_implementation()
@@ -216,3 +216,27 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     # I expect it to fail
     assert sum(attempts) == 1
     assert sum(successes) == 0
+
+
+def test_actors_can_be_assigned_message_age_limits(stub_broker):
+    # Given that I have a database
+    runs = []
+
+    # And an actor whose messages have an age limit
+    @dramatiq.actor(age_limit=100)
+    def do_work():
+        runs.append(1)
+
+    # If I send it a message
+    do_work.send()
+
+    # And join on its queue after the age limit has passed
+    time.sleep(0.1)
+    worker = Worker(stub_broker, worker_timeout=100)
+    worker.start()
+    stub_broker.join(do_work.queue_name)
+    worker.work_queue.join()
+    worker.stop()
+
+    # I expect the message to have been skipped
+    assert sum(runs) == 0

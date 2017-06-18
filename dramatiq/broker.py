@@ -1,12 +1,12 @@
 from .errors import ActorNotFound
 from .logging import get_logger
-from .middleware import Prometheus, Retries, TimeLimit
+from .middleware import AgeLimit, Prometheus, Retries, TimeLimit
 
 #: The global broker instance.
 global_broker = None
 
 #: The list of middleware that are enabled by default.
-default_middleware = [Prometheus, TimeLimit, Retries]
+default_middleware = [Prometheus, AgeLimit, TimeLimit, Retries]
 
 
 def get_broker():
@@ -155,8 +155,11 @@ class Broker:
         """
         try:
             self.emit_before("process_message", message)
-            actor = self.get_actor(message.actor_name)
-            res = actor(*message.args, **message.kwargs)
+            if message._failed:
+                res = None
+            else:
+                actor = self.get_actor(message.actor_name)
+                res = actor(*message.args, **message.kwargs)
             self.emit_after("process_message", message, result=res)
 
         except BaseException as e:
