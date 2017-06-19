@@ -187,17 +187,21 @@ def main():
             events = selector.select()
             for key, mask in events:
                 data = os.read(key.fd, 16384)
-                buffers[key.fd] += data.decode("utf-8")
+                if not data:
+                    selector.unregister(key.fileobj)
+                    sys.stderr.write(buffers[key.fd])
+                    continue
 
+                buffers[key.fd] += data.decode("utf-8")
                 while buffers[key.fd]:
                     try:
-                        marker = buffers[key.fd].index("\n")
-                        sys.stderr.write(buffers[key.fd][:marker + 1])
-                        buffers[key.fd] = buffers[key.fd][marker + 1:]
+                        index = buffers[key.fd].index("\n")
+                        sys.stderr.write(buffers[key.fd][:index + 1])
+                        sys.stderr.flush()
+
+                        buffers[key.fd] = buffers[key.fd][index + 1:]
                     except ValueError:
                         break
-
-                sys.stderr.flush()
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
     log_watcher.start()
