@@ -116,10 +116,10 @@ def worker_process(args, worker_id, logging_fd):
         worker.start()
     except ImportError as e:
         logger.critical(e)
-        return os._exit(1)
+        return os._exit(2)
     except ConnectionError as e:
         logger.critical("Broker connection failed. %s", e)
-        return os._exit(1)
+        return os._exit(3)
 
     def termhandler(signum, frame):
         nonlocal running
@@ -219,11 +219,13 @@ def main_process(args):
             except OSError:
                 logger.warning("Failed to send %r to child process.", signum.name, exc_info=True)
 
+    retcode = 0
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
     signal.signal(signal.SIGHUP, sighandler)
     for pid in worker_processes:
-        os.waitpid(pid, 0)
+        pid, rc = os.waitpid(pid, 0)
+        retcode = max(retcode, rc >> 8)
 
     running = False
     if HAS_WATCHDOG and args.watch:
@@ -236,7 +238,7 @@ def main_process(args):
 
     if reload_process:
         return main_process(args)
-    return 0
+    return retcode
 
 
 def main():
