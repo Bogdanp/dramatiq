@@ -178,8 +178,9 @@ class _RabbitmqConsumer(Consumer):
             raise ConnectionClosed(e)
 
     def close(self):
-        self.channel.cancel()
-        self.connection.close()
+        if self.connection.is_open:
+            self.channel.cancel()
+            self.connection.close()
 
 
 class _RabbitmqMessage(MessageProxy):
