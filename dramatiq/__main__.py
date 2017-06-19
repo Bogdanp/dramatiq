@@ -109,9 +109,8 @@ def worker_process(args, worker_id, logging_fd):
         module, broker = import_broker(args.broker)
         broker.emit_after("process_boot")
 
-        modules = [module]
         for module in args.modules:
-            modules.append(importlib.import_module(module))
+            importlib.import_module(module)
 
         worker = Worker(broker, worker_threads=args.threads)
         worker.start()
@@ -131,15 +130,10 @@ def worker_process(args, worker_id, logging_fd):
             logger.warning("Killing worker process...")
             return os._exit(1)
 
-    def huphandler(signum, frame):
-        logger.info("Reloading all modules...")
-        for module in modules:
-            importlib.reload(module)
-
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, termhandler)
-    signal.signal(signal.SIGHUP, huphandler)
+    signal.signal(signal.SIGHUP, termhandler)
 
     running = True
     while running:
@@ -150,8 +144,7 @@ def worker_process(args, worker_id, logging_fd):
     logging_pipe.close()
 
 
-def main():
-    args = parse_arguments()
+def main_process(args):
     worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):
@@ -168,7 +161,7 @@ def main():
 
     logger = setup_parent_logging(args)
     logger.info(f"Dramatiq {__version__!r} is booting up.")
-    running = True
+    running, reload_process = True, False
 
     if HAS_WATCHDOG and args.watch:
         file_event_handler = SourceChangesHandler(patterns=["*.py"])
@@ -211,7 +204,8 @@ def main():
     log_watcher.start()
 
     def sighandler(signum, frame):
-        nonlocal worker_processes
+        nonlocal reload_process, worker_processes
+        reload_process = signum == signal.SIGHUP
         signum = {
             signal.SIGINT: signal.SIGTERM,
             signal.SIGTERM: signal.SIGTERM,
@@ -240,7 +234,14 @@ def main():
     for pipe in worker_pipes:
         pipe.close()
 
+    if reload_process:
+        return main_process(args)
     return 0
+
+
+def main():
+    args = parse_arguments()
+    return main_process(args)
 
 
 if HAS_WATCHDOG:
