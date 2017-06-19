@@ -185,6 +185,7 @@ def main():
             events = selector.select()
             for key, mask in events:
                 sys.stderr.write(key.fileobj.readline())
+                sys.stderr.flush()
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
     log_watcher.start()
