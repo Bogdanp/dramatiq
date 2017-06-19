@@ -184,7 +184,7 @@ def main():
 
         buffers = defaultdict(str)
         while running:
-            events = selector.select()
+            events = selector.select(timeout=1)
             for key, mask in events:
                 data = os.read(key.fd, 16384)
                 if not data:
@@ -194,14 +194,18 @@ def main():
 
                 buffers[key.fd] += data.decode("utf-8")
                 while buffers[key.fd]:
-                    try:
-                        index = buffers[key.fd].index("\n")
-                        line = buffers[key.fd][:index + 1]
-                        buffers[key.fd] = buffers[key.fd][index + 1:]
-
-                        sys.stderr.write(line)
-                    except ValueError:
+                    index = buffers[key.fd].find("\n")
+                    if index == -1:
                         break
+
+                    line = buffers[key.fd][:index + 1]
+                    buffers[key.fd] = buffers[key.fd][index + 1:]
+
+                    sys.stderr.write(line)
+                    sys.stderr.flush()
+
+        logger.debug("Closing selector...")
+        selector.close()
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
     log_watcher.start()
