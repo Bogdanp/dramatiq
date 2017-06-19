@@ -1,0 +1,1 @@
+coverage>=4.0,<4.4  # Pinned due to https://bitbucket.org/ned/coveragepy/issues/578/incomplete-file-path-in-xml-report
