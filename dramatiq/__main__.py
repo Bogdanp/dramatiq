@@ -8,6 +8,7 @@ import signal
 import sys
 import time
 
+from collections import defaultdict
 from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker, get_logger
 from threading import Thread
 
@@ -181,10 +182,21 @@ def main():
         for pipe in worker_pipes:
             selector.register(pipe, selectors.EVENT_READ)
 
+        buffers = defaultdict(str)
         while running:
             events = selector.select()
             for key, mask in events:
-                sys.stderr.write(key.fileobj.readline())
+                data = os.read(key.fd, 16384)
+                buffers[key.fd] += data.decode("utf-8")
+
+                while buffers[key.fd]:
+                    try:
+                        marker = buffers[key.fd].index("\n")
+                        sys.stderr.write(buffers[key.fd][:marker + 1])
+                        buffers[key.fd] = buffers[key.fd][marker + 1:]
+                    except ValueError:
+                        break
+
                 sys.stderr.flush()
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
