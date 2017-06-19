@@ -26,7 +26,7 @@ class Prometheus(Middleware):
       http_host(str): The host to bind the Prometheus exposition server on.
       http_port(int): The port on which the server should listen.
 
-    _ Prometheus: https://prometheus.io
+    .. _Prometheus: https://prometheus.io
     """
 
     def __init__(self, *, http_host="localhost", http_port=9191):

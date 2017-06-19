@@ -10,6 +10,28 @@ _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_-]*")
 def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=None, **options):
     """Declare an Actor.
 
+    Examples:
+
+      >>> import dramatiq
+
+      >>> @dramatiq.actor
+      ... def add(x, y):
+      ...   print(x + y)
+      ...
+      >>> add
+      Actor(<function add at 0x106c6d488>, queue_name='default', actor_name='add')
+
+      >>> add(1, 2)
+      3
+
+      >>> add.send(1, 2)
+      Message(
+        queue_name='default',
+        actor_name='add',
+        args=(1, 2), kwargs={}, options={},
+        message_id='e0d27b45-7900-41da-bb97-553b8a081206',
+        message_timestamp=1497862448685)
+
     Parameters:
       fn(callable): The function to wrap.
       actor_name(str): The name of the actor.

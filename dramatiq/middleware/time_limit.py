@@ -23,6 +23,7 @@ class TimeLimitExceeded(BaseException):
 
 class TimeLimit(Middleware):
     """Middleware that cancels actors that run for too long.
+    Currently, this is only available on CPython.
 
     Note:
       This works by setting an async exception in the worker thread

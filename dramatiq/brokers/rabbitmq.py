@@ -142,7 +142,7 @@ class RabbitmqBroker(Broker):
           tests and only use this for simple integration tests.
 
         Parameters:
-          queue_name(str)
+          queue_name(str): The queue to wait on.
         """
         while True:
             total_messages = sum(self.get_queue_message_counts(queue_name)[:-1])

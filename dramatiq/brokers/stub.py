@@ -53,7 +53,7 @@ class StubBroker(Broker):
           QueueNotFound: If the given queue was never declared.
 
         Parameters:
-          queue_name(str)
+          queue_name(str): The queue to wait on.
         """
         try:
             self.queues[queue_name].join()

@@ -12,6 +12,9 @@ default_middleware = [Prometheus, AgeLimit, TimeLimit, Retries]
 def get_broker():
     """Get the global broker instance.  If no global broker is set,
     this initializes a RabbitmqBroker and returns that.
+
+    Returns:
+      Broker: The default Broker.
     """
     global global_broker
     if global_broker is None:
@@ -24,7 +27,7 @@ def set_broker(broker):
     """Configure the global broker instance.
 
     Parameters:
-      broker(Broker)
+      broker(Broker): The broker instance to use by default.
     """
     global global_broker
     global_broker = broker
@@ -60,9 +63,6 @@ class Broker:
 
     def add_middleware(self, middleware):
         """Add a middleware object to this broker.
-
-        Parameters:
-          middleware(Middleware)
         """
         self.middleware.append(middleware)
         self.actor_options |= middleware.actor_options
@@ -89,7 +89,7 @@ class Broker:
           timeout(int): The amount of time in milliseconds to idle for.
 
         Returns:
-          Consumer
+          Consumer: A message iterator.
         """
         raise NotImplementedError
 
@@ -98,7 +98,7 @@ class Broker:
         twice replaces the first actor with the second by name.
 
         Parameters:
-          actor(Actor)
+          actor(Actor): The actor being declared.
         """
         self.emit_before("declare_actor", actor)
         self.declare_queue(actor.queue_name)
@@ -110,7 +110,7 @@ class Broker:
         idempotent.
 
         Parameters:
-          queue_name(str)
+          queue_name(str): The name of the queue being declared.
         """
         raise NotImplementedError
 
@@ -151,7 +151,7 @@ class Broker:
         """Process a message and then acknowledge it.
 
         Parameters:
-          message(MessageProxy)
+          message(MessageProxy): The message being processed.
         """
         try:
             self.emit_before("process_message", message)
@@ -185,6 +185,8 @@ class Consumer:
     """
 
     def __iter__(self):  # pragma: no cover
+        """Returns this instance as a Message iterator.
+        """
         return self
 
     def __next__(self):  # pragma: no cover
@@ -192,7 +194,9 @@ class Consumer:
         blocks until a message becomes available.
 
         Returns:
-          MessageProxy
+          MessageProxy: A transparent proxy around a Message that can
+          be used to acknowledge or reject it once it's done being
+          processed.
         """
         raise NotImplementedError
 
