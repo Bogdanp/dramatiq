@@ -196,10 +196,10 @@ def main():
                 while buffers[key.fd]:
                     try:
                         index = buffers[key.fd].index("\n")
-                        sys.stderr.write(buffers[key.fd][:index + 1])
-                        sys.stderr.flush()
-
+                        line = buffers[key.fd][:index + 1]
                         buffers[key.fd] = buffers[key.fd][index + 1:]
+
+                        sys.stderr.write(line)
                     except ValueError:
                         break
 
