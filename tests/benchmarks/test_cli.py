@@ -1,7 +1,8 @@
 import dramatiq
-import dramatiq.brokers
 
-broker = dramatiq.brokers.RabbitmqBroker()
+from dramatiq.brokers.rabbitmq import RabbitmqBroker
+
+broker = RabbitmqBroker()
 
 
 @dramatiq.actor(queue_name="benchmark-throughput", broker=broker)

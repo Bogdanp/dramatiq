@@ -159,9 +159,6 @@ class _RabbitmqConsumer(Consumer):
         except pika.exceptions.ConnectionClosed as e:
             raise ConnectionClosed(e)
 
-    def __iter__(self):
-        return self
-
     def __next__(self):
         try:
             frame = next(self.iterator)

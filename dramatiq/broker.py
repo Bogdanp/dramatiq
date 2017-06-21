@@ -18,7 +18,7 @@ def get_broker():
     """
     global global_broker
     if global_broker is None:
-        from .brokers import RabbitmqBroker
+        from .brokers.rabbitmq import RabbitmqBroker
         set_broker(RabbitmqBroker())
     return global_broker
 

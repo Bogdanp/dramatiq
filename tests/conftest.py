@@ -5,7 +5,9 @@ import subprocess
 import uuid
 
 from dramatiq import Worker
-from dramatiq.brokers import RabbitmqBroker, StubBroker
+from dramatiq.brokers import StubBroker
+from dramatiq.brokers.rabbitmq import RabbitmqBroker
+from dramatiq.brokers.redis import RedisBroker
 from dramatiq.common import dq_name, xq_name
 
 
@@ -33,6 +35,16 @@ def rabbitmq_broker():
 
 
 @pytest.fixture()
+def redis_broker():
+    broker = RedisBroker()
+    broker.connection.flushall()
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    broker.close()
+
+
+@pytest.fixture()
 def stub_worker(stub_broker):
     worker = Worker(stub_broker, worker_timeout=100)
     worker.start()
@@ -43,6 +55,14 @@ def stub_worker(stub_broker):
 @pytest.fixture()
 def rabbitmq_worker(rabbitmq_broker):
     worker = Worker(rabbitmq_broker)
+    worker.start()
+    yield worker
+    worker.stop()
+
+
+@pytest.fixture()
+def redis_worker(redis_broker):
+    worker = Worker(redis_broker)
     worker.start()
     yield worker
     worker.stop()
