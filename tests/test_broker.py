@@ -1,6 +1,8 @@
 import dramatiq
 import dramatiq.broker
 
+from dramatiq.brokers.rabbitmq import RabbitmqBroker
+
 
 def test_broker_uses_rabbitmq_if_not_set():
     # Given that no global broker is set
@@ -10,4 +12,4 @@ def test_broker_uses_rabbitmq_if_not_set():
     broker = dramatiq.get_broker()
 
     # I expect it to be a RabbitmqBroker instance
-    assert isinstance(broker, dramatiq.brokers.RabbitmqBroker)
+    assert isinstance(broker, RabbitmqBroker)

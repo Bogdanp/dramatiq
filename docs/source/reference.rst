@@ -32,7 +32,9 @@ Brokers
    :members:
 .. autoclass:: dramatiq.brokers.StubBroker
    :members:
-.. autoclass:: dramatiq.brokers.RabbitmqBroker
+.. autoclass:: dramatiq.brokers.rabbitmq.RabbitmqBroker
+   :members:
+.. autoclass:: dramatiq.brokers.rabbitmq.RedisBroker
    :members:
 
 

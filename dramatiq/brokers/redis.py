@@ -81,21 +81,15 @@ class RedisBroker(Broker):
         ])
 
     def _fetch(self, queue_name, prefetch, timeout):
-        return self.scripts["fetch"](args=[
-            queue_name, prefetch, timeout,
-        ])
+        return self.scripts["fetch"](args=[queue_name, prefetch, timeout])
 
     def _ack(self, queue_name, message_id):
         # TODO: Periodically scan for unacked messages.
-        return self.scripts["ack"](args=[
-            queue_name, message_id,
-        ])
+        return self.scripts["ack"](args=[queue_name, message_id])
 
     def _nack(self, queue_name, message_id):
         # TODO: Add dead letter queue.
-        return self.scripts["ack"](args=[
-            queue_name, message_id,
-        ])
+        return self.scripts["ack"](args=[queue_name, message_id])
 
 
 class _RedisConsumer(Consumer):

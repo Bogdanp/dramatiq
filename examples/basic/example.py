@@ -3,15 +3,18 @@ import dramatiq
 import logging
 import random
 import sys
+import time
+
+from dramatiq.brokers.redis import RedisBroker
 
 logger = logging.getLogger("example")
+broker = RedisBroker()
+dramatiq.set_broker(broker)
 
 
 @dramatiq.actor
 def add(x, y):
-    if random.randint(1, 100) == 1:
-        raise RuntimeError("an exception")
-    logger.info("The sum of %d and %d is %d.", x, y, x + y)
+    pass
 
 
 def main(args):
