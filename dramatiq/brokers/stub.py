@@ -1,8 +1,8 @@
 from collections import defaultdict
 from queue import Queue, Empty
-from threading import Timer
 
 from ..broker import Broker, Consumer, MessageProxy
+from ..common import current_millis, dq_name
 from ..errors import QueueNotFound
 from ..message import Message
 
@@ -24,25 +24,25 @@ class StubBroker(Broker):
             raise QueueNotFound(queue_name)
 
     def declare_queue(self, queue_name):
-        if queue_name not in self.queues:
-            self.emit_before("declare_queue", queue_name)
-            self.queues[queue_name] = Queue()
-            self.emit_after("declare_queue", queue_name)
+        self.emit_before("declare_queue", queue_name)
+        self.queues[queue_name] = Queue()
+        self.emit_after("declare_queue", queue_name)
+
+        delayed_name = dq_name(queue_name)
+        self.queues[delayed_name] = Queue()
+        self.delay_queues.add(delayed_name)
+        self.emit_after("declare_delay_queue", delayed_name)
 
     def enqueue(self, message, *, delay=None):
         self.emit_before("enqueue", message, delay)
 
+        queue_name = message.queue_name
         if delay is not None:
-            timer = Timer(delay / 1000, self._enqueue, args=(message,))
-            timer.start()
-            self.timers_by_queue[message.queue_name].append(timer)
-        else:
-            self._enqueue(message)
+            queue_name = dq_name(queue_name)
+            message.options["eta"] = current_millis() + delay
 
+        self.queues[queue_name].put(message.encode())
         self.emit_after("enqueue", message, delay)
-
-    def _enqueue(self, message):
-        self.queues[message.queue_name].put(message.encode())
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be
@@ -56,12 +56,7 @@ class StubBroker(Broker):
           queue_name(str): The queue to wait on.
         """
         try:
-            self.queues[queue_name].join()
-
-            timers = self.timers_by_queue[queue_name]
-            while timers:
-                timer = timers.pop(0)
-                timer.join()
+            for queue_name in (queue_name, dq_name(queue_name)):
                 self.queues[queue_name].join()
         except KeyError:
             raise QueueNotFound(queue_name)

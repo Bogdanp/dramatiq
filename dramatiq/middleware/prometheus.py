@@ -33,6 +33,7 @@ class Prometheus(Middleware):
         self.logger = get_logger(__name__, type(self))
         self.http_host = http_host
         self.http_port = http_port
+        self.delayed_messages = set()
         self.durations_by_message = {}
 
     def after_process_boot(self, broker):
@@ -56,6 +57,12 @@ class Prometheus(Middleware):
             ["queue_name", "actor_name"],
             registry=registry,
         )
+        self.total_retried_messages = prom.Counter(
+            "dramatiq_message_retries_total",
+            "The total number of retried messages.",
+            ["queue_name", "actor_name"],
+            registry=registry,
+        )
         self.total_rejected_messages = prom.Counter(
             "dramatiq_message_rejects_total",
             "The total number of rejected messages (moved to the DLQ).",
@@ -68,6 +75,12 @@ class Prometheus(Middleware):
             ["queue_name", "actor_name"],
             registry=registry,
             multiprocess_mode="livesum",
+        )
+        self.inprogress_delayed_messages = prom.Gauge(
+            "dramatiq_delayed_messages_inprogress",
+            "The number of delayed messages in memory.",
+            ["queue_name", "actor_name"],
+            registry=registry,
         )
         self.message_durations = prom.Histogram(
             "dramatiq_message_duration_milliseconds",
@@ -91,8 +104,21 @@ class Prometheus(Middleware):
     def after_reject(self, broker, message):
         self.total_rejected_messages.labels(message.queue_name, message.actor_name).inc()
 
+    def after_enqueue(self, broker, message, delay):
+        if "retries" in message.options:
+            self.total_retried_messages.labels(message.queue_name, message.actor_name).inc()
+
+    def before_delay_message(self, broker, message):
+        self.delayed_messages.add(message.message_id)
+        self.inprogress_delayed_messages.labels(message.queue_name, message.actor_name).inc()
+
     def before_process_message(self, broker, message):
-        self.inprogress_messages.labels(message.queue_name, message.actor_name).inc()
+        labels = (message.queue_name, message.actor_name)
+        if message.message_id in self.delayed_messages:
+            self.delayed_messages.remove(message.message_id)
+            self.inprogress_delayed_messages.labels(*labels).dec()
+
+        self.inprogress_messages.labels(*labels).inc()
         self.durations_by_message[message.message_id] = current_millis()
 
     def after_process_message(self, broker, message, *, result=None, exception=None):

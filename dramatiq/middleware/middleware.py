@@ -42,12 +42,20 @@ class Middleware:
         """Called before a queue has been declared.
         """
 
+    def after_declare_delay_queue(self, broker, queue_name):
+        """Called before a delay queue has been declared.
+        """
+
     def before_enqueue(self, broker, message, delay):
         """Called before a message is enqueued.
         """
 
     def after_enqueue(self, broker, message, delay):
         """Called after a message has been enqueued.
+        """
+
+    def before_delay_message(self, broker, message):
+        """Called before a message has been delayed in worker memory.
         """
 
     def before_process_message(self, broker, message):

@@ -235,8 +235,31 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
     worker = Worker(stub_broker, worker_timeout=100)
     worker.start()
     stub_broker.join(do_work.queue_name)
-    worker.work_queue.join()
+    worker.join()
     worker.stop()
 
     # I expect the message to have been skipped
     assert sum(runs) == 0
+
+
+def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_worker):
+    # Given that I have a database
+    results = []
+
+    # And an actor that appends a number to the database
+    @dramatiq.actor
+    def append(x):
+        results.append(x)
+
+    # If I send it a delayed message
+    append.send_with_options(args=(1,), delay=1500)
+
+    # And then another delayed message with a smaller delay
+    append.send_with_options(args=(2,), delay=1000)
+
+    # Then join on the queue
+    stub_broker.join(append.queue_name)
+    stub_worker.join()
+
+    # I expect the latter message to have been run first
+    assert results == [2, 1]

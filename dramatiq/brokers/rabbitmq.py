@@ -4,23 +4,12 @@ import time
 from threading import local
 
 from ..broker import Broker, Consumer, MessageProxy
+from ..common import current_millis, dq_name, xq_name
 from ..errors import ConnectionClosed
 from ..message import Message
 
 #: The maximum amount of time a message can be in the dead queue.
 _dead_message_ttl = 86400 * 7 * 1000
-
-
-def _dq_name(queue_name):
-    """Returns the delayed queue name for a given queue.
-    """
-    return f"{queue_name}.DQ"
-
-
-def _xq_name(queue_name):
-    """Returns the dead letter queue name for a given queue.
-    """
-    return f"{queue_name}.XQ"
 
 
 class RabbitmqBroker(Broker):
@@ -76,27 +65,34 @@ class RabbitmqBroker(Broker):
             if queue_name not in self.queues:
                 self.emit_before("declare_queue", queue_name)
                 self._declare_queue(queue_name)
-                self._declare_dq_queue(queue_name)
-                self._declare_xq_queue(queue_name)
                 self.queues.add(queue_name)
                 self.emit_after("declare_queue", queue_name)
+
+                delayed_name = dq_name(queue_name)
+                self._declare_dq_queue(queue_name)
+                self.delay_queues.add(delayed_name)
+                self.emit_after("declare_delay_queue", delayed_name)
+
+                self._declare_xq_queue(queue_name)
         except pika.exceptions.ConnectionClosed as e:
             raise ConnectionClosed(e)
 
     def _declare_queue(self, queue_name):
         return self.channel.queue_declare(queue=queue_name, durable=True, arguments={
             "x-dead-letter-exchange": "",
-            "x-dead-letter-routing-key": _xq_name(queue_name),
+            "x-dead-letter-routing-key": xq_name(queue_name),
         })
 
     def _declare_dq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=_dq_name(queue_name), durable=True, arguments={
+        return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments={
             "x-dead-letter-exchange": "",
-            "x-dead-letter-routing-key": queue_name,
+            "x-dead-letter-routing-key": xq_name(queue_name),
         })
 
     def _declare_xq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=_xq_name(queue_name), durable=True, arguments={
+        return self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments={
+            # This HAS to be a static value since messages are expired
+            # in order inside of RabbitMQ (head-first).
             "x-message-ttl": _dead_message_ttl,
         })
 
@@ -107,8 +103,8 @@ class RabbitmqBroker(Broker):
         queue_name = message.queue_name
         properties = pika.BasicProperties(delivery_mode=2)
         if delay is not None:
-            queue_name = _dq_name(queue_name)
-            properties.expiration = str(delay)
+            queue_name = dq_name(queue_name)
+            message.options["eta"] = current_millis() + delay
 
         self.channel.publish(
             exchange="",
@@ -144,10 +140,11 @@ class RabbitmqBroker(Broker):
         Parameters:
           queue_name(str): The queue to wait on.
         """
-        while True:
+        successes = 0
+        while successes < 3:
             total_messages = sum(self.get_queue_message_counts(queue_name)[:-1])
             if total_messages == 0:
-                return
+                successes += 1
 
             time.sleep(1)
 
@@ -179,7 +176,7 @@ class _RabbitmqConsumer(Consumer):
 
     def close(self):
         if self.connection.is_open:
-            self.channel.cancel()
+            self.channel.close()
             self.connection.close()
 
 

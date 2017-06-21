@@ -47,6 +47,7 @@ class Broker:
         self.logger = get_logger(__name__, type(self))
         self.actors = {}
         self.queues = {}
+        self.delay_queues = set()
 
         self.middleware = middleware or [m() for m in default_middleware]
         self.actor_options = set()
@@ -72,6 +73,9 @@ class Broker:
 
         for queue_name in self.get_declared_queues():
             middleware.after_declare_queue(self, queue_name)
+
+        for queue_name in self.get_declared_delay_queues():
+            middleware.after_declare_delay_queue(self, queue_name)
 
     def close(self):
         """Close this broker and perform any necessary cleanup actions.
@@ -147,37 +151,11 @@ class Broker:
         """
         return self.queues.keys()
 
-    def process_message(self, message):
-        """Process a message and then acknowledge it.
-
-        Parameters:
-          message(MessageProxy): The message being processed.
+    def get_declared_delay_queues(self):  # pragma: no cover
+        """Returns the list of all the named delay queues declared on
+        this broker.
         """
-        try:
-            self.emit_before("process_message", message)
-            if message._failed:
-                res = None
-            else:
-                actor = self.get_actor(message.actor_name)
-                res = actor(*message.args, **message.kwargs)
-            self.emit_after("process_message", message, result=res)
-
-        except BaseException as e:
-            self.logger.warning("Failed to process message %r with unhandled exception.", message, exc_info=True)
-            self.emit_after("process_message", message, exception=e)
-
-        finally:
-            if message._failed:
-                self.logger.debug("Rejecting message %r.", message.message_id)
-                self.emit_before("reject", message)
-                message.reject()
-                self.emit_after("reject", message)
-
-            else:
-                self.logger.debug("Acknowledging message %r.", message.message_id)
-                self.emit_before("acknowledge", message)
-                message.acknowledge()
-                self.emit_after("acknowledge", message)
+        return self.delay_queues.copy()
 
 
 class Consumer:
@@ -210,8 +188,8 @@ class MessageProxy:
     """
 
     def __init__(self, message):
+        self.failed = False
         self._message = message
-        self._failed = False
 
     def acknowledge(self):  # pragma: no cover
         """Acknowledge that this message has been procesed.
@@ -221,7 +199,7 @@ class MessageProxy:
     def fail(self):
         """Mark this message for rejection.
         """
-        self._failed = True
+        self.failed = True
 
     def reject(self):  # pragma: no cover
         """Reject this message, moving it to the dead letter queue.

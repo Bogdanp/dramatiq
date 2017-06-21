@@ -6,7 +6,7 @@ import uuid
 
 from dramatiq import Worker
 from dramatiq.brokers import RabbitmqBroker, StubBroker
-from dramatiq.brokers.rabbitmq import _dq_name, _xq_name
+from dramatiq.common import dq_name, xq_name
 
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
@@ -53,8 +53,8 @@ def rabbitmq_random_queue(rabbitmq_broker):
     queue_name = f"rabbit-queue-{uuid.uuid4()}"
     yield queue_name
     rabbitmq_broker.channel.queue_delete(queue_name)
-    rabbitmq_broker.channel.queue_delete(_dq_name(queue_name))
-    rabbitmq_broker.channel.queue_delete(_xq_name(queue_name))
+    rabbitmq_broker.channel.queue_delete(dq_name(queue_name))
+    rabbitmq_broker.channel.queue_delete(xq_name(queue_name))
 
 
 @pytest.fixture
