@@ -215,19 +215,10 @@ class MessageProxy:
         return str(self._message)
 
     def __lt__(self, other):
-        return self._message < other._message
-
-    def __le__(self, other):
-        return self._message <= other._message
-
-    def __gt__(self, other):
-        return self._message > other._message
-
-    def __ge__(self, other):
-        return self._message >= other._message
+        # This can get called if two messages have the same priority
+        # in a queue.  If that's the case, we don't care which runs
+        # first.
+        return True
 
     def __eq__(self, other):
         return self._message == other._message
-
-    def __ne__(self, other):
-        return self._message != other._message
