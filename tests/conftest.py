@@ -5,9 +5,9 @@ import subprocess
 import uuid
 
 from dramatiq import Worker
-from dramatiq.brokers import StubBroker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
+from dramatiq.brokers.stub import StubBroker
 from dramatiq.common import dq_name, xq_name
 
 

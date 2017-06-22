@@ -1,2 +1,1 @@
-hiredis~=0.2
 redis~=2.10

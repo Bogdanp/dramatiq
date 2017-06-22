@@ -1,3 +1,5 @@
+hiredis  # Not included in the base distro because of PyPy
+
 -r common.txt
 -r rabbitmq.txt
 -r redis.txt
