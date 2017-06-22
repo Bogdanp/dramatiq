@@ -4,7 +4,11 @@ import logging
 import random
 import sys
 
+from dramatiq.brokers.redis import RedisBroker
+
 logger = logging.getLogger("example")
+broker = RedisBroker()
+dramatiq.set_broker(broker)
 
 
 @dramatiq.actor
