@@ -97,22 +97,21 @@ class RabbitmqBroker(Broker):
         })
 
     def enqueue(self, message, *, delay=None):
-        self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
-        self.emit_before("enqueue", message, delay)
-
         queue_name = message.queue_name
         properties = pika.BasicProperties(delivery_mode=2)
         if delay is not None:
             queue_name = dq_name(queue_name)
             message.options["eta"] = current_millis() + delay
 
+        self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
+        self.emit_before("enqueue", queue_name, message, delay)
         self.channel.publish(
             exchange="",
             routing_key=queue_name,
             body=message.encode(),
             properties=properties,
         )
-        self.emit_after("enqueue", message, delay)
+        self.emit_after("enqueue", queue_name, message, delay)
 
     def get_declared_queues(self):
         return self.queues.copy()

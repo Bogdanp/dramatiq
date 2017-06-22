@@ -34,15 +34,14 @@ class StubBroker(Broker):
         self.emit_after("declare_delay_queue", delayed_name)
 
     def enqueue(self, message, *, delay=None):
-        self.emit_before("enqueue", message, delay)
-
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
             message.options["eta"] = current_millis() + delay
 
+        self.emit_before("enqueue", queue_name, message, delay)
         self.queues[queue_name].put(message.encode())
-        self.emit_after("enqueue", message, delay)
+        self.emit_after("enqueue", queue_name, message, delay)
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be

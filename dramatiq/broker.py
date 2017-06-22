@@ -160,6 +160,8 @@ class Broker:
 
 class Consumer:
     """Consumers iterate over messages on a queue.
+
+    Consumers and their MessageProxies are *not* thread-safe.
     """
 
     def __iter__(self):  # pragma: no cover

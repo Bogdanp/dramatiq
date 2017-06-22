@@ -3,10 +3,12 @@ import redis
 import time
 
 from os import path
+from threading import Thread
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import current_millis, dq_name
+from ..common import compute_backoff, current_millis, dq_name, xq_name
 from ..errors import ConnectionClosed
+from ..logging import get_logger
 from ..message import Message
 
 
@@ -14,16 +16,29 @@ class RedisBroker(Broker):
     """A broker than can be used with Redis.
 
     Parameters:
+      middleware(list[Middleware])
+      namespace(str): The str with which to prefix all Redis keys.
+      requeue_deadline(int): The amount of time, in milliseconds,
+        messages are allowed to be unacked for.
+      requeue_interval(int): The interval, in milliseconds, at which
+        unacked messages should be checked.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
     """
 
-    def __init__(self, *, middleware=None, **parameters):
+    def __init__(self, *, middleware=None, namespace="dramatiq", requeue_deadline=86400000, requeue_interval=3600000, **parameters):  # noqa
         super().__init__(middleware=middleware)
 
+        self.namespace = namespace
+        self.requeue_deadline = requeue_deadline
+        self.requeue_interval = requeue_interval
         self.queues = set()
-        self.connection = redis.StrictRedis(**parameters)
-        self._load_scripts()
+        self.client = client = redis.StrictRedis(**parameters)
+        self.scripts = {name: client.register_script(script) for name, script in _scripts.items()}
+        self.watcher = _RedisWatcher(self, interval=requeue_interval)
+
+    def close(self):
+        self.watcher.stop()
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
         return _RedisConsumer(self, queue_name, prefetch, timeout)
@@ -39,16 +54,15 @@ class RedisBroker(Broker):
             self.emit_after("declare_delay_queue", delayed_name)
 
     def enqueue(self, message, *, delay=None):
-        self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, message.queue_name)
-        self.emit_before("enqueue", message, delay)
-
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
             message.options["eta"] = current_millis() + delay
 
+        self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
+        self.emit_before("enqueue", queue_name, message, delay)
         self._enqueue(queue_name, message.message_id, message.encode())
-        self.emit_after("enqueue", message, delay)
+        self.emit_after("enqueue", queue_name, message, delay)
 
     def get_declared_queues(self):
         return self.queues.copy()
@@ -61,35 +75,89 @@ class RedisBroker(Broker):
         Parameters:
           queue_name(str): The queue to wait on.
         """
-        successes = 0
-        while successes < 3:
+        while True:
             size = 0
-            for queue_name in (queue_name, dq_name(queue_name)):
-                size += self.connection.hlen(f"{queue_name}.msgs")
+            for name in (queue_name, dq_name(queue_name)):
+                size += self.client.hlen(self._add_namespace(f"{name}.msgs"))
 
             if size == 0:
-                successes += 1
+                return
 
             time.sleep(1)
 
-    def _load_scripts(self):
-        self.scripts = {name: self.connection.register_script(script) for name, script in _scripts.items()}
+    def _add_namespace(self, queue_name):
+        return f"{self.namespace}:{queue_name}"
 
     def _enqueue(self, queue_name, message_id, message_data):
-        self.scripts["enqueue"](args=[
-            queue_name, message_id, message_data,
-        ])
+        enqueue = self.scripts["enqueue"]
+        queue_name = self._add_namespace(queue_name)
+        enqueue(args=[queue_name, message_id, message_data])
 
-    def _fetch(self, queue_name, prefetch, timeout):
-        return self.scripts["fetch"](args=[queue_name, prefetch, timeout])
+    def _fetch(self, queue_name, prefetch):
+        fetch = self.scripts["fetch"]
+        # Sorted sets' scores are stored in Redis as doubles so we
+        # can't use milliseconds here.
+        timestamp = int(time.time())
+        queue_name = self._add_namespace(queue_name)
+        return fetch(args=[queue_name, prefetch, timestamp])
 
     def _ack(self, queue_name, message_id):
-        # TODO: Periodically scan for unacked messages.
-        return self.scripts["ack"](args=[queue_name, message_id])
+        ack = self.scripts["ack"]
+        queue_name = self._add_namespace(queue_name)
+        ack(args=[queue_name, message_id])
 
     def _nack(self, queue_name, message_id):
-        # TODO: Add dead letter queue.
-        return self.scripts["ack"](args=[queue_name, message_id])
+        # This is a little janky, but we can expect the naming
+        # convention not to change.  Additionally, users aren't
+        # allowed to have periods in their queues' names.
+        if queue_name.endswith(".DQ"):
+            xqueue_name = xq_name(queue_name[:-3])
+        else:
+            xqueue_name = xq_name(queue_name)
+
+        nack = self.scripts["nack"]
+        queue_name = self._add_namespace(queue_name)
+        xqueue_name = self._add_namespace(xqueue_name)
+        nack(args=[queue_name, xqueue_name, message_id])
+
+    def _requeue(self):
+        requeue = self.scripts["requeue"]
+        # Sorted sets' scores are stored in Redis as doubles so we
+        # can't use milliseconds here.  See _fetch.
+        timestamp = int(time.time()) - self.requeue_deadline / 1000
+        queue_names = list(self.get_declared_queues() | self.get_declared_delay_queues())
+        requeue(args=[timestamp], keys=queue_names)
+
+
+class _RedisWatcher(Thread):
+    """Runs the Redis requeue script on a timer in order to salvage
+    old unacked messages.
+    """
+
+    def __init__(self, broker, *, interval=3600000):
+        super().__init__(daemon=True)
+
+        self.logger = get_logger(__name__, type(self))
+        self.broker = broker
+        self.interval = interval
+        self.running = False
+        self.start()
+
+    def run(self):
+        self.logger.debug("Starting watcher...")
+        self.running = True
+        while self.running:
+            try:
+                self.logger.debug("Running requeue...")
+                self.broker._requeue()
+            except Exception:
+                self.logger.warning("Requeue failed.", exc_info=True)
+            finally:
+                time.sleep(self.interval / 1000)
+
+    def stop(self):
+        self.logger.debug("Stopping watcher...")
+        self.running = False
 
 
 class _RedisConsumer(Consumer):
@@ -104,37 +172,43 @@ class _RedisConsumer(Consumer):
 
     def __next__(self):
         try:
-            if not self.message_cache:
-                self.message_cache = self.broker._fetch(
-                    queue_name=self.queue_name,
-                    prefetch=self.prefetch,
-                    timeout=self.timeout,
-                )
+            while True:
+                try:
+                    # This is a micro-optimization so we try the fast
+                    # path first.  We assume there are messages in the
+                    # cache and if there aren't, we go down the slow
+                    # path of doing network IO.
+                    data = self.message_cache.pop(0)
+                    self.misses = 0
 
-            if self.message_cache:
-                self.misses = 0
-                data = self.message_cache.pop(0)
-                message = Message.decode(data)
-                return _RedisMessage(self.broker, message)
+                    message = Message.decode(data)
+                    return _RedisMessage(self.broker, self.queue_name, message)
+                except IndexError:
+                    self.message_cache = messages = self.broker._fetch(
+                        queue_name=self.queue_name,
+                        prefetch=self.prefetch,
+                    )
 
-            else:
-                time.sleep(min(self.timeout / 1000, 0.0125 * 2 ** self.misses))
-                self.misses = min(self.misses + 1, 4)
-                return None
+                    # TODO: Figure out a better way to do this than long polling.
+                    if not messages:
+                        self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
+                        time.sleep(backoff_ms / 1000)
+                        return None
         except redis.ConnectionError as e:
             raise ConnectionClosed(e)
 
 
 class _RedisMessage(MessageProxy):
-    def __init__(self, broker, message):
+    def __init__(self, broker, queue_name, message):
         super().__init__(message)
         self._broker = broker
+        self._queue_name = queue_name
 
     def acknowledge(self):
-        self._broker._ack(self.queue_name, self.message_id)
+        self._broker._ack(self._queue_name, self.message_id)
 
     def reject(self):
-        self._broker._nack(self.queue_name, self.message_id)
+        self._broker._nack(self._queue_name, self.message_id)
 
 
 _scripts = {}

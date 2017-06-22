@@ -1,5 +1,26 @@
 from queue import Empty
+from random import uniform
 from time import time
+
+
+def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_exponent=32):
+    """Compute an exponential backoff value based on some number of attempts.
+
+    Parameters:
+      attempts(int): The number of attempts there have been so far.
+      factor(int): The number of milliseconds to multiply each backoff by.
+      max_backoff(int): The max number of milliseconds to backoff by.
+      max_exponent(int): The maximum backoff exponent.
+
+    Returns:
+      tuple: The new number of attempts and the backoff in milliseconds.
+    """
+    exponent = min(attempts, max_exponent)
+    backoff = min(factor * 2 ** exponent, max_backoff)
+    if jitter:
+        backoff /= 2
+        backoff = int(backoff + uniform(0, backoff))
+    return attempts + 1, backoff
 
 
 def current_millis():

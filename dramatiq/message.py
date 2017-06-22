@@ -5,6 +5,10 @@ import uuid
 from collections import namedtuple
 
 
+def generate_unique_id():
+    return str(uuid.uuid4())
+
+
 class Message(namedtuple("Message", (
         "queue_name", "actor_name", "args", "kwargs",
         "options", "message_id", "message_timestamp",
@@ -25,7 +29,7 @@ class Message(namedtuple("Message", (
     def __new__(cls, *, queue_name, actor_name, args, kwargs, options, message_id=None, message_timestamp=None):
         return super().__new__(
             cls, queue_name, actor_name, tuple(args), kwargs, options,
-            message_id=message_id or str(uuid.uuid4()),
+            message_id=message_id or generate_unique_id(),
             message_timestamp=message_timestamp or int(time.time() * 1000),
         )
 
@@ -39,6 +43,11 @@ class Message(namedtuple("Message", (
         """Convert this message to a JSON bytestring.
         """
         return json.dumps(self._asdict(), separators=(",", ":")).encode("utf-8")
+
+    def new_id(self):
+        """Return a copy of this message with a new unique id.
+        """
+        return self._replace(message_id=generate_unique_id())
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)

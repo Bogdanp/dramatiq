@@ -37,7 +37,7 @@ def rabbitmq_broker():
 @pytest.fixture()
 def redis_broker():
     broker = RedisBroker()
-    broker.connection.flushall()
+    broker.client.flushall()
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker

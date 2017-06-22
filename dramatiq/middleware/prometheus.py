@@ -104,7 +104,7 @@ class Prometheus(Middleware):
     def after_reject(self, broker, message):
         self.total_rejected_messages.labels(message.queue_name, message.actor_name).inc()
 
-    def after_enqueue(self, broker, message, delay):
+    def after_enqueue(self, broker, queue_name, message, delay):
         if "retries" in message.options:
             self.total_retried_messages.labels(message.queue_name, message.actor_name).inc()
 
