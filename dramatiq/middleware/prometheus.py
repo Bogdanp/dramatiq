@@ -86,6 +86,8 @@ class Prometheus(Middleware):
             "dramatiq_message_duration_milliseconds",
             "The time spent processing messages.",
             ["queue_name", "actor_name"],
+            buckets=(5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,
+                     7500, 10000, 30000, 60000, 600000, 900000, float("inf")),
             registry=registry,
         )
 
