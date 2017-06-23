@@ -8,12 +8,13 @@ import re
 import requests
 import sys
 
+from contextlib import closing
 from threading import local
 
 logger = logging.getLogger("example")
 memcache_client = pylibmc.Client(["localhost"], binary=True)
 memcache_pool = pylibmc.ThreadMappedPool(memcache_client)
-anchor_re = re.compile(r'<a href="([^"]+)">')
+anchor_re = re.compile(rb'<a href="([^"]+)">')
 state = local()
 
 if os.getenv("REDIS") == "1":
@@ -39,15 +40,20 @@ def crawl(url):
             return
 
     logger.info("Crawling %r...", url)
-    response = get_session().get(url, timeout=(3.05, 5))
     matches = 0
-    for match in anchor_re.finditer(response.text):
-        anchor = match.group(1)
-        if anchor.startswith("http://") or anchor.startswith("https://"):
-            crawl.send(anchor)
-            matches += 1
+    session = get_session()
+    with closing(session.get(url, timeout=(3.05, 5), stream=True)) as response:
+        if not response.headers.get("content-type", "").startswith("text/html"):
+            logger.warning("Skipping URL %r since it's not HTML.", url)
+            return
 
-    logger.info("Done crawling %r. Found %d anchors.", url, matches)
+        for match in anchor_re.finditer(response.content):
+            anchor = match.group(1).decode("utf-8")
+            if anchor.startswith("http://") or anchor.startswith("https://"):
+                crawl.send(anchor)
+                matches += 1
+
+        logger.info("Done crawling %r. Found %d anchors.", url, matches)
 
 
 def main(args):
