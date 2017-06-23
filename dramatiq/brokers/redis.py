@@ -194,7 +194,7 @@ class _RedisConsumer(Consumer):
                     return _RedisMessage(self, message)
                 except IndexError:
                     # If there are fewer messages currently being
-                    # processed than we're allowed to prefect,
+                    # processed than we're allowed to prefetch,
                     # prefetch up to that number of messages.
                     messages = []
                     if self.message_refc < self.prefetch:
