@@ -163,12 +163,21 @@ class _RedisWatcher(Thread):
 class _RedisConsumer(Consumer):
     def __init__(self, broker, queue_name, prefetch, timeout):
         self.message_cache = []
+        self.message_refc = 0
         self.misses = 0
 
         self.broker = broker
         self.queue_name = queue_name
         self.prefetch = prefetch
         self.timeout = timeout
+
+    def acknowledge(self, message_id):
+        self.broker._ack(self.queue_name, message_id)
+        self.message_refc -= 1
+
+    def reject(self, message_id):
+        self.broker._nack(self.queue_name, message_id)
+        self.message_refc -= 1
 
     def __next__(self):
         try:
@@ -182,33 +191,42 @@ class _RedisConsumer(Consumer):
                     self.misses = 0
 
                     message = Message.decode(data)
-                    return _RedisMessage(self.broker, self.queue_name, message)
+                    return _RedisMessage(self, message)
                 except IndexError:
-                    self.message_cache = messages = self.broker._fetch(
-                        queue_name=self.queue_name,
-                        prefetch=self.prefetch,
-                    )
+                    # If there are fewer messages currently being
+                    # processed than we're allowed to prefect,
+                    # prefetch up to that number of messages.
+                    messages = []
+                    if self.message_refc < self.prefetch:
+                        self.message_cache = messages = self.broker._fetch(
+                            queue_name=self.queue_name,
+                            prefetch=self.prefetch - self.message_refc,
+                        )
 
-                    # TODO: Figure out a better way to do this than long polling.
+                    # Because we didn't get any messages, we should
+                    # progressively long poll up to the idle timeout.
                     if not messages:
                         self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
                         time.sleep(backoff_ms / 1000)
                         return None
+
+                    # Since we received some number of messages, we
+                    # have to keep track of them.
+                    self.message_refc += len(messages)
         except redis.ConnectionError as e:
             raise ConnectionClosed(e)
 
 
 class _RedisMessage(MessageProxy):
-    def __init__(self, broker, queue_name, message):
+    def __init__(self, consumer, message):
         super().__init__(message)
-        self._broker = broker
-        self._queue_name = queue_name
+        self._consumer = consumer
 
     def acknowledge(self):
-        self._broker._ack(self._queue_name, self.message_id)
+        self._consumer.acknowledge(self.message_id)
 
     def reject(self):
-        self._broker._nack(self._queue_name, self.message_id)
+        self._consumer.reject(self.message_id)
 
 
 _scripts = {}
