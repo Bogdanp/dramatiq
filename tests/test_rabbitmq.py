@@ -1,5 +1,6 @@
 import dramatiq
 
+from dramatiq import Message
 from dramatiq.common import current_millis
 
 
@@ -132,3 +133,25 @@ def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_random_
     # I expect the message to get moved to the dead letter queue
     _, _, xq_count = rabbitmq_broker.get_queue_message_counts(rabbitmq_random_queue)
     assert xq_count == 1
+
+
+def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(
+        rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
+    # Given that I have a broker without actors
+    # If I send it a message
+    message = Message(
+        queue_name=rabbitmq_random_queue,
+        actor_name="some-actor",
+        args=(), kwargs={},
+        options={},
+    )
+    rabbitmq_broker.declare_queue(rabbitmq_random_queue)
+    rabbitmq_broker.enqueue(message)
+
+    # Then join on the queue
+    rabbitmq_broker.join(rabbitmq_random_queue)
+    rabbitmq_worker.join()
+
+    # I expect the message to end up on the dead letter queue
+    _, _, dead = rabbitmq_broker.get_queue_message_counts(rabbitmq_random_queue)
+    assert dead == 1

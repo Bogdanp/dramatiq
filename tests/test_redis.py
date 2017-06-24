@@ -1,6 +1,7 @@
 import dramatiq
 import time
 
+from dramatiq import Message
 from dramatiq.common import current_millis, xq_name
 
 
@@ -165,7 +166,7 @@ def test_redis_messages_can_be_dead_lettered(redis_broker, redis_worker):
     assert dead_ids
 
 
-def test_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker):
+def test_redis_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker):
     # Given that I have an actor that always fails
     @dramatiq.actor(max_retries=0)
     def do_work():
@@ -184,3 +185,25 @@ def test_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker):
     dead_queue_name = f"dramatiq:{xq_name(do_work.queue_name)}"
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert not dead_ids
+
+
+def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, redis_worker):
+    # Given that I have a broker without actors
+    # If I send it a message
+    message = Message(
+        queue_name="some-queue",
+        actor_name="some-actor",
+        args=(), kwargs={},
+        options={},
+    )
+    redis_broker.declare_queue("some-queue")
+    redis_broker.enqueue(message)
+
+    # Then join on the queue
+    redis_broker.join("some-queue")
+    redis_worker.join()
+
+    # I expect the message to end up on the dead letter queue
+    dead_queue_name = f"dramatiq:{xq_name('some-queue')}"
+    dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
+    assert message.message_id.encode("utf-8") in dead_ids
