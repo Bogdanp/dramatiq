@@ -30,6 +30,7 @@ class RedisBroker(Broker):
         super().__init__(middleware=middleware)
 
         self.namespace = namespace
+        self.dead_message_ttl = 86400 * 7 * 1000
         self.requeue_deadline = requeue_deadline
         self.requeue_interval = requeue_interval
         self.queues = set()
@@ -95,9 +96,7 @@ class RedisBroker(Broker):
 
     def _fetch(self, queue_name, prefetch):
         fetch = self.scripts["fetch"]
-        # Sorted sets' scores are stored in Redis as doubles so we
-        # can't use milliseconds here.
-        timestamp = int(time.time())
+        timestamp = current_millis()
         queue_name = self._add_namespace(queue_name)
         return fetch(args=[queue_name, prefetch, timestamp])
 
@@ -115,24 +114,31 @@ class RedisBroker(Broker):
         else:
             xqueue_name = xq_name(queue_name)
 
+        # TODO: Clean up dead messages.
         nack = self.scripts["nack"]
+        timestamp = current_millis()
         queue_name = self._add_namespace(queue_name)
         xqueue_name = self._add_namespace(xqueue_name)
-        nack(args=[queue_name, xqueue_name, message_id])
+        nack(args=[queue_name, xqueue_name, message_id, timestamp])
 
     def _requeue(self):
         requeue = self.scripts["requeue"]
-        # Sorted sets' scores are stored in Redis as doubles so we
-        # can't use milliseconds here.  See _fetch.
-        timestamp = int(time.time()) - self.requeue_deadline / 1000
+        timestamp = current_millis() - self.requeue_deadline
         queue_names = self.get_declared_queues() | self.get_declared_delay_queues()
         queue_names = [self._add_namespace(queue_name) for queue_name in queue_names]
         requeue(args=[timestamp], keys=queue_names)
 
+    def _cleanup(self):
+        cleanup = self.scripts["cleanup"]
+        timestamp = current_millis() - self.dead_message_ttl
+        queue_names = map(xq_name, self.get_declared_queues())
+        queue_names = [self._add_namespace(queue_name) for queue_name in queue_names]
+        cleanup(args=[timestamp], keys=queue_names)
+
 
 class _RedisWatcher(Thread):
-    """Runs the Redis requeue script on a timer in order to salvage
-    old unacked messages.
+    """Runs the Redis requeue and cleanup scripts on a timer in order
+    to salvage unacked messages and drop old dead-lettered messages.
     """
 
     def __init__(self, broker, *, interval=3600000):
@@ -150,8 +156,12 @@ class _RedisWatcher(Thread):
         while self.running:
             try:
                 time.sleep(self.interval / 1000)
+
                 self.logger.debug("Running requeue...")
                 self.broker._requeue()
+
+                self.logger.debug("Running cleanup...")
+                self.broker._cleanup()
             except Exception:
                 self.logger.warning("Requeue failed.", exc_info=True)
 
@@ -172,6 +182,9 @@ class _RedisConsumer(Consumer):
         self.timeout = timeout
 
     def acknowledge(self, message_id):
+        # The current queue might be different from message.queue_name
+        # if the message has been delayed so we want to ack on the
+        # current queue.
         self.broker._ack(self.queue_name, message_id)
         self.message_refc -= 1
 

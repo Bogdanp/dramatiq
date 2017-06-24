@@ -1,7 +1,7 @@
 import dramatiq
 import time
 
-from dramatiq.common import current_millis
+from dramatiq.common import current_millis, xq_name
 
 
 def test_redis_actors_can_be_sent_messages(redis_broker, redis_worker):
@@ -144,3 +144,43 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     queued = redis_broker.client.lrange(f"dramatiq:{queue_name}", 0, 1)
     assert unacked == message_ids[1:]
     assert queued == message_ids[:1]
+
+
+def test_redis_messages_can_be_dead_lettered(redis_broker, redis_worker):
+    # Given that I have an actor that always fails
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise RuntimeError("failed")
+
+    # If I send it a message
+    do_work.send()
+
+    # And then join on its queue
+    redis_broker.join(do_work.queue_name)
+    redis_worker.join()
+
+    # I expect it to end up in the dead letter queue
+    dead_queue_name = f"dramatiq:{xq_name(do_work.queue_name)}"
+    dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
+    assert dead_ids
+
+
+def test_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker):
+    # Given that I have an actor that always fails
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise RuntimeError("failed")
+
+    # If I send it a message
+    do_work.send()
+
+    # And then join on its queue
+    redis_broker.join(do_work.queue_name)
+    redis_worker.join()
+
+    # I expect running the cleanup script to remove it
+    redis_broker.dead_message_ttl = 0
+    redis_broker._cleanup()
+    dead_queue_name = f"dramatiq:{xq_name(do_work.queue_name)}"
+    dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
+    assert not dead_ids
