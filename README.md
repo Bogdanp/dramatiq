@@ -6,8 +6,8 @@
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.defn.io)
 
-**dramatiq** is a task queueing library for Python with a focus on
-simplicity, reliability and performance.
+**dramatiq** is a distributed task processing library for Python with
+a focus on simplicity, reliability and performance.
 
 Here's what it looks like:
 
@@ -30,6 +30,10 @@ send_welcome_email.send(new_user.id)
 ## Installation
 
     pip install -U dramatiq[rabbitmq, watch]
+
+or
+
+    pip install -U dramatiq[redis, watch]
 
 ## Documentation
 
