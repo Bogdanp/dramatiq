@@ -106,17 +106,9 @@ class RedisBroker(Broker):
         ack(args=[queue_name, message_id])
 
     def _nack(self, queue_name, message_id):
-        # This is a little janky, but we can expect the naming
-        # convention not to change.  Additionally, users aren't
-        # allowed to have periods in their queues' names.
-        if queue_name.endswith(".DQ"):
-            xqueue_name = xq_name(queue_name[:-3])
-        else:
-            xqueue_name = xq_name(queue_name)
-
-        # TODO: Clean up dead messages.
         nack = self.scripts["nack"]
         timestamp = current_millis()
+        xqueue_name = xq_name(queue_name)
         queue_name = self._add_namespace(queue_name)
         xqueue_name = self._add_namespace(xqueue_name)
         nack(args=[queue_name, xqueue_name, message_id, timestamp])

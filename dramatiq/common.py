@@ -67,6 +67,10 @@ def dq_name(queue_name):
 
 
 def xq_name(queue_name):
-    """Returns the dead letter queue name for a given queue.
+    """Returns the dead letter queue name for a given queue.  If the
+    given queue name happens to belong to a delay queue, the dead
+    letter queue name of the original queue is generated.
     """
+    if queue_name.endswith(".DQ"):
+        queue_name = queue_name[:-3]
     return f"{queue_name}.XQ"
