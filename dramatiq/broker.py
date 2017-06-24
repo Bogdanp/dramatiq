@@ -53,7 +53,6 @@ class Broker:
 
         self.actor_options = set()
         self.middleware = []
-        self.middleware_hooks = defaultdict(list)
 
         middleware = middleware or [m() for m in default_middleware]
         for m in middleware:
