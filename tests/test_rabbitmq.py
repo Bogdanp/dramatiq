@@ -180,6 +180,7 @@ def test_rabbitmq_broker_reconnects_after_enqueue_failure(rabbitmq_broker, rabbi
     do_nothing.send()
 
 
+@pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
 def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
     # Given that I have an attempts database
     attempts = []
@@ -194,10 +195,10 @@ def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rab
     do_work.send_with_options(delay=1000)
 
     # If I stop the RabbitMQ app
-    assert os.system("rabbitmqctl stop_app") == 0
+    assert os.system("rabbitmqctl stop_app") >> 8 == 0
 
     # Then start the app back up
-    assert os.system("rabbitmqctl start_app") == 0
+    assert os.system("rabbitmqctl start_app") >> 8 == 0
 
     # And join on the queue
     del rabbitmq_broker.channel

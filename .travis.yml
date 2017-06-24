@@ -14,6 +14,6 @@ before_install:
 install:
   - pip install codeclimate-test-reporter tox-travis
 script:
-  - tox
+  - TRAVIS=1 tox
 after_success:
   - CODECLIMATE_REPO_TOKEN=27f6c9909e005594354ce88fdddb48b12205bb038725d7c94581bad3b751e15c codeclimate-test-reporter
