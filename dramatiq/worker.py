@@ -164,20 +164,34 @@ class _ConsumerThread(Thread):
                 if message is not None:
                     self.handle_message(message)
 
-                self.handle_idle()
+                self.handle_acks()
                 if not self.running:
                     break
-        except ConnectionClosed:
-            if self.running:
-                delay = min(0.5 * attempts ** 2, 10)
-                self.logger.warning("Connection error encountered. Waiting for %.02f before restarting...", delay)
+        except Exception as e:
+            # Avoid leaving any open file descriptors around.
+            try:
+                self.close()
+            except Exception:
+                self.logger.error("Could not close consumer.", exc_info=True)
 
-                time.sleep(delay)
-                return self.run(attempts=attempts + 1)
+            # The consumer must retry itself with exponential backoff
+            # assuming it hasn't been shut down.
+            if self.running:
+                attempts, backoff_ms = compute_backoff(attempts, max_backoff=60000)
+                self.logger.error(
+                    "Error encountered. Waiting for %d milliseconds before restarting...",
+                    backoff_ms, exc_info=True,
+                )
+
+                time.sleep(backoff_ms / 1000)
+                return self.run(attempts=attempts)
 
         self.logger.debug("Consumer thread stopped.")
 
-    def handle_idle(self):
+    def handle_acks(self):
+        """Perform any pending (n)acks and enqueue any scheduled
+        messages whose eta has passed.
+        """
         for message in iter_queue(self.acks_queue):
             if message.failed:
                 self.logger.debug("Rejecting message %r.", message.message_id)
@@ -246,7 +260,8 @@ class _ConsumerThread(Thread):
     def close(self):
         """Close this consumer thread and its underlying connection.
         """
-        self.consumer.close()
+        if self.consumer:
+            self.consumer.close()
 
 
 class _WorkerThread(Thread):

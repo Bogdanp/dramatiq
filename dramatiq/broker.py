@@ -58,11 +58,17 @@ class Broker:
 
     def emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
-            getattr(middleware, f"before_{signal}")(self, *args, **kwargs)
+            try:
+                getattr(middleware, f"before_{signal}")(self, *args, **kwargs)
+            except Exception:
+                self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
 
     def emit_after(self, signal, *args, **kwargs):
         for middleware in reversed(self.middleware):
-            getattr(middleware, f"after_{signal}")(self, *args, **kwargs)
+            try:
+                getattr(middleware, f"after_{signal}")(self, *args, **kwargs)
+            except Exception:
+                self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
     def add_middleware(self, middleware):
         """Add a middleware object to this broker.
