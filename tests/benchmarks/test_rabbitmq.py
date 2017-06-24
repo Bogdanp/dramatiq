@@ -1,10 +1,7 @@
 import dramatiq
 import logging
 
-from ..decorators import slow
 
-
-@slow
 def test_rabbitmq_process_10k_messages(benchmark, rabbitmq_broker, rabbitmq_random_queue):
     @dramatiq.actor(queue_name=rabbitmq_random_queue)
     def throughput():

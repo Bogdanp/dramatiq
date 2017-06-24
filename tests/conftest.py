@@ -16,10 +16,6 @@ logging.basicConfig(level=logging.DEBUG, format=logfmt)
 logging.getLogger("pika").setLevel(logging.WARN)
 
 
-def pytest_addoption(parser):
-    parser.addoption("--with-slow-tests", action="store_true", help="run slow tests")
-
-
 @pytest.fixture()
 def stub_broker():
     broker = StubBroker()
