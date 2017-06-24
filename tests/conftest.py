@@ -16,6 +16,10 @@ logging.basicConfig(level=logging.DEBUG, format=logfmt)
 logging.getLogger("pika").setLevel(logging.WARN)
 
 
+def pytest_addoption(parser):
+    parser.addoption("--with-slow-tests", action="store_true", help="run slow tests")
+
+
 @pytest.fixture()
 def stub_broker():
     broker = StubBroker()
@@ -41,6 +45,7 @@ def redis_broker():
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
+    broker.client.flushall()
     broker.close()
 
 

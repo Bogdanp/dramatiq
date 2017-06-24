@@ -149,12 +149,11 @@ class _RedisWatcher(Thread):
         self.running = True
         while self.running:
             try:
+                time.sleep(self.interval / 1000)
                 self.logger.debug("Running requeue...")
                 self.broker._requeue()
             except Exception:
                 self.logger.warning("Requeue failed.", exc_info=True)
-            finally:
-                time.sleep(self.interval / 1000)
 
     def stop(self):
         self.logger.debug("Stopping watcher...")

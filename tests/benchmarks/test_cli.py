@@ -2,6 +2,8 @@ import dramatiq
 
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
+from ..decorators import slow
+
 broker = RabbitmqBroker()
 
 
@@ -15,6 +17,7 @@ def sum_all(xs):
     sum(xs)
 
 
+@slow
 def test_rabbitmq_process_100k_messages_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 100k messages into RabbitMQ
     def setup():
@@ -27,6 +30,7 @@ def test_rabbitmq_process_100k_messages_with_cli(benchmark, info_logging, start_
     benchmark.pedantic(broker.join, args=(throughput.queue_name,), setup=setup)
 
 
+@slow
 def test_rabbitmq_process_100k_sums_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 100k messages into RabbitMQ
     def setup():

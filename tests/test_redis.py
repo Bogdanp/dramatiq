@@ -141,6 +141,6 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
 
     # I expect only the first message to have been moved
     unacked = redis_broker.client.zrangebyscore(f"dramatiq:{queue_name}.acks", 0, "+inf")
-    queued = redis_broker.client.lrange(f"dramatiq:{queue_name}", 0, 0)
+    queued = redis_broker.client.lrange(f"dramatiq:{queue_name}", 0, 1)
     assert unacked == message_ids[1:]
     assert queued == message_ids[:1]
