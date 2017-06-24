@@ -223,7 +223,7 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
     runs = []
 
     # And an actor whose messages have an age limit
-    @dramatiq.actor(age_limit=100)
+    @dramatiq.actor(max_age=100)
     def do_work():
         runs.append(1)
 

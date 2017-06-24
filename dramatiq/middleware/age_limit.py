@@ -8,24 +8,26 @@ class AgeLimit(Middleware):
     too long.
 
     Parameters:
-      age_limit(int): The default message age limit in millseconds.
+      max_age(int): The default message age limit in millseconds.
         Defaults to ``None``, meaning that messages can exist
         indefinitely.
     """
 
-    def __init__(self, *, age_limit=None):
+    def __init__(self, *, max_age=None):
         self.logger = get_logger(__name__, type(self))
-        self.age_limit = None
+        self.max_age = None
 
     @property
     def actor_options(self):
-        return set(["age_limit"])
+        return set(["max_age"])
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
-        age_limit = actor.options.get("age_limit", self.age_limit)
-        if not age_limit:
+        max_age = actor.options.get("max_age", self.max_age)
+        if not max_age:
             return
 
-        if current_millis() - message.message_timestamp >= age_limit:
+        if current_millis() - message.message_timestamp >= max_age:
+            self.logger.warning("Message %r has exceeded its age limit.", message.message_id)
             message.fail()
+            return
