@@ -22,7 +22,7 @@ DB_PATH = os.getenv("dramatiq_prom_db", "/tmp/dramatiq-prometheus")
 DEFAULT_HTTP_HOST = os.getenv("dramatiq_prom_host", "localhost")
 
 #: The default HTTP port the exposition server should listen on.
-DEFAULT_HTTP_PORT = os.getenv("dramatiq_prom_port", "9191")
+DEFAULT_HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
 
 
 class Prometheus(Middleware):
