@@ -18,6 +18,12 @@ LOCK_PATH = os.getenv("dramatiq_prom_lock", "/tmp/dramatiq-prometheus.lock")
 #: cleared before every run.
 DB_PATH = os.getenv("dramatiq_prom_db", "/tmp/dramatiq-prometheus")
 
+#: The default HTTP host the exposition server should bind to.
+DEFAULT_HTTP_HOST = os.getenv("dramatiq_prom_host", "localhost")
+
+#: The default HTTP port the exposition server should listen on.
+DEFAULT_HTTP_PORT = os.getenv("dramatiq_prom_port", "9191")
+
 
 class Prometheus(Middleware):
     """A middleware that exports stats via Prometheus_.
@@ -29,7 +35,7 @@ class Prometheus(Middleware):
     .. _Prometheus: https://prometheus.io
     """
 
-    def __init__(self, *, http_host="localhost", http_port=9191):
+    def __init__(self, *, http_host=DEFAULT_HTTP_HOST, http_port=DEFAULT_HTTP_PORT):
         self.logger = get_logger(__name__, type(self))
         self.http_host = http_host
         self.http_port = http_port
@@ -65,7 +71,7 @@ class Prometheus(Middleware):
         )
         self.total_rejected_messages = prom.Counter(
             "dramatiq_message_rejects_total",
-            "The total number of rejected messages (moved to the DLQ).",
+            "The total number of dead-lettered messages.",
             ["queue_name", "actor_name"],
             registry=registry,
         )
@@ -104,15 +110,18 @@ class Prometheus(Middleware):
         self.server.stop()
 
     def after_nack(self, broker, message):
-        self.total_rejected_messages.labels(message.queue_name, message.actor_name).inc()
+        labels = (message.queue_name, message.actor_name)
+        self.total_rejected_messages.labels(*labels).inc()
 
     def after_enqueue(self, broker, queue_name, message, delay):
         if "retries" in message.options:
-            self.total_retried_messages.labels(message.queue_name, message.actor_name).inc()
+            labels = (message.queue_name, message.actor_name)
+            self.total_retried_messages.labels(*labels).inc()
 
     def before_delay_message(self, broker, message):
+        labels = (message.queue_name, message.actor_name)
         self.delayed_messages.add(message.message_id)
-        self.inprogress_delayed_messages.labels(message.queue_name, message.actor_name).inc()
+        self.inprogress_delayed_messages.labels(*labels).inc()
 
     def before_process_message(self, broker, message):
         labels = (message.queue_name, message.actor_name)
