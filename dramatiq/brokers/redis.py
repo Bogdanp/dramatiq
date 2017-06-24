@@ -39,12 +39,30 @@ class RedisBroker(Broker):
         self.watcher = _RedisWatcher(self, interval=requeue_interval)
 
     def close(self):
+        """Close this broker.
+        """
         self.watcher.stop()
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
+        """Create a new consumer for a queue.
+
+        Parameters:
+          queue_name(str): The queue to consume.
+          prefetch(int): The number of messages to prefetch.
+          timeout(int): The idle timeout in milliseconds.
+
+        Returns:
+          Consumer: A consumer that retrieves messages from Redis.
+        """
         return _RedisConsumer(self, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):
+        """Declare a queue.  Has no effect if a queue with the given
+        name has already been declared.
+
+        Parameters:
+          queue_name(str): The name of the new queue.
+        """
         if queue_name not in self.queues:
             self.emit_before("declare_queue", queue_name)
             self.queues.add(queue_name)
@@ -55,6 +73,13 @@ class RedisBroker(Broker):
             self.emit_after("declare_delay_queue", delayed_name)
 
     def enqueue(self, message, *, delay=None):
+        """Enqueue a message.
+
+        Parameters:
+          message(Message): The message to enqueue.
+          delay(int): The minimum amount of time, in milliseconds, to
+            delay the message by.
+        """
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
@@ -67,6 +92,12 @@ class RedisBroker(Broker):
         self.emit_after("enqueue", message, delay)
 
     def get_declared_queues(self):
+        """Get all declared queues.
+
+        Returns:
+          set: A set containing the names of the queues declared so
+          far on this broker.
+        """
         return self.queues.copy()
 
     def join(self, queue_name):

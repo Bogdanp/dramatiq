@@ -27,14 +27,14 @@ Brokers
 .. autoclass:: Broker
    :members:
 .. autoclass:: Consumer
-   :members:  __iter__, __next__, close
+   :members:  __iter__, __next__, ack, nack, close
 .. autoclass:: MessageProxy
-   :members:
-.. autoclass:: dramatiq.brokers.StubBroker
    :members:
 .. autoclass:: dramatiq.brokers.rabbitmq.RabbitmqBroker
    :members:
-.. autoclass:: dramatiq.brokers.rabbitmq.RedisBroker
+.. autoclass:: dramatiq.brokers.redis.RedisBroker
+   :members:
+.. autoclass:: dramatiq.brokers.stub.StubBroker
    :members:
 
 

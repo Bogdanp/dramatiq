@@ -8,7 +8,7 @@ _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_-]*")
 
 
 def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=None, **options):
-    """Declare an Actor.
+    """Declare an actor.
 
     Examples:
 
@@ -45,7 +45,7 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
         middleware that you use.  See ``get_broker().actor_options``.
 
     Returns:
-      Actor
+      Actor: The decorated function.
     """
     def decorator(fn):
         nonlocal actor_name, broker

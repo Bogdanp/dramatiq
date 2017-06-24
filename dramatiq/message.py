@@ -16,8 +16,8 @@ class Message(namedtuple("Message", (
     """Encapsulates metadata about messages being sent to individual actors.
 
     Parameters:
-      queue_name(str): The name of the queue the message should be sent on.
-      actor_name(str): The name of the actor that should receive the message.
+      queue_name(str): The name of the queue the message belogns to.
+      actor_name(str): The name of the actor that will receive the message.
       args(tuple): Positional arguments that are passed to the actor.
       kwargs(dict): Keyword arguments that are passed to the actor.
       options(dict): Arbitrary options passed to the broker and middleware.
@@ -35,7 +35,7 @@ class Message(namedtuple("Message", (
 
     @classmethod
     def decode(cls, data):
-        """Convert a bytestring to a Message.
+        """Convert a bytestring to a message.
         """
         return cls(**json.loads(data.decode("utf-8")))
 

@@ -271,7 +271,7 @@ class _ConsumerThread(Thread):
             if self.consumer:
                 self.consumer.close()
         except Exception:
-            self.logger.error("Could not close consumer.", exc_info=True)
+            self.logger.debug("Could not close consumer.", exc_info=True)
 
 
 class _WorkerThread(Thread):

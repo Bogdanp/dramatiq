@@ -8,6 +8,10 @@ from ..message import Message
 
 class StubBroker(Broker):
     """A broker that can be used within unit tests.
+
+    Attributes:
+      dead_letters(list[Message]): Contains the dead-lettered messages
+        for all defined queues.
     """
 
     def __init__(self, middleware=None):
@@ -16,32 +20,62 @@ class StubBroker(Broker):
         self.dead_letters = []
 
     def consume(self, queue_name, prefetch=1, timeout=100):
+        """Create a new consumer for a queue.
+
+        Parameters:
+          queue_name(str): The queue to consume.
+          prefetch(int): The number of messages to prefetch.
+          timeout(int): The idle timeout in milliseconds.
+
+        Raises:
+          QueueNotFound: If the queue hasn't been declared.
+
+        Returns:
+          Consumer: A consumer that retrieves messages from Redis.
+        """
         try:
-            return _StubConsumer(
-                self.queues[queue_name],
-                self.dead_letters,
-                timeout
-            )
+            return _StubConsumer(self.queues[queue_name], self.dead_letters, timeout)
         except KeyError:
             raise QueueNotFound(queue_name)
 
     def declare_queue(self, queue_name):
-        self.emit_before("declare_queue", queue_name)
-        self.queues[queue_name] = Queue()
-        self.queues[xq_name(queue_name)] = Queue()
-        self.emit_after("declare_queue", queue_name)
+        """Declare a queue.  Has no effect if a queue with the given
+        name has already been declared.
 
-        delayed_name = dq_name(queue_name)
-        self.queues[delayed_name] = Queue()
-        self.delay_queues.add(delayed_name)
-        self.emit_after("declare_delay_queue", delayed_name)
+        Parameters:
+          queue_name(str): The name of the new queue.
+        """
+        if queue_name not in self.queues:
+            self.emit_before("declare_queue", queue_name)
+            self.queues[queue_name] = Queue()
+            self.queues[xq_name(queue_name)] = Queue()
+            self.emit_after("declare_queue", queue_name)
+
+            delayed_name = dq_name(queue_name)
+            self.queues[delayed_name] = Queue()
+            self.delay_queues.add(delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name)
 
     def enqueue(self, message, *, delay=None):
+        """Enqueue a message.
+
+        Parameters:
+          message(Message): The message to enqueue.
+          delay(int): The minimum amount of time, in milliseconds, to
+            delay the message by.
+
+        Raises:
+          QueueNotFound: If the queue the message is being enqueued on
+            doesn't exist.
+        """
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
             message = message._replace(queue_name=queue_name)
             message.options["eta"] = current_millis() + delay
+
+        if queue_name not in self.queues:
+            raise QueueNotFound(queue_name)
 
         self.emit_before("enqueue", message, delay)
         self.queues[queue_name].put(message.encode())
@@ -52,11 +86,11 @@ class StubBroker(Broker):
         processed.  This method is only meant to be used in tests
         to wait for all the messages in a queue to be processed.
 
-        Raises:
-          QueueNotFound: If the given queue was never declared.
-
         Parameters:
           queue_name(str): The queue to wait on.
+
+        Raises:
+          QueueNotFound: If the given queue was never declared.
         """
         try:
             for queue_name in (queue_name, dq_name(queue_name)):

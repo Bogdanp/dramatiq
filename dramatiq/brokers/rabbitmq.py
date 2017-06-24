@@ -1,5 +1,6 @@
 import pika
 
+from itertools import chain
 from threading import local
 
 from ..broker import Broker, Consumer, MessageProxy
@@ -27,11 +28,15 @@ class RabbitmqBroker(Broker):
 
         self.parameters = parameters
         self.connections = set()
+        self.channels = set()
         self.queues = set()
         self.state = local()
 
     @property
     def connection(self):
+        """The :class:`pika.BlockingConnection` for the current
+        thread.  This property may change without notice.
+        """
         connection = getattr(self.state, "connection", None)
         if connection is None:
             connection = self.state.connection = pika.BlockingConnection(
@@ -50,32 +55,64 @@ class RabbitmqBroker(Broker):
 
     @property
     def channel(self):
+        """The :class:`pika.BlockingChannel` for the current thread.
+        This property may change without notice.
+        """
         channel = getattr(self.state, "channel", None)
         if channel is None:
             channel = self.state.channel = self.connection.channel()
+            self.channels.add(channel)
         return channel
 
     @channel.deleter
     def channel(self):
         try:
+            channel = self.state.channel
             del self.state.channel
+            self.channels.remove(channel)
         except AttributeError:
             pass
 
     def close(self):
-        self.logger.debug("Closing connections...")
-        for connection in self.connections:
+        """Close all open RabbitMQ connections.
+        """
+        self.logger.debug("Closing channels and connections...")
+        for channel_or_conn in chain(self.channels, self.connections):
             try:
-                if connection.is_open:
-                    connection.close()
+                channel_or_conn.close()
+
+            except (pika.exceptions.ChannelClosed,
+                    pika.exceptions.ConnectionClosed):
+                pass
+
             except Exception:  # pragma: no cover
-                self.logger.debug("Encountered an error while closing connection.", exc_info=True)
-        self.logger.debug("Connections closed.")
+                self.logger.debug("Encountered an error while closing %r.", channel_or_conn, exc_info=True)
+        self.logger.debug("Channels and connections closed.")
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
+        """Create a new consumer for a queue.
+
+        Parameters:
+          queue_name(str): The queue to consume.
+          prefetch(int): The number of messages to prefetch.
+          timeout(int): The idle timeout in milliseconds.
+
+        Returns:
+          Consumer: A consumer that retrieves messages from RabbitMQ.
+        """
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):
+        """Declare a queue.  Has no effect if a queue with the given
+        name already exists.
+
+        Parameters:
+          queue_name(str): The name of the new queue.
+
+        Raises:
+          ConnectionClosed: If the underlying channel or connection
+          has been closed.
+        """
         try:
             if queue_name not in self.queues:
                 self.emit_before("declare_queue", queue_name)
@@ -117,6 +154,17 @@ class RabbitmqBroker(Broker):
         })
 
     def enqueue(self, message, *, delay=None):
+        """Enqueue a message.
+
+        Parameters:
+          message(Message): The message to enqueue.
+          delay(int): The minimum amount of time, in milliseconds, to
+            delay the message by.
+
+        Raises:
+          ConnectionClosed: If the underlying channel or connection
+          has been closed.
+        """
         queue_name = message.queue_name
         properties = pika.BasicProperties(delivery_mode=2)
         if delay is not None:
@@ -143,6 +191,12 @@ class RabbitmqBroker(Broker):
             raise ConnectionClosed(e) from None
 
     def get_declared_queues(self):
+        """Get all declared queues.
+
+        Returns:
+          set: A set containing the names of the queues declared so
+          far on this broker.
+        """
         return self.queues.copy()
 
     def get_queue_message_counts(self, queue_name):
@@ -150,7 +204,7 @@ class RabbitmqBroker(Broker):
         meant to be used in unit and integration tests.
 
         Parameters:
-          queue_name(str)
+          queue_name(str): The queue whose message counts to get.
 
         Returns:
           tuple: A triple representing the number of messages in the
