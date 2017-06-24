@@ -3,7 +3,7 @@ import platform
 import pytest
 import time
 
-from dramatiq import Message, Worker
+from dramatiq import Message, Middleware, Worker
 
 
 _current_platform = platform.python_implementation()
@@ -283,3 +283,35 @@ def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_wor
 
     # I expect the message to end up on the dead letter queue
     assert stub_broker.dead_letters == [message]
+
+
+def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
+    # Given that I have a middleware that raises exceptions when it
+    # tries to process messages.
+    class BrokenMiddleware(Middleware):
+        def before_process_message(self, broker, message):
+            raise RuntimeError("before process message error")
+
+        def after_process_message(self, broker, message, *, result=None, exception=None):
+            raise RuntimeError("after process message error")
+
+    # And a database
+    database = []
+
+    # And an actor that appends values to the database
+    @dramatiq.actor
+    def append(x):
+        database.append(x)
+
+    # If add that middleware to my broker
+    stub_broker.add_middleware(BrokenMiddleware())
+
+    # And send my actor a message
+    append.send(1)
+
+    # Then join on the queue
+    stub_broker.join(append.queue_name)
+    stub_worker.join()
+
+    # I expect the task to complete successfully
+    assert database == [1]

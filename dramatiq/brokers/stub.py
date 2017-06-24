@@ -40,11 +40,12 @@ class StubBroker(Broker):
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
+            message = message._replace(queue_name=queue_name)
             message.options["eta"] = current_millis() + delay
 
-        self.emit_before("enqueue", queue_name, message, delay)
+        self.emit_before("enqueue", message, delay)
         self.queues[queue_name].put(message.encode())
-        self.emit_after("enqueue", queue_name, message, delay)
+        self.emit_after("enqueue", message, delay)
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be
@@ -70,27 +71,17 @@ class _StubConsumer(Consumer):
         self.dead_letters = dead_letters
         self.timeout = timeout
 
-    def __iter__(self):
-        return self
+    def ack(self, message):
+        self.queue.task_done()
+
+    def nack(self, message):
+        self.queue.task_done()
+        self.dead_letters.append(message)
 
     def __next__(self):
         try:
             data = self.queue.get(timeout=self.timeout / 1000)
             message = Message.decode(data)
-            return _StubMessage(message, self.queue, self.dead_letters)
+            return MessageProxy(message)
         except Empty:
             return None
-
-
-class _StubMessage(MessageProxy):
-    def __init__(self, message, queue, dead_letters):
-        super().__init__(message)
-        self._queue = queue
-        self._dead_letters = dead_letters
-
-    def ack(self):
-        self._queue.task_done()
-
-    def nack(self):
-        self._queue.task_done()
-        self._dead_letters.append(self._message)

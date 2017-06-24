@@ -5,7 +5,7 @@ from queue import Empty, PriorityQueue, Queue
 from threading import Thread
 
 from .common import compute_backoff, current_millis, iter_queue, join_all
-from .errors import ActorNotFound
+from .errors import ActorNotFound, ConnectionClosed
 from .logging import get_logger
 from .middleware import Middleware
 
@@ -30,9 +30,8 @@ class Worker:
         self.broker = broker
 
         self.consumers = {}
-        self.queue_prefetch = worker_threads * 100
-        self.delay_prefetch = worker_threads * 1000  # TODO: Make this configurable.
-        self.delay_queue = PriorityQueue()
+        self.queue_prefetch = worker_threads * 10
+        self.delay_prefetch = worker_threads * 10
 
         self.workers = []
         self.work_queue = PriorityQueue()
@@ -81,14 +80,19 @@ class Worker:
         This method is useful when testing code.
         """
         while True:
-            self.delay_queue.join()
+            for consumer in self.consumers.values():
+                consumer.delay_queue.join()
+
             self.work_queue.join()
 
-            # If nothing got put on the delay queue while we were
+            # If nothing got put on the delay queues while we were
             # joining on the work queue then it shoud be safe to exit.
             # This could still miss stuff but the chances are slim.
-            if self.delay_queue.qsize() == 0:
-                break
+            for consumer in self.consumers.values():
+                if consumer.delay_queue.qsize() > 0:
+                    break
+            else:
+                return
 
     def _add_consumer(self, queue_name, *, delay=False):
         if queue_name in self.consumers:
@@ -99,7 +103,6 @@ class Worker:
             queue_name=queue_name,
             prefetch=self.delay_prefetch if delay else self.queue_prefetch,
             work_queue=self.work_queue,
-            delay_queue=self.delay_queue,
         )
         consumer.start()
 
@@ -129,7 +132,7 @@ class _WorkerMiddleware(Middleware):
 
 
 class _ConsumerThread(Thread):
-    def __init__(self, *, broker, queue_name, prefetch, work_queue, delay_queue):
+    def __init__(self, *, broker, queue_name, prefetch, work_queue):
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, f"ConsumerThread({queue_name})")
@@ -139,7 +142,7 @@ class _ConsumerThread(Thread):
         self.prefetch = prefetch
         self.queue_name = queue_name
         self.work_queue = work_queue
-        self.delay_queue = delay_queue
+        self.delay_queue = PriorityQueue()
         self.acks_queue = Queue()
 
     def run(self, attempts=0):
@@ -167,24 +170,28 @@ class _ConsumerThread(Thread):
                 self.handle_acks()
                 if not self.running:
                     break
+
+        except ConnectionClosed:
+            # Acking is unsafe when the connection is abruptly closed
+            # so we must clear the queue.  All brokers have at-least
+            # once semantics so this is a safe operation.
+            self.acks_queue = Queue()
+            self.delay_queue = PriorityQueue()
+
         except Exception as e:
-            # Avoid leaving any open file descriptors around.
-            try:
-                self.close()
-            except Exception:
-                self.logger.error("Could not close consumer.", exc_info=True)
+            self.logger.error("Consumer encountered an error.", exc_info=True)
+            # Avoid leaving any open file descriptors around when
+            # an exception occurs.
+            self.close()
 
-            # The consumer must retry itself with exponential backoff
-            # assuming it hasn't been shut down.
-            if self.running:
-                attempts, backoff_ms = compute_backoff(attempts, max_backoff=60000)
-                self.logger.error(
-                    "Error encountered. Waiting for %d milliseconds before restarting...",
-                    backoff_ms, exc_info=True,
-                )
-
-                time.sleep(backoff_ms / 1000)
-                return self.run(attempts=attempts)
+        # The consumer must retry itself with exponential backoff
+        # assuming it hasn't been shut down.
+        if self.running:
+            attempts, backoff_ms = compute_backoff(attempts, factor=5000, max_backoff=60000)
+            self.logger.debug("Waiting for %d milliseconds before restarting...", backoff_ms)
+            self.close()
+            time.sleep(backoff_ms / 1000)
+            return self.run(attempts=attempts)
 
         self.logger.debug("Consumer thread stopped.")
 
@@ -196,13 +203,13 @@ class _ConsumerThread(Thread):
             if message.failed:
                 self.logger.debug("Rejecting message %r.", message.message_id)
                 self.broker.emit_before("nack", message)
-                message.nack()
+                self.consumer.nack(message)
                 self.broker.emit_after("nack", message)
 
             else:
                 self.logger.debug("Acknowledging message %r.", message.message_id)
                 self.broker.emit_before("ack", message)
-                message.ack()
+                self.consumer.ack(message)
                 self.broker.emit_after("ack", message)
 
             self.acks_queue.task_done()
@@ -260,8 +267,11 @@ class _ConsumerThread(Thread):
     def close(self):
         """Close this consumer thread and its underlying connection.
         """
-        if self.consumer:
-            self.consumer.close()
+        try:
+            if self.consumer:
+                self.consumer.close()
+        except Exception:
+            self.logger.error("Could not close consumer.", exc_info=True)
 
 
 class _WorkerThread(Thread):

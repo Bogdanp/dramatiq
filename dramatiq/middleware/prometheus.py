@@ -40,7 +40,7 @@ class Prometheus(Middleware):
         self.http_host = http_host
         self.http_port = http_port
         self.delayed_messages = set()
-        self.durations_by_message = {}
+        self.message_start_times = {}
 
     def after_process_boot(self, broker):
         os.environ["prometheus_multiproc_dir"] = DB_PATH
@@ -113,7 +113,7 @@ class Prometheus(Middleware):
         labels = (message.queue_name, message.actor_name)
         self.total_rejected_messages.labels(*labels).inc()
 
-    def after_enqueue(self, broker, queue_name, message, delay):
+    def after_enqueue(self, broker, message, delay):
         if "retries" in message.options:
             labels = (message.queue_name, message.actor_name)
             self.total_retried_messages.labels(*labels).inc()
@@ -130,11 +130,12 @@ class Prometheus(Middleware):
             self.inprogress_delayed_messages.labels(*labels).dec()
 
         self.inprogress_messages.labels(*labels).inc()
-        self.durations_by_message[message.message_id] = current_millis()
+        self.message_start_times[message.message_id] = current_millis()
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         labels = (message.queue_name, message.actor_name)
-        message_duration = max(0, current_millis() - self.durations_by_message.pop(message.message_id))
+        message_start_time = self.message_start_times.pop(message.message_id, current_millis())
+        message_duration = current_millis() - message_start_time
         self.message_durations.labels(*labels).observe(message_duration)
         self.inprogress_messages.labels(*labels).dec()
         self.total_messages.labels(*labels).inc()

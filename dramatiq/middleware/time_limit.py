@@ -52,7 +52,7 @@ class TimeLimit(Middleware):
                 self.deadlines[thread_id] = None
                 if _current_platform == "CPython":
                     self._kill_thread_cpython(thread_id)
-                else:
+                else:  # pragma: no cover
                     self.logger.critical("Cannot kill threads on platform %r.", _current_platform)
 
     # TODO: Figure out how to kill threads under PyPy.

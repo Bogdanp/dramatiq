@@ -61,15 +61,19 @@ def join_all(joinables, timeout):
 
 
 def dq_name(queue_name):
-    """Returns the delayed queue name for a given queue.
+    """Returns the delayed queue name for a given queue.  If the given
+    queue name already belongs to a delayed queue, then it is returned
+    unchanged.
     """
+    if queue_name.endswith(".DQ"):
+        return queue_name
     return f"{queue_name}.DQ"
 
 
 def xq_name(queue_name):
     """Returns the dead letter queue name for a given queue.  If the
-    given queue name happens to belong to a delay queue, the dead
-    letter queue name of the original queue is generated.
+    given queue name belongs to a delayed queue, the dead letter queue
+    name for the original queue is generated.
     """
     if queue_name.endswith(".DQ"):
         queue_name = queue_name[:-3]

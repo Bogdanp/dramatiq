@@ -58,12 +58,13 @@ class RedisBroker(Broker):
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
+            message = message._replace(queue_name=queue_name)
             message.options["eta"] = current_millis() + delay
 
         self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
-        self.emit_before("enqueue", queue_name, message, delay)
+        self.emit_before("enqueue", message, delay)
         self._enqueue(queue_name, message.message_id, message.encode())
-        self.emit_after("enqueue", queue_name, message, delay)
+        self.emit_after("enqueue", message, delay)
 
     def get_declared_queues(self):
         return self.queues.copy()
@@ -173,16 +174,21 @@ class _RedisConsumer(Consumer):
         self.prefetch = prefetch
         self.timeout = timeout
 
-    def ack(self, message_id):
-        # The current queue might be different from message.queue_name
-        # if the message has been delayed so we want to ack on the
-        # current queue.
-        self.broker._ack(self.queue_name, message_id)
-        self.message_refc -= 1
+    def ack(self, message):
+        try:
+            # The current queue might be different from message.queue_name
+            # if the message has been delayed so we want to ack on the
+            # current queue.
+            self.broker._ack(self.queue_name, message.message_id)
+        finally:
+            self.message_refc -= 1
 
-    def nack(self, message_id):
-        self.broker._nack(self.queue_name, message_id)
-        self.message_refc -= 1
+    def nack(self, message):
+        try:
+            # Same deal as above.
+            self.broker._nack(self.queue_name, message.message_id)
+        finally:
+            self.message_refc -= 1
 
     def __next__(self):
         try:
@@ -196,7 +202,7 @@ class _RedisConsumer(Consumer):
                     self.misses = 0
 
                     message = Message.decode(data)
-                    return _RedisMessage(self, message)
+                    return MessageProxy(message)
                 except IndexError:
                     # If there are fewer messages currently being
                     # processed than we're allowed to prefetch,
@@ -220,18 +226,6 @@ class _RedisConsumer(Consumer):
                     self.message_refc += len(messages)
         except redis.ConnectionError as e:
             raise ConnectionClosed(e)
-
-
-class _RedisMessage(MessageProxy):
-    def __init__(self, consumer, message):
-        super().__init__(message)
-        self._consumer = consumer
-
-    def ack(self):
-        self._consumer.ack(self.message_id)
-
-    def nack(self):
-        self._consumer.nack(self.message_id)
 
 
 _scripts = {}

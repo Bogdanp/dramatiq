@@ -1,7 +1,11 @@
 import dramatiq
+import os
+import pytest
+import time
 
 from dramatiq import Message
 from dramatiq.common import current_millis
+from dramatiq.errors import ConnectionClosed
 
 
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
@@ -155,3 +159,61 @@ def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(
     # I expect the message to end up on the dead letter queue
     _, _, dead = rabbitmq_broker.get_queue_message_counts(rabbitmq_random_queue)
     assert dead == 1
+
+
+def test_rabbitmq_broker_reconnects_after_enqueue_failure(rabbitmq_broker, rabbitmq_random_queue):
+    # Given that I have an actor
+    @dramatiq.actor(queue_name=rabbitmq_random_queue)
+    def do_nothing():
+        pass
+
+    # If I close my channel
+    rabbitmq_broker.connection.close()
+
+    # Then send my actor a message
+    # I expect a ConnectionError to be raised
+    with pytest.raises(ConnectionClosed):
+        do_nothing.send()
+
+    # If I then send another message
+    # I expect the message to be sent
+    do_nothing.send()
+
+
+def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
+    # Given that I have an attempts database
+    attempts = []
+
+    # And an actor that adds 1 to the attempts database
+    @dramatiq.actor(queue_name=rabbitmq_random_queue)
+    def do_work():
+        attempts.append(1)
+        time.sleep(1)
+
+    # If I send that actor a delayed message
+    do_work.send_with_options(delay=1000)
+
+    # If I stop the RabbitMQ app
+    assert os.system("rabbitmqctl stop_app") == 0
+
+    # Then start the app back up
+    assert os.system("rabbitmqctl start_app") == 0
+
+    # And join on the queue
+    del rabbitmq_broker.channel
+    del rabbitmq_broker.connection
+    rabbitmq_broker.join(do_work.queue_name)
+    rabbitmq_worker.join()
+
+    # I expect the work to have been attempted at least once
+    assert sum(attempts) >= 1
+
+
+def test_rabbitmq_connections_can_be_deleted_multiple_times(rabbitmq_broker):
+    del rabbitmq_broker.connection
+    del rabbitmq_broker.connection
+
+
+def test_rabbitmq_channels_can_be_deleted_multiple_times(rabbitmq_broker):
+    del rabbitmq_broker.channel
+    del rabbitmq_broker.channel

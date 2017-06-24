@@ -177,6 +177,22 @@ class Consumer:
         """
         return self
 
+    def ack(self, message):  # pragma: no cover
+        """Acknowledge the given message.
+
+        Parameters:
+          message(MessageProxy)
+        """
+        raise NotImplementedError
+
+    def nack(self, message):  # pragma: no cover
+        """Reject the given message.
+
+        Parameters:
+          message(MessageProxy)
+        """
+        raise NotImplementedError
+
     def __next__(self):  # pragma: no cover
         """Retrieve the next message off of the queue.  This method
         blocks until a message becomes available.
@@ -201,16 +217,6 @@ class MessageProxy:
         self.failed = False
         self._message = message
 
-    def ack(self):  # pragma: no cover
-        """Acknowledge that this message has been procesed.
-        """
-        raise NotImplementedError
-
-    def nack(self):  # pragma: no cover
-        """Reject this message, moving it to the dead letter queue.
-        """
-        raise NotImplementedError
-
     def fail(self):
         """Mark this message for rejection.
         """
@@ -229,4 +235,6 @@ class MessageProxy:
         return True
 
     def __eq__(self, other):
-        return self._message == other._message
+        if isinstance(other, MessageProxy):
+            return self._message == other._message
+        return self._message == other
