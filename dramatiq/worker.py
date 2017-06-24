@@ -292,7 +292,7 @@ class _WorkerThread(Thread):
             self.broker.emit_after("process_message", message, result=res)
 
         except BaseException as e:
-            self.logger.warning("Failed to process message %r with unhandled exception.", message, exc_info=True)
+            self.logger.warning("Failed to process message %s with unhandled exception.", message, exc_info=True)
             self.broker.emit_after("process_message", message, exception=e)
 
         finally:
