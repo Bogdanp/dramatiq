@@ -18,7 +18,7 @@ def sum_all(xs):
 def test_redis_process_100k_messages_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 100k messages into Redis
     def setup():
-        for _ in range(100_000):
+        for _ in range(100000):
             throughput.send()
 
         start_cli("tests.benchmarks.test_redis_cli:broker")
@@ -31,7 +31,7 @@ def test_redis_process_100k_sums_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 100k messages into Redis
     def setup():
         numbers = [i for i in range(100)]
-        for _ in range(100_000):
+        for _ in range(100000):
             sum_all.send(numbers)
 
         start_cli("tests.benchmarks.test_redis_cli:broker")

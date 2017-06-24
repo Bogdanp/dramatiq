@@ -24,7 +24,7 @@ def test_rabbitmq_process_100k_messages_with_cli(benchmark, info_logging, start_
         del broker.channel
         del broker.connection
 
-        for _ in range(100_000):
+        for _ in range(100000):
             throughput.send()
 
         start_cli("tests.benchmarks.test_rabbitmq_cli:broker")
@@ -43,7 +43,7 @@ def test_rabbitmq_process_100k_sums_with_cli(benchmark, info_logging, start_cli)
         del broker.connection
 
         numbers = [i for i in range(100)]
-        for _ in range(100_000):
+        for _ in range(100000):
             sum_all.send(numbers)
 
         start_cli("tests.benchmarks.test_rabbitmq_cli:broker")
