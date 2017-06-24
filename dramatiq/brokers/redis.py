@@ -181,14 +181,14 @@ class _RedisConsumer(Consumer):
         self.prefetch = prefetch
         self.timeout = timeout
 
-    def acknowledge(self, message_id):
+    def ack(self, message_id):
         # The current queue might be different from message.queue_name
         # if the message has been delayed so we want to ack on the
         # current queue.
         self.broker._ack(self.queue_name, message_id)
         self.message_refc -= 1
 
-    def reject(self, message_id):
+    def nack(self, message_id):
         self.broker._nack(self.queue_name, message_id)
         self.message_refc -= 1
 
@@ -235,11 +235,11 @@ class _RedisMessage(MessageProxy):
         super().__init__(message)
         self._consumer = consumer
 
-    def acknowledge(self):
-        self._consumer.acknowledge(self.message_id)
+    def ack(self):
+        self._consumer.ack(self.message_id)
 
-    def reject(self):
-        self._consumer.reject(self.message_id)
+    def nack(self):
+        self._consumer.nack(self.message_id)
 
 
 _scripts = {}

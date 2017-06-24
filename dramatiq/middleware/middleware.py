@@ -10,19 +10,19 @@ class Middleware:
         """
         return set()
 
-    def before_acknowledge(self, broker, message):
+    def before_ack(self, broker, message):
         """Called before a message is acknowledged.
         """
 
-    def after_acknowledge(self, broker, message):
+    def after_ack(self, broker, message):
         """Called after a message has been acknowledged.
         """
 
-    def before_reject(self, broker, message):
+    def before_nack(self, broker, message):
         """Called before a message is rejected.
         """
 
-    def after_reject(self, broker, message):
+    def after_nack(self, broker, message):
         """Called after a message has been rejected.
         """
 

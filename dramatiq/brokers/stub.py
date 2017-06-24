@@ -83,8 +83,8 @@ class _StubMessage(MessageProxy):
         super().__init__(message)
         self._queue = queue
 
-    def acknowledge(self):
+    def ack(self):
         self._queue.task_done()
 
-    def reject(self):
+    def nack(self):
         self._queue.task_done()

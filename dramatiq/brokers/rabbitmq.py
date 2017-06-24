@@ -182,8 +182,8 @@ class _RabbitmqMessage(MessageProxy):
         self._channel = channel
         self._tag = tag
 
-    def acknowledge(self):
+    def ack(self):
         self._channel.basic_ack(self._tag)
 
-    def reject(self):
+    def nack(self):
         self._channel.basic_nack(self._tag, requeue=False)

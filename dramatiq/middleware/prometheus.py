@@ -103,7 +103,7 @@ class Prometheus(Middleware):
         self.logger.debug("Shutting down exposition server...")
         self.server.stop()
 
-    def after_reject(self, broker, message):
+    def after_nack(self, broker, message):
         self.total_rejected_messages.labels(message.queue_name, message.actor_name).inc()
 
     def after_enqueue(self, broker, queue_name, message, delay):

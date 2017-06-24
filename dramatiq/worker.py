@@ -181,15 +181,15 @@ class _ConsumerThread(Thread):
         for message in iter_queue(self.acks_queue):
             if message.failed:
                 self.logger.debug("Rejecting message %r.", message.message_id)
-                self.broker.emit_before("reject", message)
-                message.reject()
-                self.broker.emit_after("reject", message)
+                self.broker.emit_before("nack", message)
+                message.nack()
+                self.broker.emit_after("nack", message)
 
             else:
                 self.logger.debug("Acknowledging message %r.", message.message_id)
-                self.broker.emit_before("acknowledge", message)
-                message.acknowledge()
-                self.broker.emit_after("acknowledge", message)
+                self.broker.emit_before("ack", message)
+                message.ack()
+                self.broker.emit_after("ack", message)
 
             self.acks_queue.task_done()
 

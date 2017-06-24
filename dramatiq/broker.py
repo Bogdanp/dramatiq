@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import AgeLimit, Prometheus, Retries, TimeLimit
@@ -49,10 +51,13 @@ class Broker:
         self.queues = {}
         self.delay_queues = set()
 
-        self.middleware = middleware or [m() for m in default_middleware]
         self.actor_options = set()
-        for middleware in self.middleware:
-            self.actor_options |= middleware.actor_options
+        self.middleware = []
+        self.middleware_hooks = defaultdict(list)
+
+        middleware = middleware or [m() for m in default_middleware]
+        for m in middleware:
+            self.add_middleware(m)
 
     def emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
@@ -193,8 +198,13 @@ class MessageProxy:
         self.failed = False
         self._message = message
 
-    def acknowledge(self):  # pragma: no cover
+    def ack(self):  # pragma: no cover
         """Acknowledge that this message has been procesed.
+        """
+        raise NotImplementedError
+
+    def nack(self):  # pragma: no cover
+        """Reject this message, moving it to the dead letter queue.
         """
         raise NotImplementedError
 
@@ -202,11 +212,6 @@ class MessageProxy:
         """Mark this message for rejection.
         """
         self.failed = True
-
-    def reject(self):  # pragma: no cover
-        """Reject this message, moving it to the dead letter queue.
-        """
-        raise NotImplementedError
 
     def __getattr__(self, name):
         return getattr(self._message, name)
