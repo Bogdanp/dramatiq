@@ -15,7 +15,7 @@ if os.getenv("REDIS") == "1":
 
 @dramatiq.actor
 def add(x, y):
-    pass
+    logger.info("The sum of %d and %d is %d.", x, y, x + y)
 
 
 def main(args):

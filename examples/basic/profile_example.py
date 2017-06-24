@@ -15,6 +15,7 @@ logging.getLogger("pika").setLevel(logging.ERROR)
 def add(x, y):
     if random.randint(1, 100) == 1:
         raise RuntimeError("an exception")
+    logger.info("The sum of %d and %d is %d.", x, y, x + y)
 
 
 def prof(fn):

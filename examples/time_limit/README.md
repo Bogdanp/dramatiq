@@ -1,6 +1,6 @@
-# Dramatiq Basic Example
+# Dramatiq Time Limit Example
 
-This example demonstrates how easy it is to get started with Dramatiq.
+This example demonstrates the time limit feature of Dramatiq.
 
 ## Running the Example
 
@@ -10,8 +10,7 @@ This example demonstrates how easy it is to get started with Dramatiq.
 1. In a separate terminal window, run the workers: `env
    PYTHONPATH=. dramatiq example`.  Add `REDIS=1` before `PYTHONPATH`
    to use the Redis broker.
-1. In another terminal, run `python -m example 100` to enqueue 100
-   `add` tasks.
+1. In another terminal, run `python -m example` to enqueue a task.
 
 
 [rabbitmq]: https://www.rabbitmq.com
