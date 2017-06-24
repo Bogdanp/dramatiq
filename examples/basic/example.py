@@ -1,10 +1,16 @@
 import argparse
 import dramatiq
 import logging
+import os
 import random
 import sys
 
 logger = logging.getLogger("example")
+
+if os.getenv("REDIS") == "1":
+    from dramatiq.brokers.redis import RedisBroker
+    broker = RedisBroker()
+    dramatiq.set_broker(broker)
 
 
 @dramatiq.actor
