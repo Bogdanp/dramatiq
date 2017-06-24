@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import AgeLimit, Prometheus, Retries, TimeLimit

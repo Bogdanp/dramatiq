@@ -4,8 +4,8 @@ from itertools import chain
 from queue import Empty, PriorityQueue, Queue
 from threading import Thread
 
-from .common import current_millis, iter_queue, join_all
-from .errors import ConnectionClosed
+from .common import compute_backoff, current_millis, iter_queue, join_all
+from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import Middleware
 
@@ -197,7 +197,7 @@ class _ConsumerThread(Thread):
             if eta > current_millis():
                 self.delay_queue.put((eta, message))
                 self.delay_queue.task_done()
-                return
+                break
 
             actor = self.broker.get_actor(message.actor_name)
             self.logger.debug("Pushing message %r onto work queue.", message.message_id)
@@ -209,15 +209,23 @@ class _ConsumerThread(Thread):
         If the message has an eta, delay it.  Otherwise, put it on the
         work queue.
         """
-        if "eta" in message.options:
-            self.logger.debug("Pushing message %r onto delay queue.", message.message_id)
-            self.broker.emit_before("delay_message", message)
-            self.delay_queue.put((message.options.get("eta", 0), message))
+        try:
+            if "eta" in message.options:
+                self.logger.debug("Pushing message %r onto delay queue.", message.message_id)
+                self.broker.emit_before("delay_message", message)
+                self.delay_queue.put((message.options.get("eta", 0), message))
 
-        else:
-            actor = self.broker.get_actor(message.actor_name)
-            self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-            self.work_queue.put((actor.priority, message))
+            else:
+                actor = self.broker.get_actor(message.actor_name)
+                self.logger.debug("Pushing message %r onto work queue.", message.message_id)
+                self.work_queue.put((actor.priority, message))
+        except ActorNotFound:
+            self.logger.error(
+                "Received message for undefined actor %r. Moving it to the DLQ.",
+                message.actor_name, exc_info=True,
+            )
+            message.fail()
+            self.post_process_message(message)
 
     def post_process_message(self, message):
         """Called by worker threads whenever they're done processing

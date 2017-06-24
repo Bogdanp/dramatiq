@@ -263,3 +263,23 @@ def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_w
 
     # I expect the latter message to have been run first
     assert results == [2, 1]
+
+
+def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_worker):
+    # Given that I have a broker without actors
+    # If I send it a message
+    message = Message(
+        queue_name="some-queue",
+        actor_name="some-actor",
+        args=(), kwargs={},
+        options={},
+    )
+    stub_broker.declare_queue("some-queue")
+    stub_broker.enqueue(message)
+
+    # Then join on the queue
+    stub_broker.join("some-queue")
+    stub_worker.join()
+
+    # I expect the message to end up on the dead letter queue
+    assert stub_broker.dead_letters == [message]

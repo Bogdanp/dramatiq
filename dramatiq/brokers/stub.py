@@ -1,8 +1,7 @@
-from collections import defaultdict
 from queue import Queue, Empty
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import current_millis, dq_name
+from ..common import current_millis, dq_name, xq_name
 from ..errors import QueueNotFound
 from ..message import Message
 
@@ -14,18 +13,22 @@ class StubBroker(Broker):
     def __init__(self, middleware=None):
         super().__init__(middleware)
 
-        self.timers_by_queue = defaultdict(list)
+        self.dead_letters = []
 
     def consume(self, queue_name, prefetch=1, timeout=100):
         try:
-            queue = self.queues[queue_name]
-            return _StubConsumer(queue, timeout)
+            return _StubConsumer(
+                self.queues[queue_name],
+                self.dead_letters,
+                timeout
+            )
         except KeyError:
             raise QueueNotFound(queue_name)
 
     def declare_queue(self, queue_name):
         self.emit_before("declare_queue", queue_name)
         self.queues[queue_name] = Queue()
+        self.queues[xq_name(queue_name)] = Queue()
         self.emit_after("declare_queue", queue_name)
 
         delayed_name = dq_name(queue_name)
@@ -62,8 +65,9 @@ class StubBroker(Broker):
 
 
 class _StubConsumer(Consumer):
-    def __init__(self, queue, timeout):
+    def __init__(self, queue, dead_letters, timeout):
         self.queue = queue
+        self.dead_letters = dead_letters
         self.timeout = timeout
 
     def __iter__(self):
@@ -73,18 +77,20 @@ class _StubConsumer(Consumer):
         try:
             data = self.queue.get(timeout=self.timeout / 1000)
             message = Message.decode(data)
-            return _StubMessage(message, self.queue)
+            return _StubMessage(message, self.queue, self.dead_letters)
         except Empty:
             return None
 
 
 class _StubMessage(MessageProxy):
-    def __init__(self, message, queue):
+    def __init__(self, message, queue, dead_letters):
         super().__init__(message)
         self._queue = queue
+        self._dead_letters = dead_letters
 
     def ack(self):
         self._queue.task_done()
 
     def nack(self):
         self._queue.task_done()
+        self._dead_letters.append(self._message)
