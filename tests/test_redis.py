@@ -1,4 +1,5 @@
 import dramatiq
+import time
 
 from dramatiq.common import current_millis
 
@@ -113,3 +114,33 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker,
 
     # I expect the latter message to have been run first
     assert results == [2, 1]
+
+
+def test_redis_unacked_messages_can_be_requeued(redis_broker):
+    # Given that I have a Redis broker
+    queue_name = "some-queue"
+    redis_broker.declare_queue(queue_name)
+
+    # If I enqueue two messages
+    message_ids = [b"message-1", b"message-2"]
+    for message_id in message_ids:
+        redis_broker._enqueue(queue_name, message_id, b"message-data")
+
+    # And then fetch them one second apart
+    redis_broker._fetch(queue_name, 1)
+    time.sleep(1)
+    redis_broker._fetch(queue_name, 1)
+
+    # I expect both to be in the acks set
+    unacked = redis_broker.client.zrangebyscore(f"dramatiq:{queue_name}.acks", 0, "+inf")
+    assert sorted(unacked) == sorted(message_ids)
+
+    # If I then set the requeue deadline to 1 second and run a requeue
+    redis_broker.requeue_deadline = 1000
+    redis_broker._requeue()
+
+    # I expect only the first message to have been moved
+    unacked = redis_broker.client.zrangebyscore(f"dramatiq:{queue_name}.acks", 0, "+inf")
+    queued = redis_broker.client.lrange(f"dramatiq:{queue_name}", 0, 0)
+    assert unacked == message_ids[1:]
+    assert queued == message_ids[:1]

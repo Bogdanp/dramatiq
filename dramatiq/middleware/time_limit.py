@@ -42,13 +42,14 @@ class TimeLimit(Middleware):
         self.logger = get_logger(__name__, type(self))
         self.time_limit = time_limit
         self.interval = interval
-        self.threads = {}
+        self.deadlines = {}
 
     def _handle(self, signum, mask):
         current_time = current_millis()
-        for thread_id, deadline in self.threads.items():
+        for thread_id, deadline in self.deadlines.items():
             if deadline and current_time >= deadline:
                 self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
+                self.deadlines[thread_id] = None
                 if _current_platform == "CPython":
                     self._kill_thread_cpython(thread_id)
                 else:
@@ -83,7 +84,7 @@ class TimeLimit(Middleware):
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
         deadline = current_millis() + actor.options.get("time_limit", self.time_limit)
-        self.threads[threading.get_ident()] = deadline
+        self.deadlines[threading.get_ident()] = deadline
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        self.threads[threading.get_ident()] = None
+        self.deadlines[threading.get_ident()] = None

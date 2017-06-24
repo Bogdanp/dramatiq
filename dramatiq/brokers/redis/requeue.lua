@@ -13,6 +13,8 @@ for i=1,#KEYS do
 
    message_ids = redis.call("zrangebyscore", queue_acks, 0, timestamp)
    for j=1,#message_ids do
+      message_id = message_ids[j]
+
       redis.call("zrem", queue_acks, message_id)
       redis.call("rpush", queue_name, message_id)
    end

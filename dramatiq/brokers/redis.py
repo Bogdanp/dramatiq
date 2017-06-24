@@ -125,7 +125,8 @@ class RedisBroker(Broker):
         # Sorted sets' scores are stored in Redis as doubles so we
         # can't use milliseconds here.  See _fetch.
         timestamp = int(time.time()) - self.requeue_deadline / 1000
-        queue_names = list(self.get_declared_queues() | self.get_declared_delay_queues())
+        queue_names = self.get_declared_queues() | self.get_declared_delay_queues()
+        queue_names = [self._add_namespace(queue_name) for queue_name in queue_names]
         requeue(args=[timestamp], keys=queue_names)
 
 
