@@ -158,7 +158,7 @@ class Broker:
         try:
             return self.actors[actor_name]
         except KeyError:
-            raise ActorNotFound(actor_name)
+            raise ActorNotFound(actor_name) from None
 
     def get_declared_actors(self):  # pragma: no cover
         """Get all declared actors.

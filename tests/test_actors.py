@@ -315,3 +315,29 @@ def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
 
     # I expect the task to complete successfully
     assert database == [1]
+
+
+def test_actors_can_prioritize_work(stub_broker, stub_worker):
+    # Given that I have a database of calls
+    calls = []
+
+    # And an actor with high priority
+    @dramatiq.actor(priority=0)
+    def hi():
+        calls.append("hi")
+
+    # And an actor with low priority
+    @dramatiq.actor(priority=10)
+    def lo():
+        calls.append("lo")
+
+    # If I send both actors a delayed message
+    lo.send_with_options(delay=100)
+    hi.send_with_options(delay=100)
+
+    # Then join on their queue
+    stub_broker.join("default")
+    stub_worker.join()
+
+    # I expect the high priority worker to run first
+    assert calls == ["hi", "lo"]
