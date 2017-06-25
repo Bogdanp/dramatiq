@@ -29,8 +29,12 @@ class Prometheus(Middleware):
     """A middleware that exports stats via Prometheus_.
 
     Parameters:
-      http_host(str): The host to bind the Prometheus exposition server on.
+      http_host(str): The host to bind the Prometheus exposition
+        server on.  This parameter can also be configured via the
+        ``dramatiq_prom_host`` environment variable.
       http_port(int): The port on which the server should listen.
+        This parameter can also be configured via the
+        ``dramatiq_prom_port`` environment variable.
 
     .. _Prometheus: https://prometheus.io
     """

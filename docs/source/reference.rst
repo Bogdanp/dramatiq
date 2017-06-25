@@ -32,10 +32,13 @@ Brokers
    :members:
 .. autoclass:: dramatiq.brokers.rabbitmq.RabbitmqBroker
    :members:
+   :inherited-members:
 .. autoclass:: dramatiq.brokers.redis.RedisBroker
    :members:
+   :inherited-members:
 .. autoclass:: dramatiq.brokers.stub.StubBroker
    :members:
+   :inherited-members:
 
 
 Middleware
@@ -43,14 +46,11 @@ Middleware
 
 .. autoclass:: Middleware
    :members:
+   :member-order: bysource
 .. autoclass:: dramatiq.middleware.AgeLimit
-   :members:
 .. autoclass:: dramatiq.middleware.Prometheus
-   :members:
 .. autoclass:: dramatiq.middleware.Retries
-   :members:
 .. autoclass:: dramatiq.middleware.TimeLimit
-   :members:
 
 
 Workers

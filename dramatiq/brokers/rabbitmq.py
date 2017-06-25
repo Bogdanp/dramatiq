@@ -111,7 +111,7 @@ class RabbitmqBroker(Broker):
 
         Raises:
           ConnectionClosed: If the underlying channel or connection
-          has been closed.
+            has been closed.
         """
         try:
             if queue_name not in self.queues:
@@ -163,7 +163,7 @@ class RabbitmqBroker(Broker):
 
         Raises:
           ConnectionClosed: If the underlying channel or connection
-          has been closed.
+            has been closed.
         """
         queue_name = message.queue_name
         properties = pika.BasicProperties(delivery_mode=2)
@@ -194,8 +194,8 @@ class RabbitmqBroker(Broker):
         """Get all declared queues.
 
         Returns:
-          set: A set containing the names of the queues declared so
-          far on this broker.
+          set[str]: The names of all the queues declared so far on
+          this Broker.
         """
         return self.queues.copy()
 

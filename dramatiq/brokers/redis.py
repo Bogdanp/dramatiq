@@ -95,8 +95,8 @@ class RedisBroker(Broker):
         """Get all declared queues.
 
         Returns:
-          set: A set containing the names of the queues declared so
-          far on this broker.
+          set[str]: The names of all the queues declared so far on
+          this Broker.
         """
         return self.queues.copy()
 

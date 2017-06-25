@@ -41,6 +41,10 @@ class Broker:
         to this broker.  If you supply this parameter, you are
         expected to declare *all* middleware.  Most of the time,
         you'll want to use :meth:`.add_middleware` instead.
+
+    Attributes:
+      actor_options(set[str]): The names of all the options actors may
+        overwrite when they are declared.
     """
 
     def __init__(self, middleware=None):
@@ -71,7 +75,11 @@ class Broker:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
     def add_middleware(self, middleware):
-        """Add a middleware object to this broker.
+        """Add a middleware object to this broker.  The middleware is
+        appended to the end of the middleware list.
+
+        Parameters:
+          middleware(Middleware): The middleware.
         """
         self.middleware.append(middleware)
         self.actor_options |= middleware.actor_options
@@ -138,6 +146,9 @@ class Broker:
     def get_actor(self, actor_name):  # pragma: no cover
         """Look up an actor by its name.
 
+        Parameters:
+          actor_name(str): The name to look up.
+
         Raises:
           ActorNotFound: If the actor was never declared.
 
@@ -150,18 +161,29 @@ class Broker:
             raise ActorNotFound(actor_name)
 
     def get_declared_actors(self):  # pragma: no cover
-        """Returns a list of all the named actors declared on this broker.
+        """Get all declared actors.
+
+        Returns:
+          set[str]: The names of all the actors declared so far on
+          this Broker.
         """
-        return self.actors.keys()
+        return set(self.actors.keys())
 
     def get_declared_queues(self):  # pragma: no cover
-        """Returns a list of all the named queues declared on this broker.
+        """Get all declared queues.
+
+        Returns:
+          set[str]: The names of all the queues declared so far on
+          this Broker.
         """
-        return self.queues.keys()
+        return set(self.queues.keys())
 
     def get_declared_delay_queues(self):  # pragma: no cover
-        """Returns the list of all the named delay queues declared on
-        this broker.
+        """Get all declared delay queues.
+
+        Returns:
+          set[str]: The names of all the delay queues declared so far
+          on this Broker.
         """
         return self.delay_queues.copy()
 
@@ -178,18 +200,19 @@ class Consumer:
         return self
 
     def ack(self, message):  # pragma: no cover
-        """Acknowledge the given message.
+        """Acknowledge that a message has been processed, removing it
+        from the broker.
 
         Parameters:
-          message(MessageProxy)
+          message(MessageProxy): The message to acknowledge.
         """
         raise NotImplementedError
 
     def nack(self, message):  # pragma: no cover
-        """Reject the given message.
+        """Move a message to the dead-letter queue.
 
         Parameters:
-          message(MessageProxy)
+          message(MessageProxy): The message to reject.
         """
         raise NotImplementedError
 

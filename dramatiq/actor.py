@@ -111,6 +111,8 @@ class Actor:
         Parameters:
           args(tuple): Positional arguments that are passed to the actor.
           kwargs(dict): Keyword arguments that are passed to the actor.
+          delay(int): The minimum amount of time, in milliseconds, the
+            message should be delayed by.
           \**options(dict): Arbitrary options that are passed to the
             broker and any registered middleware.
 

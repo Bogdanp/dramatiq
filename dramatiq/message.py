@@ -35,7 +35,7 @@ class Message(namedtuple("Message", (
 
     @classmethod
     def decode(cls, data):
-        """Convert a bytestring to a message.
+        """Convert a JSON bytestring to a message.
         """
         return cls(**json.loads(data.decode("utf-8")))
 
@@ -45,7 +45,7 @@ class Message(namedtuple("Message", (
         return json.dumps(self._asdict(), separators=(",", ":")).encode("utf-8")
 
     def new_id(self):
-        """Return a copy of this message with a new unique id.
+        """Return a copy of this message with a new unique id assigned to it.
         """
         return self._replace(message_id=generate_unique_id())
 
