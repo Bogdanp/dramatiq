@@ -49,6 +49,7 @@ def test_cli_can_watch_for_source_code_changes(start_cli):
     # Then write another timestamp
     write_loaded_at.send(filename)
     broker.join(write_loaded_at.queue_name)
+    time.sleep(1)
 
     # I expect another timestamp to have been written to the file
     with open(filename, "r") as f:
