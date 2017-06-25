@@ -17,7 +17,7 @@ try:
     import watchdog.observers
 
     HAS_WATCHDOG = True
-except ImportError:
+except ImportError:  # pragma: no cover
     HAS_WATCHDOG = False
 
 #: The number of available cpus.
@@ -217,7 +217,7 @@ def main_process(args):
             try:
                 os.kill(pid, signum)
             except OSError:
-                logger.warning("Failed to send %r to child process.", signum.name, exc_info=True)
+                logger.warning("Failed to send %r to pid %d.", signum.name, pid)
 
     retcode = 0
     signal.signal(signal.SIGINT, sighandler)

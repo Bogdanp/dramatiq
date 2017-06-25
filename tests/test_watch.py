@@ -1,0 +1,58 @@
+import dramatiq
+import platform
+import pytest
+import time
+
+from dramatiq.brokers.redis import RedisBroker
+from dramatiq.common import current_millis
+from pathlib import Path
+
+
+broker = RedisBroker()
+loaded_at = current_millis()
+
+_current_platform = platform.python_implementation()
+
+
+@dramatiq.actor(broker=broker)
+def write_loaded_at(filename):
+    with open(filename, "w") as f:
+        f.write(str(loaded_at))
+
+
+@pytest.mark.skipif(_current_platform == "PyPy", reason="Code reloading is not supported on PyPy.")
+def test_cli_can_watch_for_source_code_changes(start_cli):
+    # Given that I have a shared file the processes can use to communicate with
+    filename = "/tmp/dramatiq-loaded-at"
+
+    # If I start my workers
+    start_cli("tests.test_watch:broker", extra_args=[
+        "--processes", "1",
+        "--threads", "1",
+        "--watch", "tests",
+    ])
+
+    # And enqueue a task to write the loaded timestamp
+    write_loaded_at.send(filename)
+    broker.join(write_loaded_at.queue_name)
+
+    # I expect a timestamp to have been written to the file
+    with open(filename, "r") as f:
+        timestamp_1 = int(f.read())
+
+    # If I then update a watched file's mtime
+    (Path("tests") / "test_watch.py").touch()
+
+    # And wait for the workers to reload
+    time.sleep(1)
+
+    # Then write another timestamp
+    write_loaded_at.send(filename)
+    broker.join(write_loaded_at.queue_name)
+
+    # I expect another timestamp to have been written to the file
+    with open(filename, "r") as f:
+        timestamp_2 = int(f.read())
+
+    # And the second time to be at least a second apart from the first
+    assert timestamp_2 - timestamp_1 >= 1000
