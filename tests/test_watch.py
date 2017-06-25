@@ -1,4 +1,5 @@
 import dramatiq
+import os
 import platform
 import pytest
 import time
@@ -20,6 +21,7 @@ def write_loaded_at(filename):
         f.write(str(loaded_at))
 
 
+@pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
 @pytest.mark.skipif(_current_platform == "PyPy", reason="Code reloading is not supported on PyPy.")
 def test_cli_can_watch_for_source_code_changes(start_cli):
     # Given that I have a shared file the processes can use to communicate with
@@ -49,7 +51,6 @@ def test_cli_can_watch_for_source_code_changes(start_cli):
     # Then write another timestamp
     write_loaded_at.send(filename)
     broker.join(write_loaded_at.queue_name)
-    time.sleep(1)
 
     # I expect another timestamp to have been written to the file
     with open(filename, "r") as f:
