@@ -1,11 +1,12 @@
 import time
 
+from collections import defaultdict
 from itertools import chain
 from queue import Empty, PriorityQueue, Queue
 from threading import Thread
 
 from .common import compute_backoff, current_millis, iter_queue, join_all
-from .errors import ActorNotFound, ConnectionClosed
+from .errors import ActorNotFound, ConnectionError
 from .logging import get_logger
 from .middleware import Middleware
 
@@ -56,7 +57,7 @@ class Worker:
 
         self.broker.emit_after("worker_boot", self)
 
-    def stop(self, timeout=60000):
+    def stop(self, timeout=600000):
         """Gracefully stop the Worker and all of its consumers and
         workers.
 
@@ -67,11 +68,24 @@ class Worker:
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
         self.logger.debug("Stopping consumers and workers...")
-        for thread in chain(self.consumers.values(), self.workers):
+        for thread in chain(self.workers, self.consumers.values()):
             thread.stop()
 
         join_all(chain(self.workers, self.consumers.values()), timeout)
         self.logger.debug("Consumers and workers stopped.")
+
+        self.logger.debug("Requeueing in-memory messages...")
+        messages_by_queue = defaultdict(list)
+        for _, message in iter_queue(self.work_queue):
+            messages_by_queue[message.queue_name].append(message)
+
+        for queue_name, messages in messages_by_queue.items():
+            try:
+                self.consumers[queue_name].requeue_messages(messages)
+            except ConnectionError as e:
+                self.logger.warning("Failed to requeue messages on queue %r.", queue_name, exc_info=True)
+        self.logger.debug("Done requeueing in-progress messages.")
+
         self.logger.debug("Closing consumers...")
         for consumer in self.consumers.values():
             consumer.close()
@@ -173,10 +187,12 @@ class _ConsumerThread(Thread):
                     self.handle_message(message)
 
                 self.handle_acks()
+                self.handle_delayed_messages()
                 if not self.running:
                     break
 
-        except ConnectionClosed:
+        except ConnectionError:
+            self.logger.error("Consumer encountered a connection error.", exc_info=True)
             # Acking is unsafe when the connection is abruptly closed
             # so we must clear the queue.  All brokers have at-least
             # once semantics so this is a safe operation.
@@ -192,7 +208,7 @@ class _ConsumerThread(Thread):
         # The consumer must retry itself with exponential backoff
         # assuming it hasn't been shut down.
         if self.running:
-            attempts, backoff_ms = compute_backoff(attempts, factor=5000, max_backoff=60000)
+            attempts, backoff_ms = compute_backoff(attempts, jitter=False, factor=10000, max_backoff=60000)
             self.logger.debug("Waiting for %d milliseconds before restarting...", backoff_ms)
             self.close()
             time.sleep(backoff_ms / 1000)
@@ -201,8 +217,7 @@ class _ConsumerThread(Thread):
         self.logger.debug("Consumer thread stopped.")
 
     def handle_acks(self):
-        """Perform any pending (n)acks and enqueue any scheduled
-        messages whose eta has passed.
+        """Perform any pending (n)acks.
         """
         for message in iter_queue(self.acks_queue):
             if message.failed:
@@ -219,6 +234,9 @@ class _ConsumerThread(Thread):
 
             self.acks_queue.task_done()
 
+    def handle_delayed_messages(self):
+        """Enqueue any delayed messages whose eta has passed.
+        """
         for eta, message in iter_queue(self.delay_queue):
             if eta > current_millis():
                 self.delay_queue.put((eta, message))
@@ -260,6 +278,13 @@ class _ConsumerThread(Thread):
         """
         self.acks_queue.put(message)
 
+    def requeue_messages(self, messages):
+        """Called on worker shutdown and whenever there is a
+        connection error to move unacked messages back to their
+        respective queues asap.
+        """
+        self.consumer.requeue(messages)
+
     def stop(self):
         """Initiate the ConsumerThread shutdown sequence.
 
@@ -272,11 +297,15 @@ class _ConsumerThread(Thread):
     def close(self):
         """Close this consumer thread and its underlying connection.
         """
+        if not self.consumer:
+            return
+
         try:
-            if self.consumer:
-                self.consumer.close()
-        except Exception:
-            self.logger.debug("Could not close consumer.", exc_info=True)
+            self.handle_acks()
+            self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
+            self.consumer.close()
+        except ConnectionError:
+            self.logger.warning("Could not close Consumer.", exc_info=True)
 
 
 class _WorkerThread(Thread):

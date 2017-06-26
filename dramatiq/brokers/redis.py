@@ -165,6 +165,11 @@ class RedisBroker(Broker):
         xqueue_name = self._add_namespace(xqueue_name)
         nack(args=[queue_name, xqueue_name, message_id, timestamp])
 
+    def _requeue_messages(self, queue_name, message_ids):
+        requeue = self.scripts["requeue_messages"]
+        queue_name = self._add_namespace(queue_name)
+        requeue(args=[queue_name], keys=message_ids)
+
     def _requeue(self):
         requeue = self.scripts["requeue"]
         timestamp = current_millis() - self.requeue_deadline
@@ -199,15 +204,17 @@ class _RedisWatcher(Thread):
         self.running = True
         while self.running:
             try:
-                time.sleep(self.interval / 1000)
-
                 self.logger.debug("Running requeue...")
                 self.broker._requeue()
 
                 self.logger.debug("Running cleanup...")
                 self.broker._cleanup()
+
             except Exception:
                 self.logger.warning("Requeue failed.", exc_info=True)
+
+            finally:
+                time.sleep(self.interval / 1000)
 
     def stop(self):
         self.logger.debug("Stopping watcher...")
@@ -216,14 +223,15 @@ class _RedisWatcher(Thread):
 
 class _RedisConsumer(Consumer):
     def __init__(self, broker, queue_name, prefetch, timeout):
-        self.message_cache = []
-        self.message_refc = 0
-        self.misses = 0
-
+        self.logger = get_logger(__name__, type(self))
         self.broker = broker
         self.queue_name = queue_name
         self.prefetch = prefetch
         self.timeout = timeout
+
+        self.message_cache = []
+        self.message_refc = 0
+        self.misses = 0
 
     def ack(self, message):
         try:
@@ -240,6 +248,14 @@ class _RedisConsumer(Consumer):
             self.broker._nack(self.queue_name, message.message_id)
         finally:
             self.message_refc -= 1
+
+    def requeue(self, messages):
+        message_ids = [message.message_id for message in messages]
+        if not message_ids:
+            return
+
+        self.logger.debug("Re-enqueueing %r on queue %r.", message_ids, self.queue_name)
+        self.broker._requeue_messages(self.queue_name, message_ids)
 
     def __next__(self):
         try:
@@ -276,7 +292,7 @@ class _RedisConsumer(Consumer):
                     # have to keep track of them.
                     self.message_refc += len(messages)
         except redis.ConnectionError as e:
-            raise ConnectionClosed(e)
+            raise ConnectionClosed(e) from None
 
 
 _scripts = {}

@@ -112,6 +112,9 @@ class _StubConsumer(Consumer):
         self.queue.task_done()
         self.dead_letters.append(message)
 
+    def requeue(self, messages):
+        pass
+
     def __next__(self):
         try:
             data = self.queue.get(timeout=self.timeout / 1000)

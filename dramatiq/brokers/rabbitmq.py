@@ -289,6 +289,11 @@ class _RabbitmqConsumer(Consumer):
         except Exception:
             self.logger.warning("Failed to nack message.", exc_info=True)
 
+    def requeue(self, messages):
+        """RabbitMQ automatically re-enqueues unacked messages when
+        consumers disconnect so this is a no-op.
+        """
+
     def __next__(self):
         try:
             frame = next(self.iterator)
@@ -304,11 +309,15 @@ class _RabbitmqConsumer(Consumer):
             raise ConnectionClosed(e) from None
 
     def close(self):
-        if self.channel.is_open:
-            self.channel.cancel()
+        try:
+            if self.channel.is_open:
+                self.channel.cancel()
 
-        self.channel.close()
-        self.connection.close()
+            self.channel.close()
+            self.connection.close()
+        except (pika.exceptions.ChannelClosed,
+                pika.exceptions.ConnectionClosed) as e:
+            raise ConnectionClosed(e) from None
 
 
 class _RabbitmqMessage(MessageProxy):

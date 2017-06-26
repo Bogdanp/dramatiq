@@ -6,6 +6,7 @@ import time
 from dramatiq import Message
 from dramatiq.common import current_millis
 from dramatiq.errors import ConnectionClosed
+from unittest.mock import Mock
 
 
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
@@ -210,16 +211,6 @@ def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rab
     assert sum(attempts) >= 1
 
 
-def test_rabbitmq_connections_can_be_deleted_multiple_times(rabbitmq_broker):
-    del rabbitmq_broker.connection
-    del rabbitmq_broker.connection
-
-
-def test_rabbitmq_channels_can_be_deleted_multiple_times(rabbitmq_broker):
-    del rabbitmq_broker.channel
-    del rabbitmq_broker.channel
-
-
 def test_rabbitmq_raises_an_exception_when_delaying_messages_for_too_long(rabbitmq_broker):
     # Given that I have an actor
     @dramatiq.actor
@@ -230,3 +221,25 @@ def test_rabbitmq_raises_an_exception_when_delaying_messages_for_too_long(rabbit
     # I expect it to raise a value error
     with pytest.raises(ValueError):
         do_nothing.send_with_options(delay=7 * 86400 * 1000 + 1)
+
+
+def test_rabbitmq_connections_can_be_deleted_multiple_times(rabbitmq_broker):
+    del rabbitmq_broker.connection
+    del rabbitmq_broker.connection
+
+
+def test_rabbitmq_channels_can_be_deleted_multiple_times(rabbitmq_broker):
+    del rabbitmq_broker.channel
+    del rabbitmq_broker.channel
+
+
+def test_rabbitmq_consumers_ignore_unknown_messages_in_ack_and_nack(rabbitmq_broker):
+    # Given that I have a RabbitmqConsumer
+    consumer = rabbitmq_broker.consume("default")
+
+    # If I attempt to ack a Message that wasn't consumed off of it
+    # I expect nothing to happen
+    assert consumer.ack(Mock(_tag=1)) is None
+
+    # Likewise for nack
+    assert consumer.nack(Mock(_tag=1)) is None

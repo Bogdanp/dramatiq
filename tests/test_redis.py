@@ -2,8 +2,8 @@ import dramatiq
 import pytest
 import time
 
-from dramatiq import Message
-from dramatiq.common import current_millis, xq_name
+from dramatiq import Message, Worker
+from dramatiq.common import current_millis, dq_name, xq_name
 
 
 def test_redis_actors_can_be_sent_messages(redis_broker, redis_worker):
@@ -220,3 +220,47 @@ def test_redis_raises_an_exception_when_delaying_messages_for_too_long(redis_bro
     # I expect it to raise a value error
     with pytest.raises(ValueError):
         do_nothing.send_with_options(delay=7 * 86400 * 1000 + 1)
+
+
+def test_redis_requeues_unhandled_messages_on_shutdown(redis_broker):
+    # Given that I have an actor that takes its time
+    @dramatiq.actor
+    def do_work():
+        time.sleep(1)
+
+    # If I send it two messages
+    message_1 = do_work.send()
+    message_2 = do_work.send()
+
+    # Then start a worker and subsequently shut it down
+    worker = Worker(redis_broker, worker_threads=1)
+    worker.start()
+    time.sleep(0.25)
+    worker.stop()
+
+    # I expect it to have processed one of the messages and re-enqueued the other
+    messages = redis_broker.client.lrange(f"dramatiq:{do_work.queue_name}", 0, 10)
+    if message_1.message_id.encode("utf-8") not in messages:
+        assert message_2.message_id.encode("utf-8") in messages
+
+    else:
+        assert message_1.message_id.encode("utf-8") in messages
+
+
+def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
+    # Given that I have an actor that takes its time
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # If I send it a delayed message
+    message = do_work.send_with_options(delay=10000)
+
+    # Then start a worker and subsequently shut it down
+    worker = Worker(redis_broker, worker_threads=1)
+    worker.start()
+    worker.stop()
+
+    # I expect it to have re-enqueued the message
+    messages = redis_broker.client.lrange(f"dramatiq:{dq_name(do_work.queue_name)}", 0, 10)
+    assert message.message_id.encode("utf-8") in messages
