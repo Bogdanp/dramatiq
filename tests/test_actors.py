@@ -317,7 +317,7 @@ def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
     assert database == [1]
 
 
-def test_actors_can_prioritize_work(stub_broker, stub_worker):
+def test_actors_can_prioritize_work(stub_broker):
     # Given that I have a database of calls
     calls = []
 
@@ -331,13 +331,16 @@ def test_actors_can_prioritize_work(stub_broker, stub_worker):
     def lo():
         calls.append("lo")
 
-    # If I send both actors a delayed message
-    lo.send_with_options(delay=100)
-    hi.send_with_options(delay=100)
+    # If I send both actors a message
+    lo.send_with_options()
+    hi.send_with_options()
 
-    # Then join on their queue
+    # Then start a worker and join on their queue
+    worker = Worker(stub_broker)
+    worker.start()
     stub_broker.join("default")
-    stub_worker.join()
+    worker.join()
+    worker.stop()
 
     # I expect the high priority worker to run first
     assert calls == ["hi", "lo"]
