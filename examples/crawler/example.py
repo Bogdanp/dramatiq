@@ -30,7 +30,7 @@ def get_session():
     return session
 
 
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, time_limit=10000)
 def crawl(url):
     url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
     with memcache_pool.reserve() as client:
