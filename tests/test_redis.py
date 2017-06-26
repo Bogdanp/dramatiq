@@ -1,4 +1,5 @@
 import dramatiq
+import pytest
 import time
 
 from dramatiq import Message
@@ -207,3 +208,15 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
     dead_queue_name = f"dramatiq:{xq_name('some-queue')}"
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert message.message_id.encode("utf-8") in dead_ids
+
+
+def test_redis_raises_an_exception_when_delaying_messages_for_too_long(redis_broker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_nothing():
+        pass
+
+    # If I try to send it a delayed message farther than 7 days into the future
+    # I expect it to raise a value error
+    with pytest.raises(ValueError):
+        do_nothing.send_with_options(delay=7 * 86400 * 1000 + 1)

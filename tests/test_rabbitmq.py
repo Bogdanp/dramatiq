@@ -218,3 +218,15 @@ def test_rabbitmq_connections_can_be_deleted_multiple_times(rabbitmq_broker):
 def test_rabbitmq_channels_can_be_deleted_multiple_times(rabbitmq_broker):
     del rabbitmq_broker.channel
     del rabbitmq_broker.channel
+
+
+def test_rabbitmq_raises_an_exception_when_delaying_messages_for_too_long(rabbitmq_broker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_nothing():
+        pass
+
+    # If I try to send it a delayed message farther than 7 days into the future
+    # I expect it to raise a value error
+    with pytest.raises(ValueError):
+        do_nothing.send_with_options(delay=7 * 86400 * 1000 + 1)

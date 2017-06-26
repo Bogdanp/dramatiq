@@ -4,6 +4,13 @@ from ..common import compute_backoff
 from ..logging import get_logger
 from .middleware import Middleware
 
+#: The default minimum amount of backoff to apply to retried tasks.
+DEFAULT_MIN_BACKOFF = 15000
+
+#: The default maximum amount of backoff to apply to retried tasks.
+#: Must be less than the max amount of time tasks can be delayed by.
+DEFAULT_MAX_BACKOFF = 86400000 * 7
+
 
 class Retries(Middleware):
     """Middleware that automatically retries failed tasks with
@@ -14,14 +21,14 @@ class Retries(Middleware):
       min_backoff(int): The minimum amount of backoff milliseconds to
         apply to retried tasks.  Defaults to 15 seconds.
       max_backoff(int): The maximum amount of backoff milliseconds to
-        apply to retried tasks.  Defaults to 30 days.
+        apply to retried tasks.  Defaults to 7 days.
     """
 
-    def __init__(self, *, max_retries=None, min_backoff=15000, max_backoff=2592000000):
+    def __init__(self, *, max_retries=None, min_backoff=None, max_backoff=None):
         self.logger = get_logger(__name__, type(self))
         self.max_retries = max_retries
-        self.min_backoff = min_backoff
-        self.max_backoff = max_backoff
+        self.min_backoff = min_backoff or DEFAULT_MIN_BACKOFF
+        self.max_backoff = max_backoff or DEFAULT_MAX_BACKOFF
 
     @property
     def actor_options(self):
@@ -49,6 +56,7 @@ class Retries(Middleware):
         message.options["traceback"] = traceback.format_exc(limit=30)
         min_backoff = actor.options.get("min_backoff", self.min_backoff)
         max_backoff = actor.options.get("max_backoff", self.max_backoff)
+        max_backoff = min(max_backoff, DEFAULT_MAX_BACKOFF)
         _, backoff = compute_backoff(retries, factor=min_backoff, max_backoff=max_backoff)
         self.logger.info("Retrying message %r as %r in %d milliseconds.", previous_id, message.message_id, backoff)
         broker.enqueue(message, delay=backoff)

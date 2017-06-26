@@ -11,6 +11,21 @@ from ..errors import ConnectionClosed
 from ..logging import get_logger
 from ..message import Message
 
+#: The amount of time in milliseconds that dead-lettered messages are
+#: kept in Redis for.
+DEFAULT_DEAD_MESSAGE_TTL = 86400000 * 7
+
+#: The default amount of time to wait before re-enqueueing unacked
+#: messages.  The max message delay is 7 days so this has to account for
+#: that and give the workers some legroom.
+DEFAULT_REQUEUE_DEADLINE = int(86400000 * 7.5)
+
+#: The default interval with which to check for unacked messages.
+DEFAULT_REQUEUE_INTERVAL = 3600000
+
+#: The max amount of time messages can be delayed by in ms.
+MAX_MESSAGE_DELAY = 86400000 * 7
+
 
 class RedisBroker(Broker):
     """A broker than can be used with Redis.
@@ -18,25 +33,21 @@ class RedisBroker(Broker):
     Parameters:
       middleware(list[Middleware])
       namespace(str): The str with which to prefix all Redis keys.
-      requeue_deadline(int): The amount of time, in milliseconds,
-        messages are allowed to be unacked for.
-      requeue_interval(int): The interval, in milliseconds, at which
-        unacked messages should be checked.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
     """
 
-    def __init__(self, *, middleware=None, namespace="dramatiq", requeue_deadline=86400000, requeue_interval=3600000, **parameters):  # noqa
+    def __init__(self, *, middleware=None, namespace="dramatiq", **parameters):  # noqa
         super().__init__(middleware=middleware)
 
         self.namespace = namespace
-        self.dead_message_ttl = 86400 * 7 * 1000
-        self.requeue_deadline = requeue_deadline
-        self.requeue_interval = requeue_interval
+        self.dead_message_ttl = DEFAULT_DEAD_MESSAGE_TTL
+        self.requeue_deadline = DEFAULT_REQUEUE_DEADLINE
+        self.requeue_interval = DEFAULT_REQUEUE_INTERVAL
         self.queues = set()
         self.client = client = redis.StrictRedis(**parameters)
         self.scripts = {name: client.register_script(script) for name, script in _scripts.items()}
-        self.watcher = _RedisWatcher(self, interval=requeue_interval)
+        self.watcher = _RedisWatcher(self, interval=self.requeue_interval)
 
     def close(self):
         """Close this broker.
@@ -78,10 +89,19 @@ class RedisBroker(Broker):
         Parameters:
           message(Message): The message to enqueue.
           delay(int): The minimum amount of time, in milliseconds, to
-            delay the message by.
+            delay the message by.  Must be less than 7 days.
+
+        Raises:
+          ValueError: If ``delay`` is longer than 7 days.
         """
         queue_name = message.queue_name
         if delay is not None:
+            if delay > MAX_MESSAGE_DELAY:
+                raise ValueError(
+                    "Messages cannot be delayed for longer than 7 days. "
+                    "Your message queue is not a Database."
+                )
+
             queue_name = dq_name(queue_name)
             message = message._replace(queue_name=queue_name)
             message.options["eta"] = current_millis() + delay
