@@ -265,13 +265,15 @@ You can set an Actor's priority via the ``priority`` keyword argument::
     ...
 
 
-Brokers
--------
+Message Brokers
+---------------
 
-Dramatiq has an abstraction over the notion of a message broker and
-currently supports both RabbitMQ and Redis out of the box.  By
-default, it'll set up a RabbitMQ broker instance pointing at the local
-host.
+Dramatiq abstracts over the notion of a message broker and currently
+supports both RabbitMQ and Redis out of the box.  By default, it'll
+set up a RabbitMQ broker instance pointing at the local host.
+
+RabbitMQ Broker
+^^^^^^^^^^^^^^^
 
 To configure the RabbitMQ host, instantiate a |RabbitmqBroker| and set
 it as the global broker as early as possible during your program's
@@ -282,9 +284,16 @@ execution::
 
   from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-  conn_parameters = pika.ConnectionParameters(host="rabbitmq")
+  conn_parameters = pika.ConnectionParameters(
+    host="rabbitmq",
+    heartbeat_interval=0,
+  )
   rabbitmq_broker = RabbitmqBroker(parameters=conn_parameters)
   dramatiq.set_broker(rabbitmq_broker)
+
+Make sure to disable heartbeats when defining your own connection
+parameters by passing them ``heartbeat_interval=0`` since *pika's*
+``BlockingConnection`` does not handle heartbeats.
 
 Redis Broker
 ^^^^^^^^^^^^
