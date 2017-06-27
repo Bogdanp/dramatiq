@@ -138,9 +138,9 @@ Error Handling
 --------------
 
 Dramatiq strives for at-least-once message delivery and assumes all
-actors are idempotent.  When an exception occurs a message is being
-processed, Dramatiq automatically enqueues a retry for that message
-with exponential backoff.
+actors are idempotent.  When an exception occurs while a message is
+being processed, Dramatiq automatically enqueues a retry for that
+message with exponential backoff.
 
 That last message we sent will cause something along these lines to be
 printed in your worker process::
@@ -169,7 +169,7 @@ signal to the main worker process::
 
   $ kill -s HUP 13047
 
-The next time your message is run should see::
+The next time your message is run you should see::
 
   Message dropped due to invalid url: 'foo'
 
@@ -180,8 +180,8 @@ Code Reloading
 Sending ``SIGHUP`` to the workers every time you make a change is
 going to get old quick.  Instead, you can run the CLI utility with the
 ``--watch`` flag pointing to the folder it should watch for source
-code changes.  Whenever Python files under that folder or any of its
-subfolders change, it'll reload the workers::
+code changes.  It'll reload the workers whenever Python files under
+that folder or any of its subfolders change::
 
   $ env PYTHONPATH=. dramatiq count_words --watch .
 
@@ -217,12 +217,9 @@ Option           Default       Description
 Message Age Limits
 ------------------
 
-If, instead of limiting the number of times messages can be retried,
-you want to expire messages older than some amount of time; you can
-specify the ``max_age`` of messages on a per-actor basis.
-
-To ensure essages older than 1 hour are never run, you can set
-``max_age`` to ``3600000``::
+Instead of limiting the number of times messages can be retried, you
+might want to expire old messages.  You can specify the ``max_age`` of
+messages on a per-actor basis::
 
   @dramatiq.actor(max_age=3600000)
   def count_words(url):
@@ -233,7 +230,7 @@ Scheduling Messages
 -------------------
 
 You can schedule messages to run up to 7 days into the future by
-calling |send_with_options| on actors and providing an ``eta``::
+calling |send_with_options| on actors and providing a ``delay``::
 
   >>> count_words.send_with_options(args=("https://example.com",), delay=10000)
   Message(
