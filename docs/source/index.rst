@@ -18,8 +18,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
 .. image:: https://img.shields.io/badge/Say%20Thanks!-%F0%9F%A6%89-1EAEDB.svg
    :target: https://saythanks.io/to/Bogdanp
 
-**dramatiq** is a task queueing library for Python with a focus on
-simplicity, reliability and performance.
+**dramatiq** is a distributed task processing library for Python with
+a focus on simplicity, reliability and performance.
 
 Here's what it looks like:
 
@@ -45,12 +45,15 @@ options are available `upon request`_.
 Get It Now
 ----------
 
-::
+If you want to use it with RabbitMQ_::
 
    $ pip install -U dramatiq[rabbitmq, watch]
 
-Read the :doc:`quickstart` if you're ready to get started or check out
-some of the :doc:`examples`.
+Or if you want to use it with Redis_::
+
+   $ pip install -U dramatiq[redis, watch]
+
+Read the :doc:`guide` if you're ready to get started.
 
 
 User Guide
@@ -63,8 +66,7 @@ how to use dramatiq.
    :maxdepth: 2
 
    installation
-   quickstart
-   examples
+   guide
    advanced
 
 

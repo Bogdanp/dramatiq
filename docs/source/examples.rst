@@ -1,4 +1,0 @@
-.. include:: global.rst
-
-Examples
-========

@@ -14,14 +14,11 @@ Here's what it looks like:
 ``` python
 import dramatiq
 
-
 @dramatiq.actor
 def send_welcome_email(user_id):
   user = User.get_by_id(user_id)
   mailer = Mailer.get_mailer()
   mailer.send(to=user.email, subject="Welcome", body="Welcome to our website!")
-
-
 
 # ... somewhere in your signup process
 send_welcome_email.send(new_user.id)
@@ -29,9 +26,11 @@ send_welcome_email.send(new_user.id)
 
 ## Installation
 
+If you want to use it with [RabbitMQ][rabbit]
+
     pip install -U dramatiq[rabbitmq, watch]
 
-or
+or if you want to use it with [Redis][redis]
 
     pip install -U dramatiq[redis, watch]
 
@@ -49,3 +48,5 @@ Commercial licensing options are available [upon request][mailto].
 
 [license]: https://github.com/Bogdanp/dramatiq/blob/master/LICENSE
 [mailto]: mailto:bogdan@defn.io
+[rabbit]: https://www.rabbitmq.com/
+[redis]: https://redis.io
