@@ -3,5 +3,6 @@ include README.md
 include setup.cfg
 include setup.py
 
-recursive-include requirements *.txt
+recursive-include bin *
 recursive-include dramatiq/brokers/redis *.lua
+recursive-include requirements *.txt

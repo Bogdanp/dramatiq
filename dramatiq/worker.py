@@ -34,10 +34,10 @@ class Worker:
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
         # must be small so we don't starve other workers out.
-        self.queue_prefetch = worker_threads * 2
+        self.queue_prefetch = min(worker_threads * 2, 65535)
         # Load a large factor more delay messages than there are
         # workers as those messages could have far-future etas.
-        self.delay_prefetch = worker_threads * 1000
+        self.delay_prefetch = min(worker_threads * 1000, 65535)
 
         self.workers = []
         self.work_queue = PriorityQueue()
