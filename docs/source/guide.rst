@@ -149,7 +149,7 @@ Error Handling
 --------------
 
 Dramatiq strives for at-least-once message delivery and assumes all
-actors are idempotent.  When an exception occurs while a message is
+actors are idempotent [#idempotent]_.  When an exception occurs while a message is
 being processed, Dramatiq automatically enqueues a retry for that
 message with exponential backoff.
 
@@ -402,3 +402,7 @@ synchronously by calling them as you would normal functions.
 
 
 .. _pytest fixtures: https://docs.pytest.org/en/latest/fixture.html
+
+.. rubric:: Footnotes
+
+.. [#idempotent] If you need a refresher: "idempotent" refers to the constraint that after running an operation *more than once*, the resulting state is the same as if it was executed *only once*. Say our word-counting actor stores a total number of words it has counted by adding the number of words to a running total. Running our word counter on the same URL twice in a row returns a different number of words than running it only once; thus, our actor is **not** idempotent, and we should probably refrain from writing accumulating word count implementations.
