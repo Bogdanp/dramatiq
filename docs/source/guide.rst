@@ -79,7 +79,8 @@ In order to run it, we'll have to boot up a Dramatiq worker.
 
 .. note::
    Because all messages have to be sent over the network, any
-   parameter you send to an actor must be JSON-encodable.
+   parameter (argument/keyword argument) you send to an actor
+   must be JSON-encodable.
 
 
 Workers
