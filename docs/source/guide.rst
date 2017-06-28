@@ -99,9 +99,9 @@ is::
 
 This will spin up as many processes as there are CPU cores on your
 machine with 8 worker threads per process.  What this means is that if
-you have an 8 core machine, Dramatiq will spawn 64 worker threads
-making it so you can process up to 64 messages concurrently on that
-machine.
+you have an 8 core machine, Dramatiq will spawn a total of 64 worker
+threads making it so you can process up to 64 messages concurrently
+on your machine.
 
 As soon as you run that command you'll see log output along these
 lines::
