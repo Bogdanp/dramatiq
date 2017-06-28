@@ -293,7 +293,8 @@ Scheduling Messages
 -------------------
 
 You can schedule messages to run up to 7 days into the future by
-calling |send_with_options| on actors and providing a ``delay``::
+calling |send_with_options| on actors and providing a ``delay`` (in
+milliseconds)::
 
   >>> count_words.send_with_options(args=("https://example.com",), delay=10000)
   Message(
@@ -313,10 +314,10 @@ Prioritizing Messages
 ---------------------
 
 Say your app has some actors that are higher priority than others:
-eg. actors that affect the UI/are somehow user-facing versus actors
-that aren't.  When choosing between two concurrent messages to run,
-Dramatiq will run the Message whose actor has a lower numeric
-priority.
+eg. actors that affect your UI and make users wait, or are otherwise
+user-facing, versus actors that aren't.  When choosing between two
+concurrent messages to run, Dramatiq will run the Message whose actor
+has a lower numeric priority.
 
 You can set an Actor's priority via the ``priority`` keyword argument::
 
@@ -328,6 +329,14 @@ You can set an Actor's priority via the ``priority`` keyword argument::
   def background():
     ...
 
+Valid priorities are `0` through `<foo>`.
+
+.. warning::
+    The lower the numeric value, the higher priority! If you need a
+    mnemonic to remember this, you be able to related to the
+    experience of hanving a ticket with a number on it handed to you
+    while waiting in line, (a "please take a number/now serving"
+    system), perhaps at a government institution or deli counter.
 
 Message Brokers
 ---------------
