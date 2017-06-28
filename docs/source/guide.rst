@@ -3,13 +3,15 @@
 User Guide
 ==========
 
-To get started, run ``rabbitmq-server`` in a terminal window and fire
-up your favorite code editor.  For the purposes of this guide, I'll
-assume you've created a new virtualenv_ and have installed Dramatiq
-with RabbitMQ support as well as the requests_ library.
+For the purposes of this guide, I'll assume you've created a new
+virtualenv_ and have installed Dramatiq with RabbitMQ support as well
+as the requests_ library, and have `installed RabbitMQ`_ itself. To
+get started, run ``rabbitmq-server`` in a terminal window and fire up
+your favorite code editor.
 
 .. _requests: http://docs.python-requests.org/en/latest/
 .. _virtualenv: http://docs.python-guide.org/en/latest/starting/installation/
+.. _installed RabbitMQ: https://www.rabbitmq.com/download.html
 
 
 Actors
@@ -73,11 +75,14 @@ asynchronously by calling its |send| method::
 
 Doing so immediately enqueues a message that can be processed
 asynchronously but *doesn't* run the function in the current process.
-In order to run it, we'll have to boot up a Dramatiq worker.
+Instead, a connection was opened to our local RabbitMQ server and the
+message representing the function execution has been queued. In order
+to run it, we'll have to boot up a Dramatiq worker.
 
 .. note::
    Because all messages have to be sent over the network, any
-   parameter you send to an actor must be JSON-encodable.
+   parameter (argument/keyword argument) you send to an actor
+   must be JSON-encodable.
 
 
 Workers
@@ -88,15 +93,16 @@ This utility is able to spin up multiple concurrent worker processes
 that pop messages off the queue and send them to actors for execution.
 
 To spawn workers for our ``count_words.py`` example, all we have to do
+(in a new terminal, since we'll want to keep this running for a while)
 is::
 
   $ env PYTHONPATH=. dramatiq count_words
 
 This will spin up as many processes as there are CPU cores on your
 machine with 8 worker threads per process.  What this means is that if
-you have an 8 core machine, Dramatiq will spawn 64 worker threads
-making it so you can process up to 64 messages concurrently on that
-machine.
+you have an 8 core machine, Dramatiq will spawn a total of 64 worker
+threads making it so you can process up to 64 messages concurrently
+on your machine.
 
 As soon as you run that command you'll see log output along these
 lines::
@@ -112,8 +118,8 @@ lines::
   [2017-06-27 13:03:09,833] [PID 13057] [MainThread] [dramatiq.WorkerProcess(7)] [INFO] Worker process is ready for action.
   There are 338 words at 'http://example.com'.
 
-If you open your python interpreter back up and send the actor some
-more URLs to process
+If you open your Python interpreter back up and send the actor some
+more URLs to process::
 
 ::
 
@@ -143,7 +149,7 @@ Error Handling
 --------------
 
 Dramatiq strives for at-least-once message delivery and assumes all
-actors are idempotent.  When an exception occurs while a message is
+actors are idempotent [#idempotent]_.  When an exception occurs while a message is
 being processed, Dramatiq automatically enqueues a retry for that
 message with exponential backoff.
 
@@ -174,11 +180,18 @@ to the main worker process::
 
   $ kill -s HUP 13047
 
+.. note::
+    Subsitute the process ID (PID) of your own main worker process
+    for `13047`. You can find the PID by looking at the log lines
+    from the worker starting up. Make sure to choose the PID from
+    the main process's log line, denoted by ``[dramatiq.MainProcess]``!
+
 The next time your message is run you should see::
 
   Message dropped due to invalid url: 'foo'
 
 
+.. _code-reloading:
 Code Reloading
 --------------
 
@@ -224,7 +237,7 @@ Message Age Limits
 
 Instead of limiting the number of times messages can be retried, you
 might want to expire old messages.  You can specify the ``max_age`` of
-messages on a per-actor basis::
+messages (given in milliseconds) on a per-actor basis::
 
   @dramatiq.actor(max_age=3600000)
   def count_words(url):
@@ -241,11 +254,17 @@ time limit of 10 minutes, which means that any actor running for
 longer than 10 minutes is killed with a |TimeLimitExceeded| error.
 
 You can control these time limits at the individual actor level by
-specifying the ``time_limit`` of each one::
+specifying the ``time_limit`` (in milliseconds) of each one::
 
   @dramatiq.actor(time_limit=60000)
   def count_words(url):
     ...
+
+.. note::
+    While this will keep our actor from running forever, remember
+    that you should take care to always specify a timeout for the
+    request itself, and this is **not** a good way to handle request
+    timeouts in production code.
 
 .. note::
    Time limits are best-effort.  They cannot cancel system calls or
@@ -274,7 +293,8 @@ Scheduling Messages
 -------------------
 
 You can schedule messages to run up to 7 days into the future by
-calling |send_with_options| on actors and providing a ``delay``::
+calling |send_with_options| on actors and providing a ``delay`` (in
+milliseconds)::
 
   >>> count_words.send_with_options(args=("https://example.com",), delay=10000)
   Message(
@@ -294,10 +314,10 @@ Prioritizing Messages
 ---------------------
 
 Say your app has some actors that are higher priority than others:
-eg. actors that affect the UI/are somehow user-facing versus actors
-that aren't.  When choosing between two concurrent messages to run,
-Dramatiq will run the Message whose actor has a lower numeric
-priority.
+eg. actors that affect your UI and make users wait, or are otherwise
+user-facing, versus actors that aren't.  When choosing between two
+concurrent messages to run, Dramatiq will run the Message whose actor
+has a lower numeric priority.
 
 You can set an Actor's priority via the ``priority`` keyword argument::
 
@@ -309,6 +329,14 @@ You can set an Actor's priority via the ``priority`` keyword argument::
   def background():
     ...
 
+Valid priorities are `0` through `<foo>`.
+
+.. warning::
+    The lower the numeric value, the higher priority! If you need a
+    mnemonic to remember this, you be able to related to the
+    experience of hanving a ticket with a number on it handed to you
+    while waiting in line, (a "please take a number/now serving"
+    system), perhaps at a government institution or deli counter.
 
 Message Brokers
 ---------------
@@ -395,3 +423,14 @@ synchronously by calling them as you would normal functions.
 
 
 .. _pytest fixtures: https://docs.pytest.org/en/latest/fixture.html
+
+.. rubric:: Footnotes
+
+.. [#idempotent] If you need a refresher: "idempotent" refers to the constraint
+that after running an operation *more than once*, the resulting state is the
+same as if it was executed *only once*. Say our word-counting actor stores a
+total number of words it has counted by adding the number of words to a running
+total. Running our word counter on the same URL twice in a row returns a
+different number of words than running it only once; thus, our actor is **not**
+idempotent, and we should probably refrain from writing accumulating word count
+implementations.
