@@ -13,15 +13,20 @@ Here's what it looks like:
 
 ``` python
 import dramatiq
+import requests
 
 @dramatiq.actor
-def send_welcome_email(user_id):
-  user = User.get_by_id(user_id)
-  mailer = Mailer.get_mailer()
-  mailer.send(to=user.email, subject="Welcome", body="Welcome to our website!")
+def count_words(url):
+   response = requests.get(url)
+   count = len(response.text.split(" "))
+   print(f"There are {count} words at {url!r}.")
 
-# ... somewhere in your signup process
-send_welcome_email.send(new_user.id)
+# Synchronously count the works on example.com in the current process
+count_words("http://example.com")
+
+# or send the actor a message so that it may perform the count
+# later, in a separate process.
+count_words.send("http://example.com")
 ```
 
 ## Installation
