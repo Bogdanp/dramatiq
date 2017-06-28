@@ -123,10 +123,10 @@ def main(args):
 
         else:
             if args.use_green_threads:
-                subprocess_args = ["dramatiq", "bench", "-p", "8"]
+                subprocess_args = ["dramatiq-gevent", "bench", "-p", "8", "-t", "250"]
 
             else:
-                subprocess_args = ["dramatiq-gevent", "bench", "-p", "8", "-t", "250"]
+                subprocess_args = ["dramatiq", "bench", "-p", "8"]
 
         proc = subprocess.Popen(subprocess_args)
         processed = 0
