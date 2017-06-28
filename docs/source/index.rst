@@ -58,6 +58,8 @@ Or if you want to use it with Redis_::
 
    $ pip install -U dramatiq[redis, watch]
 
+The ``watch`` extra enables Code Reloading; more details are available in the :ref:`guide<code-reloading>`.
+
 Read the :doc:`motivation` behind it or the :doc:`guide` if you're
 ready to get started.
 

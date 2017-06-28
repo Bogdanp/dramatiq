@@ -179,6 +179,7 @@ The next time your message is run you should see::
   Message dropped due to invalid url: 'foo'
 
 
+.. _code-reloading:
 Code Reloading
 --------------
 
