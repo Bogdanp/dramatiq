@@ -3,13 +3,14 @@
 User Guide
 ==========
 
-To get started, run ``rabbitmq-server`` in a terminal window and fire
-up your favorite code editor.  For the purposes of this guide, I'll
-assume you've created a new virtualenv_ and have installed Dramatiq
-with RabbitMQ support as well as the requests_ library.
+To follow along with this guide you'll need to install and run RabbitMQ_
+and then set up a new `virtual environment`_ in which you'll have
+to install Dramatiq and Requests_::
 
-.. _requests: http://docs.python-requests.org/en/latest/
-.. _virtualenv: http://docs.python-guide.org/en/latest/starting/installation/
+  $ pip install dramatiq[rabbitmq, watch] requests
+
+.. _requests: http://docs.python-requests.org
+.. _virtual environment: http://docs.python-guide.org/en/latest/starting/install3/osx/#virtual-environments
 
 
 Actors
@@ -54,8 +55,8 @@ using Dramatiq, all we have to do is decorate it with |actor|:
      count = len(response.text.split(" "))
      print(f"There are {count} words at {url!r}.")
 
-As before, if we call the function in the interactive interpreter, the
-function will run synchronusly and we'll get the same result out::
+Like before, if we call the function in the interactive interpreter,
+it will run synchronously and we'll get the same result out::
 
   >>> count_words("http://example.com")
   There are 338 words at 'http://example.com'.
@@ -71,32 +72,32 @@ asynchronously by calling its |send| method::
     message_id='8cdcae57-af36-40ba-9616-849a336a4316',
     message_timestamp=1498557015410)
 
-Doing so immediately enqueues a message that can be processed
-asynchronously but *doesn't* run the function in the current process.
-In order to run it, we'll have to boot up a Dramatiq worker.
+Doing so immediately enqueues a message (via our local RabbitMQ
+server) that can be processed asynchronously but *doesn't actually run
+the function*.  In order to run it, we'll have to boot up a Dramatiq
+worker.
 
 .. note::
    Because all messages have to be sent over the network, any
-   parameter you send to an actor must be JSON-encodable.
+   arguments you send to an actor must be JSON-encodable.
 
 
 Workers
 -------
 
-Dramatiq comes with a CLI utility called, predictably, ``dramatiq``.
-This utility is able to spin up multiple concurrent worker processes
-that pop messages off the queue and send them to actors for execution.
+Dramatiq comes with a command line utility called, predictably,
+``dramatiq``.  This utility is able to spin up multiple concurrent
+worker processes that pop messages off the queue and send them to
+actor functions for execution.
 
-To spawn workers for our ``count_words.py`` example, all we have to do
-is::
+To spawn workers for our ``count_words.py`` example, run the following
+command in a new terminal window::
 
   $ env PYTHONPATH=. dramatiq count_words
 
 This will spin up as many processes as there are CPU cores on your
-machine with 8 worker threads per process.  What this means is that if
-you have an 8 core machine, Dramatiq will spawn 64 worker threads
-making it so you can process up to 64 messages concurrently on that
-machine.
+machine with 8 worker threads per process.  Run ``dramatiq -h`` if you
+want to see a list of the available command line flags.
 
 As soon as you run that command you'll see log output along these
 lines::
@@ -112,10 +113,8 @@ lines::
   [2017-06-27 13:03:09,833] [PID 13057] [MainThread] [dramatiq.WorkerProcess(7)] [INFO] Worker process is ready for action.
   There are 338 words at 'http://example.com'.
 
-If you open your python interpreter back up and send the actor some
-more URLs to process
-
-::
+If you open your Python interpreter back up and send the actor some
+more URLs to process::
 
   >>> urls = [
   ...   "https://news.ycombinator.com",
@@ -127,7 +126,8 @@ more URLs to process
    Message(queue_name='default', actor_name='count_words', args=('https://xkcd.com',), kwargs={}, options={}, message_id='0ec93dcb-2f9f-414f-99ec-7035e3b1ac5a', message_timestamp=1498557998218),
    Message(queue_name='default', actor_name='count_words', args=('https://rabbitmq.com',), kwargs={}, options={}, message_id='d3dd9799-1ea5-4b00-a70b-2cd6f6f634ed', message_timestamp=1498557998218)]
 
-and then switch back to the worker terminal, you'll see three new lines::
+and then switch back to the worker terminal, you'll see three new
+lines::
 
   There are 467 words at 'https://xkcd.com'.
   There are 3962 words at 'https://rabbitmq.com'.
@@ -157,8 +157,10 @@ printed in your worker process::
   [2017-06-27 13:11:22,062] [PID 13053] [Thread-8] [dramatiq.middleware.retries.Retries] [INFO] Retrying message 'a53a5a7d-74e1-48ae-a5a8-0b72af2a8708' as 'cc6a9b6d-873d-4555-a5d1-98d816775049' in 8104 milliseconds.
 
 Dramatiq will keep retrying the message with longer and longer delays
-in between runs until we fix our code.  Lets do that: change
-``count_words`` to catch the missing schema error::
+in between runs until we fix our code or for up to about 30 days from
+when it was first enqueued.
+
+Change ``count_words`` to catch the missing schema error::
 
    @dramatiq.actor
    def count_words(url):
@@ -169,12 +171,16 @@ in between runs until we fix our code.  Lets do that: change
      except requests.exceptions.MissingSchema:
        print(f"Message dropped due to invalid url: {url!r}")
 
-To make the workers pick up the source code changes, send ``SIGHUP``
-to the main worker process::
+Then send ``SIGHUP`` to the main worker process to make the workers
+pick up the source code changes::
 
   $ kill -s HUP 13047
 
-The next time your message is run you should see::
+Substitute the process ID of your own main process for ``13047``.  You
+can find the PID by looking at the log lines from the worker starting
+up.  Look for lines containing the string ``[dramatiq.MainProcess]``.
+
+The next time your message is retried you should see::
 
   Message dropped due to invalid url: 'foo'
 
@@ -183,26 +189,28 @@ Code Reloading
 --------------
 
 Sending ``SIGHUP`` to the workers every time you make a change is
-going to get old quick.  Instead, you can run the CLI utility with the
-``--watch`` flag pointing to the folder it should watch for source
-code changes.  It'll reload the workers whenever Python files under
-that folder or any of its subfolders change::
+going to get old quick.  Instead, you can run the command line utility
+with the ``--watch`` flag pointing to the folder it should watch for
+source code changes.  It'll reload the workers whenever Python files
+under that folder or any of its sub-folders change::
 
   $ env PYTHONPATH=. dramatiq count_words --watch .
 
 .. warning::
-   While this is a great feature to use while developing your code, avoid
-   using it in production!
+   While this is a great feature to use when developing your code,
+   avoid using it in production!
 
 
 Message Retries
 ---------------
 
 As mentioned in the error handling section, Dramatiq automatically
-retries failing messages with exponential backoff.  You can specify
-how messages should be retried on a per-actor basis.  For example, if
-we wanted to limit the max number of retries for ``count_words`` we'd
-specify the ``max_retries`` keyword argument to |actor|::
+retries failures with exponential backoff.
+
+You can specify how failures should be retried on a per-actor basis.
+For example, if you want to limit the maximum number of retries for
+``count_words`` you can pass the ``max_retries`` keyword argument to
+|actor|::
 
   @dramatiq.actor(max_retries=3)
   def count_words(url):
@@ -213,7 +221,7 @@ The following retry options are configurable on a per-actor basis:
 ===============  ============  ====================================================================================================================
 Option           Default       Description
 ===============  ============  ====================================================================================================================
-``max_retries``  ``None``      The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
+``max_retries``  ``20``        The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
 ``min_backoff``  15 seconds    The minimum number of milliseconds of backoff to apply between retries.  Must be greater than 100 milliseconds.
 ``max_backoff``  7 days        The maximum number of milliseconds of backoff to apply between retries.  Must be less than or equal to 7 days.
 ===============  ============  ====================================================================================================================
@@ -224,30 +232,45 @@ Message Age Limits
 
 Instead of limiting the number of times messages can be retried, you
 might want to expire old messages.  You can specify the ``max_age`` of
-messages on a per-actor basis::
+messages (given in milliseconds) on a per-actor basis::
 
   @dramatiq.actor(max_age=3600000)
   def count_words(url):
     ...
 
+Dead Letters
+^^^^^^^^^^^^
+
+Once a message has exceeded its retry or age limits, it gets moved to
+the dead letter queue where it's kept for up to 7 days and then
+automatically dropped from the message broker.  From here, you can
+manually inspect the message and decide whether or not it should be
+put back on the queue.
+
 
 Message Time Limits
 -------------------
 
-In ``count_words``, we didn't set a timeout for the outbound request
-which means that it can take a very long time to complete if the
-server we're requesting is timing out.  Dramatiq has a default actor
-time limit of 10 minutes, which means that any actor running for
+In ``count_words``, we didn't set an explicit timeout for the outbound
+request which means that it can take a very long time to complete if
+the server we're requesting is timing out.  Dramatiq has a default
+actor time limit of 10 minutes, which means that any actor running for
 longer than 10 minutes is killed with a |TimeLimitExceeded| error.
 
 You can control these time limits at the individual actor level by
-specifying the ``time_limit`` of each one::
+specifying the ``time_limit`` (in milliseconds) of each one::
 
   @dramatiq.actor(time_limit=60000)
   def count_words(url):
     ...
 
 .. note::
+   While this will keep our actor from running forever, remember that
+   you should take care to always specify a timeout for the request
+   itself, and this is **not** a good way to handle request timeouts
+   in production code.
+
+.. warning::
    Time limits are best-effort.  They cannot cancel system calls or
    any function that doesn't currently hold the GIL under CPython.
 
@@ -274,7 +297,8 @@ Scheduling Messages
 -------------------
 
 You can schedule messages to run up to 7 days into the future by
-calling |send_with_options| on actors and providing a ``delay``::
+calling |send_with_options| on actors and providing a ``delay`` (in
+milliseconds)::
 
   >>> count_words.send_with_options(args=("https://example.com",), delay=10000)
   Message(
@@ -286,28 +310,45 @@ calling |send_with_options| on actors and providing a ``delay``::
     message_timestamp=1498560443548)
 
 Keep in mind that *your message broker is not a database*.  Scheduled
-messages should represent a small subset of your total number of
-messages.
+messages should represent a small subset of all your messages.
 
 
 Prioritizing Messages
 ---------------------
 
-Say your app has some actors that are higher priority than others:
-eg. actors that affect the UI/are somehow user-facing versus actors
-that aren't.  When choosing between two concurrent messages to run,
-Dramatiq will run the Message whose actor has a lower numeric
-priority.
+Say your app has some actors that are higher priority than others: for
+example, actors that affect your UI and make users wait, or are
+otherwise user-facing, versus actors that aren't.  When choosing
+between two concurrent messages to run, Dramatiq will run the Message
+that belongs to the actor with the highest priority.
 
 You can set an Actor's priority via the ``priority`` keyword argument::
 
   @dramatiq.actor(priority=0)  # 0 is the default
-  def ui_facing():
+  def generate_report(user_id):
     ...
 
   @dramatiq.actor(priority=10)
-  def background():
+  def sync_order_to_warehouse(order_id):
     ...
+
+That way if both ``generate_report`` and ``sync_order_to_warehouse``
+are scheduled to run at the same time but there's only capacity to run
+one of them, ``generate_report`` will always run *first*.
+
+Although all positive integers represent valid priorities, if you're
+going to use this feature, I'd recommend setting up constants for the
+various priorities you plan to use::
+
+  PRIO_LO = 100
+  PRIO_MED = 50
+  PRIO_HI = 0
+
+.. important::
+   The lower the numeric value, the higher priority!  If you need a
+   mnemonic to remember this, think of having a ticket with a number
+   on it handed to you while waiting in line, perhaps at a government
+   institution or deli counter.
 
 
 Message Brokers
@@ -337,15 +378,15 @@ execution::
   dramatiq.set_broker(rabbitmq_broker)
 
 Make sure to disable heartbeats when defining your own connection
-parameters by passing them ``heartbeat_interval=0`` since *pika's*
+parameters by passing them ``heartbeat_interval=0`` since pika's
 ``BlockingConnection`` does not handle heartbeats.
 
 Redis Broker
 ^^^^^^^^^^^^
 
 To use Dramatiq with the Redis broker, create an instance of it and
-set it as the global broker as early during your program's execution
-as possible::
+set it as the global broker as early as possible during your program’s
+execution::
 
   import dramatiq
 
