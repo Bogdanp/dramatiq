@@ -37,8 +37,8 @@ Here's what it looks like:
   send_welcome_email.send(new_user.id)
 
 **dramatiq** is :doc:`licensed<license>` under the AGPL and it
-officially supports Python 3.6 and later.  Commercial licensing
-options are available `upon request`_.
+officially supports Python 3.6 and later.  :doc:`commercial`
+is also available.
 
 .. _upon request: mailto:bogdan@defn.io
 
@@ -53,7 +53,8 @@ Or if you want to use it with Redis_::
 
    $ pip install -U dramatiq[redis, watch]
 
-Read the :doc:`guide` if you're ready to get started.
+Read the :doc:`motivation` behind it or the :doc:`guide` if you're
+ready to get started.
 
 
 User Guide
@@ -66,7 +67,9 @@ how to use dramatiq.
    :maxdepth: 2
 
    installation
+   motivation
    guide
+   best_practices
    advanced
 
 
@@ -89,4 +92,6 @@ Project Info
    :maxdepth: 1
 
    changelog
+   contributing
    license
+   commercial
