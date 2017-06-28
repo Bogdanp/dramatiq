@@ -237,7 +237,7 @@ Message Age Limits
 
 Instead of limiting the number of times messages can be retried, you
 might want to expire old messages.  You can specify the ``max_age`` of
-messages on a per-actor basis::
+messages (given in seconds) on a per-actor basis::
 
   @dramatiq.actor(max_age=3600000)
   def count_words(url):
