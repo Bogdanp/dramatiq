@@ -60,8 +60,8 @@ def latency_bench():
 dramatiq_fib_bench = dramatiq.actor(fib_bench)
 dramatiq_latency_bench = dramatiq.actor(latency_bench)
 
-celery_fib_bench = celery_app.task(name="fib-bench")(fib_bench)
-celery_latency_bench = celery_app.task(name="latency-bench")(latency_bench)
+celery_fib_bench = celery_app.task(name="fib-bench", acks_late=True)(fib_bench)
+celery_latency_bench = celery_app.task(name="latency-bench", acks_late=True)(latency_bench)
 
 
 def benchmark_arg(value):
