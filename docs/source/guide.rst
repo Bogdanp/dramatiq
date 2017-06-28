@@ -180,6 +180,12 @@ to the main worker process::
 
   $ kill -s HUP 13047
 
+.. note::
+    Subsitute the process ID (PID) of your own main worker process
+    for `13047`. You can find the PID by looking at the log lines
+    from the worker starting up. Make sure to choose the PID from
+    the main process's log line, denoted by ``[dramatiq.MainProcess]``!
+
 The next time your message is run you should see::
 
   Message dropped due to invalid url: 'foo'
