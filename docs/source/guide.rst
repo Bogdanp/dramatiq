@@ -261,6 +261,12 @@ specifying the ``time_limit`` (in seconds) of each one::
     ...
 
 .. note::
+    While this will keep our actor from running forever, remember
+    that you should take care to always specify a timeout for the
+    request itself, and this is **not** a good way to handle request
+    timeouts in production code.
+
+.. note::
    Time limits are best-effort.  They cannot cancel system calls or
    any function that doesn't currently hold the GIL under CPython.
 
