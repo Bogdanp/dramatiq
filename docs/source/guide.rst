@@ -75,7 +75,9 @@ asynchronously by calling its |send| method::
 
 Doing so immediately enqueues a message that can be processed
 asynchronously but *doesn't* run the function in the current process.
-In order to run it, we'll have to boot up a Dramatiq worker.
+Instead, a connection was opened to our local RabbitMQ server and the
+message representing the function execution has been queued. In order
+to run it, we'll have to boot up a Dramatiq worker.
 
 .. note::
    Because all messages have to be sent over the network, any
