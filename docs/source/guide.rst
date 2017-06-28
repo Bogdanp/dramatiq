@@ -118,8 +118,8 @@ lines::
   [2017-06-27 13:03:09,833] [PID 13057] [MainThread] [dramatiq.WorkerProcess(7)] [INFO] Worker process is ready for action.
   There are 338 words at 'http://example.com'.
 
-If you open your python interpreter back up and send the actor some
-more URLs to process
+If you open your Python interpreter back up and send the actor some
+more URLs to process::
 
 ::
 
