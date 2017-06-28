@@ -51,6 +51,7 @@ Middleware
 .. autoclass:: dramatiq.middleware.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
 .. autoclass:: dramatiq.middleware.TimeLimit
+.. autoclass:: dramatiq.middleware.TimeLimitExceeded
 
 
 Workers

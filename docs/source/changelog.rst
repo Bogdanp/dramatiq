@@ -3,6 +3,11 @@
 Changelog
 =========
 
+v0.5.1
+------
+
+* Dropped RabbitMQ heartbeat to avoid spurious disconnects.
+
 v0.5.0
 ------
 

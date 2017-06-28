@@ -25,9 +25,9 @@ particular URL:
    import requests
 
    def count_words(url):
-       response = requests.get(url)
-       count = len(response.text.split(" "))
-       print(f"There are {count} words at {url!r}.")
+     response = requests.get(url)
+     count = len(response.text.split(" "))
+     print(f"There are {count} words at {url!r}.")
 
 There's not a ton going on here.  We just grab the response content at
 that URL and print out how many space-separated chunks there are in
@@ -43,6 +43,7 @@ using Dramatiq, all we have to do is decorate it with |actor|:
 
 .. code-block:: python
    :caption: count_words.py
+   :emphasize-lines: 1, 4
 
    import dramatiq
    import requests
@@ -73,6 +74,10 @@ asynchronously by calling its |send| method::
 Doing so immediately enqueues a message that can be processed
 asynchronously but *doesn't* run the function in the current process.
 In order to run it, we'll have to boot up a Dramatiq worker.
+
+.. note::
+   Because all messages have to be sent over the network, any
+   parameter you send to an actor must be JSON-encodable.
 
 
 Workers
@@ -114,17 +119,17 @@ more URLs to process
 
   >>> urls = [
   ...   "https://news.ycombinator.com",
-  ...   "https://xkcd.com/",
+  ...   "https://xkcd.com",
   ...   "https://rabbitmq.com",
   ... ]
   >>> [count_words.send(url) for url in urls]
   [Message(queue_name='default', actor_name='count_words', args=('https://news.ycombinator.com',), kwargs={}, options={}, message_id='a99a5b2d-d2da-407b-be55-f2925266e216', message_timestamp=1498557998218),
-   Message(queue_name='default', actor_name='count_words', args=('https://xkcd.com/',), kwargs={}, options={}, message_id='0ec93dcb-2f9f-414f-99ec-7035e3b1ac5a', message_timestamp=1498557998218),
+   Message(queue_name='default', actor_name='count_words', args=('https://xkcd.com',), kwargs={}, options={}, message_id='0ec93dcb-2f9f-414f-99ec-7035e3b1ac5a', message_timestamp=1498557998218),
    Message(queue_name='default', actor_name='count_words', args=('https://rabbitmq.com',), kwargs={}, options={}, message_id='d3dd9799-1ea5-4b00-a70b-2cd6f6f634ed', message_timestamp=1498557998218)]
 
 and then switch back to the worker terminal, you'll see three new lines::
 
-  There are 467 words at 'https://xkcd.com/'.
+  There are 467 words at 'https://xkcd.com'.
   There are 3962 words at 'https://rabbitmq.com'.
   There are 3589 words at 'https://news.ycombinator.com'.
 
@@ -152,20 +157,20 @@ printed in your worker process::
   [2017-06-27 13:11:22,062] [PID 13053] [Thread-8] [dramatiq.middleware.retries.Retries] [INFO] Retrying message 'a53a5a7d-74e1-48ae-a5a8-0b72af2a8708' as 'cc6a9b6d-873d-4555-a5d1-98d816775049' in 8104 milliseconds.
 
 Dramatiq will keep retrying the message with longer and longer delays
-in between runs until we fix our code so lets do that.  Change
+in between runs until we fix our code.  Lets do that: change
 ``count_words`` to catch the missing schema error::
 
    @dramatiq.actor
    def count_words(url):
-       try:
-           response = requests.get(url)
-           count = len(response.text.split(" "))
-           print(f"There are {count} words at {url!r}.")
-       except requests.exceptions.MissingSchema:
-           print(f"Message dropped due to invalid url: {url!r}")
+     try:
+       response = requests.get(url)
+       count = len(response.text.split(" "))
+       print(f"There are {count} words at {url!r}.")
+     except requests.exceptions.MissingSchema:
+       print(f"Message dropped due to invalid url: {url!r}")
 
-To make the workers pick up the source code changes, send the ``HUP``
-signal to the main worker process::
+To make the workers pick up the source code changes, send ``SIGHUP``
+to the main worker process::
 
   $ kill -s HUP 13047
 
@@ -190,8 +195,8 @@ that folder or any of its subfolders change::
    using it in production!
 
 
-Retries
--------
+Message Retries
+---------------
 
 As mentioned in the error handling section, Dramatiq automatically
 retries failing messages with exponential backoff.  You can specify
@@ -226,6 +231,45 @@ messages on a per-actor basis::
     ...
 
 
+Message Time Limits
+-------------------
+
+In ``count_words``, we didn't set a timeout for the outbound request
+which means that it can take a very long time to complete if the
+server we're requesting is timing out.  Dramatiq has a default actor
+time limit of 10 minutes, which means that any actor running for
+longer than 10 minutes is killed with a |TimeLimitExceeded| error.
+
+You can control these time limits at the individual actor level by
+specifying the ``time_limit`` of each one::
+
+  @dramatiq.actor(time_limit=60000)
+  def count_words(url):
+    ...
+
+.. note::
+   Time limits are best-effort.  They cannot cancel system calls or
+   any function that doesn't currently hold the GIL under CPython.
+
+
+Handling Time Limits
+^^^^^^^^^^^^^^^^^^^^
+
+If you want to gracefully handle time limits within an actor, you can
+wrap its source code in a try block and catch |TimeLimitExceeded|::
+
+  from dramatiq.middleware import TimeLimitExceeded
+
+  @dramatiq.actor(time_limit=1000)
+  def long_running():
+    try:
+      setup_missiles()
+      time.sleep(2)
+      launch_missiles()    # <- this will not run
+    except TimeLimitExceeded:
+      teardown_missiles()  # <- this will run
+
+
 Scheduling Messages
 -------------------
 
@@ -240,6 +284,10 @@ calling |send_with_options| on actors and providing a ``delay``::
     options={'eta': 1498560453548},
     message_id='7387dc76-8ebe-426e-aec1-db34c236563c',
     message_timestamp=1498560443548)
+
+Keep in mind that *your message broker is not a database*.  Scheduled
+messages should represent a small subset of your total number of
+messages.
 
 
 Prioritizing Messages
@@ -322,18 +370,18 @@ run your tests.  My recommendation is to use it in conjunction with
 
   @pytest.fixture()
   def stub_broker():
-      broker = StubBroker()
-      broker.emit_after("process_boot")
-      dramatiq.set_broker(broker)
-      yield broker
-      broker.close()
+    broker = StubBroker()
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    broker.close()
 
   @pytest.fixture()
   def stub_worker(stub_broker):
-      worker = Worker(stub_broker, worker_timeout=100)
-      worker.start()
-      yield worker
-      worker.stop()
+    worker = Worker(stub_broker, worker_timeout=100)
+    worker.start()
+    yield worker
+    worker.stop()
 
 Then you can inject and use those fixtures in your tests::
 
@@ -341,6 +389,9 @@ Then you can inject and use those fixtures in your tests::
     count_words.send("http://example.com")
     stub_broker.join(count_words.queue_name)
     stub_worker.join()
+
+Because all actors are callable, you can of course also unit test them
+synchronously by calling them as you would normal functions.
 
 
 .. _pytest fixtures: https://docs.pytest.org/en/latest/fixture.html

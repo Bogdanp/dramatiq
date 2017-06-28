@@ -7,6 +7,7 @@
 .. |RabbitmqBroker| replace:: :class:`RabbitmqBroker<dramatiq.brokers.rabbitmq.RabbitmqBroker>`
 .. |RedisBroker| replace:: :class:`RedisBroker<dramatiq.brokers.redis.RedisBroker>`
 .. |StubBroker| replace:: :class:`StubBroker<dramatiq.brokers.stub.StubBroker>`
+.. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<dramatiq.middleware.TimeLimitExceeded>`
 
 .. _gevent: http://www.gevent.org/
 .. _RabbitMQ: https://www.rabbitmq.com
