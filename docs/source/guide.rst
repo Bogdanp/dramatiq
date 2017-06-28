@@ -3,13 +3,15 @@
 User Guide
 ==========
 
-To get started, run ``rabbitmq-server`` in a terminal window and fire
-up your favorite code editor.  For the purposes of this guide, I'll
-assume you've created a new virtualenv_ and have installed Dramatiq
-with RabbitMQ support as well as the requests_ library.
+For the purposes of this guide, I'll assume you've created a new
+virtualenv_ and have installed Dramatiq with RabbitMQ support as well
+as the requests_ library, and have `installed RabbitMQ`_ itself. To
+get started, run ``rabbitmq-server`` in a terminal window and fire up
+your favorite code editor.
 
 .. _requests: http://docs.python-requests.org/en/latest/
 .. _virtualenv: http://docs.python-guide.org/en/latest/starting/installation/
+.. _installed RabbitMQ: https://www.rabbitmq.com/download.html
 
 
 Actors
