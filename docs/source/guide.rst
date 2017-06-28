@@ -93,6 +93,7 @@ This utility is able to spin up multiple concurrent worker processes
 that pop messages off the queue and send them to actors for execution.
 
 To spawn workers for our ``count_words.py`` example, all we have to do
+(in a new terminal, since we'll want to keep this running for a while)
 is::
 
   $ env PYTHONPATH=. dramatiq count_words
