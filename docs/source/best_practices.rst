@@ -35,3 +35,15 @@ Additionally, since messages are sent over the wire you'll want to
 keep them as short as possible.  For example, if you've got an actor
 that operates over ``User`` objects in your system, send that actor
 the user's id rather than the serialized user.
+
+
+Error Reporting
+---------------
+
+Invariably, you're probably going to introduce issues in production
+every now and then and some of those issues are going to affect your
+tasks.  You should use an error reporting service such as Sentry_ so
+you get notified of these errors as soon as they occur.
+
+
+.. _Sentry: https://sentry.io/welcome/
