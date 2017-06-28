@@ -21,7 +21,7 @@ def count_words(url):
    count = len(response.text.split(" "))
    print(f"There are {count} words at {url!r}.")
 
-# Synchronously count the works on example.com in the current process
+# Synchronously count the words on example.com in the current process
 count_words("http://example.com")
 
 # or send the actor a message so that it may perform the count
