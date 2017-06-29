@@ -3,7 +3,7 @@
 Installation
 ============
 
-dramatiq supports Python versions 3.6 and up and is installable via
+Dramatiq supports Python versions 3.6 and up and is installable via
 `pip`_ or from source.
 
 
@@ -24,8 +24,30 @@ If you would like to use it with Redis_ then run::
 If you don't have `pip`_ installed, check out `this guide`_.
 
 
-.. _pip: https://pip.pypa.io/en/stable/
-.. _this guide: http://docs.python-guide.org/en/latest/starting/installation/
+Extra Requirements
+^^^^^^^^^^^^^^^^^^
+
+When installing the package via pip you can specify the following
+extra requirements:
+
+============  =======================================================================================
+Name          Description
+============  =======================================================================================
+``rabbitmq``  Installs the required dependencies for using Dramatiq with RabbitMQ.
+``redis``     Installs the required dependencies for using Dramatiq with Redis.
+``watch``     Installs the required dependencies for the ``--watch`` flag.  Not available under PyPy.
+============  =======================================================================================
+
+If you want to install Dramatiq with all available features, run::
+
+  $ pip install -U dramatiq[rabbitmq, redis, watch]
+
+Optional Requirements
+^^^^^^^^^^^^^^^^^^^^^
+
+If you're using Redis as your broker and aren't planning on using PyPy
+then you should additionally install the ``hiredis`` package to get an
+increase in throughput.
 
 
 From Source
@@ -48,3 +70,5 @@ in the cloned directory.
 
 
 .. _GitHub: https://github.com/Bogdanp/dramatiq
+.. _pip: https://pip.pypa.io/en/stable/
+.. _this guide: http://docs.python-guide.org/en/latest/starting/installation/
