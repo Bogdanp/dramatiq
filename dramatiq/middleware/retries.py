@@ -24,7 +24,7 @@ class Retries(Middleware):
         apply to retried tasks.  Defaults to 7 days.
     """
 
-    def __init__(self, *, max_retries=None, min_backoff=None, max_backoff=None):
+    def __init__(self, *, max_retries=20, min_backoff=None, max_backoff=None):
         self.logger = get_logger(__name__, type(self))
         self.max_retries = max_retries
         self.min_backoff = min_backoff or DEFAULT_MIN_BACKOFF
