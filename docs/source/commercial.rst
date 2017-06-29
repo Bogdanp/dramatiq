@@ -8,6 +8,10 @@ not wish to publish their source code.  Commercial licenses are
 invoiced anually and come with NET30 terms.  Each license costs $2,000
 per year.
 
+Companies that are just starting out may get a commercial license free
+for one year.  Ask about this in the "Additional Notes" section when
+you fill out the form below and tell me about your use case.
+
 If you're interested in purchasing a commercial license, fill out
 `this form`_ and I'll get back to you within one business day.
 
