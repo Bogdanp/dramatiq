@@ -3,6 +3,41 @@
 Advanced Topics
 ===============
 
+Enqueueing Messages from Other Languages
+----------------------------------------
+
+You can enqueue Dramatiq messages using any language that has bindings
+to one of its brokers.  All you have to do is push a JSON-encoded
+dictionary containing the following fields to your queue:
+
+.. code-block:: javascript
+
+   {
+     "queue_name": "default",     // The name of the queue the message is being pushed on
+     "actor_name": "add",         // The name of the actor that should handle this message
+     "args": [1, 2],              // A list of positional arguments that are passed to the actor
+     "kwargs": {},                // A dictionary of keyword arguments that are passed to the actor
+     "options": {},               // Arbitrary options that are used by middleware. Leave this empty
+     "message_id": "unique-id",   // A UUID4 value representing the message's unique id in the system
+     "message_timestamp": 0,      // The UNIX timestamp in milliseconds representing when the message was first enqueued
+   }
+
+Using RabbitMQ
+^^^^^^^^^^^^^^
+
+Assuming you want to enqueue a message on a queue named ``default``,
+publish a persistent message to that queue in RabbitMQ.
+
+Using Redis
+^^^^^^^^^^^
+
+Assuming you want to enqueue a message on a queue named ``default``,
+run::
+
+  > HSET default.msgs $YOUR_MESSAGE_ID $YOUR_MESSAGE_PAYLOAD
+  > RPUSH default $YOUR_MESSAGE_ID
+
+
 Prometheus Metrics
 ------------------
 
