@@ -55,7 +55,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'dramatiq'
+project = 'Dramatiq'
 copyright = '2017, CLEARTYPE SRL'
 author = 'CLEARTYPE SRL'
 

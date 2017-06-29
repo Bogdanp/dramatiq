@@ -1,6 +1,6 @@
 .. include:: global.rst
 
-dramatiq: simple task processing
+Dramatiq: simple task processing
 ================================
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
@@ -18,7 +18,7 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
 .. image:: https://img.shields.io/badge/Say%20Thanks!-%F0%9F%A6%89-1EAEDB.svg
    :target: https://saythanks.io/to/Bogdanp
 
-**dramatiq** is a distributed task processing library for Python with
+**Dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
 
 Here's what it looks like:
@@ -41,7 +41,7 @@ Here's what it looks like:
   # later, in a separate process.
   count_words.send("http://example.com")
 
-**dramatiq** is :doc:`licensed<license>` under the AGPL and it
+**Dramatiq** is :doc:`licensed<license>` under the AGPL and it
 officially supports Python 3.6 and later.  :doc:`commercial`
 is also available.
 
@@ -66,7 +66,7 @@ User Guide
 ----------
 
 This part of the documentation is focused primarily on teaching you
-how to use dramatiq.
+how to use Dramatiq.
 
 .. toctree::
    :maxdepth: 2
@@ -82,7 +82,7 @@ API Reference
 -------------
 
 This part of the documentation is focused on detailing the various
-bits and pieces of the dramatiq developer interface.
+bits and pieces of the Dramatiq developer interface.
 
 .. toctree::
    :maxdepth: 2

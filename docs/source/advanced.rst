@@ -8,8 +8,8 @@ Prometheus Metrics
 
 Prometheus metrics are automatically exported by workers whenever you
 boot them using the command line utility.  By default, the exposition
-server listens on http://localhost:9191 so you can point Prometheus at
-that or you can specify what host and port it should bind on by
+server listens on port ``9191`` so you can tell Prometheus to scrape
+that or you can specify what host and port it should listen on by
 setting the ``dramatiq_prom_host`` and ``dramatiq_prom_port``
 environment variables.
 
