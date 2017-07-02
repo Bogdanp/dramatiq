@@ -3,6 +3,11 @@
 Changelog
 =========
 
+v0.6.0
+------
+
+* Added ``before`` and ``after`` arguments to |add_middleware|.
+
 v0.5.2
 ------
 

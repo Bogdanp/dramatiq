@@ -82,14 +82,39 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
-    def add_middleware(self, middleware):
+    def add_middleware(self, middleware, *, before=None, after=None):
         """Add a middleware object to this broker.  The middleware is
-        appended to the end of the middleware list.
+        appended to the end of the middleware list by default.
+
+        You can specify another middleware (by class) as a reference
+        point for where the new middleware should be added.
 
         Parameters:
           middleware(Middleware): The middleware.
+          before(type): Add this middleware before a specific one.
+          after(type): Add this middleware after a specific one.
+
+        Raises:
+          ValueError: When either ``before`` or ``after`` refer to a
+            middleware that hasn't been registered yet.
         """
-        self.middleware.append(middleware)
+        assert not (before and after), \
+            "provide either 'before' or 'after', but not both"
+
+        if before or after:
+            for i, m in enumerate(self.middleware):
+                if isinstance(m, before or after):
+                    break
+            else:
+                raise ValueError(f"Middleware {before or after!r} not found")
+
+            if before:
+                self.middleware.insert(i, middleware)
+            else:
+                self.middleware.insert(i + 1, middleware)
+        else:
+            self.middleware.append(middleware)
+
         self.actor_options |= middleware.actor_options
 
         for actor_name in self.get_declared_actors():
