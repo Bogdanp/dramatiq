@@ -6,6 +6,19 @@ from ..errors import RateLimitExceeded
 class RateLimiter:
     """ABC for rate limiters.
 
+    Examples:
+
+      >>> from dramatiq.rate_limits.backends.redis import RedisBackend
+
+      >>> backend = RedisBackend()
+      >>> limiter = ConcurrentRateLimiter(backend, "distributed-mutex", 1)
+
+      >>> with limiter.acquire(raise_on_failure=False) as acquired:
+      ...   if not acquired:
+      ...     print("Mutex not acquired.")
+      ...     return
+      ...   print("Mutex acquired.")
+
     Parameters:
       backend(RateLimiterBackend): The rate limiting backend to use.
       key(str): The key to rate limit on.
@@ -24,20 +37,6 @@ class RateLimiter:
     @contextmanager
     def acquire(self, *, raise_on_failure=True):
         """Attempt to acquire a slot under this rate limiter.
-
-        Example::
-
-          from dramatiq.rate_limits.backends.redis import RedisBackend
-
-          backend = RedisBackend()
-          limiter = ConcurrentRateLimiter(backend, "distributed-mutex", 1)
-
-          with limiter.acquire(raise_on_failure=False) as acquired:
-            if not acquired:
-              print("Mutex not acquired.")
-              return
-
-            print("Mutex acquired.")
 
         Parameters:
           raise_on_failure(bool): Whether or not failures should raise an

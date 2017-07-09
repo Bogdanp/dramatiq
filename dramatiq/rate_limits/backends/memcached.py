@@ -6,11 +6,10 @@ from ..backend import RateLimiterBackend
 class MemcachedBackend(RateLimiterBackend):
     """A Memcached_ rate limiter backend.
 
-    Example::
+    Examples:
 
-      from dramatiq.rate_limits.backends.memcached import MemcachedBackend
-
-      backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
+      >>> from dramatiq.rate_limits.backends.memcached import MemcachedBackend
+      >>> backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
 
     Parameters:
       pool_size(int): The size of the connection pool to use.
