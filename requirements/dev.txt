@@ -1,6 +1,7 @@
 hiredis  # Not included in the base distro because of PyPy
 
 -r common.txt
+-r memcached.txt
 -r rabbitmq.txt
 -r redis.txt
 -r test.txt
