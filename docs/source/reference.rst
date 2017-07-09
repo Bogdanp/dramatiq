@@ -66,9 +66,9 @@ Backends
 
 Rate limiter backends are used to store metadata about rate limits.
 
-.. autoclass:: dramatiq.rate_limits.backend.RateLimiterBackend
-.. autoclass:: dramatiq.rate_limits.backends.memcached.MemcachedBackend
-.. autoclass:: dramatiq.rate_limits.backends.redis.RedisBackend
+.. autoclass:: dramatiq.rate_limits.RateLimiterBackend
+.. autoclass:: dramatiq.rate_limits.backends.MemcachedBackend
+.. autoclass:: dramatiq.rate_limits.backends.RedisBackend
 
 
 Limiters
