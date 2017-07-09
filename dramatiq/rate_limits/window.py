@@ -7,6 +7,13 @@ class WindowRateLimiter(RateLimiter):
     """A rate limiter that ensures that only `limit` operations may
     happen over some sliding window.
 
+    Note:
+
+      Windows are in seconds rather that milliseconds.  This is
+      different from most durations and intervals used in Dramatiq,
+      because keeping metadata at the millisecond level is far too
+      expensive for most use cases.
+
     Parameters:
       backend(RateLimiterBackend): The backend to use.
       key(str): The key to rate limit on.

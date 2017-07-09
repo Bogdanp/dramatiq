@@ -8,7 +8,7 @@ class RateLimiter:
 
     Examples:
 
-      >>> from dramatiq.rate_limits.backends.redis import RedisBackend
+      >>> from dramatiq.rate_limits.redis import RedisBackend
 
       >>> backend = RedisBackend()
       >>> limiter = ConcurrentRateLimiter(backend, "distributed-mutex", 1)

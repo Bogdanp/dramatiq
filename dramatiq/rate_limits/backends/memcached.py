@@ -8,7 +8,7 @@ class MemcachedBackend(RateLimiterBackend):
 
     Examples:
 
-      >>> from dramatiq.rate_limits.backends.memcached import MemcachedBackend
+      >>> from dramatiq.rate_limits.backends import MemcachedBackend
       >>> backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
 
     Parameters:

@@ -11,11 +11,11 @@ class BucketRateLimiter(RateLimiter):
 
       Up to 10 operations every second:
 
-      >>> BucketRateLimiter(backend, "some-key", limit=10, bucket=1)
+      >>> BucketRateLimiter(backend, "some-key", limit=10, bucket=1_000)
 
       Up to 1 operation every minute:
 
-      >>> BucketRateLimiter(backend, "some-key", limit=1, bucket=60)
+      >>> BucketRateLimiter(backend, "some-key", limit=1, bucket=60_000)
 
     Warning:
 
@@ -31,22 +31,20 @@ class BucketRateLimiter(RateLimiter):
       backend(RateLimiterBackend): The backend to use.
       key(str): The key to rate limit on.
       limit(int): The maximum number of operations per bucket per key.
-      bucket(int): The bucket interval in *seconds*.
+      bucket(int): The bucket interval in milliseconds.
     """
 
-    def __init__(self, backend, key, *, limit=1, bucket=1):
+    def __init__(self, backend, key, *, limit=1, bucket=1000):
         assert limit >= 1, "limit must be positive"
 
         super().__init__(backend, key)
         self.limit = limit
         self.bucket = bucket
-        self.bucket_seconds = bucket
-        self.bucket_millis = bucket * 1000
 
     @property
     def current_timestamp(self):
-        timestamp = int(time.time())
-        remainder = timestamp % self.bucket_seconds
+        timestamp = time.time() * 1000
+        remainder = timestamp % self.bucket
         return timestamp - remainder
 
     @property
@@ -54,11 +52,11 @@ class BucketRateLimiter(RateLimiter):
         return f"{self.key}@{self.current_timestamp}"
 
     def _acquire(self):
-        added = self.backend.add(self.current_key, 1, ttl=self.bucket_millis)
+        added = self.backend.add(self.current_key, 1, ttl=self.bucket)
         if added:
             return True
 
-        return self.backend.incr(self.current_key, 1, maximum=self.limit, ttl=self.bucket_millis)
+        return self.backend.incr(self.current_key, 1, maximum=self.limit, ttl=self.bucket)
 
     def _release(self):
         pass

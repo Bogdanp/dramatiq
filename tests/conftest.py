@@ -1,6 +1,5 @@
 import dramatiq
 import logging
-import pylibmc
 import pytest
 import subprocess
 import uuid
@@ -10,8 +9,7 @@ from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.common import dq_name, xq_name
-from dramatiq.rate_limits.backends.memcached import MemcachedBackend
-from dramatiq.rate_limits.backends.redis import RedisBackend
+from dramatiq.rate_limits.backends import MemcachedBackend, RedisBackend
 
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
