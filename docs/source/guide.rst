@@ -402,27 +402,36 @@ Unit Testing
 Dramatiq provides a |StubBroker| that can be used in unit tests so you
 don't have to have a running RabbitMQ or Redis instance in order to
 run your tests.  My recommendation is to use it in conjunction with
-`pytest fixtures`_::
+`pytest fixtures`_:
 
-  import dramatiq
-  import pytest
+.. code-block:: python
+   :caption: broker.py
 
-  from dramatiq.brokers.stub import StubBroker
+   import os
 
-  @pytest.fixture()
-  def stub_broker():
-    broker = StubBroker()
-    broker.emit_after("process_boot")
-    dramatiq.set_broker(broker)
-    yield broker
-    broker.close()
+   from dramatiq.brokers.rabbitmq import RabbitmqBroker
+   from dramatiq.brokers.stub import StubBroker
 
-  @pytest.fixture()
-  def stub_worker(stub_broker):
-    worker = Worker(stub_broker, worker_timeout=100)
-    worker.start()
-    yield worker
-    worker.stop()
+   if os.getenv("UNIT_TESTS") == "1":
+       broker = StubBroker()
+       broker.emit_after("process_boot")
+   else:
+       broker = RabbitmqBroker()
+
+.. code-block:: python
+   :caption: conftest.py
+
+   import dramatiq
+   import pytest
+
+   from yourapp import broker
+
+   @pytest.fixture()
+   def stub_worker():
+     worker = Worker(broker, worker_timeout=100)
+     worker.start()
+     yield worker
+     worker.stop()
 
 Then you can inject and use those fixtures in your tests::
 
