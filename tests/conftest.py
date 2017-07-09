@@ -106,7 +106,7 @@ def start_cli():
 
 @pytest.fixture
 def memcached_rate_limiter_backend():
-    backend = MemcachedBackend(servers=["127.0.0.1"])
+    backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
     with backend.pool.reserve() as client:
         client.flush_all()
     return backend
