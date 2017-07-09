@@ -54,6 +54,36 @@ Middleware
 .. autoclass:: dramatiq.middleware.TimeLimitExceeded
 
 
+Rate Limiters
+-------------
+
+Rate limiters can be used to determine whether or not an operation
+should run at the current time.
+
+Backends
+^^^^^^^^
+
+Rate limiter backends are used to store metadata about rate limits.
+
+.. autoclass:: dramatiq.rate_limits.backend.RateLimiterBackend
+.. autoclass:: dramatiq.rate_limits.backends.memcached.MemcachedBackend
+.. autoclass:: dramatiq.rate_limits.backends.redis.RedisBackend
+
+
+Limiters
+^^^^^^^^
+
+.. autoclass:: dramatiq.rate_limits.RateLimiter
+   :members:
+.. autoclass:: dramatiq.rate_limits.BucketRateLimiter
+.. autoclass:: dramatiq.rate_limits.Bucket
+   :members:
+   :member-order: bysource
+   :undoc-members:
+.. autoclass:: dramatiq.rate_limits.ConcurrentRateLimiter
+.. autoclass:: dramatiq.rate_limits.WindowRateLimiter
+
+
 Workers
 -------
 
@@ -77,4 +107,6 @@ Errors
 .. autoclass:: ConnectionClosed
    :members:
 .. autoclass:: ConnectionFailed
+   :members:
+.. autoclass:: RateLimitExceeded
    :members:

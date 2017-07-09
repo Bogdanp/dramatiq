@@ -1,5 +1,6 @@
 import dramatiq
 import logging
+import pylibmc
 import pytest
 import subprocess
 import uuid
@@ -9,6 +10,8 @@ from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.common import dq_name, xq_name
+from dramatiq.rate_limits.backends.memcached import MemcachedBackend
+from dramatiq.rate_limits.backends.redis import RedisBackend
 
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
@@ -99,3 +102,26 @@ def start_cli():
     if proc is not None:
         proc.terminate()
         proc.wait()
+
+
+@pytest.fixture
+def memcached_rate_limiter_backend():
+    backend = MemcachedBackend(servers=["127.0.0.1"])
+    with backend.pool.reserve() as client:
+        client.flush_all()
+    return backend
+
+
+@pytest.fixture
+def redis_rate_limiter_backend():
+    backend = RedisBackend()
+    backend.client.flushall()
+    return backend
+
+
+@pytest.fixture
+def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_backend):
+    return {
+        "memcached": memcached_rate_limiter_backend,
+        "redis": redis_rate_limiter_backend,
+    }

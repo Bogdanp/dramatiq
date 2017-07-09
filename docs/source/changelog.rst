@@ -7,6 +7,7 @@ v0.6.0
 ------
 
 * Added ``before`` and ``after`` arguments to |add_middleware|.
+* Added support for |RateLimiters|.
 
 v0.5.2
 ------

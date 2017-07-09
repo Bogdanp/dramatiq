@@ -37,3 +37,8 @@ class ConnectionFailed(ConnectionError):
 class ConnectionClosed(ConnectionError):
     """Raised when a broker connection is suddenly closed.
     """
+
+
+class RateLimitExceeded(DramatiqError):
+    """Raised when a rate limit has been exceeded.
+    """
