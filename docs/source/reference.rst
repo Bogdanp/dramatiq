@@ -57,8 +57,9 @@ Middleware
 Rate Limiters
 -------------
 
-Rate limiters can be used to determine whether or not an operation
-should run at the current time.
+Rate limiters can be used to determine whether or not an operation can
+be run at the current time across many processes and machines by using
+a shared storage backend.
 
 Backends
 ^^^^^^^^
@@ -76,10 +77,6 @@ Limiters
 .. autoclass:: dramatiq.rate_limits.RateLimiter
    :members:
 .. autoclass:: dramatiq.rate_limits.BucketRateLimiter
-.. autoclass:: dramatiq.rate_limits.Bucket
-   :members:
-   :member-order: bysource
-   :undoc-members:
 .. autoclass:: dramatiq.rate_limits.ConcurrentRateLimiter
 .. autoclass:: dramatiq.rate_limits.WindowRateLimiter
 

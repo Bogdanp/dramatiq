@@ -4,8 +4,8 @@ from .rate_limiter import RateLimiter
 
 
 class WindowRateLimiter(RateLimiter):
-    """A rate limiter that ensures that only `n` operations may happen
-    over some sliding window.
+    """A rate limiter that ensures that only `limit` operations may
+    happen over some sliding window.
 
     Parameters:
       backend(RateLimiterBackend): The backend to use.

@@ -2,11 +2,13 @@ from .rate_limiter import RateLimiter
 
 
 class ConcurrentRateLimiter(RateLimiter):
-    """A rate limiter that ensures that only `n` concurrent operations
-    may happen at a time.
+    """A rate limiter that ensures that only `limit` concurrent
+    operations may happen at the same time.
 
-    You can use a concurrent rate limiter of size 1 to get a
-    distributed mutex.
+    Note:
+
+      You can use a concurrent rate limiter of size 1 to get a
+      distributed mutex.
 
     Parameters:
       backend(RateLimiterBackend): The backend to use.
