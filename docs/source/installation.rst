@@ -30,17 +30,18 @@ Extra Requirements
 When installing the package via pip you can specify the following
 extra requirements:
 
-============  =======================================================================================
-Name          Description
-============  =======================================================================================
-``rabbitmq``  Installs the required dependencies for using Dramatiq with RabbitMQ.
-``redis``     Installs the required dependencies for using Dramatiq with Redis.
-``watch``     Installs the required dependencies for the ``--watch`` flag.  Not available under PyPy.
-============  =======================================================================================
+=============  =======================================================================================
+Name           Description
+=============  =======================================================================================
+``memcached``  Installs the required dependencies for the Memcached rate limiter backend.
+``rabbitmq``   Installs the required dependencies for using Dramatiq with RabbitMQ.
+``redis``      Installs the required dependencies for using Dramatiq with Redis.
+``watch``      Installs the required dependencies for the ``--watch`` flag.  Not available under PyPy.
+=============  =======================================================================================
 
 If you want to install Dramatiq with all available features, run::
 
-  $ pip install -U dramatiq[rabbitmq, redis, watch]
+  $ pip install -U dramatiq[memcached, rabbitmq, redis, watch]
 
 Optional Requirements
 ^^^^^^^^^^^^^^^^^^^^^
