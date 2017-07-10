@@ -31,23 +31,14 @@ class WindowRateLimiter(RateLimiter):
         self.window = window
         self.window_millis = window * 1000
 
-    @property
-    def current_key(self):
-        timestamp = int(time.time())
-        return f"{self.key}@{timestamp}"
-
-    @property
-    def window_keys(self):
+    def _acquire(self):
         keys = []
         timestamp = int(time.time())
         for i in range(self.window):
             keys.append(f"{self.key}@{timestamp - i}")
-        return keys
 
-    def _acquire(self):
-        key, keys = self.current_key, self.window_keys
-        self.backend.add(key, 0, ttl=self.window_millis)
-        return self.backend.incr_and_sum(key, keys, 1, maximum=self.limit, ttl=self.window_millis)
+        self.backend.add(keys[0], 0, ttl=self.window_millis)
+        return self.backend.incr_and_sum(keys[0], keys, 1, maximum=self.limit, ttl=self.window_millis)
 
     def _release(self):
         pass
