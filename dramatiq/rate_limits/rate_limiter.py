@@ -8,7 +8,7 @@ class RateLimiter:
 
     Examples:
 
-      >>> from dramatiq.rate_limits.redis import RedisBackend
+      >>> from dramatiq.rate_limits.backends import RedisBackend
 
       >>> backend = RedisBackend()
       >>> limiter = ConcurrentRateLimiter(backend, "distributed-mutex", 1)
@@ -17,6 +17,7 @@ class RateLimiter:
       ...   if not acquired:
       ...     print("Mutex not acquired.")
       ...     return
+      ...
       ...   print("Mutex acquired.")
 
     Parameters:
@@ -42,10 +43,10 @@ class RateLimiter:
           raise_on_failure(bool): Whether or not failures should raise an
             exception.  If this is false, the context manager will instead
             return a boolean value representing whether or not the rate
-            limit was "acquired".
+            limit slot was acquired.
 
         Returns:
-          bool: Whether or not the lock could be acquired.
+          bool: Whether or not the slot could be acquired.
         """
         acquired = False
 

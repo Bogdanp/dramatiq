@@ -4,7 +4,7 @@ from ..backend import RateLimiterBackend
 
 
 class RedisBackend(RateLimiterBackend):
-    """A Redis_ rate limiter backend.
+    """A rate limiter backend for Redis_.
 
     Parameters:
       \**parameters(dict): Connection parameters are passed directly

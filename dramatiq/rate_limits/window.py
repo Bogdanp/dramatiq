@@ -18,7 +18,8 @@ class WindowRateLimiter(RateLimiter):
       backend(RateLimiterBackend): The backend to use.
       key(str): The key to rate limit on.
       limit(int): The maximum number of operations per window per key.
-      window(int): The window size in *seconds*.
+      window(int): The window size in *seconds*.  The wider the
+        window, the more expensive it is to maintain.
     """
 
     def __init__(self, backend, key, *, limit=1, window=1):

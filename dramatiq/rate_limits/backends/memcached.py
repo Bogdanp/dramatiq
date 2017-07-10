@@ -4,7 +4,7 @@ from ..backend import RateLimiterBackend
 
 
 class MemcachedBackend(RateLimiterBackend):
-    """A Memcached_ rate limiter backend.
+    """A rate limiter backend for Memcached_.
 
     Examples:
 

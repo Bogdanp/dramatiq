@@ -20,18 +20,21 @@ class BucketRateLimiter(RateLimiter):
     Warning:
 
       Bucket rate limits are cheap to maintain but are susceptible to
-      burst "attacks".  Given a bucket rate limit of 100/minute, an
-      attacker could make a burst of calls in the last and first
-      second of every minute.
+      burst "attacks".  Given a bucket rate limit of 100 per minute,
+      an attacker could make a burst of 100 calls in the last second
+      of a minute and then another 100 calls in the first second of
+      the subsequent minute.
 
       For a rate limiter that doesn't have this problem (but is more
-      expensive to maintain), see :class:`WindowRateLimiter`.
+      expensive to maintain), see |WindowRateLimiter|.
 
     Parameters:
       backend(RateLimiterBackend): The backend to use.
       key(str): The key to rate limit on.
       limit(int): The maximum number of operations per bucket per key.
       bucket(int): The bucket interval in milliseconds.
+
+    .. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<dramatiq.rate_limits.WindowRateLimiter>`
     """
 
     def __init__(self, backend, key, *, limit=1, bucket=1000):
