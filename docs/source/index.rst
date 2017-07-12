@@ -45,7 +45,6 @@ Here's what it looks like:
 officially supports Python 3.6 and later.  :doc:`commercial`
 is also available.
 
-.. _upon request: mailto:bogdan@defn.io
 
 Get It Now
 ----------

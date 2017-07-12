@@ -11,7 +11,7 @@ class RateLimiter:
       >>> from dramatiq.rate_limits.backends import RedisBackend
 
       >>> backend = RedisBackend()
-      >>> limiter = ConcurrentRateLimiter(backend, "distributed-mutex", 1)
+      >>> limiter = ConcurrentRateLimiter(backend, "distributed-mutex", limit=1)
 
       >>> with limiter.acquire(raise_on_failure=False) as acquired:
       ...   if not acquired:
