@@ -1,4 +1,4 @@
-from pylibmc import Client, ClientPool
+from pylibmc import Client, ClientPool, NotFound
 
 from ..backend import RateLimiterBackend
 
@@ -42,9 +42,12 @@ class MemcachedBackend(RateLimiterBackend):
                 if value > maximum:
                     return False
 
-                swapped = client.cas(key, value, cid, ttl)
-                if swapped:
-                    return True
+                try:
+                    swapped = client.cas(key, value, cid, ttl)
+                    if swapped:
+                        return True
+                except NotFound:  # pragma: no cover
+                    continue
 
     def decr(self, key, amount, minimum, ttl):
         ttl = int(ttl / 1000)
@@ -58,9 +61,12 @@ class MemcachedBackend(RateLimiterBackend):
                 if value < minimum:
                     return False
 
-                swapped = client.cas(key, value, cid, ttl)
-                if swapped:
-                    return True
+                try:
+                    swapped = client.cas(key, value, cid, ttl)
+                    if swapped:
+                        return True
+                except NotFound:  # pragma: no cover
+                    continue
 
     def incr_and_sum(self, key, keys, amount, maximum, ttl):
         ttl = int(ttl / 1000)
@@ -79,6 +85,9 @@ class MemcachedBackend(RateLimiterBackend):
                 if total > maximum:
                     return False
 
-                swapped = client.cas(key, value, cid, ttl)
-                if swapped:
-                    return True
+                try:
+                    swapped = client.cas(key, value, cid, ttl)
+                    if swapped:
+                        return True
+                except NotFound:  # pragma: no cover
+                    continue
