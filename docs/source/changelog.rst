@@ -3,6 +3,12 @@
 Changelog
 =========
 
+v0.6.1
+------
+
+* Fixed a potential race condition with calls to ``cas`` in the
+  memcached rate limiter backend.
+
 v0.6.0
 ------
 
