@@ -304,7 +304,8 @@ class _RabbitmqConsumer(Consumer):
             message = Message.decode(body)
             self.known_tags.add(method.delivery_tag)
             return _RabbitmqMessage(method.delivery_tag, message)
-        except (pika.exceptions.ChannelClosed,
+        except (AssertionError,  # sometimes raised by pika
+                pika.exceptions.ChannelClosed,
                 pika.exceptions.ConnectionClosed) as e:
             raise ConnectionClosed(e) from None
 
@@ -315,7 +316,8 @@ class _RabbitmqConsumer(Consumer):
 
             self.channel.close()
             self.connection.close()
-        except (pika.exceptions.ChannelClosed,
+        except (AssertionError,  # sometimes raised by pika
+                pika.exceptions.ChannelClosed,
                 pika.exceptions.ConnectionClosed) as e:
             raise ConnectionClosed(e) from None
 
