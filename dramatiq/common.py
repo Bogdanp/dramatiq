@@ -60,6 +60,14 @@ def join_all(joinables, timeout):
         timeout = max(0, timeout - elapsed)
 
 
+def q_name(queue_name):
+    """Returns the canonical queue name for a given queue.
+    """
+    if queue_name.endswith(".DQ") or queue_name.endswith(".XQ"):
+        return queue_name[:-3]
+    return queue_name
+
+
 def dq_name(queue_name):
     """Returns the delayed queue name for a given queue.  If the given
     queue name already belongs to a delayed queue, then it is returned

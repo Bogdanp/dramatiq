@@ -5,7 +5,7 @@ from itertools import chain
 from queue import Empty, PriorityQueue, Queue
 from threading import Thread
 
-from .common import compute_backoff, current_millis, iter_queue, join_all
+from .common import compute_backoff, current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError
 from .logging import get_logger
 from .middleware import Middleware
@@ -243,9 +243,16 @@ class _ConsumerThread(Thread):
                 self.delay_queue.task_done()
                 break
 
-            actor = self.broker.get_actor(message.actor_name)
-            self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-            self.work_queue.put((actor.priority, message))
+            queue_name = q_name(message.queue_name)
+            new_message = message.new_id(queue_name=queue_name)
+            del new_message.options["eta"]
+
+            self.logger.debug(
+                "Moving message %r to work queue %r as %r.",
+                message.message_id, queue_name, new_message.message_id,
+            )
+            self.broker.enqueue(new_message)
+            self.post_process_message(message)
             self.delay_queue.task_done()
 
     def handle_message(self, message):
@@ -297,13 +304,11 @@ class _ConsumerThread(Thread):
     def close(self):
         """Close this consumer thread and its underlying connection.
         """
-        if not self.consumer:
-            return
-
         try:
-            self.handle_acks()
-            self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
-            self.consumer.close()
+            if self.consumer:
+                self.handle_acks()
+                self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
+                self.consumer.close()
         except ConnectionError:
             self.logger.warning("Could not close Consumer.", exc_info=True)
 
