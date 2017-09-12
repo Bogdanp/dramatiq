@@ -9,7 +9,6 @@ local message_id
 for i=1,#KEYS do
    message_id = KEYS[i]
 
-   redis.log(redis.LOG_WARNING, "message id is: %s" .. message_id)
    redis.call("zrem", queue_acks, message_id)
    if redis.call("hexists", queue_messages, message_id) then
       redis.call("rpush", queue_name, message_id)
