@@ -3,6 +3,12 @@
 Changelog
 =========
 
+v0.7.0
+------
+
+* Reworked scheduled messages to improve fairness.  Messages are now
+  re-enqueued on the broker once they hit their eta.
+
 v0.6.1
 ------
 
