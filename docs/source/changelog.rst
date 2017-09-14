@@ -8,6 +8,7 @@ v0.7.0
 
 * Reworked scheduled messages to improve fairness.  Messages are now
   re-enqueued on the broker once they hit their eta.
+* Pinned ``prometheus-client`` to version ``0.0.20``.
 
 v0.6.1
 ------
