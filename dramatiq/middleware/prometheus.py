@@ -4,7 +4,6 @@ import os
 
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from socketserver import ThreadingMixIn
 from threading import Thread
 
 from ..common import current_millis
@@ -171,7 +170,7 @@ class _ExpositionServer(Thread):
             self.cleanup_db_path()
 
             try:
-                self.httpd = _ThreadedHTTPd(self.address, metrics_handler)
+                self.httpd = HTTPServer(self.address, metrics_handler)
                 self.httpd.serve_forever()
             except OSError:
                 self.logger.warning("Failed to bind exposition server.", exc_info=True)
@@ -190,11 +189,6 @@ class _ExpositionServer(Thread):
                 os.unlink(dbfile)
             except OSError:
                 pass
-
-
-class _ThreadedHTTPd(ThreadingMixIn, HTTPServer):
-    """A simple threaded HTTP server.
-    """
 
 
 class metrics_handler(BaseHTTPRequestHandler):
