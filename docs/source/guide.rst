@@ -426,6 +426,10 @@ run your tests.  My recommendation is to use it in conjunction with
 
    from yourapp import broker
 
+   @pytest.fixture(scope="global")
+   def stub_broker():
+     return broker
+
    @pytest.fixture()
    def stub_worker():
      worker = Worker(broker, worker_timeout=100)
