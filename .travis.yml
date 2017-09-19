@@ -2,7 +2,6 @@ language: python
 sudo: required
 python:
   - "3.6"
-  - "3.6-dev"
   - "3.7-dev"
 services:
   - memcached
