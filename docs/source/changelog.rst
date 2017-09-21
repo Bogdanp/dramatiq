@@ -3,39 +3,63 @@
 Changelog
 =========
 
-v0.7.0
-------
+All notable changes to this project will be documented in this file.
+
+[0.7.0] -- 2017-09-13
+---------------------
+
+Changed
+^^^^^^^
 
 * Reworked scheduled messages to improve fairness.  Messages are now
   re-enqueued on the broker once they hit their eta.
 * Pinned ``prometheus-client`` to version ``0.0.20``.
 
-v0.6.1
-------
+[0.6.1] -- 2017-07-20
+---------------------
 
-* Fixed a potential race condition with calls to ``cas`` in the
-  memcached rate limiter backend.
+Fixed
+^^^^^
 
-v0.6.0
-------
+* A race condition with calls to ``cas`` in the memcached rate limiter
+  backend.
 
-* Added ``before`` and ``after`` arguments to |add_middleware|.
-* Added support for |RateLimiters|.
+[0.6.0] -- 2017-07-09
+---------------------
 
-v0.5.2
-------
+Added
+^^^^^
+
+* ``before`` and ``after`` arguments to |add_middleware|.
+* Support for |RateLimiters|.
+
+[0.5.2] -- 2017-06-29
+---------------------
+
+Changed
+^^^^^^^
 
 * Changed the default max retries value from ``None`` to ``20``,
   meaning tasks are now retried for up to about 30 days before they're
   dead-lettered by default.
 
-v0.5.1
-------
+[0.5.1] -- 2017-06-28
+---------------------
+
+Removed
+^^^^^^^
 
 * Dropped RabbitMQ heartbeat to avoid spurious disconnects.
 
-v0.5.0
-------
+[0.5.0] -- 2017-06-27
+---------------------
+
+Added
+^^^^^
 
 * Added ``dramatiq-gevent`` script.
+
+Changed
+^^^^^^^
+
 * Capped prefetch counts to 65k.
