@@ -51,6 +51,7 @@ setup(
         "dramatiq.rate_limits",
         "dramatiq.rate_limits.backends"
     ],
+    include_package_data=True,
     install_requires=dependencies,
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
