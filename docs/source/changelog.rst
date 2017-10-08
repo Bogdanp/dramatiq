@@ -5,6 +5,14 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+[0.7.1] -- 2017-10-08
+---------------------
+
+Fixed
+^^^^^
+
+* Fixed package distribution of Lua files.
+
 [0.7.0] -- 2017-09-13
 ---------------------
 
