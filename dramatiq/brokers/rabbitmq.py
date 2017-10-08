@@ -20,16 +20,16 @@ class RabbitmqBroker(Broker):
     """A broker that can be used with RabbitMQ.
 
     Parameters:
-      parameters(pika.ConnectionParameters): The connection parameters
-        to use to determine which Rabbit server to connect to.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
+      \**parameters(dict): The connection parameters to use to
+        determine which Rabbit server to connect to.
     """
 
-    def __init__(self, parameters=None, middleware=None):
+    def __init__(self, *, middleware=None, **parameters):
         super().__init__(middleware=middleware)
 
-        self.parameters = parameters
+        self.parameters = pika.ConnectionParameters(**parameters)
         self.connections = set()
         self.channels = set()
         self.queues = set()

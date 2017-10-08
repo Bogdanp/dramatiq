@@ -18,16 +18,14 @@ def get_broker():
     """
     global global_broker
     if global_broker is None:
-        from pika import ConnectionParameters
         from .brokers.rabbitmq import RabbitmqBroker
 
-        conn_parameters = ConnectionParameters(
+        set_broker(RabbitmqBroker(
             host="127.0.0.1",
             port=5672,
             heartbeat_interval=0,
             connection_attempts=5,
-        )
-        set_broker(RabbitmqBroker(conn_parameters))
+        ))
     return global_broker
 
 

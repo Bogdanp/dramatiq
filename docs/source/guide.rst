@@ -366,15 +366,13 @@ it as the global broker as early as possible during your program's
 execution::
 
   import dramatiq
-  import pika
 
   from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-  conn_parameters = pika.ConnectionParameters(
+  rabbitmq_broker = RabbitmqBroker(
     host="rabbitmq",
     heartbeat_interval=0,
   )
-  rabbitmq_broker = RabbitmqBroker(parameters=conn_parameters)
   dramatiq.set_broker(rabbitmq_broker)
 
 Make sure to disable heartbeats when defining your own connection
