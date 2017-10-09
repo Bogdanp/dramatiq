@@ -13,6 +13,8 @@ Changed
 
 * RabbitmqBroker no longer takes a ConnectionParameters param as
   input.  Instead, it builds one based on kwargs.
+* ``exec`` is now used to reload the main process on source code
+  changes when the ``--watch`` flag is enabled.
 
 [0.7.1] -- 2017-10-08
 ---------------------

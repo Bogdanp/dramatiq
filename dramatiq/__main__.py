@@ -144,7 +144,8 @@ def worker_process(args, worker_id, logging_fd):
     logging_pipe.close()
 
 
-def main_process(args):
+def main():
+    args = parse_arguments()
     worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):
@@ -237,18 +238,17 @@ def main_process(args):
         pipe.close()
 
     if reload_process:
-        return main_process(args)
+        if sys.argv[0].endswith("/dramatiq/__main__.py"):
+            return os.execvp("python", ["python", "-m", "dramatiq", *sys.argv[1:]])
+        return os.execvp(sys.argv[0], sys.argv)
     return retcode
-
-
-def main():
-    args = parse_arguments()
-    return main_process(args)
 
 
 if HAS_WATCHDOG:
     class SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):
         def on_any_event(self, event):
+            logger = logging.getLogger("SourceChangesHandler")
+            logger.info("Detected changes to %r.", event.src_path)
             os.kill(os.getpid(), signal.SIGHUP)
 
 
