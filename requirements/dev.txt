@@ -1,4 +1,5 @@
 hiredis  # Not included in the base distro because of PyPy
+twine
 
 -r common.txt
 -r memcached.txt
