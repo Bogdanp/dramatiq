@@ -44,6 +44,8 @@ for extra in extras:
 setup(
     name="dramatiq",
     version=version,
+    description="A distributed task processing library.",
+    long_description="Visit http://dramatiq.io for more information.",
     packages=[
         "dramatiq",
         "dramatiq.brokers",
