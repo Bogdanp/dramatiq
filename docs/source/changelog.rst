@@ -5,7 +5,7 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
-[0.9.0] -- UNRELEASED
+[0.9.0] -- 2017-10-20
 ---------------------
 
 Changed
