@@ -44,13 +44,13 @@ class Message(namedtuple("Message", (
         """
         return json.dumps(self._asdict(), separators=(",", ":")).encode("utf-8")
 
-    def new_id(self, **options):
-        """Return a copy of this message with a new unique id assigned to it.
-
-        Parameters:
-          \**options(dict)
+    def copy(self, **attributes):
+        """Create a copy of this message.
         """
-        return self._replace(message_id=generate_unique_id(), **options)
+        updated_options = attributes.pop("options", {})
+        options = self.options.copy()
+        options.update(updated_options)
+        return self._replace(**attributes, options=options)
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)

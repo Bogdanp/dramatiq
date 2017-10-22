@@ -4,6 +4,7 @@ import time
 
 from os import path
 from threading import Thread
+from uuid import uuid4
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import compute_backoff, current_millis, dq_name, xq_name
@@ -95,6 +96,14 @@ class RedisBroker(Broker):
           ValueError: If ``delay`` is longer than 7 days.
         """
         queue_name = message.queue_name
+
+        # Each enqueued message must have a unique id in Redis so
+        # using the Message's id isn't safe because messages may be
+        # retried.
+        message = message.copy(options={
+            "redis_message_id": str(uuid4()),
+        })
+
         if delay is not None:
             if delay > MAX_MESSAGE_DELAY:
                 raise ValueError(
@@ -103,13 +112,19 @@ class RedisBroker(Broker):
                 )
 
             queue_name = dq_name(queue_name)
-            message = message._replace(queue_name=queue_name)
-            message.options["eta"] = current_millis() + delay
+            message_eta = current_millis() + delay
+            message = message.copy(
+                queue_name=queue_name,
+                options={
+                    "eta": message_eta,
+                },
+            )
 
         self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
         self.emit_before("enqueue", message, delay)
-        self._enqueue(queue_name, message.message_id, message.encode())
+        self._enqueue(queue_name, message.options["redis_message_id"], message.encode())
         self.emit_after("enqueue", message, delay)
+        return message
 
     def get_declared_queues(self):
         """Get all declared queues.
@@ -238,19 +253,19 @@ class _RedisConsumer(Consumer):
             # The current queue might be different from message.queue_name
             # if the message has been delayed so we want to ack on the
             # current queue.
-            self.broker._ack(self.queue_name, message.message_id)
+            self.broker._ack(self.queue_name, message.options["redis_message_id"])
         finally:
             self.message_refc -= 1
 
     def nack(self, message):
         try:
             # Same deal as above.
-            self.broker._nack(self.queue_name, message.message_id)
+            self.broker._nack(self.queue_name, message.options["redis_message_id"])
         finally:
             self.message_refc -= 1
 
     def requeue(self, messages):
-        message_ids = [message.message_id for message in messages]
+        message_ids = [message.options["redis_message_id"] for message in messages]
         if not message_ids:
             return
 

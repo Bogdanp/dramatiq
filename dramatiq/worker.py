@@ -244,12 +244,12 @@ class _ConsumerThread(Thread):
                 break
 
             queue_name = q_name(message.queue_name)
-            new_message = message.new_id(queue_name=queue_name)
+            new_message = message.copy(queue_name=queue_name)
             del new_message.options["eta"]
 
             self.logger.debug(
-                "Moving message %r to work queue %r as %r.",
-                message.message_id, queue_name, new_message.message_id,
+                "Moving message %r to work queue %r.",
+                message.message_id, queue_name,
             )
             self.broker.enqueue(new_message)
             self.post_process_message(message)

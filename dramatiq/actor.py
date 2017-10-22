@@ -126,8 +126,7 @@ class Actor:
             options=options,
         )
 
-        self.broker.enqueue(message, delay=delay)
-        return message
+        return self.broker.enqueue(message, delay=delay)
 
     def __call__(self, *args, **kwargs):
         """Synchronously call this actor.

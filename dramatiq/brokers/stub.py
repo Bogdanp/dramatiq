@@ -71,8 +71,13 @@ class StubBroker(Broker):
         queue_name = message.queue_name
         if delay is not None:
             queue_name = dq_name(queue_name)
-            message = message._replace(queue_name=queue_name)
-            message.options["eta"] = current_millis() + delay
+            message_eta = current_millis() + delay
+            message = message.copy(
+                queue_name=queue_name,
+                options={
+                    "eta": message_eta,
+                },
+            )
 
         if queue_name not in self.queues:
             raise QueueNotFound(queue_name)
@@ -80,6 +85,7 @@ class StubBroker(Broker):
         self.emit_before("enqueue", message, delay)
         self.queues[queue_name].put(message.encode())
         self.emit_after("enqueue", message, delay)
+        return message
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be

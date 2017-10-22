@@ -198,7 +198,7 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
         options={},
     )
     redis_broker.declare_queue("some-queue")
-    redis_broker.enqueue(message)
+    message = redis_broker.enqueue(message)
 
     # Then join on the queue
     redis_broker.join("some-queue")
@@ -207,7 +207,7 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
     # I expect the message to end up on the dead letter queue
     dead_queue_name = f"dramatiq:{xq_name('some-queue')}"
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
-    assert message.message_id.encode("utf-8") in dead_ids
+    assert message.options["redis_message_id"].encode("utf-8") in dead_ids
 
 
 def test_redis_raises_an_exception_when_delaying_messages_for_too_long(redis_broker):
@@ -240,11 +240,11 @@ def test_redis_requeues_unhandled_messages_on_shutdown(redis_broker):
 
     # I expect it to have processed one of the messages and re-enqueued the other
     messages = redis_broker.client.lrange(f"dramatiq:{do_work.queue_name}", 0, 10)
-    if message_1.message_id.encode("utf-8") not in messages:
-        assert message_2.message_id.encode("utf-8") in messages
+    if message_1.options["redis_message_id"].encode("utf-8") not in messages:
+        assert message_2.options["redis_message_id"].encode("utf-8") in messages
 
     else:
-        assert message_1.message_id.encode("utf-8") in messages
+        assert message_1.options["redis_message_id"].encode("utf-8") in messages
 
 
 def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
@@ -263,4 +263,4 @@ def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
 
     # I expect it to have re-enqueued the message
     messages = redis_broker.client.lrange(f"dramatiq:{dq_name(do_work.queue_name)}", 0, 10)
-    assert message.message_id.encode("utf-8") in messages
+    assert message.options["redis_message_id"].encode("utf-8") in messages

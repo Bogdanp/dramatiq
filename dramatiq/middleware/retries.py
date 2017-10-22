@@ -50,13 +50,11 @@ class Retries(Middleware):
             message.fail()
             return
 
-        previous_id = message.message_id
-        message = message.new_id()
         message.options["retries"] += 1
         message.options["traceback"] = traceback.format_exc(limit=30)
         min_backoff = actor.options.get("min_backoff", self.min_backoff)
         max_backoff = actor.options.get("max_backoff", self.max_backoff)
         max_backoff = min(max_backoff, DEFAULT_MAX_BACKOFF)
         _, backoff = compute_backoff(retries, factor=min_backoff, max_backoff=max_backoff)
-        self.logger.info("Retrying message %r as %r in %d milliseconds.", previous_id, message.message_id, backoff)
+        self.logger.info("Retrying message %r in %d milliseconds.", message.message_id, backoff)
         broker.enqueue(message, delay=backoff)

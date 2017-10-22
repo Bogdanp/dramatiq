@@ -171,6 +171,9 @@ class Broker:
         Parameters:
           message(Message): The message to enqueue.
           delay(int): The number of milliseconds to delay the message for.
+
+        Returns:
+          Message: Either the original message or a copy of it.
         """
         raise NotImplementedError
 

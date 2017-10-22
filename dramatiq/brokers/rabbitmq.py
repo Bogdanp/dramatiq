@@ -178,8 +178,13 @@ class RabbitmqBroker(Broker):
                 )
 
             queue_name = dq_name(queue_name)
-            message = message._replace(queue_name=queue_name)
-            message.options["eta"] = current_millis() + delay
+            message_eta = current_millis() + delay
+            message = message.copy(
+                queue_name=queue_name,
+                options={
+                    "eta": message_eta,
+                },
+            )
 
         try:
             self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
@@ -191,6 +196,7 @@ class RabbitmqBroker(Broker):
                 properties=properties,
             )
             self.emit_after("enqueue", message, delay)
+            return message
         except (pika.exceptions.ChannelClosed,
                 pika.exceptions.ConnectionClosed) as e:
             # Delete the channel and the connection so that the next
