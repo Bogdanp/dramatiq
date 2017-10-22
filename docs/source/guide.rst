@@ -102,7 +102,7 @@ want to see a list of the available command line flags.
 As soon as you run that command you'll see log output along these
 lines::
 
-  [2017-06-27 13:03:09,675] [PID 13047] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.5.0' is booting up.
+  [2017-06-27 13:03:09,675] [PID 13047] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.9.0' is booting up.
   [2017-06-27 13:03:09,817] [PID 13051] [MainThread] [dramatiq.WorkerProcess(1)] [INFO] Worker process is ready for action.
   [2017-06-27 13:03:09,818] [PID 13052] [MainThread] [dramatiq.WorkerProcess(2)] [INFO] Worker process is ready for action.
   [2017-06-27 13:03:09,818] [PID 13050] [MainThread] [dramatiq.WorkerProcess(0)] [INFO] Worker process is ready for action.
@@ -154,7 +154,7 @@ printed in your worker process::
   Traceback (most recent call last):
     ...
   requests.exceptions.MissingSchema: Invalid URL 'foo': No schema supplied. Perhaps you meant http://foo?
-  [2017-06-27 13:11:22,062] [PID 13053] [Thread-8] [dramatiq.middleware.retries.Retries] [INFO] Retrying message 'a53a5a7d-74e1-48ae-a5a8-0b72af2a8708' as 'cc6a9b6d-873d-4555-a5d1-98d816775049' in 8104 milliseconds.
+  [2017-06-27 13:11:22,062] [PID 13053] [Thread-8] [dramatiq.middleware.retries.Retries] [INFO] Retrying message 'a53a5a7d-74e1-48ae-a5a8-0b72af2a8708' in 8104 milliseconds.
 
 Dramatiq will keep retrying the message with longer and longer delays
 in between runs until we fix our code or for up to about 30 days from
@@ -197,8 +197,8 @@ under that folder or any of its sub-folders change::
   $ env PYTHONPATH=. dramatiq count_words --watch .
 
 .. warning::
-   While this is a great feature to use when developing your code,
-   avoid using it in production!
+   Although this is a handy feature to use when developing your code,
+   you should avoid using it in production!
 
 
 Message Retries
