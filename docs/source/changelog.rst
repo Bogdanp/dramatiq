@@ -5,7 +5,17 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
-[0.8.0] -- UNRELEASED
+[0.9.0] -- UNRELEASED
+---------------------
+
+Changed
+^^^^^^^
+
+* Messages are no longer assigned new ids when they are re-enqueued.
+  This makes tracking messages using middleware significantly easier.
+* The RedisBroker now assigns its own internal message ids.
+
+[0.8.0] -- 2017-10-19
 ---------------------
 
 Changed
