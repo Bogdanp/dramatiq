@@ -75,6 +75,7 @@ how to use Dramatiq.
    guide
    best_practices
    advanced
+   cookbook
 
 
 API Reference
