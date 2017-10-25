@@ -6,10 +6,12 @@ handlers:
  - url: /
    static_files: build/html/index.html
    upload: build/html/index.html
+   secure: always
 
  - url: /(.*)
    static_files: build/html/\1
    upload: build/html/(.*)
+   secure: always
 
 skip_files:
 - ^(.*/)?#.*#$
