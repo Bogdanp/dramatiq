@@ -20,7 +20,7 @@ class MemcachedBackend(RateLimiterBackend):
     """
 
     def __init__(self, *, pool_size=8, **parameters):
-        behaviors = parameters["behaviors"] = parameters.get("behaviors", {})
+        behaviors = parameters.setdefault("behaviors", {})
         behaviors["cas"] = True
 
         self.client = client = Client(**parameters)
@@ -71,6 +71,8 @@ class MemcachedBackend(RateLimiterBackend):
     def incr_and_sum(self, key, keys, amount, maximum, ttl):
         ttl = int(ttl / 1000)
         with self.pool.reserve(block=True) as client:
+            client.add(key, 0, time=ttl)
+
             while True:
                 value, cid = client.gets(key)
                 if cid is None:

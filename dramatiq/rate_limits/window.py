@@ -32,13 +32,16 @@ class WindowRateLimiter(RateLimiter):
         self.window_millis = window * 1000
 
     def _acquire(self):
-        keys = []
         timestamp = int(time.time())
-        for i in range(self.window):
-            keys.append(f"{self.key}@{timestamp - i}")
+        keys = [f"{self.key}@{timestamp - i}" for i in range(self.window)]
 
-        self.backend.add(keys[0], 0, ttl=self.window_millis)
-        return self.backend.incr_and_sum(keys[0], keys, 1, maximum=self.limit, ttl=self.window_millis)
+        # TODO: This is susceptible to drift because the keys are
+        # never re-computed when CAS fails.
+        return self.backend.incr_and_sum(
+            keys[0], keys, 1,
+            maximum=self.limit,
+            ttl=self.window_millis,
+        )
 
     def _release(self):
         pass
