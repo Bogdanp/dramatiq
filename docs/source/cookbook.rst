@@ -15,8 +15,7 @@ open an `issue on GitHub`_ or ask around on Gitter_.
 Rate limiting work
 ------------------
 
-You can use dramatiq's |RateLimiters| to constrain how often a task
-should execute.
+You can use dramatiq's |RateLimiters| to constrain actor concurrency.
 
 .. code-block:: python
 
@@ -35,9 +34,9 @@ should execute.
            time.sleep(1)
            print("Done.")
 
-Whenever two ``one_at_a_time`` tasks run at the same time, one of them
-will be retried with exponential backoff.  This works by raising an
-exception and relying on the built-in Retries middleware to do the
+Whenever two ``one_at_a_time`` actors run at the same time, one of
+them will be retried with exponential backoff.  This works by raising
+an exception and relying on the built-in Retries middleware to do the
 work of re-enqueueing the task.
 
 If you want rate limiters not to raise an exception when they can't be
