@@ -12,6 +12,44 @@ open an `issue on GitHub`_ or ask around on Gitter_.
 .. _Gitter: https://gitter.im/dramatiq/dramatiq
 
 
+Rate limiting work
+------------------
+
+You can use dramatiq's |RateLimiters| to constrain how often a task
+should execute.
+
+.. code-block:: python
+
+   import dramatiq
+   import time
+
+   from dramatiq.rate_limits import ConcurrentRateLimiter
+   from dramatiq.rate_limits.backends import RedisBackend
+
+   backend = RedisBackend()
+   DISTRIBUTED_MUTEX = ConcurrentRateLimiter(backend, "distributed-mutex", limit=1)
+
+   @dramatiq.actor
+   def one_at_a_time():
+       with DISTRIBUTED_MUTEX.acquire():
+           time.sleep(1)
+           print("Done.")
+
+Whenever two ``one_at_a_time`` tasks run at the same time, one of them
+will be retried with exponential backoff.  This works by raising an
+exception and relying on the built-in Retries middleware to do the
+work of re-enqueueing the task.
+
+If you want rate limiters not to raise an exception when they can't be
+acquired, you should pass ``raise_on_failure=False`` to ``acquire``::
+
+  with DISTRIBUTED_MUTEX.acquire(raise_on_failure=False) as acquired:
+    if not acquired:
+      print("Lock could not be acquired.")
+    else:
+      print("Lock was acquired.")
+
+
 Reporting errors with Rollbar
 -----------------------------
 
