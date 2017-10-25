@@ -5,6 +5,8 @@
 [![Code Climate](https://codeclimate.com/github/Bogdanp/dramatiq/badges/gpa.svg)](https://codeclimate.com/github/Bogdanp/dramatiq)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
+[![Gitter Chat](https://badges.gitter.im/dramatiq/dramatiq.svg)](https://gitter.im/dramatiq/dramatiq)
+
 
 **dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.

@@ -15,8 +15,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
    :target: https://codeclimate.com/github/Bogdanp/dramatiq
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
-.. image:: https://img.shields.io/badge/Say%20Thanks!-%F0%9F%A6%89-1EAEDB.svg
-   :target: https://saythanks.io/to/Bogdanp
+.. image:: https://badges.gitter.im/dramatiq/dramatiq.svg
+   :target: https://gitter.im/dramatiq/dramatiq
 
 **Dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
