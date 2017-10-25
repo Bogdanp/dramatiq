@@ -5,6 +5,14 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+[0.10.0] -- UNRELEASED
+----------------------
+
+Changed
+^^^^^^^
+
+* Streamlined the implementation of the window rate limiter.
+
 [0.9.0] -- 2017-10-20
 ---------------------
 
