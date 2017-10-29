@@ -36,8 +36,8 @@ of the main differences between the two:
 * Celery has poor support for delayed tasks.  Delayed tasks are put on
   the same queue that is used for normal tasks and they’re simply
   pulled into worker memory until they can be executed, making it hard
-  to autoscale workers by queue size.  Dramatiq enqueues tasks on a
-  separate queue and moves them back when they're ready to be
+  to autoscale workers by queue size.  Dramatiq enqueues delayed tasks
+  on a separate queue and moves them back when they're ready to be
   executed.
 * Celery acks tasks as soon as they’re pulled by a worker by default.
   This is easy to change, but a bad default.  Dramatiq doesn’t let you
@@ -47,8 +47,7 @@ of the main differences between the two:
 * Celery’s not well suited for integration testing.  You’re expected
   to unit test tasks and to turn eager evaluation on for integration
   tests, but even then task exceptions will be swallowed by default.
-  Dramatiq provides an in-memory stub broker specifically for this use
-  case.
+  Dramatiq provides an in-memory stub broker for this use case.
 * Celery's source code is spread across 3 different projects (celery,
   billiard and kombu) and it’s impenetrable.  Its usage of runtime
   stack frame manipulation leads to heisenbugs.
@@ -61,19 +60,17 @@ of the main differences between the two:
 Compared to RQ
 --------------
 
-I have less experience with RQ_, but here are some notable differences
-between dramatiq and it:
+Here are some notable differences between dramatiq and RQ_:
 
 * Dramatiq supports RabbitMQ as a broker in addition to Redis.
-* RQ messages are pickled so it’s strictly limited to Python and
-  pickled messages are potentially exploitable.  This means you
-  may sometimes send bigger messages than you intended over the
-  network purely by accident.
+* RQ messages are pickled so messages can't easily be enqueued from
+  other languages.  Pickling represents a security hazard and is in
+  opposition to the best practice of sending small, primitive messages
+  over the network.
 * RQ queue prioritization is handled like it is in Celery: you have to
   spawn multiple groups of workers.
-* RQ forks for every job, so it’s slightly slower and forks that are
-  killed because they’ve surpassed their time limits can leak DB
-  connections if you’re not careful.
+* RQ forks for every job, making it slower.  Forks that are killed
+  because they’ve surpassed their time limits can leak DB connections.
 * RQ doesn't have a good integration testing story.
 
 .. _RQ: http://python-rq.org/
