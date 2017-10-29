@@ -2,8 +2,8 @@
 -- This function fetches up to $prefetch number of messages for a
 -- given queue.  All fetched messages are moved to the ack set.  The
 -- timestamp is used to "score" each ack such that an external watcher
--- can easily move messages unacked prior to, say, 24 hours prior to
--- when it runs back to their respective queues.
+-- can efficiently move messages unacked some time prior to when it
+-- runs back to their respective queues.
 local queue_name = ARGV[1]
 local prefetch = ARGV[2]
 local timestamp = ARGV[3]

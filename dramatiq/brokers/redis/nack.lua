@@ -1,4 +1,4 @@
--- nack(args=[queue_name, xqueue_name message_id, timestamp])
+-- nack(args=[queue_name, xqueue_name, message_id, timestamp])
 -- This function removes a message from a queue's acks set and then
 -- moves it to a dead-letter queue.
 local queue_name = ARGV[1]
