@@ -12,6 +12,7 @@ Changed
 ^^^^^^^
 
 * Streamlined the implementation of the window rate limiter.
+* More efficient requeue under Redis.
 
 [0.9.0] -- 2017-10-20
 ---------------------
