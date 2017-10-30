@@ -33,6 +33,9 @@ Brokers
 .. autoclass:: dramatiq.brokers.rabbitmq.RabbitmqBroker
    :members:
    :inherited-members:
+.. autoclass:: dramatiq.brokers.rabbitmq.URLRabbitmqBroker
+   :members:
+   :inherited-members:
 .. autoclass:: dramatiq.brokers.redis.RedisBroker
    :members:
    :inherited-members:
