@@ -8,3 +8,4 @@ of those changes to CLEARTYPE SRL.
 
 | Username | Name |
 | :------- | :--- |
+| @bendemaree | Ben Demaree |
