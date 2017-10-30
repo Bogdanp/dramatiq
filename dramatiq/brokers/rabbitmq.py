@@ -26,7 +26,7 @@ class RabbitmqBroker(Broker):
     Parameters:
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
-      \**parameters(dict): The connection parameters to use to
+      \**parameters(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
     """
 
@@ -342,6 +342,22 @@ class _RabbitmqConsumer(Consumer):
                 pika.exceptions.ChannelClosed,
                 pika.exceptions.ConnectionClosed) as e:
             raise ConnectionClosed(e) from None
+
+
+class URLRabbitmqBroker(RabbitmqBroker):
+    """Extends RabbitmqBroker to provide configuration
+    via URL instead of parameter dict.
+
+    Parameters:
+      url: A pika connection url, eg: amqp://guest:guest@localhost:5672
+      middleware(list[Middleware]): The set of middleware that apply
+        to this broker.
+    """
+
+    def __init__(self, url, middleware=None):
+        super().__init__(middleware=middleware)
+
+        self.parameters = pika.URLParameters(url)
 
 
 class _RabbitmqMessage(MessageProxy):
