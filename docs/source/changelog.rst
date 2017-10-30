@@ -11,10 +11,10 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
-* |URLRabbitmqbroker| (@whalesalad_).
-* StubBroker ``flush`` and ``flush_all``.
-* ``before_consumer_thread_shutdown`` middleware hook.
-* ``before_worker_thread_shutdown`` middleware hook.
+* |URLRabbitmqbroker| (`@whalesalad`_).
+* StubBroker |StubBroker_flush| and |StubBroker_flush_all|.
+* |before_consumer_thread_shutdown| middleware hook.
+* |before_worker_thread_shutdown| middleware hook.
 
 Changed
 ^^^^^^^
@@ -26,7 +26,7 @@ Changed
 Fixed
 ^^^^^
 
-* ``dramatiq-gevent`` packaging (@bendemaree_).
+* ``dramatiq-gevent`` packaging (`@bendemaree`_).
 
 .. _@bendemaree: https://github.com/bendemaree
 .. _@whalesalad: https://github.com/whalesalad
