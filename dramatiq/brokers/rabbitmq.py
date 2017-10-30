@@ -272,6 +272,26 @@ class RabbitmqBroker(Broker):
             self.connection.sleep(1)
 
 
+class URLRabbitmqBroker(RabbitmqBroker):
+    """A variant of :class:`.RabbitmqBroker` that takes a Pika
+    connection URL as a parameter.
+
+    Example:
+
+      >>> broker = URLRabbitmqBroker("amqp://guest:guest@localhost:5672")
+
+    Parameters:
+      url(str): A connection URL.
+      middleware(list[Middleware]): The set of middleware that apply
+        to this broker.
+    """
+
+    def __init__(self, url, middleware=None):
+        super().__init__(middleware=middleware)
+
+        self.parameters = pika.URLParameters(url)
+
+
 class _RabbitmqConsumer(Consumer):
     def __init__(self, parameters, queue_name, prefetch, timeout):
         try:
@@ -342,22 +362,6 @@ class _RabbitmqConsumer(Consumer):
                 pika.exceptions.ChannelClosed,
                 pika.exceptions.ConnectionClosed) as e:
             raise ConnectionClosed(e) from None
-
-
-class URLRabbitmqBroker(RabbitmqBroker):
-    """Extends RabbitmqBroker to provide configuration
-    via URL instead of parameter dict.
-
-    Parameters:
-      url: A pika connection url, eg: amqp://guest:guest@localhost:5672
-      middleware(list[Middleware]): The set of middleware that apply
-        to this broker.
-    """
-
-    def __init__(self, url, middleware=None):
-        super().__init__(middleware=middleware)
-
-        self.parameters = pika.URLParameters(url)
 
 
 class _RabbitmqMessage(MessageProxy):
