@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 [0.10.0] -- UNRELEASED
 ----------------------
 
+Added
+^^^^^
+
+* StubBroker ``flush`` and ``flush_all``.
+* ``before_worker_thread_shutdown`` middleware hook.
+
 Changed
 ^^^^^^^
 
