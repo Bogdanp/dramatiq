@@ -8,3 +8,4 @@ of those changes to CLEARTYPE SRL.
 
 | Username | Name |
 | :------- | :--- |
+| [whalesalad](http://github.com/whalesalad) | Michael Whalen |
