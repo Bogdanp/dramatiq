@@ -214,6 +214,7 @@ class _ConsumerThread(Thread):
             time.sleep(backoff_ms / 1000)
             return self.run(attempts=attempts)
 
+        self.broker.emit_before("consumer_thread_shutdown", self)
         self.logger.debug("Consumer thread stopped.")
 
     def handle_acks(self):

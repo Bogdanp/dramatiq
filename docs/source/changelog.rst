@@ -12,6 +12,7 @@ Added
 ^^^^^
 
 * StubBroker ``flush`` and ``flush_all``.
+* ``before_consumer_thread_shutdown`` middleware hook.
 * ``before_worker_thread_shutdown`` middleware hook.
 
 Changed
