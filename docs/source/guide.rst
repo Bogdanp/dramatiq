@@ -369,15 +369,8 @@ execution::
 
   from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-  rabbitmq_broker = RabbitmqBroker(
-    host="rabbitmq",
-    heartbeat_interval=0,
-  )
+  rabbitmq_broker = RabbitmqBroker(host="rabbitmq")
   dramatiq.set_broker(rabbitmq_broker)
-
-Make sure to disable heartbeats when defining your own connection
-parameters by passing them ``heartbeat_interval=0`` since pika's
-``BlockingConnection`` does not handle heartbeats.
 
 Redis Broker
 ^^^^^^^^^^^^

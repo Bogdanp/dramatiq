@@ -12,6 +12,10 @@ from ..message import Message
 #: The maximum amount of time a message can be in the dead queue.
 DEAD_MESSAGE_TTL = 86400 * 7 * 1000
 
+#: The max number of times to attempt an enqueue operation in case of
+#: a connection error.
+MAX_ENQUEUE_ATTEMPTS = 2
+
 #: The max amount of time messages can be delayed by in ms.
 MAX_MESSAGE_DELAY = 86400000 * 7
 
@@ -186,24 +190,36 @@ class RabbitmqBroker(Broker):
                 },
             )
 
-        try:
-            self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
-            self.emit_before("enqueue", message, delay)
-            self.channel.publish(
-                exchange="",
-                routing_key=queue_name,
-                body=message.encode(),
-                properties=properties,
-            )
-            self.emit_after("enqueue", message, delay)
-            return message
-        except (pika.exceptions.ChannelClosed,
-                pika.exceptions.ConnectionClosed) as e:
-            # Delete the channel and the connection so that the next
-            # caller may initiate new ones of each.
-            del self.channel
-            del self.connection
-            raise ConnectionClosed(e) from None
+        attempts = 1
+        while True:
+            try:
+                self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
+                self.emit_before("enqueue", message, delay)
+                self.channel.publish(
+                    exchange="",
+                    routing_key=queue_name,
+                    body=message.encode(),
+                    properties=properties,
+                )
+                self.emit_after("enqueue", message, delay)
+                return message
+
+            except (pika.exceptions.ChannelClosed,
+                    pika.exceptions.ConnectionClosed) as e:
+
+                # Delete the channel and the connection so that the
+                # next caller/attempt may initiate new ones of each.
+                del self.channel
+                del self.connection
+
+                attempts += 1
+                if attempts > MAX_ENQUEUE_ATTEMPTS:
+                    raise ConnectionClosed(e) from None
+
+                self.logger.debug(
+                    "Retrying enqueue due to closed connection. [%d/%d]",
+                    attempts, MAX_ENQUEUE_ATTEMPTS,
+                )
 
     def get_declared_queues(self):
         """Get all declared queues.

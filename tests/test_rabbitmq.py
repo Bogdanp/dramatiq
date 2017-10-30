@@ -168,17 +168,15 @@ def test_rabbitmq_broker_reconnects_after_enqueue_failure(rabbitmq_broker, rabbi
     def do_nothing():
         pass
 
-    # If I close my channel
+    # If I close my connection
     rabbitmq_broker.connection.close()
 
     # Then send my actor a message
-    # I expect a ConnectionError to be raised
-    with pytest.raises(ConnectionClosed):
-        do_nothing.send()
+    # I expect the message to be enqueued
+    assert do_nothing.send()
 
-    # If I then send another message
-    # I expect the message to be sent
-    do_nothing.send()
+    # And the connection be reopened
+    assert rabbitmq_broker.connection.is_open
 
 
 @pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")

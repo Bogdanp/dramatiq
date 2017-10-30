@@ -311,7 +311,7 @@ class _ConsumerThread(Thread):
                 self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
                 self.consumer.close()
         except ConnectionError:
-            self.logger.warning("Could not close Consumer.", exc_info=True)
+            pass
 
 
 class _WorkerThread(Thread):
