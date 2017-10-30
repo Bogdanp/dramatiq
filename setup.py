@@ -58,4 +58,7 @@ setup(
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
+    options={
+        "build_scripts": {"executable": "/usr/bin/env python3"}
+    }
 )
