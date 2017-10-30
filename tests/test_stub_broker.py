@@ -1,3 +1,4 @@
+import dramatiq
 import pytest
 
 from dramatiq import QueueNotFound
@@ -26,3 +27,22 @@ def test_stub_broker_raises_queue_error_when_joining_on_undeclared_queues(stub_b
     # I expect a QueueNotFound error to be raised
     with pytest.raises(QueueNotFound):
         stub_broker.join("idontexist")
+
+
+def test_stub_broker_can_be_flushed(stub_broker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # If I send that actor a message
+    do_work.send()
+
+    # I expect its queue to contain a message
+    assert stub_broker.queues[do_work.queue_name].qsize() == 1
+
+    # If I then flush all the queues in the broker
+    stub_broker.flush_all()
+
+    # I expect the queue to have been emptied
+    assert stub_broker.queues[do_work.queue_name].qsize() == 0

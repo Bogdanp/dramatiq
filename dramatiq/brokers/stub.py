@@ -1,7 +1,7 @@
 from queue import Queue, Empty
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import current_millis, dq_name, xq_name
+from ..common import current_millis, dq_name, xq_name, iter_queue
 from ..errors import QueueNotFound
 from ..message import Message
 
@@ -86,6 +86,21 @@ class StubBroker(Broker):
         self.queues[queue_name].put(message.encode())
         self.emit_after("enqueue", message, delay)
         return message
+
+    def flush(self, queue_name):
+        """Drop all the messages from a queue.
+
+        Parameters:
+          queue_name(str): The queue to flush.
+        """
+        for _ in iter_queue(self.queues[queue_name]):
+            pass
+
+    def flush_all(self):
+        """Drop all messages from all declared queues.
+        """
+        for queue_name in self.queues:
+            self.flush(queue_name)
 
     def join(self, queue_name):
         """Wait for all the messages on the given queue to be
