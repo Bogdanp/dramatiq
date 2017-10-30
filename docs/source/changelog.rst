@@ -19,7 +19,8 @@ Changed
 ^^^^^^^
 
 * Streamlined the implementation of the window rate limiter.
-* More efficient requeue under Redis.
+* Made requeue more efficient under Redis.
+* Made enqueue resilient to disconnects under RabbitMQ.
 
 [0.9.0] -- 2017-10-20
 ---------------------
