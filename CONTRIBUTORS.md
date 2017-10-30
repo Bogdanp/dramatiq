@@ -8,4 +8,5 @@ of those changes to CLEARTYPE SRL.
 
 | Username | Name |
 | :------- | :--- |
-| [whalesalad](http://github.com/whalesalad) | Michael Whalen |
+| [@bendemaree](https://github.com/bendemaree) | Ben Demaree |
+| [@whalesalad](https://github.com/whalesalad) | Michael Whalen |
