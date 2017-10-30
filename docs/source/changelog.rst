@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
+* |URLRabbitmqbroker| (@whalesalad_).
 * StubBroker ``flush`` and ``flush_all``.
 * ``before_consumer_thread_shutdown`` middleware hook.
 * ``before_worker_thread_shutdown`` middleware hook.
@@ -21,6 +22,15 @@ Changed
 * Streamlined the implementation of the window rate limiter.
 * Made requeue more efficient under Redis.
 * Made enqueue resilient to disconnects under RabbitMQ.
+
+Fixed
+^^^^^
+
+* ``dramatiq-gevent`` packaging (@bendemaree_).
+
+.. _@bendemaree: https://github.com/bendemaree
+.. _@whalesalad: https://github.com/whalesalad
+
 
 [0.9.0] -- 2017-10-20
 ---------------------
