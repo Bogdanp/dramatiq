@@ -85,3 +85,11 @@ class Middleware:
     def after_worker_shutdown(self, broker, worker):
         """Called after the worker process shuts down.
         """
+
+    def before_worker_thread_shutdown(self, thread):
+        """Called before a worker thread shuts down.  This may be used
+        to clean up thread-local resources (such as Django database
+        connections).
+
+        There is no "after_worker_thread_boot".
+        """

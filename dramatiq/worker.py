@@ -343,6 +343,8 @@ class _WorkerThread(Thread):
                 self.process_message(message)
             except Empty:
                 continue
+
+        self.broker.emit_before("worker_thread_shutdown", self)
         self.logger.debug("Worker thread stopped.")
 
     def process_message(self, message):
