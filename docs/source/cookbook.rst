@@ -12,6 +12,16 @@ open an `issue on GitHub`_ or ask around on Gitter_.
 .. _Gitter: https://gitter.im/dramatiq/dramatiq
 
 
+Usage with Django
+-----------------
+
+Check out the `django_dramatiq`_ project if you want to use Dramatiq
+with Django_.
+
+.. _django_dramatiq: https://github.com/Bogdanp/django_dramatiq
+.. _django: https://djangoproject.com
+
+
 Rate limiting work
 ------------------
 
