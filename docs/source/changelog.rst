@@ -5,6 +5,19 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+[0.10.1] -- 2017-11-04
+----------------------
+
+Fixed
+^^^^^
+
+* Made |StubBroker_flush_all| flush delay queues.
+
+Changed
+^^^^^^^
+
+* Added more benchmarks.
+
 [0.10.0] -- 2017-10-30
 ----------------------
 
