@@ -98,7 +98,7 @@ def test_rabbitmq_process_10k_fib_with_cli(benchmark, info_logging, start_cli):
         start_cli("tests.benchmarks.test_rabbitmq_cli:broker")
 
     # I expect processing those messages with the CLI to be consistently fast
-    benchmark.pedantic(broker.join, args=(latency.queue_name,), setup=setup)
+    benchmark.pedantic(broker.join, args=(fib.queue_name,), setup=setup)
 
 
 @pytest.mark.benchmark(group="rabbitmq-1k-latency")
