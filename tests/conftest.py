@@ -1,6 +1,7 @@
 import dramatiq
 import logging
 import pytest
+import random
 import subprocess
 import uuid
 
@@ -15,6 +16,8 @@ from dramatiq.rate_limits.backends import MemcachedBackend, RedisBackend
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=logfmt)
 logging.getLogger("pika").setLevel(logging.WARN)
+
+random.seed(1337)
 
 
 @pytest.fixture()

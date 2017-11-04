@@ -1,7 +1,9 @@
 import dramatiq
 import logging
+import pytest
 
 
+@pytest.mark.benchmark(group="redis-10k")
 def test_redis_process_10k_messages(benchmark, redis_broker):
     @dramatiq.actor
     def throughput():
