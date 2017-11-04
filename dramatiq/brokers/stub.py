@@ -1,3 +1,4 @@
+from itertools import chain
 from queue import Queue, Empty
 
 from ..broker import Broker, Consumer, MessageProxy
@@ -99,7 +100,7 @@ class StubBroker(Broker):
     def flush_all(self):
         """Drop all messages from all declared queues.
         """
-        for queue_name in self.queues:
+        for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
 
     def join(self, queue_name):
