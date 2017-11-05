@@ -16,10 +16,23 @@ Usage with Django
 -----------------
 
 Check out the `django_dramatiq`_ project if you want to use Dramatiq
-with Django_.
+with Django_.  Check out the `django_dramatiq_example`_ repo to see an
+example app build with Django and Dramatiq.
 
 .. _django_dramatiq: https://github.com/Bogdanp/django_dramatiq
+.. _django_dramatiq_example: https://github.com/Bogdanp/django_dramatiq_example
 .. _django: https://djangoproject.com
+
+
+Usage with Flask
+-----------------
+
+Check out the `flask_dramatiq_example`_ repo to see an example app
+built with Flask_ and Dramatiq.
+
+.. _flask_dramatiq_example: https://github.com/Bogdanp/flask_dramatiq_example
+.. _flask: http://flask.pocoo.org
+
 
 
 Rate limiting work
