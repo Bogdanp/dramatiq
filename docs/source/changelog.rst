@@ -5,6 +5,14 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+[0.10.2] -- 2017-11-06
+----------------------
+
+Changed
+^^^^^^^
+
+* Pinned `pika` to ``>=0.10,<0.12``.
+
 [0.10.1] -- 2017-11-04
 ----------------------
 

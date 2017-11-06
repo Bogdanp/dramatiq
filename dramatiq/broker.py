@@ -23,7 +23,7 @@ def get_broker():
         set_broker(RabbitmqBroker(
             host="127.0.0.1",
             port=5672,
-            heartbeat_interval=5,
+            heartbeat=5,
             connection_attempts=5,
             blocked_connection_timeout=30,
         ))
