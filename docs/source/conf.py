@@ -110,7 +110,7 @@ html_theme_options = {
     'github_type': 'star',
     'github_user': 'Bogdanp',
     'github_repo': 'dramatiq',
-    'gratipay_user': 'Bogdanp',
+    'analytics_id': 'UA-54541558-7',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
