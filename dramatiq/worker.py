@@ -122,6 +122,7 @@ class Worker:
             queue_name=queue_name,
             prefetch=self.delay_prefetch if delay else self.queue_prefetch,
             work_queue=self.work_queue,
+            worker_timeout=self.worker_timeout,
         )
         consumer.start()
 
@@ -151,7 +152,7 @@ class _WorkerMiddleware(Middleware):
 
 
 class _ConsumerThread(Thread):
-    def __init__(self, *, broker, queue_name, prefetch, work_queue):
+    def __init__(self, *, broker, queue_name, prefetch, work_queue, worker_timeout):
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, f"ConsumerThread({queue_name})")
@@ -161,6 +162,7 @@ class _ConsumerThread(Thread):
         self.prefetch = prefetch
         self.queue_name = queue_name
         self.work_queue = work_queue
+        self.worker_timeout = worker_timeout
         self.delay_queue = PriorityQueue()
         self.acks_queue = Queue()
 
@@ -171,7 +173,7 @@ class _ConsumerThread(Thread):
             self.consumer = self.broker.consume(
                 queue_name=self.queue_name,
                 prefetch=self.prefetch,
-                timeout=1000,
+                timeout=self.worker_timeout,
             )
 
             # Reset the attempts counter since we presumably got a
