@@ -26,16 +26,22 @@ class RabbitmqBroker(Broker):
     """A broker that can be used with RabbitMQ.
 
     Parameters:
+      url(str): An optional connection URL.  If both a URL and
+        connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
       \**parameters(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
     """
 
-    def __init__(self, *, middleware=None, **parameters):
+    def __init__(self, *, url=None, middleware=None, **parameters):
         super().__init__(middleware=middleware)
 
-        self.parameters = pika.ConnectionParameters(**parameters)
+        if url:
+            self.parameters = pika.URLParameters(url)
+        else:
+            self.parameters = pika.ConnectionParameters(**parameters)
+
         self.connections = set()
         self.channels = set()
         self.queues = set()
@@ -280,24 +286,16 @@ class RabbitmqBroker(Broker):
             self.connection.sleep(idle_time / 1000.0)
 
 
-class URLRabbitmqBroker(RabbitmqBroker):
-    """A variant of :class:`.RabbitmqBroker` that takes a Pika
-    connection URL as a parameter.
-
-    Example:
-
-      >>> broker = URLRabbitmqBroker("amqp://guest:guest@localhost:5672")
+def URLRabbitmqBroker(url, *, middleware=None):
+    """Alias for the RabbitMQ broker that takes a connection URL as a
+    positional argument.
 
     Parameters:
-      url(str): A connection URL.
-      middleware(list[Middleware]): The set of middleware that apply
-        to this broker.
+      url(str): A connection string.
+      middleware(list[Middleware]): The middleware to add to this
+        broker.
     """
-
-    def __init__(self, url, middleware=None):
-        super().__init__(middleware=middleware)
-
-        self.parameters = pika.URLParameters(url)
+    return RabbitmqBroker(url=url, middleware=middleware)
 
 
 class _InterruptEvent(object):

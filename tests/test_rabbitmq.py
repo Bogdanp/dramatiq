@@ -5,7 +5,19 @@ import time
 
 from dramatiq import Message
 from dramatiq.common import current_millis
+from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker
 from unittest.mock import Mock
+
+
+def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
+    # Given a URL connection string
+    url = "amqp://localhost:5672"
+
+    # When I pass that to URLRabbitmqBroker
+    broker = URLRabbitmqBroker(url)
+
+    # Then I should get back a RabbitmqBroker
+    assert isinstance(broker, RabbitmqBroker)
 
 
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_random_queue, rabbitmq_worker):
