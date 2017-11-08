@@ -5,29 +5,55 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
-[0.10.2] -- 2017-11-06
-----------------------
+`Unreleased`_
+-------------
+
+Added
+^^^^^
+
+* |RabbitmqBroker_join| now takes optional ``min_successes`` and
+  ``idle_time`` parameters.
 
 Changed
 ^^^^^^^
 
-* Pinned `pika` to ``>=0.10,<0.12``.
-
-[0.10.1] -- 2017-11-04
-----------------------
+* Consumer reconnect backoff factor has been lowered from 10s to 100ms.
+* |URLRabbitmqBroker| is now a factory function that creates instances
+  of |RabbitmqBroker|.
 
 Fixed
 ^^^^^
 
-* Made |StubBroker_flush_all| flush delay queues.
+* Worker processes no longer use a spinlock to consume messages.
+* Consumers now use the same idle timeout as workers.
+* |StubBroker| no longer declares dead letter queues.
+
+
+`0.10.2`_ -- 2017-11-06
+-----------------------
 
 Changed
 ^^^^^^^
 
-* Added more benchmarks.
+* ``pika`` is now pinned to ``>=0.10,<0.12``.
 
-[0.10.0] -- 2017-10-30
-----------------------
+
+`0.10.1`_ -- 2017-11-04
+-----------------------
+
+Added
+^^^^^
+
+* More benchmarks.
+
+Fixed
+^^^^^
+
+* |StubBroker_flush_all| now flushes delay queues.
+
+
+`0.10.0`_ -- 2017-10-30
+-----------------------
 
 Added
 ^^^^^
@@ -40,9 +66,9 @@ Added
 Changed
 ^^^^^^^
 
-* Streamlined the implementation of the window rate limiter.
-* Made requeue more efficient under Redis.
-* Made enqueue resilient to disconnects under RabbitMQ.
+* Implementation of the window rate limiter has been streamlined.
+* Redis requeue is now more efficient.
+* RabbitMQ enqueue is now resilient to disconnects.
 
 Fixed
 ^^^^^
@@ -53,8 +79,8 @@ Fixed
 .. _@whalesalad: https://github.com/whalesalad
 
 
-[0.9.0] -- 2017-10-20
----------------------
+`0.9.0`_ -- 2017-10-20
+----------------------
 
 Changed
 ^^^^^^^
@@ -63,8 +89,9 @@ Changed
   This makes tracking messages using middleware significantly easier.
 * The RedisBroker now assigns its own internal message ids.
 
-[0.8.0] -- 2017-10-19
----------------------
+
+`0.8.0`_ -- 2017-10-19
+----------------------
 
 Changed
 ^^^^^^^
@@ -74,26 +101,29 @@ Changed
 * ``exec`` is now used to reload the main process on source code
   changes when the ``--watch`` flag is enabled.
 
-[0.7.1] -- 2017-10-08
----------------------
+
+`0.7.1`_ -- 2017-10-08
+----------------------
 
 Fixed
 ^^^^^
 
-* Fixed package distribution of Lua files.
+* Lua files are now properly distributed with the package.
 
-[0.7.0] -- 2017-09-13
----------------------
+
+`0.7.0`_ -- 2017-09-13
+----------------------
 
 Changed
 ^^^^^^^
 
 * Reworked scheduled messages to improve fairness.  Messages are now
   re-enqueued on the broker once they hit their eta.
-* Pinned ``prometheus-client`` to version ``0.0.20``.
+* ``prometheus-client`` has been pinned to version ``0.0.20``.
 
-[0.6.1] -- 2017-07-20
----------------------
+
+`0.6.1`_ -- 2017-07-20
+----------------------
 
 Fixed
 ^^^^^
@@ -101,8 +131,9 @@ Fixed
 * A race condition with calls to ``cas`` in the memcached rate limiter
   backend.
 
-[0.6.0] -- 2017-07-09
----------------------
+
+`0.6.0`_ -- 2017-07-09
+----------------------
 
 Added
 ^^^^^
@@ -110,8 +141,9 @@ Added
 * ``before`` and ``after`` arguments to |add_middleware|.
 * Support for |RateLimiters|.
 
-[0.5.2] -- 2017-06-29
----------------------
+
+`0.5.2`_ -- 2017-06-29
+----------------------
 
 Changed
 ^^^^^^^
@@ -120,16 +152,18 @@ Changed
   meaning tasks are now retried for up to about 30 days before they're
   dead-lettered by default.
 
-[0.5.1] -- 2017-06-28
----------------------
+
+`0.5.1`_ -- 2017-06-28
+----------------------
 
 Removed
 ^^^^^^^
 
 * Dropped RabbitMQ heartbeat to avoid spurious disconnects.
 
-[0.5.0] -- 2017-06-27
----------------------
+
+`0.5.0`_ -- 2017-06-27
+----------------------
 
 Added
 ^^^^^
@@ -140,3 +174,18 @@ Changed
 ^^^^^^^
 
 * Capped prefetch counts to 65k.
+
+
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v0.10.2...HEAD
+.. _0.10.2: https://github.com/Bogdanp/dramatiq/compare/v0.10.1...v0.10.2
+.. _0.10.1: https://github.com/Bogdanp/dramatiq/compare/v0.10.0...v0.10.1
+.. _0.10.0: https://github.com/Bogdanp/dramatiq/compare/v0.9.0...v0.10.0
+.. _0.9.0: https://github.com/Bogdanp/dramatiq/compare/v0.8.0...v0.9.0
+.. _0.8.0: https://github.com/Bogdanp/dramatiq/compare/v0.7.1...v0.8.0
+.. _0.7.1: https://github.com/Bogdanp/dramatiq/compare/v0.7.0...v0.7.1
+.. _0.7.0: https://github.com/Bogdanp/dramatiq/compare/v0.6.1...v0.7.0
+.. _0.6.1: https://github.com/Bogdanp/dramatiq/compare/v0.6.0...v0.6.1
+.. _0.6.0: https://github.com/Bogdanp/dramatiq/compare/v0.5.2...v0.6.0
+.. _0.5.2: https://github.com/Bogdanp/dramatiq/compare/v0.5.1...v0.5.2
+.. _0.5.1: https://github.com/Bogdanp/dramatiq/compare/v0.5.0...v0.5.1
+.. _0.5.0: https://github.com/Bogdanp/dramatiq/compare/v0.4.1...v0.5.0
