@@ -401,15 +401,18 @@ class _RabbitmqConsumer(Consumer):
             self.channel._queue_consumer_generator.pending_events.append(self.interrupt_message)
             # Finally, drain the socket for select
             self.interrupt_sock_r.recv(512)
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             if e.errno != errno.EGAIN:
                 raise
 
     def close(self):
         try:
-            self.connection._impl.ioloop.remove_handler(self.interrupt_sock_r.fileno())
-            self.interrupt_sock_w.close()
-            self.interrupt_sock_r.close()
+            try:
+                self.interrupt_sock_w.close()
+                self.interrupt_sock_r.close()
+                self.connection._impl.ioloop.remove_handler(self.interrupt_sock_r.fileno())
+            except KeyError:
+                pass
 
             if self.channel.is_open:
                 self.channel.cancel()
