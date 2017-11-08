@@ -5,7 +5,6 @@ import time
 
 from dramatiq import Message
 from dramatiq.common import current_millis
-from dramatiq.errors import ConnectionClosed
 from unittest.mock import Mock
 
 

@@ -171,12 +171,7 @@ class _ConsumerThread(Thread):
             self.consumer = self.broker.consume(
                 queue_name=self.queue_name,
                 prefetch=self.prefetch,
-
-                # We're being a little piggy here.  We don't have a
-                # good way to signal the consumer to stop idling when
-                # we get ack requests, so we have to have a low idle
-                # timeout instead.
-                timeout=20,
+                timeout=1000,
             )
 
             # Reset the attempts counter since we presumably got a
@@ -285,6 +280,7 @@ class _ConsumerThread(Thread):
         be acked or rejected.
         """
         self.acks_queue.put(message)
+        self.consumer.interrupt()
 
     def requeue_messages(self, messages):
         """Called on worker shutdown and whenever there is a

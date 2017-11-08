@@ -1,10 +1,9 @@
 import dramatiq
-import logging
 import pytest
 
 
 @pytest.mark.benchmark(group="rabbitmq-10k")
-def test_rabbitmq_process_10k_messages(benchmark, rabbitmq_broker, rabbitmq_random_queue):
+def test_rabbitmq_process_10k_messages(benchmark, rabbitmq_broker, rabbitmq_random_queue, info_logging):
     @dramatiq.actor(queue_name=rabbitmq_random_queue)
     def throughput():
         pass
@@ -21,6 +20,4 @@ def test_rabbitmq_process_10k_messages(benchmark, rabbitmq_broker, rabbitmq_rand
         rabbitmq_broker.join(rabbitmq_random_queue)
         worker.stop()
 
-    logging.getLogger().setLevel(logging.INFO)
     benchmark.pedantic(process_messages, setup=load_messages)
-    logging.getLogger().setLevel(logging.DEBUG)
