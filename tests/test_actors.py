@@ -108,6 +108,7 @@ def test_actors_can_perform_work(stub_broker, stub_worker):
 
     # Then join on the queue
     stub_broker.join(put.queue_name)
+    stub_worker.join()
 
     # I expect the database to be populated
     assert len(database) == 100
@@ -127,6 +128,7 @@ def test_actors_can_perform_work_with_kwargs(stub_broker, stub_worker):
 
     # Then join on the queue
     stub_broker.join(add.queue_name)
+    stub_worker.join()
 
     # I expect the database to be populated
     assert results == [3]
@@ -150,6 +152,7 @@ def test_actors_retry_on_failure(stub_broker, stub_worker):
 
     # Then join on the queue
     stub_broker.join(do_work.queue_name)
+    stub_worker.join()
 
     # I expect successes
     assert sum(successes) == 1
@@ -170,6 +173,7 @@ def test_actors_retry_a_max_number_of_times_on_failure(stub_broker, stub_worker)
 
     # Then join on the queue
     stub_broker.join(do_work.queue_name)
+    stub_worker.join()
 
     # I expect successes
     assert sum(attempts) == 4
@@ -190,6 +194,7 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
 
     # Then join on the queue
     stub_broker.join(do_work.queue_name)
+    stub_worker.join()
 
     # I expect successes
     assert sum(attempts) >= 1
@@ -212,6 +217,7 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
 
     # Then join on the queue
     stub_broker.join(do_work.queue_name)
+    stub_worker.join()
 
     # I expect it to fail
     assert sum(attempts) == 1
@@ -338,7 +344,7 @@ def test_actors_can_prioritize_work(stub_broker):
     # Then start a worker and join on their queue
     worker = Worker(stub_broker)
     worker.start()
-    stub_broker.join("default")
+    stub_broker.join(lo.queue_name)
     worker.join()
     worker.stop()
 

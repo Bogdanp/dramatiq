@@ -49,7 +49,8 @@ def test_redis_actors_retry_with_backoff_on_failure(redis_broker, redis_worker):
     redis_worker.join()
 
     # I expect backoff time to have passed between sucess and failure
-    assert 500 <= success_time - failure_time <= 1500
+    # + the worker idle timeout as padding in case the worker is long polling
+    assert 500 <= success_time - failure_time <= 2500 + redis_worker.worker_timeout
 
 
 def test_redis_actors_can_retry_multiple_times(redis_broker, redis_worker):
@@ -105,7 +106,7 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker,
         results.append(x)
 
     # If I send it a delayed message
-    append.send_with_options(args=(1,), delay=1500)
+    append.send_with_options(args=(1,), delay=2000)
 
     # And then another delayed message with a smaller delay
     append.send_with_options(args=(2,), delay=1000)
