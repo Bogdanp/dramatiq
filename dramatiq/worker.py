@@ -205,7 +205,7 @@ class _ConsumerThread(Thread):
         # The consumer must retry itself with exponential backoff
         # assuming it hasn't been shut down.
         if self.running:
-            attempts, backoff_ms = compute_backoff(attempts, jitter=False, factor=10000, max_backoff=60000)
+            attempts, backoff_ms = compute_backoff(attempts, jitter=False, factor=100, max_backoff=60000)
             self.logger.debug("Waiting for %d milliseconds before restarting...", backoff_ms)
             self.close()
             time.sleep(backoff_ms / 1000)
@@ -245,10 +245,6 @@ class _ConsumerThread(Thread):
             new_message = message.copy(queue_name=queue_name)
             del new_message.options["eta"]
 
-            self.logger.debug(
-                "Moving message %r to work queue %r.",
-                message.message_id, queue_name,
-            )
             self.broker.enqueue(new_message)
             self.post_process_message(message)
             self.delay_queue.task_done()
