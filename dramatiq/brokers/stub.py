@@ -2,7 +2,7 @@ from itertools import chain
 from queue import Queue, Empty
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import current_millis, dq_name, xq_name, iter_queue
+from ..common import current_millis, dq_name, iter_queue
 from ..errors import QueueNotFound
 from ..message import Message
 
@@ -49,7 +49,6 @@ class StubBroker(Broker):
         if queue_name not in self.queues:
             self.emit_before("declare_queue", queue_name)
             self.queues[queue_name] = Queue()
-            self.queues[xq_name(queue_name)] = Queue()
             self.emit_after("declare_queue", queue_name)
 
             delayed_name = dq_name(queue_name)
