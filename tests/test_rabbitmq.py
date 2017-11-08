@@ -47,7 +47,7 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
     do_work.send()
 
     # Then join on the queue
-    rabbitmq_broker.join(rabbitmq_random_queue)
+    rabbitmq_broker.join(rabbitmq_random_queue, min_successes=20)
     rabbitmq_worker.join()
 
     # I expect backoff time to have passed between sucess and failure
@@ -69,7 +69,7 @@ def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_rand
     do_work.send()
 
     # Then join on the queue
-    rabbitmq_broker.join(rabbitmq_random_queue)
+    rabbitmq_broker.join(rabbitmq_random_queue, min_successes=40)
     rabbitmq_worker.join()
 
     # I expect it to have been attempted 4 times
@@ -114,7 +114,7 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(
     append.send_with_options(args=(2,), delay=1000)
 
     # Then join on the queue
-    rabbitmq_broker.join(rabbitmq_random_queue)
+    rabbitmq_broker.join(rabbitmq_random_queue, min_successes=20)
     rabbitmq_worker.join()
 
     # I expect the latter message to have been run first

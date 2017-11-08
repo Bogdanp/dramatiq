@@ -252,26 +252,32 @@ class RabbitmqBroker(Broker):
             xq_queue_response.method.message_count,
         )
 
-    def join(self, queue_name):
+    def join(self, queue_name, min_successes=10, idle_time=100):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
 
-        Note:
+        Warning:
           This method doesn't wait for unacked messages so it may not
           be completely reliable.  Use the stub broker in your unit
           tests and only use this for simple integration tests.
 
         Parameters:
           queue_name(str): The queue to wait on.
+          min_successes(int): The minimum number of times all the
+            polled queues should be empty.
+          idle_time(int): The number of milliseconds to wait between
+            counts.
         """
         successes = 0
-        while successes < 3:
+        while successes < min_successes:
             total_messages = sum(self.get_queue_message_counts(queue_name)[:-1])
             if total_messages == 0:
                 successes += 1
+            else:
+                successes = 0
 
-            self.connection.sleep(1)
+            self.connection.sleep(idle_time / 1000.0)
 
 
 class URLRabbitmqBroker(RabbitmqBroker):
@@ -347,7 +353,7 @@ class _RabbitmqConsumer(Consumer):
             raise ConnectionClosed(e) from None
         except KeyError:
             self.logger.warning("Failed to ack message: not in known tags.")
-        except Exception:
+        except Exception:  # pragma: no cover
             self.logger.warning("Failed to ack message.", exc_info=True)
 
     def nack(self, message):
@@ -358,7 +364,7 @@ class _RabbitmqConsumer(Consumer):
             raise ConnectionClosed(e) from None
         except KeyError:
             self.logger.warning("Failed to nack message: not in known tags.")
-        except Exception:
+        except Exception:  # pragma: no cover
             self.logger.warning("Failed to nack message.", exc_info=True)
 
     def requeue(self, messages):
