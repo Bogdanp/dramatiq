@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* |Worker_pause| and |Worker_resume|.
+
 Fixed
 ^^^^^
 

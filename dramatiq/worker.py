@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from itertools import chain
 from queue import Empty, PriorityQueue, Queue
-from threading import Thread
+from threading import Event, Thread
 
 from .common import compute_backoff, current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError
@@ -56,6 +56,21 @@ class Worker:
             self._add_worker()
 
         self.broker.emit_after("worker_boot", self)
+
+    def pause(self):
+        """Pauses all the worker threads.
+        """
+        for worker in self.workers:
+            worker.pause()
+
+        for worker in self.workers:
+            worker.paused_event.wait()
+
+    def resume(self):
+        """Resumes all the worker threads.
+        """
+        for worker in self.workers:
+            worker.resume()
 
     def stop(self, timeout=600000):
         """Gracefully stop the Worker and all of its consumers and
@@ -324,17 +339,25 @@ class _WorkerThread(Thread):
 
         self.logger = get_logger(__name__, "WorkerThread")
         self.running = False
+        self.paused = False
+        self.paused_event = Event()
         self.broker = broker
         self.consumers = consumers
         self.work_queue = work_queue
-        self.worker_timeout = worker_timeout
+        self.timeout = worker_timeout / 1000
 
     def run(self):
         self.logger.debug("Running worker thread...")
         self.running = True
         while self.running:
+            if self.paused:
+                self.logger.debug("Worker is paused. Sleeping for %.02f...", self.timeout)
+                self.paused_event.set()
+                time.sleep(self.timeout)
+                continue
+
             try:
-                _, message = self.work_queue.get(timeout=self.worker_timeout / 1000)
+                _, message = self.work_queue.get(timeout=self.timeout)
                 self.process_message(message)
             except Empty:
                 continue
@@ -375,6 +398,18 @@ class _WorkerThread(Thread):
             # this is safe.  Probably.
             self.consumers[message.queue_name].post_process_message(message)
             self.work_queue.task_done()
+
+    def pause(self):
+        """Pause this worker.
+        """
+        self.paused_event.clear()
+        self.paused = True
+
+    def resume(self):
+        """Resume this worker.
+        """
+        self.paused_event.clear()
+        self.paused = False
 
     def stop(self):
         """Initiate the WorkerThread shutdown process.

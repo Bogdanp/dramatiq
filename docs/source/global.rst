@@ -19,6 +19,8 @@
 .. |before_worker_thread_shutdown| replace:: :meth:`before_worker_thread_shutdown<dramatiq.Middleware.before_worker_thread_shutdown>`
 .. |after_skip_message| replace:: :meth:`after_skip_message<dramatiq.Middleware.after_skip_message>`
 .. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
+.. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`
+.. |Worker_resume| replace:: :meth:`Worker.resume<dramatiq.Worker.resume>`
 
 .. _gevent: http://www.gevent.org/
 .. _Memcached: http://memcached.org

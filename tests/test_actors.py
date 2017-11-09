@@ -357,30 +357,58 @@ def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
     assert sum(skipped_messages) == 1
 
 
-def test_actors_can_prioritize_work(stub_broker):
-    # Given that I have a database of calls
+def test_workers_can_be_paused(stub_broker, stub_worker):
+    # Given a paused worker
+    stub_worker.pause()
+
+    # And an actor that keeps track of its calls
     calls = []
 
-    # And an actor with high priority
+    @dramatiq.actor
+    def track_call():
+        calls.append(1)
+
+    # When I send that actor a message
+    track_call.send()
+
+    # And wait for half a second
+    time.sleep(0.5)
+
+    # Then no calls should be made
+    assert calls == []
+
+    # When I resume the worker and join on it
+    stub_worker.resume()
+    stub_broker.join(track_call.queue_name)
+    stub_worker.join()
+
+    # Then one call should be made
+    assert calls == [1]
+
+
+def test_actors_can_prioritize_work(stub_broker, stub_worker):
+    # Given that I a paused worker
+    stub_worker.pause()
+
+    # And actors with different priorities
+    calls = []
+
     @dramatiq.actor(priority=0)
     def hi():
         calls.append("hi")
 
-    # And an actor with low priority
     @dramatiq.actor(priority=10)
     def lo():
         calls.append("lo")
 
-    # If I send both actors a message
-    lo.send_with_options()
-    hi.send_with_options()
+    # When I send both actors a message
+    lo.send()
+    hi.send()
 
-    # Then start a worker and join on their queue
-    worker = Worker(stub_broker)
-    worker.start()
+    # Then resume the worker and join on the queue
+    stub_worker.resume()
     stub_broker.join(lo.queue_name)
-    worker.join()
-    worker.stop()
+    stub_worker.join()
 
-    # I expect the high priority worker to run first
+    # Then the high priority actor should run first
     assert calls == ["hi", "lo"]

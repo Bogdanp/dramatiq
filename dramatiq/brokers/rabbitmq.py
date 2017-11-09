@@ -283,7 +283,7 @@ class RabbitmqBroker(Broker):
             else:
                 successes = 0
 
-            self.connection.sleep(idle_time / 1000.0)
+            self.connection.sleep(idle_time / 1000)
 
 
 def URLRabbitmqBroker(url, *, middleware=None):
