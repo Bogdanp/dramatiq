@@ -8,7 +8,7 @@ from threading import Thread
 from .common import compute_backoff, current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError
 from .logging import get_logger
-from .middleware import Middleware
+from .middleware import Middleware, SkipMessage
 
 
 class Worker:
@@ -359,6 +359,10 @@ class _WorkerThread(Thread):
                 res = actor(*message.args, **message.kwargs)
 
             self.broker.emit_after("process_message", message, result=res)
+
+        except SkipMessage as e:
+            self.logger.warning("Message %s was skipped.", message)
+            self.broker.emit_after("skip_message", message)
 
         except BaseException as e:
             self.logger.warning("Failed to process message %s with unhandled exception.", message, exc_info=True)

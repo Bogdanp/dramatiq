@@ -1,3 +1,14 @@
+class MiddlewareError(Exception):
+    """Base class for middleware errors.
+    """
+
+
+class SkipMessage(MiddlewareError):
+    """An exception that may be raised by Middleware inside the
+    ``before_process_message`` hook in order to skip a message.
+    """
+
+
 class Middleware:
     """Base class for broker middleware.  The default implementations
     for all hooks are no-ops and subclasses may implement whatever
@@ -60,10 +71,20 @@ class Middleware:
 
     def before_process_message(self, broker, message):
         """Called before a message is processed.
+
+        Raises:
+          SkipMessage: If the current message should be skipped.  When
+            this is raised, ``after_skip_message`` is emitted instead
+            of ``after_process_message``.
         """
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         """Called after a message has been processed.
+        """
+
+    def after_skip_message(self, broker, message):
+        """Called instead of ``after_process_message`` after a message
+        has been skippped.
         """
 
     def after_process_boot(self, broker):

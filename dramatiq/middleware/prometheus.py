@@ -145,6 +145,8 @@ class Prometheus(Middleware):
         if exception is not None:
             self.total_errored_messages.labels(*labels).inc()
 
+    after_skip_message = after_process_message
+
 
 class _ExpositionServer(Thread):
     """Exposition servers race against a POSIX lock in order to bind

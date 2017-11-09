@@ -48,6 +48,7 @@ Middleware
 .. autoclass:: Middleware
    :members:
    :member-order: bysource
+.. autoclass:: dramatiq.middleware.SkipMessage
 .. autoclass:: dramatiq.middleware.AgeLimit
 .. autoclass:: dramatiq.middleware.Prometheus
 .. autoclass:: dramatiq.middleware.Retries

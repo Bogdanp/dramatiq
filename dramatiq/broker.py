@@ -1,6 +1,6 @@
 from .errors import ActorNotFound
 from .logging import get_logger
-from .middleware import AgeLimit, Prometheus, Retries, TimeLimit
+from .middleware import MiddlewareError, AgeLimit, Prometheus, Retries, TimeLimit
 
 #: The global broker instance.
 global_broker = None
@@ -71,6 +71,8 @@ class Broker:
         for middleware in self.middleware:
             try:
                 getattr(middleware, f"before_{signal}")(self, *args, **kwargs)
+            except MiddlewareError as e:
+                raise
             except Exception:
                 self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
 

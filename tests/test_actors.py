@@ -4,7 +4,7 @@ import pytest
 import time
 
 from dramatiq import Message, Middleware, Worker
-
+from dramatiq.middleware import SkipMessage
 
 _current_platform = platform.python_implementation()
 
@@ -321,6 +321,40 @@ def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
 
     # I expect the task to complete successfully
     assert database == [1]
+
+
+def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
+    # Given a middleware that skips all messages
+    skipped_messages = []
+
+    class SkipMiddleware(Middleware):
+        def before_process_message(self, broker, message):
+            raise SkipMessage()
+
+        def after_skip_message(self, broker, message):
+            skipped_messages.append(1)
+
+    stub_broker.add_middleware(SkipMiddleware())
+
+    # And an actor that keeps track of its calls
+    calls = []
+
+    @dramatiq.actor
+    def track_call():
+        calls.append(1)
+
+    # When I send that actor a message
+    track_call.send()
+
+    # And join on the broker and the worker
+    stub_broker.join(track_call.queue_name)
+    stub_worker.join()
+
+    # Then I expect the call list to be empty
+    assert sum(calls) == 0
+
+    # And the skipped_messages list to contain one item
+    assert sum(skipped_messages) == 1
 
 
 def test_actors_can_prioritize_work(stub_broker):

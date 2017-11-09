@@ -17,6 +17,8 @@
 .. |RateLimiters| replace:: :class:`RateLimiters<dramatiq.rate_limits.RateLimiter>`
 .. |before_consumer_thread_shutdown| replace:: :meth:`before_consumer_thread_shutdown<dramatiq.Middleware.before_consumer_thread_shutdown>`
 .. |before_worker_thread_shutdown| replace:: :meth:`before_worker_thread_shutdown<dramatiq.Middleware.before_worker_thread_shutdown>`
+.. |after_skip_message| replace:: :meth:`after_skip_message<dramatiq.Middleware.after_skip_message>`
+.. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
 
 .. _gevent: http://www.gevent.org/
 .. _Memcached: http://memcached.org

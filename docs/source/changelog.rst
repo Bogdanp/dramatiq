@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
+* |SkipMessage| middleware error.
+* |after_skip_message| middleware hook.
 * |RabbitmqBroker_join| now takes optional ``min_successes`` and
   ``idle_time`` parameters.
 
