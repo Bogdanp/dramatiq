@@ -3,8 +3,8 @@
 Advanced Topics
 ===============
 
-Signals
--------
+Controlling Workers
+-------------------
 
 The main Dramatiq process responds to several signals::
 
