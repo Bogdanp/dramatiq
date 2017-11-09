@@ -413,6 +413,19 @@ class _RabbitmqConsumer(Consumer):
                 pass
 
             if self.channel.is_open:
+                # Remove all the interrupt events from the pending
+                # events queue before calling cancel so pika doesn't
+                # try to reject them.
+                pending_events = []
+                pending_events_queue = self.channel._queue_consumer_generator.pending_events
+                while pending_events_queue:
+                    event = pending_events_queue.popleft()
+                    if not isinstance(event, _InterruptMessage):
+                        pending_events.append(event)
+
+                for event in pending_events:
+                    pending_events_queue.append(event)
+
                 self.channel.cancel()
 
             self.channel.close()

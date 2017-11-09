@@ -5,6 +5,18 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+
+`Unreleased`_
+-------------
+
+Fixed
+^^^^^
+
+* Pending interrupt messages are now removed from pika's queue before
+  cancel is called.  This fixes an issue where an ``AtrributeError``
+  was sometimes raised on worker shutdown.
+
+
 `0.11.0`_ -- 2017-11-09
 -----------------------
 
