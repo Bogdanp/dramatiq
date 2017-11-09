@@ -3,6 +3,33 @@
 Advanced Topics
 ===============
 
+Signals
+-------
+
+The main Dramatiq process responds to several signals::
+
+  $ kill -TERM [master-process-pid]
+
+``INT`` and ``TERM``
+^^^^^^^^^^^^^^^^^^^^
+
+Sending an ``INT`` or ``TERM`` signal to the main process triggers
+graceful shutdown.  Consumer threads will stop receiving new work and
+worker threads will finish processing the work they have in flight
+before shutting down.  Any tasks still in worker memory at this point
+are re-queued on the broker.
+
+If you send a second ``TERM`` signal then the worker processes will be
+killed immediately.
+
+``HUP``
+^^^^^^^
+
+Sending ``HUP`` to the main process triggers a graceful shutdown
+followed by a reload of the workers.  This is useful if you want to
+reload code without completely restarting the main process.
+
+
 Enqueueing Messages from Other Languages
 ----------------------------------------
 
