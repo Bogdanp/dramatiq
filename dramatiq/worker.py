@@ -402,14 +402,14 @@ class _WorkerThread(Thread):
     def pause(self):
         """Pause this worker.
         """
-        self.paused_event.clear()
         self.paused = True
+        self.paused_event.clear()
 
     def resume(self):
         """Resume this worker.
         """
-        self.paused_event.clear()
         self.paused = False
+        self.paused_event.clear()
 
     def stop(self):
         """Initiate the WorkerThread shutdown process.
