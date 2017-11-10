@@ -25,6 +25,26 @@ MAX_MESSAGE_DELAY = 86400000 * 7
 class RabbitmqBroker(Broker):
     """A broker that can be used with RabbitMQ.
 
+    Examples:
+
+      If you want to specify connection parameters individually:
+
+      >>> RabbitmqBroker(
+      ...   host="127.0.0.1",
+      ...   port=5672,
+      ...   username="guest",
+      ...   password="guest",
+      ... )
+
+      Alternatively, if you want to use a connection URL:
+
+      >>> RabbitmqBroker(url="amqp://guest:guest@127.0.0.1:5672")
+
+      To see a list of all the available connection parameters run:
+
+      >>> import pika
+      >>> help(pika.ConnectionParameters.__init__)
+
     Parameters:
       url(str): An optional connection URL.  If both a URL and
         connection parameters are provided, the URL is used.

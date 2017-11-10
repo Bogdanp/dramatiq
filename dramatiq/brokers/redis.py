@@ -31,6 +31,21 @@ MAX_MESSAGE_DELAY = 86400000 * 7
 class RedisBroker(Broker):
     """A broker than can be used with Redis.
 
+    Examples:
+
+      If you want to specify connection parameters individually:
+
+      >>> RedisBroker(host="127.0.0.1", port=6379, db=0, password="hunter2")
+
+      Alternatively, if you want to use a connection URL:
+
+      >>> RedisBroker(url="redis://127.0.0.1:6379/0")
+
+      To see a list of all the available connection parameters run:
+
+      >>> import redis
+      >>> help(redis.StrictRedis.__init__)
+
     Parameters:
       url(str): An optional connection URL.  If both a URL and
         connection parameters are provided, the URL is used.
