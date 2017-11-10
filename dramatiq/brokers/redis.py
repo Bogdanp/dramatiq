@@ -41,10 +41,8 @@ class RedisBroker(Broker):
 
       >>> RedisBroker(url="redis://127.0.0.1:6379/0")
 
-      To see a list of all the available connection parameters run:
-
-      >>> import redis
-      >>> help(redis.StrictRedis.__init__)
+    See also:
+      StrictRedis_ for a list of all the available connection parameters.
 
     Parameters:
       url(str): An optional connection URL.  If both a URL and
@@ -53,6 +51,8 @@ class RedisBroker(Broker):
       namespace(str): The str with which to prefix all Redis keys.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
+
+    .. _StrictRedis: http://redis-py.readthedocs.io/en/latest/#redis.StrictRedis
     """
 
     def __init__(self, *, url=None, middleware=None, namespace="dramatiq", **parameters):  # noqa

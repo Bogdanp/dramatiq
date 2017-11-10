@@ -40,10 +40,9 @@ class RabbitmqBroker(Broker):
 
       >>> RabbitmqBroker(url="amqp://guest:guest@127.0.0.1:5672")
 
-      To see a list of all the available connection parameters run:
-
-      >>> import pika
-      >>> help(pika.ConnectionParameters.__init__)
+    See also:
+      ConnectionParameters_ for a list of all the available connection
+      parameters.
 
     Parameters:
       url(str): An optional connection URL.  If both a URL and
@@ -52,6 +51,8 @@ class RabbitmqBroker(Broker):
         to this broker.
       \**parameters(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
+
+    .. _ConnectionParameters: https://pika.readthedocs.io/en/0.10.0/modules/parameters.html
     """
 
     def __init__(self, *, url=None, middleware=None, **parameters):
