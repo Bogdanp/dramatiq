@@ -404,10 +404,10 @@ run your tests.  My recommendation is to use it in conjunction with
    from dramatiq.brokers.stub import StubBroker
 
    if os.getenv("UNIT_TESTS") == "1":
-       broker = StubBroker()
-       broker.emit_after("process_boot")
+     broker = StubBroker()
+     broker.emit_after("process_boot")
    else:
-       broker = RabbitmqBroker()
+     broker = RabbitmqBroker()
 
 .. code-block:: python
    :caption: conftest.py
