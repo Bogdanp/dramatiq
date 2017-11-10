@@ -49,10 +49,10 @@ Documentation is available at http://dramatiq.io
 dramatiq is licensed under the AGPL.  Please see [LICENSE][license]
 for licensing details.
 
-Commercial licensing options are available [upon request][mailto].
+Commercial licensing options are available [upon request][commercial].
 
 
+[commercial]: https://dramatiq.io/commercial.html
 [license]: https://github.com/Bogdanp/dramatiq/blob/master/LICENSE
-[mailto]: mailto:bogdan@defn.io
 [rabbit]: https://www.rabbitmq.com/
 [redis]: https://redis.io
