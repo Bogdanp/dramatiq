@@ -32,14 +32,19 @@ class RedisBroker(Broker):
     """A broker than can be used with Redis.
 
     Parameters:
+      url(str): An optional connection URL.  If both a URL and
+        connection parameters are provided, the URL is used.
       middleware(list[Middleware])
       namespace(str): The str with which to prefix all Redis keys.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
     """
 
-    def __init__(self, *, middleware=None, namespace="dramatiq", **parameters):  # noqa
+    def __init__(self, *, url=None, middleware=None, namespace="dramatiq", **parameters):  # noqa
         super().__init__(middleware=middleware)
+
+        if url:
+            parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
         self.namespace = namespace
         self.dead_message_ttl = DEFAULT_DEAD_MESSAGE_TTL

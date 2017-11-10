@@ -13,6 +13,7 @@ Added
 ^^^^^
 
 * |Worker_pause| and |Worker_resume|.
+* ``url`` parameter to |RedisBroker|.
 
 Fixed
 ^^^^^
