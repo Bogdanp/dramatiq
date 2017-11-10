@@ -6,7 +6,7 @@ import subprocess
 import uuid
 
 from dramatiq import Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker
+from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.common import dq_name, xq_name
@@ -88,7 +88,6 @@ def rabbitmq_random_queue(rabbitmq_broker):
     rabbitmq_broker.channel.queue_delete(queue_name)
     rabbitmq_broker.channel.queue_delete(dq_name(queue_name))
     rabbitmq_broker.channel.queue_delete(xq_name(queue_name))
-
 
 
 @pytest.fixture
