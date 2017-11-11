@@ -53,9 +53,9 @@ You can use dramatiq's |RateLimiters| to constrain actor concurrency.
 
    @dramatiq.actor
    def one_at_a_time():
-       with DISTRIBUTED_MUTEX.acquire():
-           time.sleep(1)
-           print("Done.")
+     with DISTRIBUTED_MUTEX.acquire():
+       time.sleep(1)
+       print("Done.")
 
 Whenever two ``one_at_a_time`` actors run at the same time, one of
 them will be retried with exponential backoff.  This works by raising
@@ -89,9 +89,9 @@ Save the following middleware to a module inside your project:
    import rollbar
 
    class RollbarMiddleware(dramatiq.Middleware):
-       def after_process_message(self, broker, message, *, result=None, exception=None):
-           if exception is not None:
-               rollbar.report_exc_info()
+     def after_process_message(self, broker, message, *, result=None, exception=None):
+       if exception is not None:
+         rollbar.report_exc_info()
 
 Finally, instantiate and add it to your broker:
 
@@ -121,12 +121,12 @@ Save the following middleware to a module inside your project:
    import dramatiq
 
    class SentryMiddleware(dramatiq.Middleware):
-       def __init__(self, raven_client):
-           self.raven_client = raven_client
+     def __init__(self, raven_client):
+       self.raven_client = raven_client
 
-       def after_process_message(self, broker, message, *, result=None, exception=None):
-           if exception is not None:
-               self.raven_client.captureException()
+     def after_process_message(self, broker, message, *, result=None, exception=None):
+       if exception is not None:
+         self.raven_client.captureException()
 
 Finally, instantiate and add it to your broker:
 
