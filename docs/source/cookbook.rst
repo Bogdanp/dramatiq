@@ -6,7 +6,7 @@ Cookbook
 This part of the docs contains recipes for various things you might
 want to do using dramatiq.  Each section will be light on prose and
 code heavy, so if you have any questions about one of the recipes,
-open an `issue on GitHub`_ or ask around on Gitter_.
+open an `issue on GitHub`_.
 
 .. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
 .. _Gitter: https://gitter.im/dramatiq/dramatiq
