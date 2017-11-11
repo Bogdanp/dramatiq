@@ -115,6 +115,13 @@ The following metrics are exported:
 
 All metrics define labels for ``queue_name`` and ``actor_name``.
 
+Grafana
+^^^^^^^
+
+You can find a Grafana dashboard that displays these metrics here_.
+
+.. _here: https://grafana.com/dashboards/3692
+
 
 Using gevent
 ------------
