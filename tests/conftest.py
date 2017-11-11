@@ -102,9 +102,11 @@ def info_logging():
 def start_cli():
     proc = None
 
-    def run(broker_module, *, extra_args=[]):
+    def run(broker_module, *, extra_args=[], **kwargs):
         nonlocal proc
-        proc = subprocess.Popen(["python", "-m", "dramatiq", broker_module] + extra_args)
+        args = ["python", "-m", "dramatiq", broker_module]
+        proc = subprocess.Popen(args + extra_args, **kwargs)
+        return proc
 
     yield run
 

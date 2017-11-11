@@ -18,7 +18,7 @@ LOCK_PATH = os.getenv("dramatiq_prom_lock", "/tmp/dramatiq-prometheus.lock")
 DB_PATH = os.getenv("dramatiq_prom_db", "/tmp/dramatiq-prometheus")
 
 #: The default HTTP host the exposition server should bind to.
-DEFAULT_HTTP_HOST = os.getenv("dramatiq_prom_host", "localhost")
+DEFAULT_HTTP_HOST = os.getenv("dramatiq_prom_host", "127.0.0.1")
 
 #: The default HTTP port the exposition server should listen on.
 DEFAULT_HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
