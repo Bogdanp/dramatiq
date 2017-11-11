@@ -3,6 +3,21 @@
 Advanced Topics
 ===============
 
+Worker Exit Codes
+-----------------
+
+Dramatiq uses process exit codes to denote several scenarios:
+
+=====  ========================================================================================
+Code   Description
+=====  ========================================================================================
+``0``  Returned when the process exits gracefully.
+``1``  Returned when the process is killed.
+``2``  Returned when a module cannot be imported or when a command line argument is invalid.
+``3``  Returned when a broker connection cannot be established.
+=====  ========================================================================================
+
+
 Controlling Workers
 -------------------
 
@@ -19,8 +34,8 @@ worker threads will finish processing the work they have in flight
 before shutting down.  Any tasks still in worker memory at this point
 are re-queued on the broker.
 
-If you send a second ``TERM`` signal then the worker processes will be
-killed immediately.
+If you send a second ``INT`` or ``TERM`` signal then the worker
+processes will be killed immediately.
 
 ``HUP``
 ^^^^^^^
