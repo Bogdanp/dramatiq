@@ -5,7 +5,7 @@ import time
 
 from dramatiq import Message
 from dramatiq.common import current_millis
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker
+from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from unittest.mock import Mock
 
 
@@ -252,3 +252,22 @@ def test_rabbitmq_consumers_ignore_unknown_messages_in_ack_and_nack(rabbitmq_bro
 
     # Likewise for nack
     assert consumer.nack(Mock(_tag=1)) is None
+
+
+def test_ignore_scary_logs_filter_ignores_logs():
+    # Given a filter that ignores scary logs
+    log_filter = _IgnoreScaryLogs("pika.adapters")
+
+    # When I ask it to filter a log message that contains a scary message
+    record = Mock()
+    record.getMessage.return_value = b"ConnectionError('Broken pipe')"
+
+    # Then it should filter out that log message
+    assert not log_filter.filter(record)
+
+    # And when I ask it to filter a log message that doesn't
+    record = Mock()
+    record.getMessage.return_value = b"Not scary"
+
+    # Then it should ignore that log message
+    assert log_filter.filter(record)
