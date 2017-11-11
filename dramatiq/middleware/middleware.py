@@ -112,7 +112,7 @@ class Middleware:
         used to clean up thread-local resources (such as Django
         database connections).
 
-        There is no "after_consumer_thread_boot".
+        There is no ``after_consumer_thread_boot``.
         """
 
     def before_worker_thread_shutdown(self, broker, thread):
@@ -120,5 +120,5 @@ class Middleware:
         to clean up thread-local resources (such as Django database
         connections).
 
-        There is no "after_worker_thread_boot".
+        There is no ``after_worker_thread_boot``.
         """

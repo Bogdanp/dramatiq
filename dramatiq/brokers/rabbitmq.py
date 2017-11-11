@@ -1,4 +1,5 @@
 import errno
+import logging
 import pika
 import socket
 
@@ -29,12 +30,7 @@ class RabbitmqBroker(Broker):
 
       If you want to specify connection parameters individually:
 
-      >>> RabbitmqBroker(
-      ...   host="127.0.0.1",
-      ...   port=5672,
-      ...   username="guest",
-      ...   password="guest",
-      ... )
+      >>> RabbitmqBroker(host="127.0.0.1", port=5672)
 
       Alternatively, if you want to use a connection URL:
 
@@ -112,6 +108,15 @@ class RabbitmqBroker(Broker):
     def close(self):
         """Close all open RabbitMQ connections.
         """
+        # The main thread may keep connections open for a long time
+        # w/o publishing heartbeats, which means that they'll end up
+        # being closed by the time the broker is closed.  When that
+        # happens, pika logs a bunch of scary stuff so we want to
+        # filter that out.
+        logging_filter = _IgnoreScaryLogs()
+        logging.getLogger("pika.adapters.base_connection").addFilter(logging_filter)
+        logging.getLogger("pika.adapters.blocking_connection").addFilter(logging_filter)
+
         self.logger.debug("Closing channels and connections...")
         for channel_or_conn in chain(self.channels, self.connections):
             try:
@@ -319,12 +324,17 @@ def URLRabbitmqBroker(url, *, middleware=None):
     return RabbitmqBroker(url=url, middleware=middleware)
 
 
-class _InterruptEvent(object):
+class _IgnoreScaryLogs(logging.Filter):
+    def filter(self, record):
+        return b"Broken pipe" not in record.getMessage()
+
+
+class _InterruptEvent:
     def dispatch(self):
         pass
 
 
-class _InterruptMessage(object):
+class _InterruptMessage:
     def __init__(self):
         self.method = type(self)
         self.properties = None
