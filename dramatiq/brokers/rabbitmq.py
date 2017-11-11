@@ -326,7 +326,7 @@ def URLRabbitmqBroker(url, *, middleware=None):
 
 class _IgnoreScaryLogs(logging.Filter):
     def filter(self, record):
-        return b"Broken pipe" not in record.getMessage()
+        return "Broken pipe" not in record.getMessage()
 
 
 class _InterruptEvent:

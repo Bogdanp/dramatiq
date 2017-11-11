@@ -260,14 +260,14 @@ def test_ignore_scary_logs_filter_ignores_logs():
 
     # When I ask it to filter a log message that contains a scary message
     record = Mock()
-    record.getMessage.return_value = b"ConnectionError('Broken pipe')"
+    record.getMessage.return_value = "ConnectionError('Broken pipe')"
 
     # Then it should filter out that log message
     assert not log_filter.filter(record)
 
     # And when I ask it to filter a log message that doesn't
     record = Mock()
-    record.getMessage.return_value = b"Not scary"
+    record.getMessage.return_value = "Not scary"
 
     # Then it should ignore that log message
     assert log_filter.filter(record)
