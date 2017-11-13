@@ -19,6 +19,10 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
 **Dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
 
+.. raw:: html
+
+   <iframe width="660" height="371" src="https://www.youtube-nocookie.com/embed/e3kCT2CLd7o?rel=0" frameborder="0" gesture="media" allowfullscreen></iframe>
+
 Here's what it looks like:
 
 ::
