@@ -13,7 +13,7 @@ def test_cli_fails_to_start_given_an_invalid_broker_name(start_cli):
     assert proc.returncode == 2
 
     # And the output should contain an error
-    assert b"[CRITICAL] Module 'tests.test_cli' does not define a 'idontexist' variable." in proc.stdout.read()
+    assert b"Module 'tests.test_cli' does not define a 'idontexist' variable." in proc.stdout.read()
 
 
 def test_cli_fails_to_start_given_an_invalid_broker_instance(start_cli):
@@ -26,4 +26,4 @@ def test_cli_fails_to_start_given_an_invalid_broker_instance(start_cli):
     assert proc.returncode == 2
 
     # And the output should contain an error
-    assert b"[CRITICAL] Variable 'fakebroker' from module 'tests.test_cli' is not a Broker." in proc.stdout.read()
+    assert b"Variable 'fakebroker' from module 'tests.test_cli' is not a Broker." in proc.stdout.read()
