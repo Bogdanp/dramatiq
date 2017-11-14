@@ -103,7 +103,7 @@ html_context = {}
 # documentation.
 #
 html_theme_options = {
-    'logo_name': True,
+    'logo_name': False,
     'code_font_family': '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
     'code_font_size': '0.8em',
     'fixed_sidebar': True,
@@ -122,7 +122,7 @@ html_static_path = ['_static']
 
 html_sidebars = {
     '**': [
-        'about.html',
+        'sidebarlogo.html',
         'navigation.html',
         'relations.html',
         'searchbox.html',
