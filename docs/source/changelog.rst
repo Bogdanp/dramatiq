@@ -22,6 +22,9 @@ Fixed
   cancel is called.  This fixes an issue where an ``AtrributeError``
   was sometimes raised on worker shutdown.
 * Pika connection reset logs from the main thread are now hidden.
+* Distribution of ``dramatiq-gevent`` (`#2`_).
+
+.. _#2: https://github.com/Bogdanp/dramatiq/issues/2
 
 
 `0.11.0`_ -- 2017-11-09
