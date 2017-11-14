@@ -6,6 +6,18 @@ Changelog
 All notable changes to this project will be documented in this file.
 
 
+`Unreleased`_
+-------------
+
+Fixed
+^^^^^
+
+* An ``AssertionError`` after starting the consumer if RabbitMQ is not
+  running (`#10`_).
+
+.. _#10: https://github.com/Bogdanp/dramatiq/issues/10
+
+
 `0.12.0`_ -- 2017-11-14
 -----------------------
 

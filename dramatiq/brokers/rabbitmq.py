@@ -171,7 +171,7 @@ class RabbitmqBroker(Broker):
                 pika.exceptions.ConnectionClosed) as e:  # pragma: no cover
             # Delete the channel and the connection so that the next
             # caller may initiate new ones of each.
-            del self.consumer
+            del self.channel
             del self.connection
             raise ConnectionClosed(e) from None
 
