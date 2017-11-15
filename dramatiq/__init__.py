@@ -4,6 +4,7 @@ from .errors import (  # noqa
     DramatiqError, BrokerError, ActorNotFound, QueueNotFound, ConnectionError,
     ConnectionClosed, ConnectionFailed, RateLimitExceeded
 )
+from .generic import GenericActor  # noqa
 from .logging import get_logger  # noqa
 from .message import Message  # noqa
 from .middleware import Middleware  # noqa

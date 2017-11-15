@@ -21,6 +21,7 @@
 .. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`
 .. |Worker_resume| replace:: :meth:`Worker.resume<dramatiq.Worker.resume>`
+.. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`
 
 .. _gevent: http://www.gevent.org/
 .. _Memcached: http://memcached.org

@@ -9,6 +9,13 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Support for |GenericActors| (`#9`_).
+
+.. _#9: https://github.com/Bogdanp/dramatiq/issues/9
+
 
 `0.12.1`_ -- 2017-11-15
 -----------------------
