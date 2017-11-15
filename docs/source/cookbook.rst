@@ -157,12 +157,12 @@ startup (eg. in Docker):
 
    delay=1
    while true; do
-       dramatiq $@
-       if [ $? -eq 3 ]; then
-           echo "Connection error encountered on startup. Retrying in $delay second(s)..."
-           sleep $delay
-           delay=$((delay * 2))
-       else
-           exit $?
-       fi
+     dramatiq $@
+     if [ $? -eq 3 ]; then
+       echo "Connection error encountered on startup. Retrying in $delay second(s)..."
+       sleep $delay
+       delay=$((delay * 2))
+     else
+       exit $?
+     fi
    done
