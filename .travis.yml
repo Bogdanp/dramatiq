@@ -17,7 +17,6 @@ services:
   - rabbitmq
   - redis
 install:
-  - pip install pytest-cov
   - pip install -c requirements/constraints.txt codeclimate-test-reporter tox-travis
 script:
   - TRAVIS=1 tox
