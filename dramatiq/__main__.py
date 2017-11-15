@@ -115,7 +115,7 @@ def worker_process(args, worker_id, logging_fd):
         worker = Worker(broker, worker_threads=args.threads)
         worker.start()
     except ImportError:
-        logger.exception("Failed to import module")
+        logger.exception("Failed to import module.")
         return os._exit(2)
     except ConnectionError:
         logger.exception("Broker connection failed.")
