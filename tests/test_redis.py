@@ -17,7 +17,7 @@ def test_redis_actors_can_be_sent_messages(redis_broker, redis_worker):
 
     # If I send that actor many async messages
     for i in range(100):
-        assert put.send(f"key-{i}", i)
+        assert put.send("key-%s" % i, i)
 
     # And I give the workers time to process the messages
     redis_broker.join(put.queue_name)
@@ -62,7 +62,7 @@ def test_redis_actors_can_retry_multiple_times(redis_broker, redis_worker):
     def do_work():
         attempts.append(1)
         if sum(attempts) < 4:
-            raise RuntimeError(f"Failure #{sum(attempts)}")
+            raise RuntimeError("Failure #%s" % sum(attempts))
 
     # If I send it a message
     do_work.send()
@@ -135,7 +135,7 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     redis_broker._fetch(queue_name, 1)
 
     # I expect both to be in the acks set
-    unacked = redis_broker.client.zrangebyscore(f"dramatiq:{queue_name}.acks", 0, "+inf")
+    unacked = redis_broker.client.zrangebyscore("dramatiq:%s.acks" % queue_name, 0, "+inf")
     assert sorted(unacked) == sorted(message_ids)
 
     # If I then set the requeue deadline to 1 second and run a requeue
@@ -143,8 +143,8 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     redis_broker._requeue()
 
     # I expect only the first message to have been moved
-    unacked = redis_broker.client.zrangebyscore(f"dramatiq:{queue_name}.acks", 0, "+inf")
-    queued = redis_broker.client.lrange(f"dramatiq:{queue_name}", 0, 1)
+    unacked = redis_broker.client.zrangebyscore("dramatiq:%s.acks" % queue_name, 0, "+inf")
+    queued = redis_broker.client.lrange("dramatiq:%s" % queue_name, 0, 1)
     assert unacked == message_ids[1:]
     assert queued == message_ids[:1]
 
@@ -163,7 +163,7 @@ def test_redis_messages_can_be_dead_lettered(redis_broker, redis_worker):
     redis_worker.join()
 
     # I expect it to end up in the dead letter queue
-    dead_queue_name = f"dramatiq:{xq_name(do_work.queue_name)}"
+    dead_queue_name = "dramatiq:%s" % xq_name(do_work.queue_name)
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert dead_ids
 
@@ -184,7 +184,7 @@ def test_redis_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker)
     # I expect running the cleanup script to remove it
     redis_broker.dead_message_ttl = 0
     redis_broker._cleanup()
-    dead_queue_name = f"dramatiq:{xq_name(do_work.queue_name)}"
+    dead_queue_name = "dramatiq:%s" % xq_name(do_work.queue_name)
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert not dead_ids
 
@@ -206,7 +206,7 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
     redis_worker.join()
 
     # I expect the message to end up on the dead letter queue
-    dead_queue_name = f"dramatiq:{xq_name('some-queue')}"
+    dead_queue_name = "dramatiq:%s" % xq_name('some-queue')
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert message.options["redis_message_id"].encode("utf-8") in dead_ids
 
@@ -240,7 +240,7 @@ def test_redis_requeues_unhandled_messages_on_shutdown(redis_broker):
     worker.stop()
 
     # I expect it to have processed one of the messages and re-enqueued the other
-    messages = redis_broker.client.lrange(f"dramatiq:{do_work.queue_name}", 0, 10)
+    messages = redis_broker.client.lrange("dramatiq:%s" % do_work.queue_name, 0, 10)
     if message_1.options["redis_message_id"].encode("utf-8") not in messages:
         assert message_2.options["redis_message_id"].encode("utf-8") in messages
 
@@ -263,5 +263,5 @@ def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
     worker.stop()
 
     # I expect it to have re-enqueued the message
-    messages = redis_broker.client.lrange(f"dramatiq:{dq_name(do_work.queue_name)}", 0, 10)
+    messages = redis_broker.client.lrange("dramatiq:%s" % dq_name(do_work.queue_name), 0, 10)
     assert message.options["redis_message_id"].encode("utf-8") in messages

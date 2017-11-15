@@ -33,7 +33,7 @@ class WindowRateLimiter(RateLimiter):
 
     def _acquire(self):
         timestamp = int(time.time())
-        keys = [f"{self.key}@{timestamp - i}" for i in range(self.window)]
+        keys = ["%s@%s" % (self.key, timestamp - i) for i in range(self.window)]
 
         # TODO: This is susceptible to drift because the keys are
         # never re-computed when CAS fails.

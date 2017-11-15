@@ -104,7 +104,7 @@ def test_actors_can_perform_work(stub_broker, stub_worker):
 
     # If I send that actor many async messages
     for i in range(100):
-        assert put.send(f"key-{i}", i)
+        assert put.send("key-%s" % i, i)
 
     # Then join on the queue
     stub_broker.join(put.queue_name)

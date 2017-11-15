@@ -41,18 +41,18 @@ def import_broker(value):
     module = importlib.import_module(modname)
     if varname is not None:
         if not hasattr(module, varname):
-            raise ImportError(f"Module {modname!r} does not define a {varname!r} variable.")
+            raise ImportError("Module %r does not define a %r variable." % (modname, varname))
 
         broker = getattr(module, varname)
         if not isinstance(broker, Broker):
-            raise ImportError(f"Variable {varname!r} from module {modname!r} is not a Broker.")
+            raise ImportError("Variable %r from module %r is not a Broker." % (varname, modname))
         return module, broker
     return module, get_broker()
 
 
 def folder_path(value):
     if not os.path.isdir(value):
-        raise argparse.ArgumentError(f"{value!r} is not a valid directory")
+        raise argparse.ArgumentError("%r is not a valid directory" % value)
     return os.path.abspath(value)
 
 
@@ -68,7 +68,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--processes", "-p", default=cpus, type=int,
-        help=f"the number of worker processes to run (default: {cpus})",
+        help="the number of worker processes to run (default: %s)" % cpus,
     )
     parser.add_argument(
         "--threads", "-t", default=8, type=int,
@@ -99,7 +99,7 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
     logging.getLogger("pika").setLevel(logging.ERROR)
-    return get_logger("dramatiq", f"WorkerProcess({worker_id})")
+    return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
 def worker_process(args, worker_id, logging_fd):
@@ -161,7 +161,7 @@ def main():
         return worker_process(args, worker_id, write_fd)
 
     logger = setup_parent_logging(args)
-    logger.info(f"Dramatiq {__version__!r} is booting up.")
+    logger.info("Dramatiq %r is booting up." % __version__)
     running, reload_process = True, False
 
     if HAS_WATCHDOG and args.watch:

@@ -60,8 +60,8 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
         invalid_options = set(options) - broker.actor_options
         if invalid_options:
             raise ValueError(
-                f"The following actor options are undefined: {', '.join(invalid_options)}. "
-                "Did you forget to add a middleware to your Broker?"
+                ("The following actor options are undefined: %s. "
+                 "Did you forget to add a middleware to your Broker?") % ', '.join(invalid_options)
             )
 
         return Actor(
@@ -141,7 +141,8 @@ class Actor:
         return self.fn(*args, **kwargs)
 
     def __repr__(self):  # pragma: no cover
-        return f"Actor({self.fn!r}, queue_name={self.queue_name!r}, actor_name={self.actor_name!r})"
+        return "Actor({self.fn!r}, queue_name={self.queue_name!r}, actor_name={self.actor_name!r})".format(
+            self=self)
 
     def __str__(self):  # pragma: no cover
-        return f"Actor({self.actor_name!r})"
+        return "Actor({self.actor_name!r})".format(self=self)

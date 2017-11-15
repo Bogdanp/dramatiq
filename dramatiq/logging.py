@@ -7,6 +7,6 @@ def get_logger(module, name=None):
     if name is not None:
         if inspect.isclass(name):
             name = name.__name__
-        logger_fqn += f".{name}"
+        logger_fqn += ".%s" % name
 
     return logging.getLogger(logger_fqn)
