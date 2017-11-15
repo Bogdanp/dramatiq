@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Connection and import errors that occur during process boot now log
+  stack traces (`@rakanalh`_).
+
+.. _@rakanalh: https://github.com/rakanalh
+
 
 `0.13.0`_ -- 2017-11-15
 -----------------------
