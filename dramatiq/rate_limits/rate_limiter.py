@@ -53,7 +53,7 @@ class RateLimiter:
         try:
             acquired = self._acquire()
             if raise_on_failure and not acquired:
-                raise RateLimitExceeded(f"rate limit exceeded for key {self.key!r}")
+                raise RateLimitExceeded("rate limit exceeded for key {self.key!r}".format(self))
 
             yield acquired
         finally:

@@ -77,7 +77,7 @@ class TimeLimit(Middleware):
 
         if _current_platform not in _supported_platforms:  # pragma: no cover
             warnings.warn(
-                f"TimeLimit cannot kill threads on your current platform ({_current_platform!r}).",
+                "TimeLimit cannot kill threads on your current platform (%r)." % _current_platform,
                 category=RuntimeWarning, stacklevel=2,
             )
 

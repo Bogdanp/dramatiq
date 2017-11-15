@@ -70,7 +70,7 @@ class Broker:
     def emit_before(self, signal, *args, **kwargs):
         for middleware in self.middleware:
             try:
-                getattr(middleware, f"before_{signal}")(self, *args, **kwargs)
+                getattr(middleware, "before_%s" % signal)(self, *args, **kwargs)
             except MiddlewareError as e:
                 raise
             except Exception:
@@ -79,7 +79,7 @@ class Broker:
     def emit_after(self, signal, *args, **kwargs):
         for middleware in reversed(self.middleware):
             try:
-                getattr(middleware, f"after_{signal}")(self, *args, **kwargs)
+                getattr(middleware, "after_%s" % signal)(self, *args, **kwargs)
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
@@ -107,7 +107,7 @@ class Broker:
                 if isinstance(m, before or after):
                     break
             else:
-                raise ValueError(f"Middleware {before or after!r} not found")
+                raise ValueError("Middleware %r not found" % (before or after))
 
             if before:
                 self.middleware.insert(i, middleware)

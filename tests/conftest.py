@@ -83,7 +83,7 @@ def redis_worker(redis_broker):
 
 @pytest.fixture()
 def rabbitmq_random_queue(rabbitmq_broker):
-    queue_name = f"rabbit-queue-{uuid.uuid4()}"
+    queue_name = "rabbit-queue-%s" % uuid.uuid4()
     yield queue_name
     rabbitmq_broker.channel.queue_delete(queue_name)
     rabbitmq_broker.channel.queue_delete(dq_name(queue_name))
