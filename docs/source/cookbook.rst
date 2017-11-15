@@ -9,7 +9,6 @@ code heavy, so if you have any questions about one of the recipes,
 open an `issue on GitHub`_.
 
 .. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
-.. _Gitter: https://gitter.im/dramatiq/dramatiq
 
 
 Usage with Django
@@ -141,3 +140,29 @@ Finally, instantiate and add it to your broker:
 
 .. _pipenv: https://docs.pipenv.org
 .. _raven: https://github.com/getsentry/raven-python
+
+
+Retrying connection errors on startup
+-------------------------------------
+
+Dramatiq does not retry connection errors that occur on worker
+startup.  It does, however, return a specific exit code (``3``) when
+that happens.  Using that, you can build a wrapper script around it if
+you need to retry with backoff when connection errors happen during
+startup (eg. in Docker):
+
+.. code-block:: bash
+
+   #!/usr/bin/env bash
+
+   delay=1
+   while true; do
+       dramatiq $@
+       if [ $? -eq 3 ]; then
+           echo "Connection error encountered on startup. Retrying in $delay second(s)..."
+           sleep $delay
+           delay=$((delay * 2))
+       else
+           exit $?
+       fi
+   done
