@@ -170,7 +170,7 @@ class _ConsumerThread(Thread):
     def __init__(self, *, broker, queue_name, prefetch, work_queue, worker_timeout):
         super().__init__(daemon=True)
 
-        self.logger = get_logger(__name__, f"ConsumerThread({queue_name})")
+        self.logger = get_logger(__name__, "ConsumerThread(%s)" % queue_name)
         self.running = False
         self.consumer = None
         self.broker = broker

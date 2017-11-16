@@ -56,6 +56,6 @@ class Message(namedtuple("Message", (
         params = ", ".join(repr(arg) for arg in self.args)
         if self.kwargs:
             params += ", " if params else ""
-            params += ", ".join(f"{name}={value!r}" for name, value in self.kwargs.items())
+            params += ", ".join("%s=%r" % (name, value) for name, value in self.kwargs.items())
 
-        return f"{self.actor_name}({params})"
+        return "%s(%s)" % (self.actor_name, params)

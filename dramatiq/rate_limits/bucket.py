@@ -52,7 +52,7 @@ class BucketRateLimiter(RateLimiter):
 
     @property
     def current_key(self):
-        return f"{self.key}@{self.current_timestamp}"
+        return "{self.key}@{self.current_timestamp}".format(self=self)
 
     def _acquire(self):
         added = self.backend.add(self.current_key, 1, ttl=self.bucket)

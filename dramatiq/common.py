@@ -78,7 +78,7 @@ def dq_name(queue_name):
 
     if queue_name.endswith(".XQ"):
         queue_name = queue_name[:-3]
-    return f"{queue_name}.DQ"
+    return "%s.DQ" % queue_name
 
 
 def xq_name(queue_name):
@@ -91,4 +91,4 @@ def xq_name(queue_name):
 
     if queue_name.endswith(".DQ"):
         queue_name = queue_name[:-3]
-    return f"{queue_name}.XQ"
+    return "%s.XQ" % queue_name

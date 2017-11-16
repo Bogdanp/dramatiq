@@ -31,7 +31,7 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_random_q
 
     # If I send that actor many async messages
     for i in range(100):
-        assert put.send(f"key-{i}", i)
+        assert put.send("key-%d" % i, i)
 
     # And I give the workers time to process the messages
     rabbitmq_broker.join(rabbitmq_random_queue)
@@ -75,7 +75,7 @@ def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_rand
     def do_work():
         attempts.append(1)
         if sum(attempts) < 4:
-            raise RuntimeError(f"Failure #{sum(attempts)}")
+            raise RuntimeError("Failure #%d" % sum(attempts))
 
     # If I send it a message
     do_work.send()

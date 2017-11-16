@@ -44,7 +44,7 @@ Here's what it looks like:
   count_words.send("http://example.com")
 
 **Dramatiq** is :doc:`licensed<license>` under the AGPL and it
-officially supports Python 3.6 and later.  :doc:`commercial` is also
+officially supports Python 3.5 and later.  :doc:`commercial` is also
 available.  Commercial licenses are free for one year for startups.
 
 

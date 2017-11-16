@@ -166,7 +166,7 @@ class RedisBroker(Broker):
         while True:
             size = 0
             for name in (queue_name, dq_name(queue_name)):
-                size += self.client.hlen(self._add_namespace(f"{name}.msgs"))
+                size += self.client.hlen(self._add_namespace("%s.msgs" % name))
 
             if size == 0:
                 return
@@ -174,7 +174,7 @@ class RedisBroker(Broker):
             time.sleep(1)
 
     def _add_namespace(self, queue_name):
-        return f"{self.namespace}:{queue_name}"
+        return "%s:%s" % (self.namespace, queue_name)
 
     def _enqueue(self, queue_name, message_id, message_data):
         enqueue = self.scripts["enqueue"]
