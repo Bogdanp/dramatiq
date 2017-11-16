@@ -17,6 +17,12 @@ Changed
 
 .. _@rakanalh: https://github.com/rakanalh
 
+* Python **3.5** compatible. First step to resolve the issue `#7`
+  (`@jssuzanne`_).
+
+.. _@jssuzanne: https://github.com/jssuzanne
+.. _#7: https://github.com/Bogdanp/dramatiq/issues/7
+
 
 `0.13.0`_ -- 2017-11-15
 -----------------------
