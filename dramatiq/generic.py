@@ -42,7 +42,6 @@ class GenericActor(metaclass=generic_actor):
       ...
       ...   def perform(self):
       ...     print(f"Hello from {self.get_task_name()}!")
-      ...
 
       >>> class FooTask(BaseTask):
       ...   def get_task_name(self):
@@ -74,4 +73,4 @@ class GenericActor(metaclass=generic_actor):
         a message.  All non-abstract subclasses must implement this
         method.
         """
-        raise NotImplementedError("{self.__name__} does not implement perform()".format(self=self))
+        raise NotImplementedError("%s does not implement perform()" % self.__name__)

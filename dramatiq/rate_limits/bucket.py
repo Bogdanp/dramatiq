@@ -44,22 +44,15 @@ class BucketRateLimiter(RateLimiter):
         self.limit = limit
         self.bucket = bucket
 
-    @property
-    def current_timestamp(self):
-        timestamp = time.time() * 1000
-        remainder = timestamp % self.bucket
-        return timestamp - remainder
-
-    @property
-    def current_key(self):
-        return "{self.key}@{self.current_timestamp}".format(self=self)
-
     def _acquire(self):
-        added = self.backend.add(self.current_key, 1, ttl=self.bucket)
+        timestamp = int(time.time() * 1000)
+        current_timestamp = timestamp - (timestamp % self.bucket)
+        current_key = "%s@%d" % (self.key, current_timestamp)
+        added = self.backend.add(current_key, 1, ttl=self.bucket)
         if added:
             return True
 
-        return self.backend.incr(self.current_key, 1, maximum=self.limit, ttl=self.bucket)
+        return self.backend.incr(current_key, 1, maximum=self.limit, ttl=self.bucket)
 
     def _release(self):
         pass

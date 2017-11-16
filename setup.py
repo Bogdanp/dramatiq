@@ -37,7 +37,7 @@ dependencies = list(parse_dependencies("common.txt"))
 extras = ("memcached", "rabbitmq", "redis", "watch")
 extra_dependencies = {}
 for extra in extras:
-    filename = "{}.txt".format(extra)
+    filename = extra + ".txt"
     extra_dependencies[extra] = list(parse_dependencies(filename))
 
 

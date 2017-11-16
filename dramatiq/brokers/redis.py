@@ -166,7 +166,7 @@ class RedisBroker(Broker):
         while True:
             size = 0
             for name in (queue_name, dq_name(queue_name)):
-                size += self.client.hlen(self._add_namespace("%s.msgs" % name))
+                size += self.client.hlen(self._add_namespace(name + ".msgs"))
 
             if size == 0:
                 return

@@ -1,0 +1,35 @@
+sequenceDiagram
+  participant CT as ConsumerThread("default")
+  participant RMQ as RabbitMQ
+  participant WorkQueue as WorkQueue in memory
+  participant AcksQueue as AcksQueue in memory
+  participant WT1 as WorkerThread1
+  participant WT2 as WorkerThread2
+
+  loop while running, read messages off the broker and put them on the work queue
+    CT->>+RMQ: get_message(queue_name="default", block=True)
+    RMQ-->>CT: Message(id=1, {...})
+    CT->>WorkQueue: put_work(Message(id=1, {...}))
+
+    loop while pending acks
+      CT->>AcksQueue: get_pending_ack()
+      AcksQueue-->>CT: Message(id=1, {...})
+      CT->>RMQ: ack_message(id=1)
+    end
+  end
+
+  alt concurrently
+    loop while running, process work
+      WT1->>WorkQueue: get_work(block=True)
+      WorkQueue-->>WT1: Message(id=2, { ... })
+      WT1->>WT1: process_message(Message(id=2, {...}))
+      WT1->>AcksQueue: ack_message(Message(id=2, { ... }))
+    end
+  else
+    loop while running, process work
+      WT2->>WorkQueue: get_work(block=True)
+      WorkQueue-->>WT2: Message(id=1, { ... })
+      WT2->>WT2: process_message(Message(id=1, {...}))
+      WT2->>AcksQueue: ack_message(Message(id=1, { ... }))
+    end
+  end
