@@ -10,3 +10,4 @@ of those changes to CLEARTYPE SRL.
 | :------- | :--- |
 | [@bendemaree](https://github.com/bendemaree) | Ben Demaree |
 | [@whalesalad](https://github.com/whalesalad) | Michael Whalen |
+| [@jssuzanne](https://github.com/jssuzanne) | Jean-Sébastien Suzanne |
