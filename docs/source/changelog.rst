@@ -14,12 +14,10 @@ Changed
 
 * Connection and import errors that occur during process boot now log
   stack traces (`@rakanalh`_).
+* Added support for Python **3.5**.  Progress toward resolving issue
+  `#7`_ (`@jssuzanne`_).
 
 .. _@rakanalh: https://github.com/rakanalh
-
-* Python **3.5** compatible. First step to resolve the issue `#7`
-  (`@jssuzanne`_).
-
 .. _@jssuzanne: https://github.com/jssuzanne
 .. _#7: https://github.com/Bogdanp/dramatiq/issues/7
 
