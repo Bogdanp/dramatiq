@@ -48,9 +48,9 @@ class Message(namedtuple("Message", (
         """Create a copy of this message.
         """
         updated_options = attributes.pop("options", {})
-        options = self.options.copy()
+        options = attributes["options"] = self.options.copy()
         options.update(updated_options)
-        return self._replace(**attributes, options=options)
+        return self._replace(**attributes)
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)
