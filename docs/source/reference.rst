@@ -20,6 +20,12 @@ Actors & Messages
 .. autoclass:: Message
    :members:
 
+Class-based Actors
+^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: GenericActor
+   :members:
+
 
 Brokers
 -------

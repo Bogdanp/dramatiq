@@ -114,11 +114,11 @@ def worker_process(args, worker_id, logging_fd):
 
         worker = Worker(broker, worker_threads=args.threads)
         worker.start()
-    except ImportError as e:
-        logger.critical(e)
+    except ImportError:
+        logger.exception("Failed to import module.")
         return os._exit(2)
-    except ConnectionError as e:
-        logger.critical("Broker connection failed. %s", e)
+    except ConnectionError:
+        logger.exception("Broker connection failed.")
         return os._exit(3)
 
     def termhandler(signum, frame):

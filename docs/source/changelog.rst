@@ -9,6 +9,29 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Connection and import errors that occur during process boot now log
+  stack traces (`@rakanalh`_).
+
+.. _@rakanalh: https://github.com/rakanalh
+
+
+`0.13.0`_ -- 2017-11-15
+-----------------------
+
+Added
+^^^^^
+
+* Support for |GenericActors| (`#9`_).
+
+.. _#9: https://github.com/Bogdanp/dramatiq/issues/9
+
+
+`0.12.1`_ -- 2017-11-15
+-----------------------
+
 Fixed
 ^^^^^
 
@@ -212,7 +235,9 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v0.11.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v0.13.0...HEAD
+.. _0.13.0: https://github.com/Bogdanp/dramatiq/compare/v0.12.1...v0.13.0
+.. _0.12.1: https://github.com/Bogdanp/dramatiq/compare/v0.12.0...v0.12.1
 .. _0.12.0: https://github.com/Bogdanp/dramatiq/compare/v0.11.0...v0.12.0
 .. _0.11.0: https://github.com/Bogdanp/dramatiq/compare/v0.10.2...v0.11.0
 .. _0.10.2: https://github.com/Bogdanp/dramatiq/compare/v0.10.1...v0.10.2
