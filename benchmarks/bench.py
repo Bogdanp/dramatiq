@@ -67,7 +67,7 @@ celery_latency_bench = celery_app.task(name="latency-bench", acks_late=True)(lat
 def benchmark_arg(value):
     benchmarks = ("fib", "latency")
     if value not in benchmarks:
-        raise argparse.ArgumentTypeError("benchmark must be one of %r" % benchmarks)
+        raise argparse.ArgumentTypeError(f"benchmark must be one of {benchmarks!r}")
     return value
 
 
@@ -132,14 +132,14 @@ def main(args):
         processed = 0
         while processed < args.count:
             processed = client.get(counter_key)
-            print("%s/%s messages processed\r" % (processed, args.count), end="")
+            print(f"{processed}/{args.count} messages processed\r", end="")
             time.sleep(0.1)
 
         duration = time.time() - start_time
         proc.terminate()
         proc.wait()
 
-    print("Took %s seconds to process %s messages." % (duration, args.count))
+    print(f"Took {duration} seconds to process {args.count} messages.")
     return 0
 
 
