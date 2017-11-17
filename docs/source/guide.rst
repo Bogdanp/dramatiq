@@ -418,10 +418,10 @@ run your tests.  My recommendation is to use it in conjunction with
    from dramatiq import Worker
    from yourapp import broker
 
-   @pytest.fixture(scope="session")
+   @pytest.fixture()
    def stub_broker():
-     yield broker
      broker.flush_all()
+     return broker
 
    @pytest.fixture()
    def stub_worker():
