@@ -14,8 +14,7 @@ Changed
 
 * Connection and import errors that occur during process boot now log
   stack traces (`@rakanalh`_).
-* Added support for Python **3.5**.  Progress toward resolving issue
-  `#7`_ (`@jssuzanne`_).
+* Added support for Python **3.5** (`#7`_ by `@jssuzanne`_).
 
 .. _@rakanalh: https://github.com/rakanalh
 .. _@jssuzanne: https://github.com/jssuzanne
