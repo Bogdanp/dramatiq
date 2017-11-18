@@ -10,12 +10,12 @@ from `GAE Push Queues`_ and Sidekiq_.
 
 Dramatiq's driving principles are as follows:
 
-* high reliability
+* high reliability and performance
 * simple and easy to understand core
 * convention over configuration
 
-If you're used to either of those or if you've ever had to use Celery
-in anger, Dramatiq might just be the tool for you.
+If you've ever had to use Celery in anger, Dramatiq could be the tool
+for you.
 
 
 .. _GAE Push Queues: https://cloud.google.com/appengine/docs/standard/python/taskqueue/push/
