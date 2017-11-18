@@ -3,50 +3,26 @@
 Advanced Topics
 ===============
 
-Worker Exit Codes
------------------
+Messages
+--------
 
-Dramatiq uses process exit codes to denote several scenarios:
+Message Persistence
+^^^^^^^^^^^^^^^^^^^
 
-=====  ========================================================================================
-Code   Description
-=====  ========================================================================================
-``0``  Returned when the process exits gracefully.
-``1``  Returned when the process is killed.
-``2``  Returned when a module cannot be imported or when a command line argument is invalid.
-``3``  Returned when a broker connection cannot be established.
-=====  ========================================================================================
+Dramatiq has at-least-once message delivery semantics.  Messages sent
+to Dramatiq brokers are persisted to disk and survive across broker
+reboots.  Exactly how often messages are written to disk depends on
+your broker.
 
-
-Controlling Workers
--------------------
-
-The main Dramatiq process responds to several signals::
-
-  $ kill -TERM [master-process-pid]
-
-``INT`` and ``TERM``
-^^^^^^^^^^^^^^^^^^^^
-
-Sending an ``INT`` or ``TERM`` signal to the main process triggers
-graceful shutdown.  Consumer threads will stop receiving new work and
-worker threads will finish processing the work they have in flight
-before shutting down.  Any tasks still in worker memory at this point
-are re-queued on the broker.
-
-If you send a second ``INT`` or ``TERM`` signal then the worker
-processes will be killed immediately.
-
-``HUP``
-^^^^^^^
-
-Sending ``HUP`` to the main process triggers a graceful shutdown
-followed by a reload of the workers.  This is useful if you want to
-reload code without completely restarting the main process.
+Messages that have been pulled by workers but not processed are
+returned to the broker on shutdown and any messages that are in flight
+while a worker is terminated (eg. via ``SIGKILL``) are going to be
+redelivered later.  Messages are only ever acknowledged to the broker
+when they have finished being processed.
 
 
 Enqueueing Messages from Other Languages
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can enqueue Dramatiq messages using any language that has bindings
 to one of its brokers.  All you have to do is push a JSON-encoded
@@ -64,14 +40,15 @@ dictionary containing the following fields to your queue:
      "message_timestamp": 0,      // The UNIX timestamp in milliseconds representing when the message was first enqueued
    }
 
+
 Using RabbitMQ
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~
 
 Assuming you want to enqueue a message on a queue named ``default``,
 publish a persistent message to that queue in RabbitMQ.
 
 Using Redis
-^^^^^^^^^^^
+~~~~~~~~~~~
 
 Assuming you want to enqueue a message on a queue named ``default``,
 run::
@@ -80,15 +57,76 @@ run::
   > RPUSH default $YOUR_MESSAGE_ID
 
 
+Workers
+-------
+
+Worker Exit Codes
+^^^^^^^^^^^^^^^^^
+
+Dramatiq uses process exit codes to denote several scenarios:
+
+=====  ========================================================================================
+Code   Description
+=====  ========================================================================================
+``0``  Returned when the process exits gracefully.
+``1``  Returned when the process is killed.
+``2``  Returned when a module cannot be imported or when a command line argument is invalid.
+``3``  Returned when a broker connection cannot be established during worker startup.
+=====  ========================================================================================
+
+Controlling Workers
+^^^^^^^^^^^^^^^^^^^
+
+The main Dramatiq process responds to several signals::
+
+  $ kill -TERM [master-process-pid]
+
+``INT`` and ``TERM``
+~~~~~~~~~~~~~~~~~~~~
+
+Sending an ``INT`` or ``TERM`` signal to the main process triggers
+graceful shutdown.  Consumer threads will stop receiving new work and
+worker threads will finish processing the work they have in flight
+before shutting down.  Any tasks still in worker memory at this point
+are re-queued on the broker.
+
+If you send a second ``INT`` or ``TERM`` signal then the worker
+processes will be killed immediately.
+
+``HUP``
+~~~~~~~
+
+Sending ``HUP`` to the main process triggers a graceful shutdown
+followed by a reload of the workers.  This is useful if you want to
+reload code without completely restarting the main process.
+
+Using gevent
+^^^^^^^^^^^^
+
+Dramatiq comes with a CLI utility called ``dramatiq-gevent`` that can
+run workers under gevent_.  The following invocation would run 8
+worker processes with 250 greenlets per process for a total of 2k
+lightweight worker threads::
+
+  $ dramatiq-gevent my_app -p 8 -t 250
+
+If your tasks spend most of their time doing network IO and don't
+depend on C extensions to execute those network calls then using
+gevent could provide a significant performance improvement.
+
+I suggest at least experimenting with it to see if it fits your use
+case.
+
 Prometheus Metrics
-------------------
+^^^^^^^^^^^^^^^^^
 
 Prometheus metrics are automatically exported by workers whenever you
-boot them using the command line utility.  By default, the exposition
-server listens on port ``9191`` so you can tell Prometheus to scrape
-that or you can specify what host and port it should listen on by
-setting the ``dramatiq_prom_host`` and ``dramatiq_prom_port``
-environment variables.
+run them using the command line utility (assuming you're using the
+Prometheus middleware).  By default, the exposition server listens on
+port ``9191`` so you can tell Prometheus to scrape that or you can
+specify what host and port it should listen on by setting the
+``dramatiq_prom_host`` and ``dramatiq_prom_port`` environment
+variables.
 
 The following metrics are exported:
 
@@ -116,26 +154,8 @@ The following metrics are exported:
 All metrics define labels for ``queue_name`` and ``actor_name``.
 
 Grafana
-^^^^^^^
+~~~~~~~
 
 You can find a Grafana dashboard that displays these metrics here_.
 
 .. _here: https://grafana.com/dashboards/3692
-
-
-Using gevent
-------------
-
-Dramatiq comes with a CLI utility called ``dramatiq-gevent`` that can
-run workers under gevent_.  The following invocation would run 8
-worker processes with 250 greenlets per process for a total of 2k
-lightweight worker threads::
-
-  $ dramatiq-gevent my_app -p 8 -t 250
-
-If your tasks spend most of their time doing network IO and don't
-depend on C extensions to execute those network calls then using
-gevent could provide a significant performance improvement.
-
-I suggest at least experimenting with it to see if it fits your use
-case.
