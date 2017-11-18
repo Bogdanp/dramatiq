@@ -106,6 +106,7 @@ html_theme_options = {
     'logo_name': False,
     'code_font_family': '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
     'code_font_size': '0.8em',
+    'show_related': True,
     'fixed_sidebar': True,
     'github_banner': True,
     'github_button': True,
