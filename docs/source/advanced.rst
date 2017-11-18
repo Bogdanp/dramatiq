@@ -3,6 +3,37 @@
 Advanced Topics
 ===============
 
+Brokers
+-------
+
+Multi-tenancy
+^^^^^^^^^^^^^
+
+With Dramatiq you can run multiple logical apps on the same broker.
+The way you do this is different for each broker, but fairly simple in
+each case.
+
+RabbitMQ
+~~~~~~~~
+
+RabbitMQ has the concept of `virtual hosts`_ built into it.  They
+provide logical grouping and separation of resources.  You can create
+virtual hosts using the `rabbitmqctl` command::
+
+  $ rabbitmqctl add_vhost app1
+  $ rabbitmqctl set_permissions -p app1 my_user ".*" ".*" ".*"
+
+You can then pass that vhost to |RabbitmqBroker| when you instantiate it.
+
+.. _virtual hosts:  https://www.rabbitmq.com/vhosts.html
+
+Redis
+~~~~~
+
+The |RedisBroker| takes a ``namespace`` parameter that you can use to
+logically split queues across multiple apps.
+
+
 Messages
 --------
 
