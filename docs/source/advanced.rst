@@ -118,7 +118,7 @@ I suggest at least experimenting with it to see if it fits your use
 case.
 
 Prometheus Metrics
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 Prometheus metrics are automatically exported by workers whenever you
 run them using the command line utility (assuming you're using the
