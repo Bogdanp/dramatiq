@@ -9,6 +9,12 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Logging statements before and after an actor is called.
+* :attr:`dramatiq.Actor.logger`.
+
 
 `0.13.1`_ -- 2017-11-17
 -----------------------

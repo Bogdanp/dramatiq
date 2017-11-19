@@ -1,11 +1,8 @@
 import argparse
 import dramatiq
-import logging
 import os
 import random
 import sys
-
-logger = logging.getLogger("example")
 
 if os.getenv("REDIS") == "1":
     from dramatiq.brokers.redis import RedisBroker
@@ -15,7 +12,7 @@ if os.getenv("REDIS") == "1":
 
 @dramatiq.actor
 def add(x, y):
-    logger.info("The sum of %d and %d is %d.", x, y, x + y)
+    add.logger.info("The sum of %d and %d is %d.", x, y, x + y)
 
 
 def main(args):

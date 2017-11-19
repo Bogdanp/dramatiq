@@ -1,6 +1,8 @@
 import re
+import time
 
 from .broker import get_broker
+from .logging import get_logger
 from .message import Message
 
 #: The regular expression that represents valid queue names.
@@ -77,10 +79,21 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
 
 class Actor:
     """Thin wrapper around callables that stores metadata about how
-    they should be executed asynchronously.
+    they should be executed asynchronously.  Actors are callable.
+
+    Attributes:
+      logger(Logger): The actor's logger.
+      fn(callable): The underlying callable.
+      broker(Broker): The broker this actor is bound to.
+      actor_name(str): The actor's name.
+      queue_name(str): The actor's queue.
+      priority(int): The actor's priority.
+      options(dict): Arbitrary options that are passed to the broker
+        and middleware.
     """
 
     def __init__(self, fn, *, broker, actor_name, queue_name, priority, options):
+        self.logger = get_logger(fn.__module__, actor_name)
         self.fn = fn
         self.broker = broker
         self.actor_name = actor_name
@@ -139,7 +152,13 @@ class Actor:
         Returns:
           Whatever the underlying function backing this actor returns.
         """
-        return self.fn(*args, **kwargs)
+        try:
+            self.logger.info("Received args=%r kwargs=%r.", args, kwargs)
+            start = time.perf_counter()
+            return self.fn(*args, **kwargs)
+        finally:
+            delta = time.perf_counter() - start
+            self.logger.info("Completed after %.02fms.", delta * 1000)
 
     def __repr__(self):  # pragma: no cover
         return "Actor(%(fn)r, queue_name=%(queue_name)r, actor_name=%(actor_name)r)" % vars(self)
