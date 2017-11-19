@@ -102,16 +102,18 @@ want to see a list of the available command line flags.
 As soon as you run that command you'll see log output along these
 lines::
 
-  [2017-06-27 13:03:09,675] [PID 13047] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.9.0' is booting up.
-  [2017-06-27 13:03:09,817] [PID 13051] [MainThread] [dramatiq.WorkerProcess(1)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,818] [PID 13052] [MainThread] [dramatiq.WorkerProcess(2)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,818] [PID 13050] [MainThread] [dramatiq.WorkerProcess(0)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,819] [PID 13053] [MainThread] [dramatiq.WorkerProcess(3)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,821] [PID 13054] [MainThread] [dramatiq.WorkerProcess(4)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,829] [PID 13056] [MainThread] [dramatiq.WorkerProcess(6)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,832] [PID 13055] [MainThread] [dramatiq.WorkerProcess(5)] [INFO] Worker process is ready for action.
-  [2017-06-27 13:03:09,833] [PID 13057] [MainThread] [dramatiq.WorkerProcess(7)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,188] [PID 22370] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.13.1' is booting up.
+  [2017-11-19 13:03:48,349] [PID 22377] [MainThread] [dramatiq.WorkerProcess(3)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,350] [PID 22375] [MainThread] [dramatiq.WorkerProcess(1)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,357] [PID 22376] [MainThread] [dramatiq.WorkerProcess(2)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,357] [PID 22374] [MainThread] [dramatiq.WorkerProcess(0)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,358] [PID 22379] [MainThread] [dramatiq.WorkerProcess(5)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,362] [PID 22381] [MainThread] [dramatiq.WorkerProcess(7)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,364] [PID 22380] [MainThread] [dramatiq.WorkerProcess(6)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,366] [PID 22378] [MainThread] [dramatiq.WorkerProcess(4)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,369] [PID 22377] [Thread-4] [count_words.count_words] [INFO] Received args=('http://example.com',) kwargs={}.
   There are 338 words at 'http://example.com'.
+  [2017-11-19 13:03:48,679] [PID 22377] [Thread-4] [count_words.count_words] [INFO] Completed after 310.42ms.
 
 If you open your Python interpreter back up and send the actor some
 more URLs to process::
@@ -126,12 +128,18 @@ more URLs to process::
    Message(queue_name='default', actor_name='count_words', args=('https://xkcd.com',), kwargs={}, options={}, message_id='0ec93dcb-2f9f-414f-99ec-7035e3b1ac5a', message_timestamp=1498557998218),
    Message(queue_name='default', actor_name='count_words', args=('https://rabbitmq.com',), kwargs={}, options={}, message_id='d3dd9799-1ea5-4b00-a70b-2cd6f6f634ed', message_timestamp=1498557998218)]
 
-and then switch back to the worker terminal, you'll see three new
+and then switch back to the worker terminal, you'll see nine new
 lines::
 
-  There are 467 words at 'https://xkcd.com'.
-  There are 3962 words at 'https://rabbitmq.com'.
-  There are 3589 words at 'https://news.ycombinator.com'.
+  [2017-11-19 13:10:02,620] [PID 24357] [Thread-4] [count_words.count_words] [INFO] Received args=('https://rabbitmq.com',) kwargs={}.
+  [2017-11-19 13:10:02,621] [PID 24357] [Thread-6] [count_words.count_words] [INFO] Received args=('https://xkcd.com',) kwargs={}.
+  [2017-11-19 13:10:02,621] [PID 24357] [Thread-5] [count_words.count_words] [INFO] Received args=('https://news.ycombinator.com',) kwargs={}.
+  There are 888 words at 'https://rabbitmq.com'.
+  [2017-11-19 13:10:02,757] [PID 24357] [Thread-4] [count_words.count_words] [INFO] Completed after 137.26ms.
+  There are 461 words at 'https://xkcd.com'.
+  [2017-11-19 13:10:02,841] [PID 24357] [Thread-6] [count_words.count_words] [INFO] Completed after 219.76ms.
+  There are 3598 words at 'https://news.ycombinator.com'.
+  [2017-11-19 13:10:03,297] [PID 24357] [Thread-5] [count_words.count_words] [INFO] Completed after 675.19ms.
 
 At this point, you're probably wondering what happens if you send the
 actor an invalid URL.  Let's try it::
