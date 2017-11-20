@@ -21,8 +21,8 @@ Fixed
 Added
 ^^^^^
 
-* Logging statements before and after an actor is called.
 * :attr:`dramatiq.Actor.logger`.
+* Logging statements before and after an actor is called.
 
 Fixed
 ^^^^^

@@ -10,8 +10,8 @@ from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.common import dq_name, xq_name
-from dramatiq.rate_limits.backends import MemcachedBackend, RedisBackend
-
+from dramatiq.rate_limits import backends as rl_backends
+from dramatiq.results import backends as res_backends
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=logfmt)
@@ -117,7 +117,7 @@ def start_cli():
 
 @pytest.fixture
 def memcached_rate_limiter_backend():
-    backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    backend = rl_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
     with backend.pool.reserve() as client:
         client.flush_all()
     return backend
@@ -125,7 +125,7 @@ def memcached_rate_limiter_backend():
 
 @pytest.fixture
 def redis_rate_limiter_backend():
-    backend = RedisBackend()
+    backend = rl_backends.RedisBackend()
     backend.client.flushall()
     return backend
 
@@ -135,4 +135,27 @@ def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_bac
     return {
         "memcached": memcached_rate_limiter_backend,
         "redis": redis_rate_limiter_backend,
+    }
+
+
+@pytest.fixture
+def memcached_result_backend():
+    backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    with backend.pool.reserve() as client:
+        client.flush_all()
+    return backend
+
+
+@pytest.fixture
+def redis_result_backend():
+    backend = res_backends.RedisBackend()
+    backend.client.flushall()
+    return backend
+
+
+@pytest.fixture
+def result_backends(memcached_result_backend, redis_result_backend):
+    return {
+        "memcached": memcached_result_backend,
+        "redis": redis_result_backend,
     }
