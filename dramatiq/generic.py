@@ -11,10 +11,18 @@ class generic_actor(type):
         if not getattr(meta, "abstract", False):
             options = {name: getattr(meta, name) for name in vars(meta) if not name.startswith("_")}
             options.pop("abstract", False)
-            return actor(clazz(), **options)
+
+            clazz_instance = clazz()
+            actor_instance = actor(clazz_instance, **options)
+            setattr(clazz, "__getattr__", generic_actor.__getattr__)
+            setattr(clazz_instance, "__actor__", actor_instance)
+            return clazz_instance
 
         setattr(meta, "abstract", False)
         return clazz
+
+    def __getattr__(cls, name):
+        return getattr(cls.__actor__, name)
 
 
 class GenericActor(metaclass=generic_actor):
@@ -54,6 +62,14 @@ class GenericActor(metaclass=generic_actor):
       >>> FooTask.send()
       >>> BarTask.send()
 
+    Attributes:
+      logger(Logger): The actor's logger.
+      broker(Broker): The broker this actor is bound to.
+      actor_name(str): The actor's name.
+      queue_name(str): The actor's queue.
+      priority(int): The actor's priority.
+      options(dict): Arbitrary options that are passed to the broker
+        and middleware.
     """
 
     class Meta:

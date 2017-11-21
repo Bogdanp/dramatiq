@@ -8,8 +8,8 @@ def test_generic_actors_can_be_defined(stub_broker):
         def perform(self, x, y):
             return x + y
 
-    # Then Add should be an instance of Actor
-    assert isinstance(Add, dramatiq.Actor)
+    # Then Add.__actor__ should be an instance of Actor
+    assert isinstance(Add.__actor__, dramatiq.Actor)
 
     # And it should be callable
     assert Add(1, 2) == 3
@@ -71,8 +71,8 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
 
     # Then both subclasses should be actors
     # And they should inherit the parent's meta
-    assert isinstance(FooTask, dramatiq.Actor)
-    assert isinstance(BarTask, dramatiq.Actor)
+    assert isinstance(FooTask.__actor__, dramatiq.Actor)
+    assert isinstance(BarTask.__actor__, dramatiq.Actor)
     assert FooTask.queue_name == BarTask.queue_name == "tasks"
 
     # When I send both actors a message
@@ -84,3 +84,14 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
 
     # Then my calls database should contain both task names
     assert calls == {"Foo", "Bar"}
+
+
+def test_generic_actors_can_have_class_attributes(stub_broker):
+    # Given a generic actor with class attributes
+    class DoSomething(dramatiq.GenericActor):
+        STATUS_RUNNING = "running"
+        STATUS_DONE = "done"
+
+    # When I access one of it class attributes
+    # Then I should get back that attribute's value
+    assert DoSomething.STATUS_DONE == "done"
