@@ -15,6 +15,8 @@ you fill out the form below and tell me about your use case.
 If you're interested in purchasing a commercial license, fill out
 `this form`_ and I'll get back to you within one business day.
 
+You can find the :doc:`commercial license here<EULA>`.
+
 
 FAQ
 ---
