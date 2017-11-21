@@ -15,6 +15,13 @@ Added
 * Logging statements before and after an actor is called.
 * :attr:`dramatiq.Actor.logger`.
 
+Fixed
+^^^^^
+
+* |GenericActors| behave more like normal Python classes now. (`#15`_)
+
+.. _#15: https://github.com/Bogdanp/dramatiq/issues/15
+
 
 `0.13.1`_ -- 2017-11-17
 -----------------------
