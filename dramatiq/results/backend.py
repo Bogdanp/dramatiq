@@ -2,9 +2,13 @@ import hashlib
 import time
 
 from ..common import compute_backoff, q_name
+from .errors import ResultTimeout, ResultMissing
 
 #: The default timeout for blocking get operations in milliseconds.
 DEFAULT_TIMEOUT = 10000
+
+#: The minimum amount of time in ms to wait between polls.
+BACKOFF_FACTOR = 100
 
 #: Canary value that is returned when a result hasn't been set yet.
 Missing = type("Missing", (object,), {})()
@@ -14,7 +18,7 @@ class ResultBackend:
     """ABC for result backends.
     """
 
-    def get_result(self, message, *, block=False, timeout=DEFAULT_TIMEOUT):
+    def get_result(self, message, *, block=False, timeout=None):
         """Get a result from the backend.
 
         Parameters:
@@ -23,25 +27,34 @@ class ResultBackend:
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.
 
+        Raises:
+          ResultMissing: When block is False and the result isn't set.
+          ResultTimeout: When waiting for a result times out.
+
         Returns:
-          ``Missing`` when the result isn't ready yet.
+          object: The result.
         """
-        message_key = self.build_message_key(message)
+        timeout = timeout or DEFAULT_TIMEOUT
         end_time = time.monotonic() + timeout / 1000
+        message_key = self.build_message_key(message)
+
         attempts = 0
         while True:
             data = self._get(message_key)
             if data is Missing and block:
-                attempts, delay = compute_backoff(attempts, factor=50)
-
+                attempts, delay = compute_backoff(attempts, factor=BACKOFF_FACTOR)
                 delay /= 1000
                 if time.monotonic() + delay > end_time:
-                    return data
+                    raise ResultTimeout(message)
 
                 time.sleep(delay)
                 continue
 
-            return data
+            elif data is Missing:
+                raise ResultMissing(message)
+
+            else:
+                return data
 
     def store_result(self, message, result, ttl):
         """Store a result in the backend.
