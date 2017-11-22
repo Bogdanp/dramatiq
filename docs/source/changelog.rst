@@ -9,10 +9,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Support for |Results|.
+
 Fixed
 ^^^^^
 
 * Fixed bad file descriptor issue during RMQ broker shutdown under gevent.
+* Made |MiddlewareError| a subclass of |DramatiqError|.
 
 
 `0.14.0`_ -- 2017-11-21

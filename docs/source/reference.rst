@@ -51,15 +51,44 @@ Brokers
 Middleware
 ----------
 
+The following middleware are all enabled by default.
+
 .. autoclass:: Middleware
    :members:
    :member-order: bysource
-.. autoclass:: dramatiq.middleware.SkipMessage
 .. autoclass:: dramatiq.middleware.AgeLimit
 .. autoclass:: dramatiq.middleware.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
 .. autoclass:: dramatiq.middleware.TimeLimit
 .. autoclass:: dramatiq.middleware.TimeLimitExceeded
+
+Errors
+^^^^^^
+
+.. autoclass:: dramatiq.middleware.SkipMessage
+
+
+Results
+-------
+
+Actor results can be stored and retrieved by leveraging result
+backends and the results middleware.  Results and result backends are
+not enabled by default and you should avoid using them until you have
+a really good use case.  Most of the time you can get by with actors
+simply updating data in your database instead of using results.
+
+Middleware
+^^^^^^^^^^
+
+.. autoclass:: dramatiq.results.Results
+
+Backends
+^^^^^^^^
+
+.. autoclass:: dramatiq.results.ResultBackend
+.. autoclass:: dramatiq.results.backends.MemcachedBackend
+.. autoclass:: dramatiq.results.backends.RedisBackend
+.. autoclass:: dramatiq.results.backends.StubBackend
 
 
 Rate Limiters
@@ -114,4 +143,10 @@ Errors
 .. autoclass:: ConnectionFailed
    :members:
 .. autoclass:: RateLimitExceeded
+   :members:
+.. autoclass:: dramatiq.results.ResultError
+   :members:
+.. autoclass:: dramatiq.results.ResultMissing
+   :members:
+.. autoclass:: dramatiq.results.ResultTimeout
    :members:

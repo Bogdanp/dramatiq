@@ -47,7 +47,7 @@ of the main differences between Dramatiq, Celery and RQ:
 | Locks and rate limiting      | Yes      | No          | No           |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
-| Result storage               | No       | Yes         | Yes          |
+| Result storage               | Yes      | Yes         | Yes          |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
 | Simple implementation        | Yes      | No [#sim]_  | Yes          |
