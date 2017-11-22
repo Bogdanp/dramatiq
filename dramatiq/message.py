@@ -4,6 +4,9 @@ import uuid
 
 from collections import namedtuple
 
+from .broker import get_broker
+from .results import Results
+
 
 def generate_unique_id():
     return str(uuid.uuid4())
@@ -51,6 +54,44 @@ class Message(namedtuple("Message", (
         options = self.options.copy()
         options.update(updated_options)
         return self._replace(**attributes, options=options)
+
+    def get_result(self, *, backend=None, block=False, timeout=None):
+        """Get the result associated with this message from a result
+        backend.
+
+        Warning:
+          If you use multiple result backends or brokers you should
+          always pass the backend parameter.  This method is only able
+          to infer the result backend off of the default broker.
+
+        Parameters:
+          backend(ResultBackend): The result backend to use to get the
+            result.  If omitted, this method will try to find and use
+            the result backend on the default broker instance.
+          block(bool): Whether or not to block while waiting for a
+            result.
+          timeout(int): The maximum amount of time, in ms, to block
+            while waiting for a result.
+
+        Raises:
+          RuntimeError: If there is no result backend on the default
+            broker.
+          ResultMissing: When block is False and the result isn't set.
+          ResultTimeout: When waiting for a result times out.
+
+        Returns:
+          object: The result.
+        """
+        if not backend:
+            broker = get_broker()
+            for middleware in broker.middleware:
+                if isinstance(middleware, Results):
+                    backend = middleware.backend
+                    break
+            else:
+                raise RuntimeError("The default broker doesn't have a results backend.")
+
+        return backend.get_result(self, block=block, timeout=timeout)
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)

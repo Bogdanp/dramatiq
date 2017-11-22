@@ -11,7 +11,7 @@ class MemcachedBackend(ResultBackend):
     Parameters:
       namespace(str): A string with which to prefix result keys.
       pool(ClientPool): An optional pylibmc client pool to use.  If
-        this is not None, all other connection params are ignored.
+        this is passed, all other connection params are ignored.
       pool_size(int): The size of the connection pool to use.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`pylibmc.Client`.

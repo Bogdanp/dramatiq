@@ -2,7 +2,7 @@ import dramatiq
 import pytest
 import time
 
-from dramatiq.results import Missing, Results
+from dramatiq.results import Missing, Results, ResultTimeout, ResultMissing
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis"])
@@ -46,10 +46,9 @@ def test_retrieving_a_result_can_return_not_ready(stub_broker, stub_worker, back
     message = do_work.send()
 
     # And get the result without blocking
-    result = backend.get_result(message)
-
-    # Then the result should be Missing
-    assert result is Missing
+    # Then a ResultMissing error should be raised
+    with pytest.raises(ResultMissing):
+        backend.get_result(message)
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis"])
@@ -70,7 +69,63 @@ def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, res
     message = do_work.send()
 
     # And wait for a result
-    result = backend.get_result(message, block=True, timeout=100)
+    # Then a ResultTimeout error should be raised
+    with pytest.raises(ResultTimeout):
+        backend.get_result(message, block=True, timeout=100)
 
-    # Then the result should be Missing
-    assert result is Missing
+
+@pytest.mark.parametrize("backend", ["memcached", "redis"])
+def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores a result
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    # Then I should get that result back
+    assert message.get_result(backend=backend, block=True) == 42
+
+
+@pytest.mark.parametrize("backend", ["memcached", "redis"])
+def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores a result
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    # Then I should get that result back
+    assert message.get_result(block=True) == 42
+
+
+def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):
+    # Given an actor that doesn't store results
+    @dramatiq.actor
+    def do_work():
+        return 42
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    # Then I should get a RuntimeError back
+    with pytest.raises(RuntimeError):
+        message.get_result()
