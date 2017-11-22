@@ -1,7 +1,4 @@
-from ..errors import DramatiqError
-
-
-class MiddlewareError(DramatiqError):
+class MiddlewareError(Exception):
     """Base class for middleware errors.
     """
 
