@@ -2,10 +2,10 @@ import dramatiq
 import pytest
 import time
 
-from dramatiq.results import Missing, Results, ResultTimeout, ResultMissing
+from dramatiq.results import Results, ResultTimeout, ResultMissing
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_actors_can_store_results(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -28,7 +28,7 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
     assert result == 42
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_retrieving_a_result_can_return_not_ready(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -51,7 +51,7 @@ def test_retrieving_a_result_can_return_not_ready(stub_broker, stub_worker, back
         backend.get_result(message)
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -74,7 +74,7 @@ def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, res
         backend.get_result(message, block=True, timeout=100)
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]

@@ -154,8 +154,14 @@ def redis_result_backend():
 
 
 @pytest.fixture
-def result_backends(memcached_result_backend, redis_result_backend):
+def stub_result_backend():
+    return res_backends.StubBackend()
+
+
+@pytest.fixture
+def result_backends(memcached_result_backend, redis_result_backend, stub_result_backend):
     return {
         "memcached": memcached_result_backend,
         "redis": redis_result_backend,
+        "stub": stub_result_backend,
     }
