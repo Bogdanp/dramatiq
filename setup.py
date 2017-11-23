@@ -51,7 +51,9 @@ setup(
         "dramatiq.brokers",
         "dramatiq.middleware",
         "dramatiq.rate_limits",
-        "dramatiq.rate_limits.backends"
+        "dramatiq.rate_limits.backends",
+        "dramatiq.results",
+        "dramatiq.results.backends",
     ],
     include_package_data=True,
     install_requires=dependencies,
