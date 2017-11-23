@@ -13,6 +13,8 @@ Added
 ^^^^^
 
 * Support for |Results|.
+* ``pool`` parameter to the |MemcachedRLBackend| rate limiter backend.
+* ``client`` parameter to the |RedisRLBackend| rate limiter backend.
 
 Fixed
 ^^^^^

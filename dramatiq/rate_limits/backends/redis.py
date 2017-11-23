@@ -7,14 +7,16 @@ class RedisBackend(RateLimiterBackend):
     """A rate limiter backend for Redis_.
 
     Parameters:
+      client(StrictRedis): An optional client.  If this is passed,
+        then all other parameters are ignored.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
 
     .. _redis: https://redis.io
     """
 
-    def __init__(self, **parameters):
-        self.client = redis.StrictRedis(**parameters)
+    def __init__(self, *, client=None, **parameters):
+        self.client = client or redis.StrictRedis(**parameters)
 
     def add(self, key, value, ttl):
         return bool(self.client.set(key, value, px=ttl, nx=True))

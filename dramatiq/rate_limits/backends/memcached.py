@@ -12,6 +12,8 @@ class MemcachedBackend(RateLimiterBackend):
       >>> backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
 
     Parameters:
+      pool(ClientPool): An optional pylibmc client pool to use.  If
+        this is passed, all other connection params are ignored.
       pool_size(int): The size of the connection pool to use.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`pylibmc.Client`.
@@ -19,12 +21,11 @@ class MemcachedBackend(RateLimiterBackend):
     .. _memcached: https://memcached.org
     """
 
-    def __init__(self, *, pool_size=8, **parameters):
+    def __init__(self, *, pool=None, pool_size=8, **parameters):
         behaviors = parameters.setdefault("behaviors", {})
         behaviors["cas"] = True
 
-        self.client = client = Client(**parameters)
-        self.pool = ClientPool(client, pool_size)
+        self.pool = pool or ClientPool(Client(**parameters), pool_size)
 
     def add(self, key, value, ttl):
         with self.pool.reserve(block=True) as client:

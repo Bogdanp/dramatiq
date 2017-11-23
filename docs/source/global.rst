@@ -2,11 +2,13 @@
 
 .. |DramatiqError| replace:: :class:`DramatiqError<dramatiq.DramatiqError>`
 .. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`
+.. |MemcachedRLBackend| replace:: :class:`Memcached<dramatiq.rate_limits.backends.MemcachedBackend>`
 .. |MiddlewareError| replace:: :class:`MiddlewareError<dramatiq.middleware.MiddlewareError>`
 .. |RabbitmqBroker_join| replace:: :meth:`join<dramatiq.brokers.rabbitmq.RabbitmqBroker.join>`
 .. |RabbitmqBroker| replace:: :class:`RabbitmqBroker<dramatiq.brokers.rabbitmq.RabbitmqBroker>`
 .. |RateLimiters| replace:: :class:`RateLimiters<dramatiq.rate_limits.RateLimiter>`
 .. |RedisBroker| replace:: :class:`RedisBroker<dramatiq.brokers.redis.RedisBroker>`
+.. |RedisRLBackend| replace:: :class:`Redis<dramatiq.rate_limits.backends.RedisBackend>`
 .. |Results| replace:: :class:`Results<dramatiq.results.Results>`
 .. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
 .. |StubBroker_flush_all| replace:: :meth:`flush_all<dramatiq.brokers.stub.StubBroker.flush_all>`
