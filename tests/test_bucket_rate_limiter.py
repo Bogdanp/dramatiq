@@ -4,7 +4,7 @@ import time
 from dramatiq.rate_limits import BucketRateLimiter
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_bucket_rate_limiter_limits_per_bucket(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 

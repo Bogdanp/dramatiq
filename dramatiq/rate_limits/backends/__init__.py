@@ -1,5 +1,7 @@
 import warnings
 
+from .stub import StubBackend  # noqa
+
 try:
     from .memcached import MemcachedBackend  # noqa
 except ImportError:  # pragma: no cover

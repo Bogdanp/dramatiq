@@ -131,10 +131,16 @@ def redis_rate_limiter_backend():
 
 
 @pytest.fixture
-def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_backend):
+def stub_rate_limiter_backend():
+    return rl_backends.StubBackend()
+
+
+@pytest.fixture
+def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_backend, stub_rate_limiter_backend):
     return {
         "memcached": memcached_rate_limiter_backend,
         "redis": redis_rate_limiter_backend,
+        "stub": stub_rate_limiter_backend,
     }
 
 

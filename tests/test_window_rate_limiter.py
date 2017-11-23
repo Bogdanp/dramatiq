@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dramatiq.rate_limits import WindowRateLimiter
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_window_rate_limiter_limits_per_window(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 
