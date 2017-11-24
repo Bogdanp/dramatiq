@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Fixed bad file descriptor issue during RMQ broker shutdown under gevent.
+
 
 `0.14.0`_ -- 2017-11-21
 -----------------------

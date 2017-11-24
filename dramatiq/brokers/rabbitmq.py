@@ -431,15 +431,15 @@ class _RabbitmqConsumer(Consumer):
             # Finally, drain the socket for select
             self.interrupt_sock_r.recv(512)
         except OSError as e:  # pragma: no cover
-            if e.errno != errno.EGAIN:
+            if e.errno != errno.EAGAIN:
                 raise
 
     def close(self):
         try:
             try:
+                self.connection._impl.ioloop.remove_handler(self.interrupt_sock_r.fileno())
                 self.interrupt_sock_w.close()
                 self.interrupt_sock_r.close()
-                self.connection._impl.ioloop.remove_handler(self.interrupt_sock_r.fileno())
             except KeyError:
                 pass
 
