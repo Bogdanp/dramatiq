@@ -15,6 +15,7 @@ from threading import Thread
 try:
     import watchdog.events
     import watchdog.observers
+    import watchdog.observers.polling
 
     HAS_WATCHDOG = True
 except ImportError:  # pragma: no cover
@@ -81,6 +82,15 @@ def parse_arguments():
             help=(
                 "watch a directory and reload the workers when any source files "
                 "change (this feature must only be used during development)"
+            )
+        )
+        parser.add_argument(
+            "--watch-use-polling",
+            action="store_true",
+            help=(
+                "poll the filesystem for changes rather than using a "
+                "system-dependent filesystem event emitter (useful "
+                "under docker-for-mac)"
             )
         )
 
@@ -165,8 +175,13 @@ def main():
     running, reload_process = True, False
 
     if HAS_WATCHDOG and args.watch:
+        if args.watch_use_polling:
+            observer_class = watchdog.observers.polling.PollingObserver
+        else:
+            observer_class = watchdog.observers.Observer
+
         file_event_handler = SourceChangesHandler(patterns=["*.py"])
-        file_watcher = watchdog.observers.Observer()
+        file_watcher = observer_class()
         file_watcher.schedule(file_event_handler, args.watch, recursive=True)
         file_watcher.start()
 
