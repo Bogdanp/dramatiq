@@ -32,6 +32,9 @@ of the main differences between Dramatiq, Celery and RQ:
 +------------------------------+----------+-------------+--------------+
 |                              | Dramatiq | Celery_     | RQ_          |
 +------------------------------+----------+-------------+--------------+
+| Python 2 support             | No       | Yes         | Yes          |
+|                              |          |             |              |
++------------------------------+----------+-------------+--------------+
 | At-least-once delivery       | Yes      | No [#]_     | No           |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
@@ -56,10 +59,10 @@ of the main differences between Dramatiq, Celery and RQ:
 | Task prioritization          | Yes      | No [#prio]_ | No [#prio]_  |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
-| Redis support                | Yes      | Yes         | Yes          |
+| RabbitMQ support             | Yes      | Yes         | No           |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
-| RabbitMQ support             | Yes      | Yes         | No           |
+| Redis support                | Yes      | Yes         | Yes          |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
 | In-memory broker support     | Yes      | No          | No           |
