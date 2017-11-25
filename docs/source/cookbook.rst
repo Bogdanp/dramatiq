@@ -11,6 +11,16 @@ open an `issue on GitHub`_.
 .. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
 
 
+Usage with API Star
+-------------------
+
+Check out the `apistar_dramatiq`_ project if you want to use Dramatiq
+with `API Star`_.
+
+.. _apistar_dramatiq: https://github.com/Bogdanp/apistar_dramatiq
+.. _API Star: https://github.com/encode/apistar
+
+
 Usage with Django
 -----------------
 
@@ -24,7 +34,7 @@ example app build with Django and Dramatiq.
 
 
 Usage with Flask
------------------
+----------------
 
 Check out the `flask_dramatiq_example`_ repo to see an example app
 built with Flask_ and Dramatiq.
