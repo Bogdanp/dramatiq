@@ -11,41 +11,185 @@ open an `issue on GitHub`_.
 .. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
 
 
-Usage with API Star
--------------------
+Docker
+------
 
-Check out the `apistar_dramatiq`_ project if you want to use Dramatiq
-with `API Star`_.
+Watching for source changes in Docker for Mac
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Docker for Mac has known issues_ with inotify so ``dramatiq --watch``
+won't work out of the box.  To work around it, you can tell Dramatiq
+to use a polling file watcher instead, by passing the
+``--watch-use-polling`` flag.  For example::
+
+  $ dramatiq some_module --watch . --watch-use-polling
+
+.. _issues: https://github.com/docker/for-mac/issues/681
+
+
+Error Reporting
+---------------
+
+Reporting errors with Rollbar
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Rollbar_ provides an easy-to-use Python client.  Add it to your
+project with pipenv_::
+
+   $ pipenv install rollbar
+
+Save the following middleware to a module inside your project:
+
+.. code-block:: python
+
+   import dramatiq
+   import rollbar
+
+   class RollbarMiddleware(dramatiq.Middleware):
+     def after_process_message(self, broker, message, *, result=None, exception=None):
+       if exception is not None:
+         rollbar.report_exc_info()
+
+Finally, instantiate and add it to your broker:
+
+.. code-block:: python
+
+   rollbar.init(YOUR_ROLLBAR_KEY)
+   broker.add_middleware(path.to.RollbarMiddleware())
+
+
+.. _pipenv: https://docs.pipenv.org
+.. _Rollbar: https://github.com/rollbar/pyrollbar#quick-start
+
+Reporting errors with Sentry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Install Sentry's raven_ client with pipenv_::
+
+   $ pipenv install raven
+
+Save the following middleware to a module inside your project:
+
+.. code-block:: python
+
+   import dramatiq
+
+   class SentryMiddleware(dramatiq.Middleware):
+     def __init__(self, raven_client):
+       self.raven_client = raven_client
+
+     def after_process_message(self, broker, message, *, result=None, exception=None):
+       if exception is not None:
+         self.raven_client.captureException()
+
+Finally, instantiate and add it to your broker:
+
+.. code-block:: python
+
+   from raven import Client
+
+   raven_client = Client(YOUR_DSN)
+   broker.add_middleware(path.to.SentryMiddleware(raven_client))
+
+
+.. _pipenv: https://docs.pipenv.org
+.. _raven: https://github.com/getsentry/raven-python
+
+
+Frameworks
+----------
+
+API Star
+^^^^^^^^
+
+The `apistar_dramatiq`_ library lets you use API Star dependency
+injection with your Dramatiq actors.
 
 .. _apistar_dramatiq: https://github.com/Bogdanp/apistar_dramatiq
 .. _API Star: https://github.com/encode/apistar
 
 
-Usage with Django
------------------
+Django
+^^^^^^
 
 Check out the `django_dramatiq`_ project if you want to use Dramatiq
-with Django_.  Check out the `django_dramatiq_example`_ repo to see an
-example app build with Django and Dramatiq.
+with Django_.  The `django_dramatiq_example`_ repo is an example app
+build with Django and Dramatiq.
 
 .. _django_dramatiq: https://github.com/Bogdanp/django_dramatiq
 .. _django_dramatiq_example: https://github.com/Bogdanp/django_dramatiq_example
 .. _django: https://djangoproject.com
 
 
-Usage with Flask
-----------------
+Flask
+^^^^^
 
-Check out the `flask_dramatiq_example`_ repo to see an example app
-built with Flask_ and Dramatiq.
+The `flask_dramatiq_example`_ repo is an example app built with Flask_
+and Dramatiq.
 
 .. _flask_dramatiq_example: https://github.com/Bogdanp/flask_dramatiq_example
 .. _flask: http://flask.pocoo.org
 
 
+Operations
+----------
+
+Auto-discovering "tasks" modules with bash
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Dramatiq doesn't attempt to auto-discover tasks modules.  Assuming you
+follow a convention where all your tasks modules are named
+``tasks.py`` then you can discover them using bash:
+
+.. code-block:: bash
+
+   #!/usr/bin/env bash
+
+   set -e
+
+   tasks_packages=$(find . -type d -name tasks | sed s':/:.:g' | sed s'/^..//' | xargs)
+   tasks_modules=$(find . -type f -name tasks.py | sed s':/:.:g' | sed s'/^..//' | sed s'/.py$//g' | xargs)
+   all_modules="$tasks_packages $tasks_modules"
+
+   echo "Discovered tasks modules:"
+   for module in $all_modules; do
+       echo "  * ${module}"
+   done
+   echo
+
+   pipenv run dramatiq-gevent $all_modules --watch . --watch-use-polling
+
+Retrying connection errors on startup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Dramatiq does not retry connection errors that occur on worker
+startup.  It does, however, return a specific exit code (``3``) when
+that happens.  Using that, you can build a wrapper script around it if
+you need to retry with backoff when connection errors happen during
+startup (eg. in Docker):
+
+.. code-block:: bash
+
+   #!/usr/bin/env bash
+
+   delay=1
+   while true; do
+     dramatiq $@
+     if [ $? -eq 3 ]; then
+       echo "Connection error encountered on startup. Retrying in $delay second(s)..."
+       sleep $delay
+       delay=$((delay * 2))
+     else
+       exit $?
+     fi
+   done
+
+
+Rate Limiting
+-------------
 
 Rate limiting work
-------------------
+^^^^^^^^^^^^^^^^^^
 
 You can use dramatiq's |RateLimiters| to constrain actor concurrency.
 
@@ -79,100 +223,3 @@ acquired, you should pass ``raise_on_failure=False`` to ``acquire``::
       print("Lock could not be acquired.")
     else:
       print("Lock was acquired.")
-
-
-Reporting errors with Rollbar
------------------------------
-
-Rollbar_ provides an easy-to-use Python client.  Add it to your
-project with pipenv_::
-
-   $ pipenv install rollbar
-
-Save the following middleware to a module inside your project:
-
-.. code-block:: python
-   :caption: myapp.rollbar_middleware
-
-   import dramatiq
-   import rollbar
-
-   class RollbarMiddleware(dramatiq.Middleware):
-     def after_process_message(self, broker, message, *, result=None, exception=None):
-       if exception is not None:
-         rollbar.report_exc_info()
-
-Finally, instantiate and add it to your broker:
-
-.. code-block:: python
-   :caption: myapp.main
-
-   rollbar.init(YOUR_ROLLBAR_KEY)
-   broker.add_middleware(path.to.RollbarMiddleware())
-
-
-.. _pipenv: https://docs.pipenv.org
-.. _Rollbar: https://github.com/rollbar/pyrollbar#quick-start
-
-
-Reporting errors with Sentry
-----------------------------
-
-Install Sentry's raven_ client with pipenv_::
-
-   $ pipenv install raven
-
-Save the following middleware to a module inside your project:
-
-.. code-block:: python
-   :caption: myapp.sentry_middleware
-
-   import dramatiq
-
-   class SentryMiddleware(dramatiq.Middleware):
-     def __init__(self, raven_client):
-       self.raven_client = raven_client
-
-     def after_process_message(self, broker, message, *, result=None, exception=None):
-       if exception is not None:
-         self.raven_client.captureException()
-
-Finally, instantiate and add it to your broker:
-
-.. code-block:: python
-   :caption: myapp.main
-
-   from raven import Client
-
-   raven_client = Client(YOUR_DSN)
-   broker.add_middleware(path.to.SentryMiddleware(raven_client))
-
-
-.. _pipenv: https://docs.pipenv.org
-.. _raven: https://github.com/getsentry/raven-python
-
-
-Retrying connection errors on startup
--------------------------------------
-
-Dramatiq does not retry connection errors that occur on worker
-startup.  It does, however, return a specific exit code (``3``) when
-that happens.  Using that, you can build a wrapper script around it if
-you need to retry with backoff when connection errors happen during
-startup (eg. in Docker):
-
-.. code-block:: bash
-
-   #!/usr/bin/env bash
-
-   delay=1
-   while true; do
-     dramatiq $@
-     if [ $? -eq 3 ]; then
-       echo "Connection error encountered on startup. Retrying in $delay second(s)..."
-       sleep $delay
-       delay=$((delay * 2))
-     else
-       exit $?
-     fi
-   done
