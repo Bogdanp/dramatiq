@@ -57,6 +57,7 @@ setup(
     ],
     include_package_data=True,
     install_requires=dependencies,
+    python_requires=">=3.5",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
