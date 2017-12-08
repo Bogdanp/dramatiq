@@ -11,22 +11,6 @@ open an `issue on GitHub`_.
 .. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
 
 
-Docker
-------
-
-Watching for source changes in Docker for Mac
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Docker for Mac has known issues_ with inotify so ``dramatiq --watch``
-won't work out of the box.  To work around it, you can tell Dramatiq
-to use a polling file watcher instead, by passing the
-``--watch-use-polling`` flag.  For example::
-
-  $ dramatiq some_module --watch . --watch-use-polling
-
-.. _issues: https://github.com/docker/for-mac/issues/681
-
-
 Error Reporting
 ---------------
 
