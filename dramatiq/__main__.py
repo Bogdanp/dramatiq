@@ -14,8 +14,8 @@ from threading import Thread
 
 try:
     import watchdog.events
-    import watchdog.observers
     import watchdog.observers.polling
+    import watchdog_gevent
 
     HAS_WATCHDOG = True
 except ImportError:  # pragma: no cover
@@ -178,7 +178,7 @@ def main():
         if args.watch_use_polling:
             observer_class = watchdog.observers.polling.PollingObserver
         else:
-            observer_class = watchdog.observers.Observer
+            observer_class = watchdog_gevent.Observer
 
         file_event_handler = SourceChangesHandler(patterns=["*.py"])
         file_watcher = observer_class()

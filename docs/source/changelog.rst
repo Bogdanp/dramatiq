@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Autoreload now works under gevent.
+
 
 `0.15.0`_ -- 2017-11-24
 -----------------------
