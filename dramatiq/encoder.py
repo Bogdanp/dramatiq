@@ -1,10 +1,10 @@
 import abc
 import json
 import pickle
-
 import typing
 
 
+#: Represents the contents of a Message object as a dict.
 MessageData = typing.Dict[str, typing.Any]
 
 
@@ -29,10 +29,10 @@ class JSONEncoder(Encoder):
     """Encodes messages as JSON.  This is the default encoder.
     """
 
-    def encode(self, data):
+    def encode(self, data: MessageData) -> bytes:
         return json.dumps(data, separators=(",", ":")).encode("utf-8")
 
-    def decode(self, data):
+    def decode(self, data: bytes) -> MessageData:
         return json.loads(data.decode("utf-8"))
 
 
