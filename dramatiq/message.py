@@ -1,14 +1,41 @@
-import json
 import time
 import uuid
 
 from collections import namedtuple
 
 from .broker import get_broker
+from .encoder import Encoder, JSONEncoder
 from .results import Results
 
 
-def generate_unique_id():
+#: The global encoder instance.
+global_encoder = JSONEncoder()
+
+
+def get_encoder() -> Encoder:
+    """Get the global encoder object.
+
+    Returns:
+      Encoder
+    """
+    global global_encoder
+    return global_encoder
+
+
+def set_encoder(encoder: Encoder):
+    """Set the global encoder object.
+
+    Parameters:
+      encoder(Encoder): The encoder instance to use when serializing
+        messages.
+    """
+    global global_encoder
+    global_encoder = encoder
+
+
+def generate_unique_id() -> str:
+    """Generate a globally-unique message id.
+    """
     return str(uuid.uuid4())
 
 
@@ -38,14 +65,14 @@ class Message(namedtuple("Message", (
 
     @classmethod
     def decode(cls, data):
-        """Convert a JSON bytestring to a message.
+        """Convert a bytestring to a message.
         """
-        return cls(**json.loads(data.decode("utf-8")))
+        return cls(**global_encoder.decode(data))
 
     def encode(self):
-        """Convert this message to a JSON bytestring.
+        """Convert this message to a bytestring.
         """
-        return json.dumps(self._asdict(), separators=(",", ":")).encode("utf-8")
+        return global_encoder.encode(self._asdict())
 
     def copy(self, **attributes):
         """Create a copy of this message.

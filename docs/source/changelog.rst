@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Support for pluggable message |Encoders|.
+
 
 `0.15.1`_ -- 2017-12-08
 -----------------------

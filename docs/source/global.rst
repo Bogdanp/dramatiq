@@ -1,6 +1,7 @@
 .. References
 
 .. |DramatiqError| replace:: :class:`DramatiqError<dramatiq.DramatiqError>`
+.. |Encoders| replace:: :class:`Encoders<dramatiq.Encoder>`
 .. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`
 .. |MemcachedRLBackend| replace:: :class:`Memcached<dramatiq.rate_limits.backends.MemcachedBackend>`
 .. |MiddlewareError| replace:: :class:`MiddlewareError<dramatiq.middleware.MiddlewareError>`

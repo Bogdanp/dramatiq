@@ -9,9 +9,9 @@ global_broker = None
 default_middleware = [Prometheus, AgeLimit, TimeLimit, Retries]
 
 
-def get_broker():
+def get_broker() -> "Broker":
     """Get the global broker instance.  If no global broker is set,
-    this initializes a RabbitmqBroker and returns that.
+    this initializes a RabbitmqBroker and returns it.
 
     Returns:
       Broker: The default Broker.
@@ -30,7 +30,7 @@ def get_broker():
     return global_broker
 
 
-def set_broker(broker):
+def set_broker(broker: "Broker"):
     """Configure the global broker instance.
 
     Parameters:

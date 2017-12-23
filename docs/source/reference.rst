@@ -9,6 +9,8 @@ Functions
 
 .. autofunction:: get_broker
 .. autofunction:: set_broker
+.. autofunction:: get_encoder
+.. autofunction:: set_encoder
 
 
 Actors & Messages
@@ -25,6 +27,16 @@ Class-based Actors
 
 .. autoclass:: GenericActor
    :members:
+
+Message Encoders
+^^^^^^^^^^^^^^^^
+
+Encoders are used to serialize and deserialize messages over the wire.
+
+.. autoclass:: Encoder
+   :members:
+.. autoclass:: JSONEncoder
+.. autoclass:: PickleEncoder
 
 
 Brokers
