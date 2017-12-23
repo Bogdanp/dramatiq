@@ -4,16 +4,18 @@ import pytest
 
 @pytest.fixture
 def pickle_encoder():
-    encoder = dramatiq.PickleEncoder()
-    dramatiq.set_encoder(encoder)
-    yield encoder
-    dramatiq.set_encoder(dramatiq.JSONEncoder())
+    old_encoder = dramatiq.get_encoder()
+    new_encoder = dramatiq.PickleEncoder()
+    dramatiq.set_encoder(new_encoder)
+    yield new_encoder
+    dramatiq.set_encoder(old_encoder)
 
 
 def test_set_encoder_sets_the_global_encoder(pickle_encoder):
     # Given that I've set a Pickle encoder as the global encoder
     # When I get the global encoder
     encoder = dramatiq.get_encoder()
+
     # Then it should be the same as the encoder that was set
     assert encoder == pickle_encoder
 
