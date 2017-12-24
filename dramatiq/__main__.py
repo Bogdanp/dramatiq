@@ -21,6 +21,9 @@ try:
 except ImportError:  # pragma: no cover
     HAS_WATCHDOG = False
 
+#: The size of the logging buffer.
+BUFSIZE = 65536
+
 #: The number of available cpus.
 cpus = multiprocessing.cpu_count()
 
@@ -106,6 +109,11 @@ def setup_parent_logging(args):
 
 
 def setup_worker_logging(args, worker_id, logging_pipe):
+    # Redirect all output to the logging pipe so that all output goes
+    # to stderr and output is serialized so there isn't any mangling.
+    sys.stdout = logging_pipe
+    sys.stderr = logging_pipe
+
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
     logging.getLogger("pika").setLevel(logging.ERROR)
@@ -154,7 +162,7 @@ def worker_process(args, worker_id, logging_fd):
     logging_pipe.close()
 
 
-def main():
+def main():  # noqa
     args = parse_arguments()
     worker_pipes = []
     worker_processes = []
@@ -195,10 +203,11 @@ def main():
         while running:
             events = selector.select(timeout=1)
             for key, mask in events:
-                data = os.read(key.fd, 16384)
+                data = os.read(key.fd, BUFSIZE)
                 if not data:
                     selector.unregister(key.fileobj)
                     sys.stderr.write(buffers[key.fd])
+                    sys.stderr.flush()
                     continue
 
                 buffers[key.fd] += data.decode("utf-8")

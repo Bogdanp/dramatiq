@@ -15,6 +15,11 @@ Added
 * ``long_running`` example.
 * Support for pluggable message |Encoders|.
 
+Changed
+^^^^^^^
+
+* ``sys.std{err,out}`` are now redirected to stderr and line-buffered.
+
 
 `0.15.1`_ -- 2017-12-08
 -----------------------
