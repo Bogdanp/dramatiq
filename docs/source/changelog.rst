@@ -13,11 +13,14 @@ Added
 ^^^^^
 
 * ``long_running`` example.
-* Support for pluggable message |Encoders|.
+* |Messages| now support pluggable |Encoders|.
+* |ResultBackends| now support pluggable |Encoders|.
 
 Changed
 ^^^^^^^
 
+* |RedisResBackend| result backend is now considerably more
+  resource-efficient (it no longer polls).
 * ``sys.std{err,out}`` are now redirected to stderr and line-buffered.
 
 Fixed

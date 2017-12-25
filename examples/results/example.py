@@ -5,10 +5,11 @@ import sys
 import time
 
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
+from dramatiq.encoder import PickleEncoder
 from dramatiq.results.backends import RedisBackend
 from dramatiq.results import Results
 
-result_backend = RedisBackend()
+result_backend = RedisBackend(encoder=PickleEncoder())
 broker = RabbitmqBroker()
 broker.add_middleware(Results(backend=result_backend))
 dramatiq.set_broker(broker)

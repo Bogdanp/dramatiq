@@ -29,7 +29,7 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_retrieving_a_result_can_return_not_ready(stub_broker, stub_worker, backend, result_backends):
+def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
 
