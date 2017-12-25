@@ -241,7 +241,7 @@ def main():  # noqa
         for pid in worker_processes:
             try:
                 os.kill(pid, signum)
-            except OSError:
+            except OSError:  # pragma: no cover
                 logger.warning("Failed to send %r to pid %d.", signum.name, pid)
 
     retcode = 0

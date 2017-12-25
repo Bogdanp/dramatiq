@@ -20,6 +20,16 @@ logging.getLogger("pika").setLevel(logging.WARN)
 random.seed(1337)
 
 
+@pytest.mark.hookwrapper
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    if item.get_marker("flaky"):
+        report = outcome.get_result()
+        if report.outcome == "failed":
+            report.outcome = "skipped"
+            report.wasxfail = "skipped flaky test"
+
+
 @pytest.fixture()
 def stub_broker():
     broker = StubBroker()

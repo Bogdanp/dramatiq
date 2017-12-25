@@ -23,7 +23,11 @@ def write_loaded_at(filename):
 
 @pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
 @pytest.mark.skipif(_current_platform == "PyPy", reason="Code reloading is not supported on PyPy.")
-def test_cli_can_watch_for_source_code_changes(start_cli):
+@pytest.mark.parametrize("extra_args", [
+    (),
+    ("--watch-use-polling",),
+])
+def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     # Given that I have a shared file the processes can use to communicate with
     filename = "/tmp/dramatiq-loaded-at"
 
@@ -32,6 +36,7 @@ def test_cli_can_watch_for_source_code_changes(start_cli):
         "--processes", "1",
         "--threads", "1",
         "--watch", "tests",
+        *extra_args,
     ])
 
     # And enqueue a task to write the loaded timestamp
