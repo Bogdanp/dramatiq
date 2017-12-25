@@ -244,3 +244,38 @@ Getting a result raises |ResultMissing| when a result hasn't been
 stored yet or if it has already expired (results expire after 10
 minutes by default).  When the ``block`` parameter is ``True``,
 |ResultTimeout| is raised instead.
+
+
+Scheduling
+----------
+
+Scheduling messages
+^^^^^^^^^^^^^^^^^^^
+
+APScheduler_ is the recommended scheduler to use with dramatiq:
+
+.. code-block:: python
+
+   import dramatiq
+   import sys
+
+   from apscheduler.schedulers.blocking import BlockingScheduler
+   from apscheduler.triggers.cron import CronTrigger
+   from datetime import datetime
+
+   @dramatiq.actor
+   def print_current_date():
+     print(datetime.now())
+
+   if __name__ == "__main__":
+     scheduler = BlockingScheduler()
+     scheduler.add_job(
+       print_current_date.send,
+       CronTrigger.from_crontab("* * * * *"),
+     )
+     try:
+       scheduler.start()
+     except KeyboardInterrupt:
+       scheduler.shutdown()
+
+.. _APScheduler: https://apscheduler.readthedocs.io
