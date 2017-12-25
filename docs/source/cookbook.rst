@@ -232,7 +232,6 @@ add the |Results| middleware to your broker.
    broker.add_middleware(Results(backend=result_backend))
    dramatiq.set_broker(broker)
 
-
    @dramatiq.actor(store_results=True)
    def add(x, y):
      return x + y
@@ -240,3 +239,8 @@ add the |Results| middleware to your broker.
    if __name__ == "__main__":
      message = add.send(1, 2)
      print(message.get_result(block=True))
+
+Getting a result raises |ResultMissing| when a result hasn't been
+stored yet or if it has already expired (results expire after 10
+minutes by default).  When the ``block`` parameter is ``True``,
+|ResultTimeout| is raised instead.
