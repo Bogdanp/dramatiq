@@ -69,6 +69,7 @@ The following middleware are all enabled by default.
    :members:
    :member-order: bysource
 .. autoclass:: dramatiq.middleware.AgeLimit
+.. autoclass:: dramatiq.middleware.Callbacks
 .. autoclass:: dramatiq.middleware.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
 .. autoclass:: dramatiq.middleware.TimeLimit

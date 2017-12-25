@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* |Callbacks| middleware.
+
 
 `0.16.0`_ -- 2017-12-25
 -----------------------

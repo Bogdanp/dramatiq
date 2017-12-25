@@ -1,12 +1,12 @@
 from .errors import ActorNotFound
 from .logging import get_logger
-from .middleware import MiddlewareError, AgeLimit, Prometheus, Retries, TimeLimit
+from .middleware import MiddlewareError, AgeLimit, Callbacks, Prometheus, Retries, TimeLimit
 
 #: The global broker instance.
 global_broker = None
 
 #: The list of middleware that are enabled by default.
-default_middleware = [Prometheus, AgeLimit, TimeLimit, Retries]
+default_middleware = [Prometheus, AgeLimit, TimeLimit, Callbacks, Retries]
 
 
 def get_broker() -> "Broker":

@@ -11,6 +11,39 @@ open an `issue on GitHub`_.
 .. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
 
 
+Callbacks
+---------
+
+Dramatiq has built-in support for sending actors messages when other
+actors succeed or fail.  The ``on_failure`` callback is called every
+time an actor fails, even if the message is going to be retried.
+
+.. code-block:: python
+
+   import dramatiq
+
+   @dramatiq.actor
+   def identity(x):
+     return x
+
+   @dramatiq.actor
+   def print_result(message_data, result):
+     print(f"The result of message {message_data['message_id']} was {result}.")
+
+   @dramatiq.actor
+   def print_error(message_data, exception_data):
+     print(f"Message {message_data['message_id']} failed:")
+     print(f"  * type: {exception_data['type']}")
+     print(f"  * message: {exception_data['message']!r}")
+
+   if __name__ == "__main__":
+     identity.send_with_options(
+       args=(42,)
+       on_failure=print_error,
+       on_success=print_result,
+     )
+
+
 Error Reporting
 ---------------
 

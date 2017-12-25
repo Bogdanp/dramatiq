@@ -133,6 +133,14 @@ class Actor:
         Returns:
           Message: The enqueued message.
         """
+        for name in ["on_failure", "on_success"]:
+            callback = options.get(name)
+            if isinstance(callback, Actor):
+                options[name] = callback.actor_name
+
+            elif not isinstance(callback, (type(None), str)):
+                raise TypeError(name + " value must be an Actor")
+
         message = Message(
             queue_name=self.queue_name,
             actor_name=self.actor_name,

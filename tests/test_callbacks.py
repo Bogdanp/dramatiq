@@ -1,0 +1,70 @@
+import dramatiq
+import pytest
+
+from collections import Counter
+
+
+def test_actors_can_define_success_callbacks(stub_broker, stub_worker):
+    # Given an actor that returns the sum of two numbers
+    @dramatiq.actor
+    def add(x, y):
+        return x + y
+
+    # And an actor that takes in a number and stores it in a db
+    db = []
+
+    @dramatiq.actor
+    def save(message_data, result):
+        db.append(result)
+
+    # When I send the first actor a message and tell it to call the
+    # second actor on success
+    add.send_with_options(args=(1, 2), on_success=save)
+
+    # And join on the broker and worker
+    stub_broker.join(add.queue_name)
+    stub_worker.join()
+
+    # Then my db should contain the result
+    assert db == [3]
+
+
+def test_actors_can_define_failure_callbacks(stub_broker, stub_worker):
+    # Given an actor that fails with an exception
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise Exception()
+
+    # And an actor that reports on exceptions
+    exceptions = Counter()
+
+    @dramatiq.actor
+    def report_exceptions(message_data, exception_data):
+        exceptions.update({message_data["actor_name"]})
+
+    # When I send the first actor a message and tell it to call the
+    # second actor on failure
+    do_work.send_with_options(on_failure="report_exceptions")
+
+    # And join on the broker and worker
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then my db should contain the result
+    assert exceptions[do_work.actor_name] == 1
+
+
+def test_actor_callbacks_raise_type_error_when_given_a_normal_callable(stub_broker):
+    # Given an actor that does nothing
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # And a non-actor callable
+    def callback(message, res):
+        pass
+
+    # When I try to set that callable as an on success callback
+    # Then I should get back a TypeError
+    with pytest.raises(TypeError):
+        do_work.send_with_options(on_success=callback)
