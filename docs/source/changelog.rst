@@ -9,10 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+
+`0.16.0`_ -- 2017-12-25
+-----------------------
+
 Added
 ^^^^^
 
 * ``long_running`` example.
+* ``scheduling`` example.
 * |Messages| now support pluggable |Encoders|.
 * |ResultBackends| now support pluggable |Encoders|.
 
@@ -304,7 +309,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v0.15.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v0.16.0...HEAD
+.. _0.16.0: https://github.com/Bogdanp/dramatiq/compare/v0.15.1...v0.16.0
 .. _0.15.1: https://github.com/Bogdanp/dramatiq/compare/v0.15.0...v0.15.1
 .. _0.15.0: https://github.com/Bogdanp/dramatiq/compare/v0.14.0...v0.15.0
 .. _0.14.0: https://github.com/Bogdanp/dramatiq/compare/v0.13.1...v0.14.0
