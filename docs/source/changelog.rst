@@ -20,6 +20,11 @@ Changed
 
 * ``sys.std{err,out}`` are now redirected to stderr and line-buffered.
 
+Fixed
+^^^^^
+
+* |TimeLimit| middleware now uses a monotonic clock.
+
 
 `0.15.1`_ -- 2017-12-08
 -----------------------

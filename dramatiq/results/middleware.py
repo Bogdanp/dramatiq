@@ -43,10 +43,10 @@ class Results(Middleware):
 
     @property
     def actor_options(self):
-        return set([
+        return {
             "store_results",
             "result_ttl",
-        ])
+        }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         actor = broker.get_actor(message.actor_name)

@@ -15,6 +15,7 @@
 .. |StubBroker_flush_all| replace:: :meth:`flush_all<dramatiq.brokers.stub.StubBroker.flush_all>`
 .. |StubBroker_flush| replace:: :meth:`flush<dramatiq.brokers.stub.StubBroker.flush>`
 .. |StubBroker| replace:: :class:`StubBroker<dramatiq.brokers.stub.StubBroker>`
+.. |TimeLimit| replace:: :class:`TimeLimit<dramatiq.middleware.TimeLimit>`
 .. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<dramatiq.middleware.TimeLimitExceeded>`
 .. |URLRabbitmqBroker| replace:: :class:`URLRabbitmqBroker<dramatiq.brokers.rabbitmq.URLRabbitmqBroker>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`

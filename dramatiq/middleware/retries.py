@@ -32,11 +32,11 @@ class Retries(Middleware):
 
     @property
     def actor_options(self):
-        return set([
+        return {
             "max_retries",
             "min_backoff",
             "max_backoff",
-        ])
+        }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         if exception is None:

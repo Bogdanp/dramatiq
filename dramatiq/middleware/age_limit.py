@@ -19,7 +19,7 @@ class AgeLimit(Middleware):
 
     @property
     def actor_options(self):
-        return set(["max_age"])
+        return {"max_age"}
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)

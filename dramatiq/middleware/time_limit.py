@@ -2,9 +2,9 @@ import ctypes
 import platform
 import signal
 import threading
+import time
 import warnings
 
-from ..common import current_millis
 from ..logging import get_logger
 from .middleware import Middleware
 
@@ -45,7 +45,7 @@ class TimeLimit(Middleware):
         self.deadlines = {}
 
     def _handle(self, signum, mask):
-        current_time = current_millis()
+        current_time = time.monotonic()
         for thread_id, deadline in self.deadlines.items():
             if deadline and current_time >= deadline:
                 self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
@@ -55,7 +55,6 @@ class TimeLimit(Middleware):
                 else:  # pragma: no cover
                     self.logger.critical("Cannot kill threads on platform %r.", _current_platform)
 
-    # TODO: Figure out how to kill threads under PyPy.
     def _kill_thread_cpython(self, thread_id):
         thread_id = ctypes.c_long(thread_id)
         exception = ctypes.py_object(TimeLimitExceeded)
@@ -68,7 +67,7 @@ class TimeLimit(Middleware):
 
     @property
     def actor_options(self):
-        return set(["time_limit"])
+        return {"time_limit"}
 
     def after_process_boot(self, broker):
         self.logger.debug("Setting up timers...")
@@ -83,7 +82,8 @@ class TimeLimit(Middleware):
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
-        deadline = current_millis() + actor.options.get("time_limit", self.time_limit)
+        limit = actor.options.get("time_limit", self.time_limit)
+        deadline = time.monotonic() + limit / 1000
         self.deadlines[threading.get_ident()] = deadline
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
