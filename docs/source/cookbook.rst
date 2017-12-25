@@ -207,3 +207,36 @@ acquired, you should pass ``raise_on_failure=False`` to ``acquire``::
       print("Lock could not be acquired.")
     else:
       print("Lock was acquired.")
+
+
+Results
+-------
+
+Storing message results
+^^^^^^^^^^^^^^^^^^^^^^^
+
+You can use dramatiq's result backends to store and retrieve message
+return values.  To enable result storage, you need to instantiate and
+add the |Results| middleware to your broker.
+
+.. code-block:: python
+
+   import dramatiq
+
+   from dramatiq.brokers.rabbitmq import RabbitmqBroker
+   from dramatiq.results.backends import RedisBackend
+   from dramatiq.results import Results
+
+   result_backend = RedisBackend()
+   broker = RabbitmqBroker()
+   broker.add_middleware(Results(backend=result_backend))
+   dramatiq.set_broker(broker)
+
+
+   @dramatiq.actor(store_results=True)
+   def add(x, y):
+     return x + y
+
+   if __name__ == "__main__":
+     message = add.send(1, 2)
+     print(message.get_result(block=True))
