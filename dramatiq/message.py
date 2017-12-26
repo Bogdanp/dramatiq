@@ -63,6 +63,11 @@ class Message(namedtuple("Message", (
             message_timestamp=message_timestamp or int(time.time() * 1000),
         )
 
+    def asdict(self):
+        """Convert this message to a dictionary.
+        """
+        return self._asdict()
+
     @classmethod
     def decode(cls, data):
         """Convert a bytestring to a message.

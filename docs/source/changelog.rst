@@ -13,6 +13,7 @@ Added
 ^^^^^
 
 * |Callbacks| middleware.
+* ``asdict`` method to |Messages|.
 
 
 `0.16.0`_ -- 2017-12-25
