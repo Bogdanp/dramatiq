@@ -15,6 +15,16 @@ Added
 * |Callbacks| middleware.
 * ``asdict`` method to |Messages|.
 
+Fixed
+^^^^^
+
+* Pinned pika version `0.11` to avoid an issue where passing
+  ``heartbeat`` to ``RabbitmqBroker`` in ``get_broker`` would raise a
+  ``TypeError``.  (`#23`_, `@chen2aaron`_)
+
+.. _@chen2aaron: https://github.com/chen2aaron
+.. _#23: https://github.com/Bogdanp/dramatiq/pull/23
+
 
 `0.16.0`_ -- 2017-12-25
 -----------------------
