@@ -12,3 +12,4 @@ of those changes to CLEARTYPE SRL.
 | [@whalesalad](https://github.com/whalesalad) | Michael Whalen |
 | [@rakanalh](https://github.com/rakanalh) | Rakan Alhneiti |
 | [@jssuzanne](https://github.com/jssuzanne) | Jean-Sébastien Suzanne |
+| [@chen2aaron](https://github.com/chen2aaron) | xixijun |
