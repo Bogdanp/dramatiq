@@ -23,7 +23,6 @@ If you would like to use it with Redis_ then run::
 
 If you don't have `pip`_ installed, check out `this guide`_.
 
-
 Extra Requirements
 ^^^^^^^^^^^^^^^^^^
 
@@ -36,12 +35,12 @@ Name           Description
 ``memcached``  Installs the required dependencies for the Memcached rate limiter backend.
 ``rabbitmq``   Installs the required dependencies for using Dramatiq with RabbitMQ.
 ``redis``      Installs the required dependencies for using Dramatiq with Redis.
-``watch``      Installs the required dependencies for the ``--watch`` flag.  Not available under PyPy.
+``watch``      Installs the required dependencies for the ``--watch`` flag.
 =============  =======================================================================================
 
 If you want to install Dramatiq with all available features, run::
 
-  $ pip install -U dramatiq[memcached, rabbitmq, redis, watch]
+  $ pip install -U dramatiq[all]
 
 Optional Requirements
 ^^^^^^^^^^^^^^^^^^^^^
