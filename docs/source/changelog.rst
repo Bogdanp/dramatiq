@@ -9,6 +9,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* ``pip install dramatiq[all]`` installs all deps.
+
+Changed
+^^^^^^^
+
+* ``pip install dramatiq`` now installs RabbitMQ and watch deps.
+
 
 `0.17.0`_ -- 2017-12-30
 -----------------------
