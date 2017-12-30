@@ -1,5 +1,6 @@
 .. References
 
+.. |Callbacks| replace:: :class:`Callbacks<dramatiq.middleware.Callbacks>`
 .. |DramatiqError| replace:: :class:`DramatiqError<dramatiq.DramatiqError>`
 .. |Encoders| replace:: :class:`Encoders<dramatiq.Encoder>`
 .. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`
@@ -12,11 +13,11 @@
 .. |RedisBroker| replace:: :class:`RedisBroker<dramatiq.brokers.redis.RedisBroker>`
 .. |RedisRLBackend| replace:: :class:`Redis<dramatiq.rate_limits.backends.RedisBackend>`
 .. |RedisResBackend| replace:: :class:`Redis<dramatiq.results.backends.RedisBackend>`
-.. |ResultBackend| replace:: :class:`ResultBackend<dramatiq.results.ResultBackend>`
 .. |ResultBackends| replace:: :class:`ResultBackends<dramatiq.results.ResultBackend>`
-.. |Results| replace:: :class:`Results<dramatiq.results.Results>`
+.. |ResultBackend| replace:: :class:`ResultBackend<dramatiq.results.ResultBackend>`
 .. |ResultMissing| replace:: :class:`ResultMissing<dramatiq.results.ResultMissing>`
 .. |ResultTimeout| replace:: :class:`ResultTimeout<dramatiq.results.ResultTimeout>`
+.. |Results| replace:: :class:`Results<dramatiq.results.Results>`
 .. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
 .. |StubBroker_flush_all| replace:: :meth:`flush_all<dramatiq.brokers.stub.StubBroker.flush_all>`
 .. |StubBroker_flush| replace:: :meth:`flush<dramatiq.brokers.stub.StubBroker.flush>`
