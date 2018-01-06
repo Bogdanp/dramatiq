@@ -10,7 +10,7 @@ This example demonstrates how to use Dramatiq in conjunction with
 1. Install apscheduler: `pip install apscheduler`
 1. Run RabbitMQ: `rabbitmq-server`
 1. Run Redis: `redis-server`
-1. In a separate terminal window, run the workers: `env PYTHONPATH=. dramatiq example`.
+1. In a separate terminal window, run the workers: `dramatiq example`.
 1. In another terminal, run `python -m example`.
 
 

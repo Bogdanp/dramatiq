@@ -13,11 +13,14 @@ Added
 ^^^^^
 
 * ``pip install dramatiq[all]`` installs all deps.
+* ``--path`` command line argument.  (`#27`_)
 
 Changed
 ^^^^^^^
 
 * ``pip install dramatiq`` now installs RabbitMQ and watch deps.
+
+.. _#27: https://github.com/Bogdanp/dramatiq/issues/27
 
 
 `0.17.0`_ -- 2017-12-30

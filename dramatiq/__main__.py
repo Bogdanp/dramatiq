@@ -6,6 +6,7 @@ import os
 import selectors
 import signal
 import sys
+import textwrap
 import time
 
 from collections import defaultdict
@@ -61,7 +62,29 @@ def folder_path(value):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(prog="dramatiq", description="Run dramatiq workers.")
+    parser = argparse.ArgumentParser(
+        prog="dramatiq",
+        description="Run dramatiq workers.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent("""\
+        examples:
+
+            # Run dramatiq workers with actors defined in `./some_module.py`.
+            $ dramatiq some_module
+
+            # Auto-reload dramatiq when files in the current directory change.
+            $ dramatiq --watch . some_module
+
+            # Run dramatiq with 1 thread per process.
+            $ dramatiq --threads 1 some_module
+
+            # Run dramatiq with gevent (make sure you `pip install gevent` first).
+            $ dramatiq-gevent --processes 1 --threads 1024 some_module
+
+            # Import extra modules.  Useful when your main module doesn't import
+            # all the modules you need.
+            $ dramatiq some_module some_other_module
+"""))
     parser.add_argument(
         "broker",
         help="the broker to use (eg: 'some_module' or 'some_module:some_broker')",
@@ -78,6 +101,10 @@ def parse_arguments():
         "--threads", "-t", default=8, type=int,
         help="the number of worker threads per process (default: 8)",
     )
+    parser.add_argument(
+        "--path", "-P", default=".", nargs="*", type=str,
+        help="the module import path (default: .)"
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -92,8 +119,7 @@ def parse_arguments():
             action="store_true",
             help=(
                 "poll the filesystem for changes rather than using a "
-                "system-dependent filesystem event emitter (useful "
-                "under docker-for-mac)"
+                "system-dependent filesystem event emitter"
             )
         )
 
@@ -164,6 +190,9 @@ def worker_process(args, worker_id, logging_fd):
 
 def main():  # noqa
     args = parse_arguments()
+    for path in args.path:
+        sys.path.append(path)
+
     worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):

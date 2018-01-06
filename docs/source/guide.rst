@@ -93,7 +93,7 @@ actor functions for execution.
 To spawn workers for our ``count_words.py`` example, run the following
 command in a new terminal window::
 
-  $ env PYTHONPATH=. dramatiq count_words
+  $ dramatiq count_words
 
 This will spin up as many processes as there are CPU cores on your
 machine with 8 worker threads per process.  Run ``dramatiq -h`` if you
@@ -202,7 +202,7 @@ with the ``--watch`` flag pointing to the folder it should watch for
 source code changes.  It'll reload the workers whenever Python files
 under that folder or any of its sub-folders change::
 
-  $ env PYTHONPATH=. dramatiq count_words --watch .
+  $ dramatiq count_words --watch .
 
 .. warning::
    Although this is a handy feature to use when developing your code,
