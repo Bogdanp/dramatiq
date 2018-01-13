@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* |group| and |pipeline|.
+
 
 `0.18.0`_ -- 2018-01-06
 -----------------------

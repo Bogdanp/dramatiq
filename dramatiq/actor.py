@@ -102,11 +102,55 @@ class Actor:
         self.options = options
         self.broker.declare_actor(self)
 
+    def message(self, *args, **kwargs):
+        """Build a message.  This method is useful if you want to
+        compose actors.  See the actor composition documentation for
+        details.
+
+        Parameters:
+          \*args(tuple): Positional arguments to send to the actor.
+          \**kwargs(dict): Keyword arguments to send to the actor.
+
+        Examples:
+          >>> (add.message(1, 2) | add.message(3))
+          pipeline([add(1, 2), add(3)])
+
+        Returns:
+          Message: A message that can be enqueued on a broker.
+        """
+        return self.message_with_options(args=args, kwargs=kwargs)
+
+    def message_with_options(self, *, args=None, kwargs=None, **options):
+        """Build a message with an arbitray set of processing options.
+        This method is useful if you want to compose actors.  See the
+        actor composition documentation for details.
+
+        Parameters:
+          args(tuple): Positional arguments that are passed to the actor.
+          kwargs(dict): Keyword arguments that are passed to the actor.
+          \**options(dict): Arbitrary options that are passed to the
+            broker and any registered middleware.
+
+        Returns:
+          Message: A message that can be enqueued on a broker.
+        """
+        for name in ["on_failure", "on_success"]:
+            callback = options.get(name)
+            if isinstance(callback, Actor):
+                options[name] = callback.actor_name
+
+            elif not isinstance(callback, (type(None), str)):
+                raise TypeError(name + " value must be an Actor")
+
+        return Message(
+            queue_name=self.queue_name,
+            actor_name=self.actor_name,
+            args=args or (), kwargs=kwargs or {},
+            options=options,
+        )
+
     def send(self, *args, **kwargs):
         """Asynchronously send a message to this actor.
-
-        Note:
-          All arguments must be JSON-encodable.
 
         Parameters:
           \*args(tuple): Positional arguments to send to the actor.
@@ -133,21 +177,7 @@ class Actor:
         Returns:
           Message: The enqueued message.
         """
-        for name in ["on_failure", "on_success"]:
-            callback = options.get(name)
-            if isinstance(callback, Actor):
-                options[name] = callback.actor_name
-
-            elif not isinstance(callback, (type(None), str)):
-                raise TypeError(name + " value must be an Actor")
-
-        message = Message(
-            queue_name=self.queue_name,
-            actor_name=self.actor_name,
-            args=args or (), kwargs=kwargs or {},
-            options=options,
-        )
-
+        message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
     def __call__(self, *args, **kwargs):

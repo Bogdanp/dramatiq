@@ -1,5 +1,6 @@
 from .actor import Actor, actor  # noqa
 from .broker import Broker, Consumer, MessageProxy, get_broker, set_broker  # noqa
+from .composition import group, pipeline  # noqa
 from .encoder import Encoder, JSONEncoder, PickleEncoder  # noqa
 from .errors import (  # noqa
     DramatiqError,

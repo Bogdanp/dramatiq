@@ -105,13 +105,17 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker,
     def append(x):
         results.append(x)
 
-    # If I send it a delayed message
+    # When I pause the worker
+    redis_worker.pause()
+
+    # And I send it a delayed message
     append.send_with_options(args=(1,), delay=2000)
 
     # And then another delayed message with a smaller delay
     append.send_with_options(args=(2,), delay=1000)
 
-    # Then join on the queue
+    # Then resume the worker and join on the queue
+    redis_worker.resume()
     redis_broker.join(append.queue_name)
     redis_worker.join()
 

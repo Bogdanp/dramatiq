@@ -42,7 +42,9 @@ class RedisBackend(ResultBackend):
         Returns:
           object: The result.
         """
-        timeout = timeout or DEFAULT_TIMEOUT
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+
         message_key = self.build_message_key(message)
         if block:
             timeout = int(timeout / 1000)

@@ -4,7 +4,7 @@ Cookbook
 ========
 
 This part of the docs contains recipes for various things you might
-want to do using dramatiq.  Each section will be light on prose and
+want to do using Dramatiq.  Each section will be light on prose and
 code heavy, so if you have any questions about one of the recipes,
 open an `issue on GitHub`_.
 
@@ -42,6 +42,103 @@ time an actor fails, even if the message is going to be retried.
        on_failure=print_error,
        on_success=print_result,
      )
+
+
+Composition
+-----------
+
+Dramatiq has built-in support for a couple high-level composition
+constructs.  You can use these to combine generalized tasks that don't
+know about one another into complex workflows.
+
+In order to take advantage of group and pipeline result management,
+you need to enable result storage and your actors need to store
+results.  Check out the `Results`_ section for more information on
+result storage.
+
+Groups
+^^^^^^
+
+|Groups| run actors in parallel and let you gather their results or
+wait for all of them to finish.  Assuming you have a computationally
+intensive actor called ``frobnicate``, you can group multiple
+messages together as follows::
+
+  g = group([
+    frobnicate.message(1, 2),
+    frobnicate.message(2, 3),
+    frobnicate.message(3, 4),
+  ]).run()
+
+This will enqueue 3 separate messages and, assuming there are enough
+resources available, execute them in parallel.  You can then wait for
+the whole group to finish::
+
+  g.wait(timeout=10_000)  # 10s expressed in millis
+
+Or you can iterate over the results::
+
+  for res in g.get_results(block=True, timeout=5_000):
+    ...
+
+Results are returned in the same order that the messages were added to
+the group.
+
+Pipelines
+^^^^^^^^^
+
+Actors can be chained together using the |pipeline| function.  For
+example, if you have an actor that gets the text contents of a website
+and one that counts the number of "words" in a piece of text:
+
+.. code-block:: python
+
+   @dramatiq.actor
+   def get_uri_contents(uri):
+     return requests.get(uri).text
+
+   @dramatiq.actor
+   def count_words(uri, text):
+     count = len(text.split(" "))
+     print(f"There are {count} words at {uri}.")
+
+You can chain them together like so::
+
+  uri = "http://example.com"
+  pipe = pipeline([
+    get_uri_contents.message(uri),
+    count_words.message(uri),
+  ]).run()
+
+Or you can use pipe notation to achieve the same thing::
+
+  pipe = get_uri_contents.message(uri) | count_words.message(uri)
+
+In both cases, the result of running ``get_uri_contents(uri)`` is
+passed as the last positional argument to ``count_words``.  If you
+would like to avoid passing the result of an actor to the next one in
+line, set the ``pipe_ignore`` option to ``True`` when you create the
+"receiving" message::
+
+  (
+    bust_caches.message() |
+    prepare_codes.message_with_options(pipe_ignore=True) |
+    launch_missiles.message()
+  )
+
+Here, the result of ``bust_caches()`` will not be passed to
+``prepare_codes()``, but the result of ``prepare_codes()`` will be
+passed to ``launch_missiles(codes)``.  To get the end result of a
+pipeline -- that is, the result of the last actor in the pipeline --
+you can call |pipeline_get_result|::
+
+  pipe.get_result(block=True, timeout=5_000)
+
+To get the intermediate results of each step in the pipeline, you can
+call |pipeline_get_results|::
+
+  for res in pipe.get_results(block=True):
+    ...
 
 
 Error Reporting
@@ -208,7 +305,7 @@ Rate Limiting
 Rate limiting work
 ^^^^^^^^^^^^^^^^^^
 
-You can use dramatiq's |RateLimiters| to constrain actor concurrency.
+You can use Dramatiq's |RateLimiters| to constrain actor concurrency.
 
 .. code-block:: python
 
@@ -248,7 +345,7 @@ Results
 Storing message results
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-You can use dramatiq's result backends to store and retrieve message
+You can use Dramatiq's result backends to store and retrieve message
 return values.  To enable result storage, you need to instantiate and
 add the |Results| middleware to your broker.
 
@@ -285,7 +382,7 @@ Scheduling
 Scheduling messages
 ^^^^^^^^^^^^^^^^^^^
 
-APScheduler_ is the recommended scheduler to use with dramatiq:
+APScheduler_ is the recommended scheduler to use with Dramatiq:
 
 .. code-block:: python
 

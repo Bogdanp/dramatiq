@@ -119,13 +119,17 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(
     def append(x):
         results.append(x)
 
-    # If I send it a delayed message
+    # When I pause the worker
+    rabbitmq_worker.pause()
+
+    # And I send it a delayed message
     append.send_with_options(args=(1,), delay=1500)
 
     # And then another delayed message with a smaller delay
     append.send_with_options(args=(2,), delay=1000)
 
-    # Then join on the queue
+    # Then resume the worker and join on the queue
+    rabbitmq_worker.resume()
     rabbitmq_broker.join(rabbitmq_random_queue, min_successes=20)
     rabbitmq_worker.join()
 

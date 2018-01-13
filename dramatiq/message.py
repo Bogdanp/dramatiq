@@ -4,6 +4,7 @@ import uuid
 from collections import namedtuple
 
 from .broker import get_broker
+from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .results import Results
 
@@ -62,6 +63,11 @@ class Message(namedtuple("Message", (
             message_id=message_id or generate_unique_id(),
             message_timestamp=message_timestamp or int(time.time() * 1000),
         )
+
+    def __or__(self, other) -> pipeline:
+        """Combine this message into a pipeline with "other".
+        """
+        return pipeline([self, other])
 
     def asdict(self):
         """Convert this message to a dictionary.

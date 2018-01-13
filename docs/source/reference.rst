@@ -28,6 +28,14 @@ Class-based Actors
 .. autoclass:: GenericActor
    :members:
 
+Message Composition
+^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: group
+   :members:
+.. autoclass:: pipeline
+   :members:
+
 Message Encoders
 ^^^^^^^^^^^^^^^^
 

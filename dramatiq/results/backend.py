@@ -52,7 +52,9 @@ class ResultBackend:
         Returns:
           object: The result.
         """
-        timeout = timeout or DEFAULT_TIMEOUT
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+
         end_time = time.monotonic() + timeout / 1000
         message_key = self.build_message_key(message)
 
