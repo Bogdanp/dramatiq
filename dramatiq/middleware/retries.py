@@ -22,13 +22,18 @@ class Retries(Middleware):
         apply to retried tasks.  Defaults to 15 seconds.
       max_backoff(int): The maximum amount of backoff milliseconds to
         apply to retried tasks.  Defaults to 7 days.
+      retry_when(Callable[[int, Exception], bool]): An optional
+        predicate that can be used to programmatically determine
+        whether a task should be retried or not.  This takes
+        precedence over `max_retries` when set.
     """
 
-    def __init__(self, *, max_retries=20, min_backoff=None, max_backoff=None):
+    def __init__(self, *, max_retries=20, min_backoff=None, max_backoff=None, retry_when=None):
         self.logger = get_logger(__name__, type(self))
         self.max_retries = max_retries
         self.min_backoff = min_backoff or DEFAULT_MIN_BACKOFF
         self.max_backoff = max_backoff or DEFAULT_MAX_BACKOFF
+        self.retry_when = retry_when
 
     @property
     def actor_options(self):
@@ -36,6 +41,7 @@ class Retries(Middleware):
             "max_retries",
             "min_backoff",
             "max_backoff",
+            "retry_when",
         }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
@@ -43,9 +49,11 @@ class Retries(Middleware):
             return
 
         actor = broker.get_actor(message.actor_name)
-        max_retries = actor.options.get("max_retries", self.max_retries)
         retries = message.options.setdefault("retries", 0)
-        if max_retries is not None and retries >= max_retries:
+        max_retries = actor.options.get("max_retries", self.max_retries)
+        retry_when = actor.options.get("retry_when", self.retry_when)
+        if retry_when is not None and not retry_when(retries, exception) or \
+           retry_when is None and max_retries is not None and retries >= max_retries:
             self.logger.warning("Retries exceeded for message %r.", message.message_id)
             message.fail()
             return
