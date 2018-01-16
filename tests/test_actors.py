@@ -4,7 +4,9 @@ import pytest
 import time
 
 from dramatiq import Message, Middleware, Worker
+from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import SkipMessage
+from unittest.mock import call, patch
 
 _current_platform = platform.python_implementation()
 
@@ -449,3 +451,23 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
 
     # Then I expect the actor to retry 3 times
     assert sum(attempts) == 4
+
+
+def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_worker):
+    # Given that I've mocked the logging class
+    with patch("logging.Logger.warning") as warning_mock:
+        # And I have an actor that raises RateLimitExceeded
+        @dramatiq.actor(max_retries=0)
+        def raise_rate_limit_exceeded():
+            raise RateLimitExceeded("exceeded")
+
+        # When I send that actor a message
+        raise_rate_limit_exceeded.send()
+
+        # And wait for the message to get processed
+        stub_broker.join(raise_rate_limit_exceeded.queue_name)
+        stub_worker.join()
+
+        # Then warning mock should be called with a special message
+        warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
+        assert "Rate limit exceeded in message %s: %s." in warning_messages

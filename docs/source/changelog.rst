@@ -15,6 +15,12 @@ Added
 * |group| and |pipeline|.
 * ``retry_when`` parameter to |Retries|.
 
+Changed
+^^^^^^^
+
+* |RateLimitExceeded| errors no longer log the full stack trace when
+  raised within workers.
+
 
 `0.18.0`_ -- 2018-01-06
 -----------------------

@@ -6,7 +6,7 @@ from queue import Empty, PriorityQueue, Queue
 from threading import Event, Thread
 
 from .common import compute_backoff, current_millis, iter_queue, join_all, q_name
-from .errors import ActorNotFound, ConnectionError
+from .errors import ActorNotFound, ConnectionError, RateLimitExceeded
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
 
@@ -388,7 +388,11 @@ class _WorkerThread(Thread):
             self.broker.emit_after("skip_message", message)
 
         except BaseException as e:
-            self.logger.warning("Failed to process message %s with unhandled exception.", message, exc_info=True)
+            if isinstance(e, RateLimitExceeded):
+                self.logger.warning("Rate limit exceeded in message %s: %s.", message, e.message)
+            else:
+                self.logger.warning("Failed to process message %s with unhandled exception.", message, exc_info=True)
+
             self.broker.emit_after("process_message", message, exception=e)
 
         finally:
