@@ -1,3 +1,4 @@
+import os
 import time
 
 from collections import defaultdict
@@ -5,10 +6,14 @@ from itertools import chain
 from queue import Empty, PriorityQueue, Queue
 from threading import Event, Thread
 
-from .common import compute_backoff, current_millis, iter_queue, join_all, q_name
+from .common import current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError, RateLimitExceeded
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
+
+#: The number of milliseconds to wait before restarting consumers
+#: after a connection error.
+CONSUMER_RESTART_DELAY = int(os.getenv("dramatiq_restart_delay", 3000))
 
 
 class Worker:
@@ -181,7 +186,7 @@ class _ConsumerThread(Thread):
         self.delay_queue = PriorityQueue()
         self.acks_queue = Queue()
 
-    def run(self, attempts=0):
+    def run(self):
         try:
             self.logger.debug("Running consumer thread...")
             self.running = True
@@ -191,9 +196,6 @@ class _ConsumerThread(Thread):
                 timeout=self.worker_timeout,
             )
 
-            # Reset the attempts counter since we presumably got a
-            # working connection.
-            attempts = 0
             for message in self.consumer:
                 if message is not None:
                     self.handle_message(message)
@@ -203,8 +205,8 @@ class _ConsumerThread(Thread):
                 if not self.running:
                     break
 
-        except ConnectionError:
-            self.logger.error("Consumer encountered a connection error.", exc_info=True)
+        except ConnectionError as e:
+            self.logger.critical("Consumer encountered a connection error: %s", e)
             # Acking is unsafe when the connection is abruptly closed
             # so we must clear the queue.  All brokers have at-least
             # once semantics so this is a safe operation.
@@ -212,22 +214,23 @@ class _ConsumerThread(Thread):
             self.delay_queue = PriorityQueue()
 
         except Exception as e:
-            self.logger.error("Consumer encountered an error.", exc_info=True)
+            self.logger.critical("Consumer encountered an error: %s", e)
             # Avoid leaving any open file descriptors around when
             # an exception occurs.
             self.close()
 
-        # The consumer must retry itself with exponential backoff
-        # assuming it hasn't been shut down.
+        # While the consumer is running (i.e. hasn't been shut down),
+        # try to restart it once a second.
         if self.running:
-            attempts, backoff_ms = compute_backoff(attempts, jitter=False, factor=100, max_backoff=60000)
-            self.logger.debug("Waiting for %d milliseconds before restarting...", backoff_ms)
+            delay = CONSUMER_RESTART_DELAY / 100
+            self.logger.info("Restarting consumer in %0.2f seconds.", delay)
             self.close()
-            time.sleep(backoff_ms / 1000)
-            return self.run(attempts=attempts)
+            time.sleep(delay)
+            self.run()
 
-        self.broker.emit_before("consumer_thread_shutdown", self)
-        self.logger.debug("Consumer thread stopped.")
+        else:
+            self.broker.emit_before("consumer_thread_shutdown", self)
+            self.logger.debug("Consumer thread stopped.")
 
     def handle_acks(self):
         """Perform any pending (n)acks.

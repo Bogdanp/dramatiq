@@ -20,6 +20,9 @@ Changed
 
 * |RateLimitExceeded| errors no longer log the full stack trace when
   raised within workers.
+* Consumer connection errors no longer dump a stack trace.
+* Consumers now wait exactly 3 seconds between retries after a
+  connection error, rather than using exponential backoff.
 
 
 `0.18.0`_ -- 2018-01-06

@@ -142,7 +142,7 @@ def setup_worker_logging(args, worker_id, logging_pipe):
 
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
-    logging.getLogger("pika").setLevel(logging.ERROR)
+    logging.getLogger("pika").setLevel(logging.CRITICAL)
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
