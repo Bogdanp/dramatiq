@@ -6,7 +6,7 @@ import time
 from dramatiq import Message, Middleware, Worker
 from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import SkipMessage
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 _current_platform = platform.python_implementation()
 
