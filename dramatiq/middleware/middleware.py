@@ -92,7 +92,7 @@ class Middleware:
         """
 
     def before_worker_boot(self, broker, worker):
-        """Called before the worker processes starts up.
+        """Called before the worker process starts up.
         """
 
     def after_worker_boot(self, broker, worker):
