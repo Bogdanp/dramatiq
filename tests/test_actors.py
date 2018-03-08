@@ -471,3 +471,12 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
         # Then warning mock should be called with a special message
         warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
         assert "Rate limit exceeded in message %s: %s." in warning_messages
+
+
+def test_actor_str():
+    """Actor should return proper representation as string."""
+    @dramatiq.actor
+    def test():
+        pass
+
+    assert str(test) == "Actor(test)"
