@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 -------------
 
 `0.19.1`_ -- 2018-03-08
-----------------------
+-----------------------
 
 Fixed
 ^^^^^
