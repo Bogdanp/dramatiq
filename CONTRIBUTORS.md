@@ -13,3 +13,4 @@ of those changes to CLEARTYPE SRL.
 | [@rakanalh](https://github.com/rakanalh) | Rakan Alhneiti |
 | [@jssuzanne](https://github.com/jssuzanne) | Jean-Sébastien Suzanne |
 | [@chen2aaron](https://github.com/chen2aaron) | xixijun |
+| [@aequitas](https://github.com/aequitas) | Johan Bloemberg |
