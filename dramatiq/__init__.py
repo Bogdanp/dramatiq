@@ -14,4 +14,4 @@ from .message import Message, get_encoder, set_encoder  # noqa
 from .middleware import Middleware  # noqa
 from .worker import Worker  # noqa
 
-__version__ = "0.19.0"
+__version__ = "0.19.1"
