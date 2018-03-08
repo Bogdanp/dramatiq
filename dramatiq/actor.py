@@ -202,4 +202,4 @@ class Actor:
         return "Actor(%(fn)r, queue_name=%(queue_name)r, actor_name=%(actor_name)r)" % vars(self)
 
     def __str__(self):  # pragma: no cover
-        return "Actor(%(actor_name))" % vars(self)
+        return "Actor(%(actor_name)s)" % vars(self)
