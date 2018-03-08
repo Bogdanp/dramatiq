@@ -453,6 +453,28 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
     assert sum(attempts) == 4
 
 
+def test_can_call_str_on_actors():
+    # Given that I have an actor
+    @dramatiq.actor
+    def test():
+        pass
+
+    # When I call str on it
+    # Then I should get back its representation as a string
+    assert str(test) == "Actor(test)"
+
+
+def test_can_call_repr_on_actors():
+    # Given that I have an actor
+    @dramatiq.actor
+    def test():
+        pass
+
+    # When I call repr on it
+    # Then I should get back its representation
+    assert repr(test) == "Actor(%(fn)r, queue_name='default', actor_name='test')" % vars(test)
+
+
 def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_worker):
     # Given that I've mocked the logging class
     with patch("logging.Logger.warning") as warning_mock:

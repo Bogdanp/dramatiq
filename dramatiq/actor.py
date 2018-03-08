@@ -198,8 +198,8 @@ class Actor:
             delta = time.perf_counter() - start
             self.logger.info("Completed after %.02fms.", delta * 1000)
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return "Actor(%(fn)r, queue_name=%(queue_name)r, actor_name=%(actor_name)r)" % vars(self)
 
-    def __str__(self):  # pragma: no cover
-        return "Actor(%(actor_name))" % vars(self)
+    def __str__(self):
+        return "Actor(%(actor_name)s)" % vars(self)
