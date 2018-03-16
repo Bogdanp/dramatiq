@@ -14,6 +14,7 @@ from .middleware import Middleware, SkipMessage
 #: The number of milliseconds to wait before restarting consumers
 #: after a connection error.
 CONSUMER_RESTART_DELAY = int(os.getenv("dramatiq_restart_delay", 3000))
+CONSUMER_RESTART_DELAY_SECS = CONSUMER_RESTART_DELAY / 1000
 
 
 class Worker:
@@ -214,7 +215,7 @@ class _ConsumerThread(Thread):
             self.delay_queue = PriorityQueue()
 
         except Exception as e:
-            self.logger.critical("Consumer encountered an error: %s", e)
+            self.logger.critical("Consumer encountered an unexpected error.", exc_info=True)
             # Avoid leaving any open file descriptors around when
             # an exception occurs.
             self.close()
@@ -222,10 +223,9 @@ class _ConsumerThread(Thread):
         # While the consumer is running (i.e. hasn't been shut down),
         # try to restart it once a second.
         if self.running:
-            delay = CONSUMER_RESTART_DELAY / 100
-            self.logger.info("Restarting consumer in %0.2f seconds.", delay)
+            self.logger.info("Restarting consumer in %0.2f seconds.", CONSUMER_RESTART_DELAY_SECS)
             self.close()
-            time.sleep(delay)
+            time.sleep(CONSUMER_RESTART_DELAY_SECS)
             self.run()
 
         else:
