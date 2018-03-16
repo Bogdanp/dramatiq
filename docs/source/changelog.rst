@@ -9,6 +9,13 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* ``--queues`` CLI argument.  (`#35`_)
+
+.. _#35: https://github.com/Bogdanp/dramatiq/pull/35
+
 Changed
 ^^^^^^^
 

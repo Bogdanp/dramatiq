@@ -68,22 +68,24 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
         examples:
+          # Run dramatiq workers with actors defined in `./some_module.py`.
+          $ dramatiq some_module
 
-            # Run dramatiq workers with actors defined in `./some_module.py`.
-            $ dramatiq some_module
+          # Auto-reload dramatiq when files in the current directory change.
+          $ dramatiq --watch . some_module
 
-            # Auto-reload dramatiq when files in the current directory change.
-            $ dramatiq --watch . some_module
+          # Run dramatiq with 1 thread per process.
+          $ dramatiq --threads 1 some_module
 
-            # Run dramatiq with 1 thread per process.
-            $ dramatiq --threads 1 some_module
+          # Run dramatiq with gevent.  Make sure you `pip install gevent` first.
+          $ dramatiq-gevent --processes 1 --threads 1024 some_module
 
-            # Run dramatiq with gevent (make sure you `pip install gevent` first).
-            $ dramatiq-gevent --processes 1 --threads 1024 some_module
+          # Import extra modules.  Useful when your main module doesn't import
+          # all the modules you need.
+          $ dramatiq some_module some_other_module
 
-            # Import extra modules.  Useful when your main module doesn't import
-            # all the modules you need.
-            $ dramatiq some_module some_other_module
+          # Listen only to the "foo" and "bar" queues.
+          $ dramatiq some_module -Q foo bar
 """))
     parser.add_argument(
         "broker",
@@ -104,6 +106,10 @@ def parse_arguments():
     parser.add_argument(
         "--path", "-P", default=".", nargs="*", type=str,
         help="the module import path (default: .)"
+    )
+    parser.add_argument(
+        "--queues", "-Q", nargs="*", type=str,
+        help="use this flag to listen to a subset of queues (default: all declared queues)",
     )
 
     if HAS_WATCHDOG:
@@ -156,7 +162,7 @@ def worker_process(args, worker_id, logging_fd):
         for module in args.modules:
             importlib.import_module(module)
 
-        worker = Worker(broker, worker_threads=args.threads)
+        worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")

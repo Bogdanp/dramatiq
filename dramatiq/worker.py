@@ -27,16 +27,20 @@ class Worker:
 
     Parameters:
       broker(Broker)
+      queues(Set[str]): An optional subset of queues to listen on.  By
+        default, if this is not provided, the worker will listen on
+        all declared queues.
       worker_timeout(int): The number of milliseconds workers should
         wake up after if the queue is idle.
       worker_threads(int): The number of worker threads to spawn.
     """
 
-    def __init__(self, broker, *, worker_timeout=1000, worker_threads=8):
+    def __init__(self, broker, *, queues=None, worker_timeout=1000, worker_threads=8):
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
 
         self.consumers = {}
+        self.consumer_whitelist = queues and set(queues)
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
         # must be small so we don't starve other workers out.
@@ -136,6 +140,12 @@ class Worker:
 
     def _add_consumer(self, queue_name, *, delay=False):
         if queue_name in self.consumers:
+            self.logger.debug("A consumer for queue %r is already running.", queue_name)
+            return
+
+        canonical_name = q_name(queue_name)
+        if self.consumer_whitelist and canonical_name not in self.consumer_whitelist:
+            self.logger.debug("Dropping consumer for queue %r: not whitelisted.", queue_name)
             return
 
         consumer = self.consumers[queue_name] = _ConsumerThread(
