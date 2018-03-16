@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Unhandled errors within workers now print the full stack trace.
+  (`#42`_)
+
+.. _#42: https://github.com/Bogdanp/dramatiq/pull/42
+
+
 `0.19.1`_ -- 2018-03-08
 -----------------------
 
