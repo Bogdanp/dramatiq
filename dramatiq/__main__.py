@@ -115,6 +115,10 @@ def parse_arguments():
         "--pid-file", "-f", type=str,
         help="use this flag to specify a file in which Dramatiq can write the PID of the parent process)",
     )
+    parser.add_argument(
+        "--log-file", "-l", type=str,
+        help="use this flag to specify a log file in which Dramatiq will write logs)",
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -141,7 +145,14 @@ def parse_arguments():
 def setup_parent_logging(args):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=sys.stderr)
-    return get_logger("dramatiq", "MainProcess")
+    logger = get_logger("dramatiq", "MainProcess")
+    if args.log_file:
+        file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
+        file_handler.setLevel(level)
+        file_handler.setFormatter(logging.Formatter(logformat))
+        logger.addHandler(file_handler)
+
+    return logger
 
 
 def setup_worker_logging(args, worker_id, logging_pipe):
@@ -153,7 +164,15 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
     logging.getLogger("pika").setLevel(logging.CRITICAL)
-    return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
+    logger = get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
+
+    if args.log_file:
+        file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
+        file_handler.setLevel(level)
+        file_handler.setFormatter(logging.Formatter(logformat))
+        logger.addHandler(file_handler)
+
+    return logger
 
 
 def worker_process(args, worker_id, logging_fd):
