@@ -346,7 +346,9 @@ def main():  # noqa
         if sys.argv[0].endswith("/dramatiq/__main__.py"):
             return os.execvp("python", ["python", "-m", "dramatiq", *sys.argv[1:]])
         return os.execvp(sys.argv[0], sys.argv)
-    os.remove(args.pid_file)
+
+    if(args.pid_file):
+        os.remove(args.pid_file)
     return retcode
 
 
