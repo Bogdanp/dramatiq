@@ -111,6 +111,14 @@ def parse_arguments():
         "--queues", "-Q", nargs="*", type=str,
         help="use this flag to listen to a subset of queues (default: all declared queues)",
     )
+    parser.add_argument(
+        "--pid-file", "-f", type=str,
+        help="use this flag to specify a file in which Dramatiq can write the PID of the parent process)",
+    )
+    parser.add_argument(
+        "--log-file", "-l", type=str,
+        help="use this flag to specify a log file in which Dramatiq will write logs)",
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -137,7 +145,14 @@ def parse_arguments():
 def setup_parent_logging(args):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=sys.stderr)
-    return get_logger("dramatiq", "MainProcess")
+    logger = get_logger("dramatiq", "MainProcess")
+    if args.log_file:
+        file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
+        file_handler.setLevel(level)
+        file_handler.setFormatter(logging.Formatter(logformat))
+        logger.addHandler(file_handler)
+
+    return logger
 
 
 def setup_worker_logging(args, worker_id, logging_pipe):
@@ -149,7 +164,15 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
     logging.getLogger("pika").setLevel(logging.CRITICAL)
-    return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
+    logger = get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
+
+    if args.log_file:
+        file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
+        file_handler.setLevel(level)
+        file_handler.setFormatter(logging.Formatter(logformat))
+        logger.addHandler(file_handler)
+
+    return logger
 
 
 def worker_process(args, worker_id, logging_fd):
@@ -194,10 +217,35 @@ def worker_process(args, worker_id, logging_fd):
     logging_pipe.close()
 
 
+def process_pid_file(file_path, logger):
+    try:
+        pid = int(open(file_path, "r").read().strip())
+        try:
+            os.kill(pid, 0)
+            logger.error("A Dramatiq instance is already running with PID %d!" % pid)
+            sys.exit(1)
+        except OSError:
+            logger.warn("Stale PID file found, scrubbing it clean.")
+            os.remove(file_path)
+    except FileNotFoundError:
+        pass
+    except ValueError:
+        logger.warn("Garbage data in PID file, scrubbing it clean.")
+        os.remove(file_path)
+    with open(file_path, "w") as pid_file:
+        pid_file.write(str(os.getpid()))
+
+
 def main():  # noqa
     args = parse_arguments()
     for path in args.path:
         sys.path.append(path)
+
+    logger = setup_parent_logging(args)
+    logger.info("Dramatiq %r is booting up." % __version__)
+
+    if args.pid_file:
+        process_pid_file(args.pid_file, logger)
 
     worker_pipes = []
     worker_processes = []
@@ -213,8 +261,6 @@ def main():  # noqa
         os.close(read_fd)
         return worker_process(args, worker_id, write_fd)
 
-    logger = setup_parent_logging(args)
-    logger.info("Dramatiq %r is booting up." % __version__)
     running, reload_process = True, False
 
     if HAS_WATCHDOG and args.watch:
@@ -300,6 +346,9 @@ def main():  # noqa
         if sys.argv[0].endswith("/dramatiq/__main__.py"):
             return os.execvp("python", ["python", "-m", "dramatiq", *sys.argv[1:]])
         return os.execvp(sys.argv[0], sys.argv)
+
+    if(args.pid_file):
+        os.remove(args.pid_file)
     return retcode
 
 
