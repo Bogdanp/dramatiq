@@ -14,3 +14,4 @@ of those changes to CLEARTYPE SRL.
 | [@jssuzanne](https://github.com/jssuzanne) | Jean-Sébastien Suzanne |
 | [@chen2aaron](https://github.com/chen2aaron) | xixijun |
 | [@aequitas](https://github.com/aequitas) | Johan Bloemberg |
+| [@najamansari](https://github.com/najamansari) | Najam Ahmed Ansari |
