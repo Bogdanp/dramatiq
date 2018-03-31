@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* ``--log-file`` command line argument.  (`#43`_, `@najamansari`_)
+* ``--pid-file`` command line argument.  (`#43`_, `@najamansari`_)
+
+.. _#43: https://github.com/Bogdanp/dramatiq/issues/43
+.. _@najamansari: https://github.com/najamansari
+
 Fixed
 ^^^^^
 

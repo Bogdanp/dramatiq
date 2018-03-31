@@ -1,4 +1,5 @@
 import argparse
+import atexit
 import importlib
 import logging
 import multiprocessing
@@ -112,12 +113,12 @@ def parse_arguments():
         help="use this flag to listen to a subset of queues (default: all declared queues)",
     )
     parser.add_argument(
-        "--pid-file", "-f", type=str,
-        help="use this flag to specify a file in which Dramatiq can write the PID of the parent process)",
+        "--pid-file", type=str,
+        help="use this flag to specify where Dramatiq should write the PID of the master process",
     )
     parser.add_argument(
-        "--log-file", "-l", type=str,
-        help="use this flag to specify a log file in which Dramatiq will write logs)",
+        "--log-file", type=str,
+        help="use this flag to specify where Dramatiq should write its logs",
     )
 
     if HAS_WATCHDOG:
@@ -142,10 +143,62 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def setup_pidfile(filename, logger):
+    logger.debug("Setting up PID file %r.", filename)
+    pid = os.getpid()
+
+    try:
+        logger.debug("Checking PID file %r.", filename)
+        with open(filename, "r") as pid_file:
+            old_pid = int(pid_file.read().strip())
+
+        try:
+            logger.debug("Found old PID %r. Checking if process exists.", old_pid)
+            os.kill(old_pid, 0)
+            logger.critical("Dramatiq is already running with PID %d.", old_pid)
+            return None
+        except OSError:
+            try:
+                logger.warning("Process does not exist. Removing stale PID file.")
+                os.remove(filename)
+            except FileNotFoundError:
+                logger.debug("Failed to remove stale PID file. It's gone.")
+
+    except FileNotFoundError:  # pragma: no cover
+        pass
+
+    except ValueError:
+        # Abort here to avoid overwriting real files.  Eg. someone
+        # accidentally specifies a config file as the pid file.
+        logger.warning("PID file contains garbage. Aborting.")
+        return None
+
+    try:
+        logger.debug("Writing PID file %r.", filename)
+        with open(filename, "w") as pid_file:
+            pid_file.write(str(pid))
+
+        # Change permissions to -rw-r--r--.
+        os.chmod(filename, 0o644)
+        return pid
+    except FileNotFoundError as e:
+        logger.critical("Failed to write PID file. %s %r.", e.strerror, e.filename)
+        return None
+
+
+def remove_pidfile(filename, logger):
+    try:
+        logger.debug("Removing PID file %r.", filename)
+        os.remove(filename)
+    except FileNotFoundError:  # pragma: no cover
+        logger.debug("Failed to remove PID file. It's gone.")
+
+
 def setup_parent_logging(args):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=sys.stderr)
     logger = get_logger("dramatiq", "MainProcess")
+
     if args.log_file:
         file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
         file_handler.setLevel(level)
@@ -217,25 +270,6 @@ def worker_process(args, worker_id, logging_fd):
     logging_pipe.close()
 
 
-def process_pid_file(file_path, logger):
-    try:
-        pid = int(open(file_path, "r").read().strip())
-        try:
-            os.kill(pid, 0)
-            logger.error("A Dramatiq instance is already running with PID %d!" % pid)
-            sys.exit(1)
-        except OSError:
-            logger.warn("Stale PID file found, scrubbing it clean.")
-            os.remove(file_path)
-    except FileNotFoundError:
-        pass
-    except ValueError:
-        logger.warn("Garbage data in PID file, scrubbing it clean.")
-        os.remove(file_path)
-    with open(file_path, "w") as pid_file:
-        pid_file.write(str(os.getpid()))
-
-
 def main():  # noqa
     args = parse_arguments()
     for path in args.path:
@@ -243,9 +277,8 @@ def main():  # noqa
 
     logger = setup_parent_logging(args)
     logger.info("Dramatiq %r is booting up." % __version__)
-
-    if args.pid_file:
-        process_pid_file(args.pid_file, logger)
+    if args.pid_file and not setup_pidfile(args.pid_file, logger):
+        return 4
 
     worker_pipes = []
     worker_processes = []
@@ -260,6 +293,9 @@ def main():  # noqa
 
         os.close(read_fd)
         return worker_process(args, worker_id, write_fd)
+
+    if args.pid_file:
+        atexit.register(remove_pidfile, args.pid_file, logger)
 
     running, reload_process = True, False
 
@@ -347,8 +383,6 @@ def main():  # noqa
             return os.execvp("python", ["python", "-m", "dramatiq", *sys.argv[1:]])
         return os.execvp(sys.argv[0], sys.argv)
 
-    if(args.pid_file):
-        os.remove(args.pid_file)
     return retcode
 
 

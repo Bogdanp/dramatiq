@@ -110,6 +110,7 @@ Code   Description
 ``1``  Returned when the process is killed.
 ``2``  Returned when a module cannot be imported or when a command line argument is invalid.
 ``3``  Returned when a broker connection cannot be established during worker startup.
+``4``  Returned when a PID file is set and Dramatiq is already running.
 =====  ========================================================================================
 
 Controlling Workers
