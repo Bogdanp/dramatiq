@@ -5,7 +5,7 @@ Dramatiq: simple task processing
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
 
-.. image:: https://img.shields.io/badge/license-AGPL-blue.svg
+.. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
 .. image:: https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master
    :target: https://travis-ci.org/Bogdanp/dramatiq
@@ -43,9 +43,8 @@ Here's what it looks like:
   # later, in a separate process.
   count_words.send("http://example.com")
 
-**Dramatiq** is :doc:`licensed<license>` under the AGPL and it
-officially supports Python 3.5 and later.  :doc:`commercial` is also
-available.  Commercial licenses are free for one year for startups.
+**Dramatiq** is :doc:`licensed<license>` under the LGPL and it
+officially supports Python 3.5 and later.
 
 
 Get It Now
@@ -101,7 +100,6 @@ Project Info
    changelog
    contributing
    license
-   commercial
 
 
 Newsletter

@@ -18,6 +18,11 @@ Added
 .. _#43: https://github.com/Bogdanp/dramatiq/issues/43
 .. _@najamansari: https://github.com/najamansari
 
+Changed
+^^^^^^^
+
+* Dramatiq is now licensed under the LGPL.
+
 Fixed
 ^^^^^
 

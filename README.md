@@ -47,13 +47,10 @@ Documentation is available at http://dramatiq.io
 
 ## License
 
-dramatiq is licensed under the AGPL.  Please see [LICENSE][license]
-for licensing details.
-
-Commercial licensing options are available [upon request][commercial].
+dramatiq is licensed under the LGPL.  Please see [COPYING.LESSER] for
+licensing details.
 
 
-[commercial]: https://dramatiq.io/commercial.html
-[license]: https://github.com/Bogdanp/dramatiq/blob/master/LICENSE
+[COPYING.LESSER]: https://github.com/Bogdanp/dramatiq/blob/master/COPYING.LESSER
 [rabbit]: https://www.rabbitmq.com/
 [redis]: https://redis.io

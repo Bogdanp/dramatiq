@@ -72,6 +72,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: System :: Distributed Computing",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     ],
 )
