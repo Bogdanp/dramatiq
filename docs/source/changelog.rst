@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Cleaned up command line argument descriptions.
+
 
 `1.0.0`_ -- 2018-03-31
 ----------------------
