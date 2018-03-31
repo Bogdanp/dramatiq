@@ -96,6 +96,9 @@ def parse_arguments():
           # Run dramatiq workers with actors defined in `./some_module.py`.
           $ dramatiq some_module
 
+          # Run with a broker named "redis_broker" defined in "some_module".
+          $ dramatiq some_module:redis_broker
+
           # Auto-reload dramatiq when files in the current directory change.
           $ dramatiq --watch . some_module
 
@@ -120,7 +123,7 @@ def parse_arguments():
 """))
     parser.add_argument(
         "broker",
-        help="the broker to use (eg: 'some_module' or 'some_module:some_broker')",
+        help="the broker to use (eg: 'module' or 'module:a_broker')",
     )
     parser.add_argument(
         "modules", metavar="module", nargs="*",
@@ -140,20 +143,20 @@ def parse_arguments():
     )
     parser.add_argument(
         "--queues", "-Q", nargs="*", type=str,
-        help="listen to a subset of queues (default: all declared queues)",
+        help="listen to a subset of queues (default: all queues)",
     )
     parser.add_argument(
         "--pid-file", type=str,
-        help="specify where Dramatiq should write the PID of the master process (default: no pid file)",
+        help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
         "--log-file", type=argparse.FileType(mode="a", encoding="utf-8"),
-        help="specify where Dramatiq should write its logs (default: standard error)",
+        help="write all logs to a file (default: sys.stderr)",
     )
 
     if HAS_WATCHDOG:
         parser.add_argument(
-            "--watch", type=folder_path,
+            "--watch", type=folder_path, metavar="DIR",
             help=(
                 "watch a directory and reload the workers when any source files "
                 "change (this feature must only be used during development)"
@@ -169,7 +172,7 @@ def parse_arguments():
         )
 
     parser.add_argument("--version", action="version", version=__version__)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--verbose", "-v", action="count", default=0, help="turn on verbose log output")
     return parser.parse_args()
 
 
