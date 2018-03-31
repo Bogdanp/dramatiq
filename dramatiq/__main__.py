@@ -7,6 +7,7 @@ import os
 import selectors
 import signal
 import sys
+import tempfile
 import textwrap
 import time
 
@@ -22,6 +23,13 @@ try:
     HAS_WATCHDOG = True
 except ImportError:  # pragma: no cover
     HAS_WATCHDOG = False
+
+#: The exit codes that the master process returns.
+RET_OK = 0  # The process terminated successfully.
+RET_KILLED = 1  # The process was killed.
+RET_IMPORT = 2  # Module imoprt(s) failed or invalid command line argument.
+RET_CONNECT = 3  # Broker connection failed during worker startup.
+RET_PIDFILE = 4  # PID file points to an existing process or cannot be written to.
 
 #: The size of the logging buffer.
 BUFSIZE = 65536
@@ -87,6 +95,12 @@ def parse_arguments():
 
           # Listen only to the "foo" and "bar" queues.
           $ dramatiq some_module -Q foo bar
+
+          # Write the main process pid to a file.
+          $ dramatiq some_module --pid-file /tmp/dramatiq.pid
+
+          # Write logs to a file.
+          $ dramatiq some_module --log-file /tmp/dramatiq.log
 """))
     parser.add_argument(
         "broker",
@@ -110,15 +124,15 @@ def parse_arguments():
     )
     parser.add_argument(
         "--queues", "-Q", nargs="*", type=str,
-        help="use this flag to listen to a subset of queues (default: all declared queues)",
+        help="listen to a subset of queues (default: all declared queues)",
     )
     parser.add_argument(
         "--pid-file", type=str,
-        help="use this flag to specify where Dramatiq should write the PID of the master process",
+        help="specify where Dramatiq should write the PID of the master process (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", type=str,
-        help="use this flag to specify where Dramatiq should write its logs",
+        "--log-file", type=argparse.FileType(mode="a", encoding="utf-8"),
+        help="specify where Dramatiq should write its logs (default: standard error)",
     )
 
     if HAS_WATCHDOG:
@@ -143,26 +157,23 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def setup_pidfile(filename, logger):
-    logger.debug("Setting up PID file %r.", filename)
-    pid = os.getpid()
-
+def setup_pidfile(filename):
     try:
-        logger.debug("Checking PID file %r.", filename)
+        pid = os.getpid()
         with open(filename, "r") as pid_file:
             old_pid = int(pid_file.read().strip())
+            # This can happen when reloading the process via SIGHUP.
+            if old_pid == pid:
+                return pid
 
         try:
-            logger.debug("Found old PID %r. Checking if process exists.", old_pid)
             os.kill(old_pid, 0)
-            logger.critical("Dramatiq is already running with PID %d.", old_pid)
-            return None
+            raise RuntimeError("Dramatiq is already running with PID %d." % old_pid)
         except OSError:
             try:
-                logger.warning("Process does not exist. Removing stale PID file.")
                 os.remove(filename)
             except FileNotFoundError:
-                logger.debug("Failed to remove stale PID file. It's gone.")
+                pass
 
     except FileNotFoundError:  # pragma: no cover
         pass
@@ -170,20 +181,17 @@ def setup_pidfile(filename, logger):
     except ValueError:
         # Abort here to avoid overwriting real files.  Eg. someone
         # accidentally specifies a config file as the pid file.
-        logger.warning("PID file contains garbage. Aborting.")
-        return None
+        raise RuntimeError("PID file contains garbage. Aborting.")
 
     try:
-        logger.debug("Writing PID file %r.", filename)
         with open(filename, "w") as pid_file:
             pid_file.write(str(pid))
 
         # Change permissions to -rw-r--r--.
         os.chmod(filename, 0o644)
         return pid
-    except FileNotFoundError as e:
-        logger.critical("Failed to write PID file. %s %r.", e.strerror, e.filename)
-        return None
+    except (FileNotFoundError, PermissionError) as e:
+        raise RuntimeError("Failed to write PID file %r. %s." % (e.filename, e.strerror))
 
 
 def remove_pidfile(filename, logger):
@@ -194,18 +202,10 @@ def remove_pidfile(filename, logger):
         logger.debug("Failed to remove PID file. It's gone.")
 
 
-def setup_parent_logging(args):
+def setup_parent_logging(args, *, stream=sys.stderr):
     level = verbosity.get(args.verbose, logging.DEBUG)
-    logging.basicConfig(level=level, format=logformat, stream=sys.stderr)
-    logger = get_logger("dramatiq", "MainProcess")
-
-    if args.log_file:
-        file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
-        file_handler.setLevel(level)
-        file_handler.setFormatter(logging.Formatter(logformat))
-        logger.addHandler(file_handler)
-
-    return logger
+    logging.basicConfig(level=level, format=logformat, stream=stream)
+    return get_logger("dramatiq", "MainProcess")
 
 
 def setup_worker_logging(args, worker_id, logging_pipe):
@@ -217,15 +217,7 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=logging_pipe)
     logging.getLogger("pika").setLevel(logging.CRITICAL)
-    logger = get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
-
-    if args.log_file:
-        file_handler = logging.FileHandler(args.log_file, "a", "utf-8")
-        file_handler.setLevel(level)
-        file_handler.setFormatter(logging.Formatter(logformat))
-        logger.addHandler(file_handler)
-
-    return logger
+    return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
 def worker_process(args, worker_id, logging_fd):
@@ -242,10 +234,10 @@ def worker_process(args, worker_id, logging_fd):
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
-        return os._exit(2)
+        return os._exit(RET_IMPORT)
     except ConnectionError:
         logger.exception("Broker connection failed.")
-        return os._exit(3)
+        return os._exit(RET_CONNECT)
 
     def termhandler(signum, frame):
         nonlocal running
@@ -254,7 +246,7 @@ def worker_process(args, worker_id, logging_fd):
             running = False
         else:
             logger.warning("Killing worker process...")
-            return os._exit(1)
+            return os._exit(RET_KILLED)
 
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -275,10 +267,13 @@ def main():  # noqa
     for path in args.path:
         sys.path.append(path)
 
-    logger = setup_parent_logging(args)
-    logger.info("Dramatiq %r is booting up." % __version__)
-    if args.pid_file and not setup_pidfile(args.pid_file, logger):
-        return 4
+    try:
+        if args.pid_file:
+            setup_pidfile(args.pid_file)
+    except RuntimeError as e:
+        logger = setup_parent_logging(args, stream=args.log_file or sys.stderr)
+        logger.critical(e)
+        return RET_PIDFILE
 
     worker_pipes = []
     worker_processes = []
@@ -294,6 +289,11 @@ def main():  # noqa
         os.close(read_fd)
         return worker_process(args, worker_id, write_fd)
 
+    parent_read_fd, parent_write_fd = os.pipe()
+    parent_read_pipe = os.fdopen(parent_read_fd)
+    parent_write_pipe = os.fdopen(parent_write_fd, "w")
+    logger = setup_parent_logging(args, stream=parent_write_pipe)
+    logger.info("Dramatiq %r is booting up." % __version__)
     if args.pid_file:
         atexit.register(remove_pidfile, args.pid_file, logger)
 
@@ -312,8 +312,10 @@ def main():  # noqa
 
     def watch_logs(worker_pipes):
         nonlocal running
+
+        log_file = args.log_file or sys.stderr
         selector = selectors.DefaultSelector()
-        for pipe in worker_pipes:
+        for pipe in [parent_read_pipe] + worker_pipes:
             selector.register(pipe, selectors.EVENT_READ)
 
         buffers = defaultdict(str)
@@ -323,8 +325,8 @@ def main():  # noqa
                 data = os.read(key.fd, BUFSIZE)
                 if not data:
                     selector.unregister(key.fileobj)
-                    sys.stderr.write(buffers[key.fd])
-                    sys.stderr.flush()
+                    log_file.write(buffers[key.fd])
+                    log_file.flush()
                     continue
 
                 buffers[key.fd] += data.decode("utf-8")
@@ -335,9 +337,8 @@ def main():  # noqa
 
                     line = buffers[key.fd][:index + 1]
                     buffers[key.fd] = buffers[key.fd][index + 1:]
-
-                    sys.stderr.write(line)
-                    sys.stderr.flush()
+                    log_file.write(line)
+                    log_file.flush()
 
         logger.debug("Closing selector...")
         selector.close()
@@ -361,7 +362,7 @@ def main():  # noqa
             except OSError:  # pragma: no cover
                 logger.warning("Failed to send %r to pid %d.", signum.name, pid)
 
-    retcode = 0
+    retcode = RET_OK
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
     signal.signal(signal.SIGHUP, sighandler)
@@ -375,7 +376,7 @@ def main():  # noqa
         file_watcher.join()
 
     log_watcher.join()
-    for pipe in worker_pipes:
+    for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes]:
         pipe.close()
 
     if reload_process:

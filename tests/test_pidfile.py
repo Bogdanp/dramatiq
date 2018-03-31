@@ -1,4 +1,5 @@
 import os
+import signal
 import time
 
 from dramatiq.brokers.stub import StubBroker
@@ -58,5 +59,28 @@ def test_cli_aborts_when_pidfile_contains_garbage(start_cli):
 
         # Then the process should exit with return code 4
         assert proc.returncode == 4
+    finally:
+        remove(filename)
+
+
+def test_cli_with_pidfile_can_be_reloaded(start_cli):
+    try:
+        # Given that I have a PID file
+        filename = "test_reload.pid"
+
+        # When I try to start the cli and pass that file as a PID file
+        proc = start_cli("tests.test_pidfile:broker", extra_args=["--pid-file", filename])
+        time.sleep(1)
+
+        # And send the proc a HUP signal
+        proc.send_signal(signal.SIGHUP)
+        time.sleep(3)
+
+        # And then terminate the process
+        proc.terminate()
+        proc.wait()
+
+        # Then the process should exit with return code 0
+        assert proc.returncode == 0
     finally:
         remove(filename)
