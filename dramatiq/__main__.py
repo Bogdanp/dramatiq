@@ -43,7 +43,7 @@ except ImportError:  # pragma: no cover
 #: The exit codes that the master process returns.
 RET_OK = 0  # The process terminated successfully.
 RET_KILLED = 1  # The process was killed.
-RET_IMPORT = 2  # Module imoprt(s) failed or invalid command line argument.
+RET_IMPORT = 2  # Module import(s) failed or invalid command line argument.
 RET_CONNECT = 3  # Broker connection failed during worker startup.
 RET_PIDFILE = 4  # PID file points to an existing process or cannot be written to.
 
