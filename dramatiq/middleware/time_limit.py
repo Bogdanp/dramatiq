@@ -82,7 +82,7 @@ class TimeLimit(Middleware):
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
-        limit = actor.options.get("time_limit", self.time_limit)
+        limit = message.options.get("time_limit") or actor.options.get("time_limit", self.time_limit)
         deadline = time.monotonic() + limit / 1000
         self.deadlines[threading.get_ident()] = deadline
 

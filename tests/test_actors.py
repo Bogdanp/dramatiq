@@ -226,6 +226,30 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     assert sum(successes) == 0
 
 
+@pytest.mark.skipif(_current_platform == "PyPy", reason="Time limits are not supported under PyPy.")
+def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
+    # Given that I have a database
+    attempts, successes = [], []
+
+    # And an actor without an explicit time limit
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        attempts.append(1)
+        time.sleep(2)
+        successes.append(1)
+
+    # If I send it a message with a custom time limit
+    do_work.send_with_options(time_limit=1000)
+
+    # Then join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # I expect it to fail
+    assert sum(attempts) == 1
+    assert sum(successes) == 0
+
+
 def test_actors_can_be_assigned_message_age_limits(stub_broker):
     # Given that I have a database
     runs = []

@@ -9,6 +9,13 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Passing ``time_limit`` in ``send_with_options``.  (`#44`_)
+
+.. _#44: https://github.com/Bogdanp/dramatiq/issues/44
+
 
 `0.20.0`_ -- 2018-03-17
 -----------------------
