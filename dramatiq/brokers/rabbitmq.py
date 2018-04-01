@@ -58,6 +58,9 @@ class RabbitmqBroker(Broker):
       parameters.
 
     Parameters:
+      confirm_delivery(bool): Wait for RabbitMQ to confirm that
+        messages have been committed on every call to enqueue.
+        Defaults to False.
       url(str): An optional connection URL.  If both a URL and
         connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
@@ -68,7 +71,7 @@ class RabbitmqBroker(Broker):
     .. _ConnectionParameters: https://pika.readthedocs.io/en/0.10.0/modules/parameters.html
     """
 
-    def __init__(self, *, url=None, middleware=None, **parameters):
+    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, **parameters):
         super().__init__(middleware=middleware)
 
         if url:
@@ -76,6 +79,7 @@ class RabbitmqBroker(Broker):
         else:
             self.parameters = pika.ConnectionParameters(**parameters)
 
+        self.confirm_delivery = confirm_delivery
         self.connections = set()
         self.channels = set()
         self.queues = set()
@@ -110,6 +114,9 @@ class RabbitmqBroker(Broker):
         channel = getattr(self.state, "channel", None)
         if channel is None:
             channel = self.state.channel = self.connection.channel()
+            if self.confirm_delivery:
+                channel.confirm_delivery()
+
             self.channels.add(channel)
         return channel
 

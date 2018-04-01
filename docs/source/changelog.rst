@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* ``confirm_delivery`` parameter to |RabbitmqBroker|.
+
 Changed
 ^^^^^^^
 
