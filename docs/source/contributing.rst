@@ -12,7 +12,7 @@ rejected so it's always better to start a discussion first!
 
 By submitting contributions, you disavow any rights or claims to any
 changes submitted to the Dramatiq project and assign the copyright of
-those changes to CLEARTPYE SRL.  If you cannot or do not want to
+those changes to CLEARTYPE SRL.  If you cannot or do not want to
 reassign those rights, you shouldn't submit a PR.  Instead, you should
 open an issue and let someone else do that work.
 
