@@ -150,9 +150,8 @@ actor an invalid URL.  Let's try it::
 Error Handling
 --------------
 
-Dramatiq strives for at-least-once message delivery and assumes all
-actors are idempotent.  When an exception occurs while a message is
-being processed, Dramatiq automatically enqueues a retry for that
+Dramatiq assumes all actors are idempotent so when an exception occurs
+during message processing, it automatically enqueues a retry for that
 message with exponential backoff.
 
 That last message we sent will cause something along these lines to be

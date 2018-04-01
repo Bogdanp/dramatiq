@@ -17,10 +17,10 @@ database.
 Retriable Actors
 ----------------
 
-Dramatiq guarantees that messages are delivered to their respective
-actors at least once.  This means that, for any given message, running
-your actor multiple times must be safe.  This is also known as being
-"idempotent".
+Dramatiq actors may receive the same message multiple times in the
+event of a worker failure (hardware, network or power failure).  This
+means that, for any given message, running your actor multiple times
+must be safe.  This is also known as being "idempotent".
 
 
 Simple Messages

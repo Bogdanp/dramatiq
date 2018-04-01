@@ -40,16 +40,20 @@ Messages
 Message Persistence
 ^^^^^^^^^^^^^^^^^^^
 
-Dramatiq has at-least-once message delivery semantics.  Messages sent
-to Dramatiq brokers are persisted to disk and survive across broker
-reboots.  Exactly how often messages are written to disk depends on
-your broker.
+Messages sent to Dramatiq brokers are persisted to disk and survive
+across broker reboots.  Exactly how often messages are flushed to disk
+depends on your broker.
 
 Messages that have been pulled by workers but not processed are
-returned to the broker on shutdown and any messages that are in flight
-while a worker is terminated (eg. via ``SIGKILL``) are going to be
-redelivered later.  Messages are only ever acknowledged to the broker
-when they have finished being processed.
+returned to the broker on graceful shutdown and any messages that are
+in flight when a worker is terminated are going to be redelivered
+later.  Messages are only ever acknowledged to (removed from) the
+broker after they have been successfully processed.
+
+When a worker goes down while processing messages (eg. due to
+hardware, power or network failure) then the messages it pulled from
+the broker will eventually be re-delivered to it (assuming it
+recovers) or another worker.
 
 Message Results
 ^^^^^^^^^^^^^^^

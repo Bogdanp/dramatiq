@@ -35,7 +35,7 @@ of the main differences between Dramatiq, Celery and RQ:
 | Python 2 support             | No       | Yes         | Yes          |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
-| At-least-once delivery       | Yes      | No [#]_     | No           |
+| Reliable delivery            | Yes      | No [#]_     | No           |
 |                              |          |             |              |
 +------------------------------+----------+-------------+--------------+
 | Automatic retries            | Yes      | No          | No           |
