@@ -33,8 +33,8 @@ class TimeLimitExceeded(BaseException):
     """Raised asynchronously inside worker threads when actors exceed
     their time limits.
 
-    This is intentionally *not* a subclass of DramatiqError to avoid
-    it being caught unintentionally.
+    This is *not* a subclass of DramatiqError to avoid it being caught
+    unintentionally.
     """
 
 

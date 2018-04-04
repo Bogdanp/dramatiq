@@ -21,6 +21,12 @@ from .middleware import Middleware
 class Callbacks(Middleware):
     """Middleware that lets you chain success and failure callbacks
     onto Actors.
+
+    Parameters:
+      on_failure(str): The name of an actor to send a message to on
+        failure.
+      on_success(str): The name of an actor to send a message to on
+        success.
     """
 
     @property
