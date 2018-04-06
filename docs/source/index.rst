@@ -3,7 +3,9 @@
 Dramatiq: simple task processing
 ================================
 
-Release v\ |release|. (:doc:`installation`, :doc:`changelog`)
+Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Chat`_)
+
+.. _Chat: https://gitter.im/dramatiq/dramatiq
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
