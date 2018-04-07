@@ -196,9 +196,25 @@ The following metrics are exported:
 
 All metrics define labels for ``queue_name`` and ``actor_name``.
 
-Grafana
-~~~~~~~
+Grafana Dashboard
+~~~~~~~~~~~~~~~~~
 
 You can find a Grafana dashboard that displays these metrics here_.
 
 .. _here: https://grafana.com/dashboards/3692
+
+Gotchas with Prometheus
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The Prometheus client for Python is a bit finicky when it comes to
+exporting metrics from a multi-process configuration.  If your own app
+uses Prometheus, then you should export ``prometheus_multiproc_dir``
+and ``dramatiq_prom_db`` environment variables -- both pointing to an
+existing folder -- before running Dramatiq.  For example::
+
+  mkdir -p /tmp/dramatiq-prometheus \
+    && env prometheus_multiproc_dir=/tmp/dramatiq-prometheus \
+           dramatiq_prom_db=/tmp/dramatiq-prometheus \
+           dramatiq app
+
+If you don't do this, then metrics will likely fail to export properly.
