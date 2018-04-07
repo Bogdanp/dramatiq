@@ -298,6 +298,39 @@ startup (eg. in Docker):
      fi
    done
 
+Binding Worker Groups to Queues
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, Dramatiq workers consume all declared queues, but it's
+common to want to bind worker groups to specific queues in order to
+have better control over throughput.  For example, given the following
+actors::
+
+   @dramatiq.actor
+   def very_slow():
+     ...
+
+   @dramatiq.actor(queue_name="ui-blocking")
+   def very_important():
+     ...
+
+You may want to run one group of workers that only processes messages
+on the ``default`` queue and another that only processes messages off
+of the ``ui-blocking`` queue.  To do that, you have to pass each group
+the appropriate queue on the command line:
+
+.. code-block:: bash
+
+   # Only consume the "default" queue
+   $ dramatiq an_app --queues default
+
+   # Only consume the "ui-blocking" queue
+   $ dramatiq an_app --queues ui-blocking
+
+Messages sent to ``very_slow`` will always be delievered to those
+workers that consume the ``default`` queue and messages sent to
+``very_important`` will always be delievered to the ones that consume
+the ``ui-blocking`` queue.
 
 Rate Limiting
 -------------
