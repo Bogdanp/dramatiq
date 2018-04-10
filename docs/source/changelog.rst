@@ -23,6 +23,15 @@ Changed
 
 * Cleaned up command line argument descriptions.
 
+Fixed
+^^^^^
+
+* ``rabbitmq`` and ``watch`` extra dependencies are only installed
+  when they are explicitly required now.  (`#60`_, `@rpkilby`_)
+
+.. _#60: https://github.com/Bogdanp/dramatiq/issues/60
+.. _@rpkilby: https://github.com/rpkilby
+
 
 `1.0.0`_ -- 2018-03-31
 ----------------------
