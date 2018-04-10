@@ -66,26 +66,41 @@ class RedisBroker(Broker):
         connection parameters are provided, the URL is used.
       middleware(list[Middleware])
       namespace(str): The str with which to prefix all Redis keys.
+      dead_message_ttl(int): The amount of time (in ms) that
+        dead-lettered messages are kept in Redis for.
+      requeue_deadline(int): The amount of time (in ms) to wait before
+        re-enqueueing unacked messages.  This needs to be longer than
+        the longest message delay and message duration combined.
+      requeue_interval(int): The interval (in ms) with which to check
+        for messages that can be re-enqueued.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
 
     .. _StrictRedis: http://redis-py.readthedocs.io/en/latest/#redis.StrictRedis
     """
 
-    def __init__(self, *, url=None, middleware=None, namespace="dramatiq", **parameters):  # noqa
+    def __init__(
+            self, *,
+            url=None, middleware=None, namespace="dramatiq",
+            dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
+            requeue_deadline=DEFAULT_REQUEUE_DEADLINE,
+            requeue_interval=DEFAULT_REQUEUE_INTERVAL,
+            **parameters
+    ):
         super().__init__(middleware=middleware)
 
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
         self.namespace = namespace
-        self.dead_message_ttl = DEFAULT_DEAD_MESSAGE_TTL
-        self.requeue_deadline = DEFAULT_REQUEUE_DEADLINE
-        self.requeue_interval = DEFAULT_REQUEUE_INTERVAL
+        self.dead_message_ttl = dead_message_ttl
+        self.requeue_deadline = requeue_deadline
+        self.requeue_interval = requeue_interval
         self.queues = set()
         self.client = client = redis.StrictRedis(**parameters)
         self.scripts = {name: client.register_script(script) for name, script in _scripts.items()}
         self.watcher = _RedisWatcher(self, interval=self.requeue_interval)
+        self.watcher.start()
 
     def close(self):
         """Close this broker.
@@ -249,7 +264,6 @@ class _RedisWatcher(Thread):
         self.broker = broker
         self.interval = interval
         self.running = False
-        self.start()
 
     def run(self):
         self.logger.debug("Starting watcher...")
