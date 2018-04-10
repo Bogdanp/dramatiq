@@ -13,6 +13,10 @@ Added
 ^^^^^
 
 * ``confirm_delivery`` parameter to |RabbitmqBroker|.
+* ``dead_message_ttl``, ``requeue_deadline`` and ``requeue_interval``
+  parameters to |RedisBroker|.
+* ``url`` parameters to |RedisRLBackend| rate limiter backend.
+* ``url`` parameters to |RedisResBackend| result backend.
 
 Changed
 ^^^^^^^
