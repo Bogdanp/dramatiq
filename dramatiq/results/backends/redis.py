@@ -30,14 +30,20 @@ class RedisBackend(ResultBackend):
         result data.  Defaults to :class:`.JSONEncoder`.
       client(StrictRedis): An optional client.  If this is passed,
         then all other parameters are ignored.
+      url(str): An optional connection URL.  If both a URL and
+        connection paramters are provided, the URL is used.
       \**parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
 
     .. _redis: https://redis.io
     """
 
-    def __init__(self, *, namespace="dramatiq-results", encoder=None, client=None, **parameters):
+    def __init__(self, *, namespace="dramatiq-results", encoder=None, client=None, url=None, **parameters):
         super().__init__(namespace=namespace, encoder=encoder)
+
+        if url:
+            parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
+
         self.client = client or redis.StrictRedis(**parameters)
 
     def get_result(self, message, *, block=False, timeout=None):
