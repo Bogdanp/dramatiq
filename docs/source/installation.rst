@@ -12,14 +12,14 @@ Via pip
 
 To install dramatiq, simply run the following command in a terminal::
 
-  $ pip install -U dramatiq[rabbitmq, watch]
+  $ pip install -U 'dramatiq[rabbitmq, watch]'
 
 RabbitMQ_ is the recommended message broker, but Dramatiq also
 supports Redis_.
 
 If you would like to use it with Redis_ then run::
 
-  $ pip install -U dramatiq[redis, watch]
+  $ pip install -U 'dramatiq[redis, watch]'
 
 If you don't have `pip`_ installed, check out `this guide`_.
 
@@ -40,7 +40,7 @@ Name           Description
 
 If you want to install Dramatiq with all available features, run::
 
-  $ pip install -U dramatiq[all]
+  $ pip install -U 'dramatiq[all]'
 
 Optional Requirements
 ^^^^^^^^^^^^^^^^^^^^^
