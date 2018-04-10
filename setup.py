@@ -41,10 +41,6 @@ for extra in extras:
     extra_dependencies[extra] = list(parse_dependencies(filename))
 
 extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
-extra_dependencies[""] = list(set(
-    extra_dependencies["rabbitmq"] +
-    extra_dependencies["watch"]
-))
 
 setup(
     name="dramatiq",
