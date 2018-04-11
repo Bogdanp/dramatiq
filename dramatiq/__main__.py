@@ -332,6 +332,8 @@ def main():  # noqa
     def watch_logs(worker_pipes):
         nonlocal running
 
+        signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT, signal.SIGTERM, signal.SIGHUP})
+
         log_file = args.log_file or sys.stderr
         selector = selectors.DefaultSelector()
         for pipe in [parent_read_pipe] + worker_pipes:
