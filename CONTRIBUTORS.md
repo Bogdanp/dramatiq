@@ -16,3 +16,4 @@ of those changes to CLEARTYPE SRL.
 | [@aequitas](https://github.com/aequitas) | Johan Bloemberg |
 | [@najamansari](https://github.com/najamansari) | Najam Ahmed Ansari |
 | [@rpkilby](https://github.com/rpkilby) | Ryan P Kilby |
+| [@2miksyn](https://github.com/2miksyn) | Mikhail Smirnov |
