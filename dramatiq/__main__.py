@@ -323,10 +323,11 @@ def main():  # noqa
     # the signals it expects to handle before spawning the file
     # watcher and log watcher threads so that those threads can
     # inherit the blocking behaviour.
-    signal.pthread_sigmask(
-        signal.SIG_BLOCK,
-        {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
-    )
+    if hasattr(signal, "pthread_sigmask"):
+        signal.pthread_sigmask(
+            signal.SIG_BLOCK,
+            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+        )
 
     if HAS_WATCHDOG and args.watch:
         if args.watch_use_polling:
@@ -393,10 +394,11 @@ def main():  # noqa
 
     # Now that the watcher threads have been started, it should be
     # safe to unblock the signals that were previously blocked.
-    signal.pthread_sigmask(
-        signal.SIG_UNBLOCK,
-        {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
-    )
+    if hasattr(signal, "pthread_sigmask"):
+        signal.pthread_sigmask(
+            signal.SIG_UNBLOCK,
+            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+        )
 
     retcode = RET_OK
     signal.signal(signal.SIGINT, sighandler)
