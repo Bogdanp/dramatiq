@@ -417,7 +417,7 @@ def main():  # noqa
 
     if reload_process:
         if sys.argv[0].endswith("/dramatiq/__main__.py"):
-            return os.execvp("python", ["python", "-m", "dramatiq", *sys.argv[1:]])
+            return os.execvp(sys.executable, ["python", "-m", "dramatiq", *sys.argv[1:]])
         return os.execvp(sys.argv[0], sys.argv)
 
     return retcode
