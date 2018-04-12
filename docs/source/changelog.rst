@@ -28,8 +28,12 @@ Fixed
 
 * ``rabbitmq`` and ``watch`` extra dependencies are only installed
   when they are explicitly required now.  (`#60`_, `@rpkilby`_)
+* signal handling from the master process on FreeBSD 10.3.  (`#66`_)
+* reloading now uses ``sys.executable`` when exec'ing workers that
+  were started with ``python -m dramatiq``.
 
 .. _#60: https://github.com/Bogdanp/dramatiq/issues/60
+.. _#66: https://github.com/Bogdanp/dramatiq/issues/66
 .. _@rpkilby: https://github.com/rpkilby
 
 
