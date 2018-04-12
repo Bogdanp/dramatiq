@@ -318,6 +318,16 @@ def main():  # noqa
 
     running, reload_process = True, False
 
+    # To avoid issues with signal delivery to user threads on
+    # platforms such as FreeBSD 10.3, we make the main thread block
+    # the signals it expects to handle before spawning the file
+    # watcher and log watcher threads so that those threads can
+    # inherit the blocking behaviour.
+    signal.pthread_sigmask(
+        signal.SIG_BLOCK,
+        {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+    )
+
     if HAS_WATCHDOG and args.watch:
         if args.watch_use_polling:
             observer_class = watchdog.observers.polling.PollingObserver
@@ -380,6 +390,13 @@ def main():  # noqa
                 os.kill(pid, signum)
             except OSError:  # pragma: no cover
                 logger.warning("Failed to send %r to pid %d.", signum.name, pid)
+
+    # Now that the watcher threads have been started, it should be
+    # safe to unblock the signals that were previously blocked.
+    signal.pthread_sigmask(
+        signal.SIG_UNBLOCK,
+        {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+    )
 
     retcode = RET_OK
     signal.signal(signal.SIGINT, sighandler)
