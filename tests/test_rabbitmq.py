@@ -290,3 +290,20 @@ def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker)
     # Then I expect a QueueJoinTimeout to be raised
     with pytest.raises(QueueJoinTimeout):
         rabbitmq_broker.join(do_work.queue_name, timeout=500)
+
+
+def test_rabbitmq_broker_can_flush_queues(rabbitmq_broker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And then tell the broker to flush all queues
+    rabbitmq_broker.flush_all()
+
+    # And then join on the actors's queue
+    # Then it should join immediately
+    assert rabbitmq_broker.join(do_work.queue_name, min_successes=1, timeout=200) is None

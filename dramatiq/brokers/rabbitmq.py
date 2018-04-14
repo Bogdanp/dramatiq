@@ -309,6 +309,21 @@ class RabbitmqBroker(Broker):
             xq_queue_response.method.message_count,
         )
 
+    def flush(self, queue_name):
+        """Drop all the messages from a queue.
+
+        Parameters:
+          queue_name(str): The queue to flush.
+        """
+        for name in (queue_name, dq_name(queue_name), xq_name(queue_name)):
+            self.channel.queue_purge(name)
+
+    def flush_all(self):
+        """Drop all messages from all declared queues.
+        """
+        for queue_name in self.queues:
+            self.flush(queue_name)
+
     def join(self, queue_name, min_successes=10, idle_time=100, *, timeout=None):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to

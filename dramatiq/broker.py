@@ -241,6 +241,24 @@ class Broker:
         """
         return self.delay_queues.copy()
 
+    def flush(self, queue_name):  # pragma: no cover
+        """Drop all the messages from a queue.
+
+        Parameters:
+          queue_name(str): The name of the queue to flush.
+        """
+        raise NotImplementedError()
+
+    def flush_all(self):  # pragma: no cover
+        """Drop all messages from all declared queues.
+        """
+        raise NotImplementedError()
+
+    def join(self, queue_name, *, timeout=None):  # pragma: no cover
+        """
+        """
+        raise NotImplementedError()
+
 
 class Consumer:
     """Consumers iterate over messages on a queue.

@@ -284,3 +284,20 @@ def test_redis_broker_can_join_with_timeout(redis_broker, redis_worker):
     # Then I expect a QueueJoinTimeout to be raised
     with pytest.raises(QueueJoinTimeout):
         redis_broker.join(do_work.queue_name, timeout=500)
+
+
+def test_redis_broker_can_flush_queues(redis_broker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And then tell the broker to flush all queues
+    redis_broker.flush_all()
+
+    # And then join on the actors's queue
+    # Then it should join immediately
+    assert redis_broker.join(do_work.queue_name, timeout=200) is None

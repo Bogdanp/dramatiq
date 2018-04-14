@@ -18,6 +18,8 @@ Added
 * ``url`` parameters to |RedisRLBackend| rate limiter backend.
 * ``url`` parameters to |RedisResBackend| result backend.
 * ``timeout`` parameter to all the brokers' ``join`` methods.
+* ``flush`` and ``flush_all`` methods to |RedisBroker|.
+* ``flush`` and ``flush_all`` methods to |RabbitmqBroker|.
 
 Changed
 ^^^^^^^

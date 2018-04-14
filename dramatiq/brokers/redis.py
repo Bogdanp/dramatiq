@@ -187,6 +187,21 @@ class RedisBroker(Broker):
         """
         return self.queues.copy()
 
+    def flush(self, queue_name):
+        """Drop all the messages from a queue.
+
+        Parameters:
+          queue_name(str): The queue to flush.
+        """
+        for name in (queue_name, dq_name(queue_name), xq_name(queue_name)):
+            self._purge(name)
+
+    def flush_all(self):
+        """Drop all messages from all declared queues.
+        """
+        for queue_name in self.queues:
+            self.flush(queue_name)
+
     def join(self, queue_name, *, interval=100, timeout=None):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
@@ -247,6 +262,11 @@ class RedisBroker(Broker):
         requeue = self.scripts["requeue_messages"]
         queue_name = self._add_namespace(queue_name)
         requeue(args=[queue_name], keys=message_ids)
+
+    def _purge(self, queue_name):
+        purge = self.scripts["purge"]
+        queue_name = self._add_namespace(queue_name)
+        purge(args=[queue_name])
 
     def _requeue(self):
         requeue = self.scripts["requeue"]
