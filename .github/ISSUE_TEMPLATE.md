@@ -1,7 +1,7 @@
 # Issues
 
 GitHub issues are for bugs.  If you have questions, please ask them on
-the [discussion board][https://discuss.dramatiq.io].
+the [discussion board](https://discuss.dramatiq.io).
 
 ## Checklist
 
