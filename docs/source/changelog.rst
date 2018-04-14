@@ -15,8 +15,8 @@ Added
 * ``confirm_delivery`` parameter to |RabbitmqBroker|.
 * ``dead_message_ttl``, ``requeue_deadline`` and ``requeue_interval``
   parameters to |RedisBroker|.
-* ``url`` parameters to |RedisRLBackend| rate limiter backend.
-* ``url`` parameters to |RedisResBackend| result backend.
+* ``url`` parameter to |RedisRLBackend| rate limiter backend.
+* ``url`` parameter to |RedisResBackend| result backend.
 * ``timeout`` parameter to all the brokers' ``join`` methods.  (`#57`_)
 * ``flush`` and ``flush_all`` methods to |RedisBroker|.  (`#62`_)
 * ``flush`` and ``flush_all`` methods to |RabbitmqBroker|.  (`#62`_)
