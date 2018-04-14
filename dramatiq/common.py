@@ -19,6 +19,8 @@ from queue import Empty
 from random import uniform
 from time import time
 
+from .errors import QueueJoinTimeout
+
 
 def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_exponent=32):
     """Compute an exponential backoff value based on some number of attempts.
@@ -60,6 +62,25 @@ def iter_queue(queue):
             yield queue.get_nowait()
         except Empty:
             break
+
+
+def join_queue(queue, timeout=None):
+    """The join() method of standard queues in Python doesn't support
+    timeouts.  This implements the same functionality as that join
+    method, with optional timeout support, by depending on Queue
+    internals.
+
+    Raises:
+      QueueJoinTimeout: When the timeout is reached.
+
+    Parameters:
+      timeout(Optional[float])
+    """
+    with queue.all_tasks_done:
+        while queue.unfinished_tasks:
+            finished_in_time = queue.all_tasks_done.wait(timeout=timeout)
+            if not finished_in_time:
+                raise QueueJoinTimeout(f"timed out after {timeout} seconds")
 
 
 def join_all(joinables, timeout):

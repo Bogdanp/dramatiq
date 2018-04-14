@@ -25,7 +25,7 @@ from uuid import uuid4
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import compute_backoff, current_millis, dq_name, xq_name
-from ..errors import ConnectionClosed
+from ..errors import ConnectionClosed, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message
 
@@ -187,15 +187,26 @@ class RedisBroker(Broker):
         """
         return self.queues.copy()
 
-    def join(self, queue_name):
+    def join(self, queue_name, *, interval=100, timeout=None):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
 
+        Raises:
+          QueueJoinTimeout: When the timeout elapses.
+
         Parameters:
           queue_name(str): The queue to wait on.
+          interval(Optional[int]): The interval, in milliseconds, at
+            which to check the queues.
+          timeout(Optional[int]): The max amount of time, in
+            milliseconds, to wait on this queue.
         """
+        deadline = timeout and time.monotonic() + timeout / 1000
         while True:
+            if deadline and time.monotonic() >= deadline:
+                raise QueueJoinTimeout(queue_name)
+
             size = 0
             for name in (queue_name, dq_name(queue_name)):
                 size += self.client.hlen(self._add_namespace(name + ".msgs"))
@@ -203,7 +214,7 @@ class RedisBroker(Broker):
             if size == 0:
                 return
 
-            time.sleep(1)
+            time.sleep(interval / 1000)
 
     def _add_namespace(self, queue_name):
         return "%s:%s" % (self.namespace, queue_name)

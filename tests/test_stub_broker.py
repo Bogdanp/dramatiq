@@ -1,7 +1,8 @@
 import dramatiq
 import pytest
+import time
 
-from dramatiq import QueueNotFound
+from dramatiq import QueueNotFound, QueueJoinTimeout
 from unittest.mock import Mock
 
 
@@ -46,3 +47,18 @@ def test_stub_broker_can_be_flushed(stub_broker):
 
     # I expect the queue to have been emptied
     assert stub_broker.queues[do_work.queue_name].qsize() == 0
+
+
+def test_stub_broker_can_join_with_timeout(stub_broker, stub_worker):
+    # Given that I have an actor that takes a long time to run
+    @dramatiq.actor
+    def do_work():
+        time.sleep(1)
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on its queue with a timeout
+    # Then I expect a QueueJoinTimeout to be raised
+    with pytest.raises(QueueJoinTimeout):
+        stub_broker.join(do_work.queue_name, timeout=500)

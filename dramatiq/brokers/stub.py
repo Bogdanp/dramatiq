@@ -14,12 +14,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import time
 
 from itertools import chain
 from queue import Queue, Empty
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import current_millis, dq_name, iter_queue
+from ..common import current_millis, dq_name, iter_queue, join_queue
 from ..errors import QueueNotFound
 from ..message import Message
 
@@ -119,20 +120,25 @@ class StubBroker(Broker):
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
 
-    def join(self, queue_name):
+    def join(self, queue_name, *, timeout=None):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests
         to wait for all the messages in a queue to be processed.
 
+        Raises:
+          QueueJoinTimeout: When the timeout elapses.
+          QueueNotFound: If the given queue was never declared.
+
         Parameters:
           queue_name(str): The queue to wait on.
-
-        Raises:
-          QueueNotFound: If the given queue was never declared.
+          timeout(Optional[int]): The max amount of time, in
+            milliseconds, to wait on this queue.
         """
         try:
+            deadline = timeout and time.monotonic() + timeout / 1000
             for queue_name in (queue_name, dq_name(queue_name)):
-                self.queues[queue_name].join()
+                timeout = deadline and deadline - time.monotonic()
+                join_queue(self.queues[queue_name], timeout=timeout)
         except KeyError:
             raise QueueNotFound(queue_name)
 

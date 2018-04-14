@@ -2,7 +2,7 @@ import dramatiq
 import pytest
 import time
 
-from dramatiq import Message, Worker
+from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.common import current_millis, dq_name, xq_name
 
 
@@ -269,3 +269,18 @@ def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
     # I expect it to have re-enqueued the message
     messages = redis_broker.client.lrange("dramatiq:%s" % dq_name(do_work.queue_name), 0, 10)
     assert message.options["redis_message_id"].encode("utf-8") in messages
+
+
+def test_redis_broker_can_join_with_timeout(redis_broker, redis_worker):
+    # Given that I have an actor that takes a long time to run
+    @dramatiq.actor
+    def do_work():
+        time.sleep(1)
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on its queue with a timeout
+    # Then I expect a QueueJoinTimeout to be raised
+    with pytest.raises(QueueJoinTimeout):
+        redis_broker.join(do_work.queue_name, timeout=500)

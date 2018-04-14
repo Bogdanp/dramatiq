@@ -21,7 +21,7 @@ from .composition import group, pipeline
 from .encoder import Encoder, JSONEncoder, PickleEncoder
 from .errors import (
     DramatiqError,
-    BrokerError, ActorNotFound, QueueNotFound,
+    BrokerError, ActorNotFound, QueueNotFound, QueueJoinTimeout,
     ConnectionError, ConnectionClosed, ConnectionFailed,
     RateLimitExceeded,
 )
@@ -47,7 +47,7 @@ __all__ = [
     # Errors
     "DramatiqError",
     "BrokerError",
-    "ActorNotFound", "QueueNotFound",
+    "ActorNotFound", "QueueNotFound", "QueueJoinTimeout",
     "ConnectionError", "ConnectionClosed", "ConnectionFailed",
     "RateLimitExceeded",
 

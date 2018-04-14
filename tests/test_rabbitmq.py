@@ -3,7 +3,7 @@ import os
 import pytest
 import time
 
-from dramatiq import Message
+from dramatiq import Message, QueueJoinTimeout
 from dramatiq.common import current_millis
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from unittest.mock import Mock
@@ -275,3 +275,18 @@ def test_ignore_scary_logs_filter_ignores_logs():
 
     # Then it should ignore that log message
     assert log_filter.filter(record)
+
+
+def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker):
+    # Given that I have an actor that takes a long time to run
+    @dramatiq.actor
+    def do_work():
+        time.sleep(1)
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on its queue with a timeout
+    # Then I expect a QueueJoinTimeout to be raised
+    with pytest.raises(QueueJoinTimeout):
+        rabbitmq_broker.join(do_work.queue_name, timeout=500)

@@ -42,6 +42,12 @@ class QueueNotFound(BrokerError):
     """
 
 
+class QueueJoinTimeout(DramatiqError):
+    """Raised by brokers that support joining on queues when the join
+    operation times out.
+    """
+
+
 class ConnectionError(BrokerError):
     """Base class for broker connection-related errors.
     """

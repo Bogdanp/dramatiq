@@ -17,6 +17,7 @@ Added
   parameters to |RedisBroker|.
 * ``url`` parameters to |RedisRLBackend| rate limiter backend.
 * ``url`` parameters to |RedisResBackend| result backend.
+* ``timeout`` parameter to all the brokers' ``join`` methods.
 
 Changed
 ^^^^^^^

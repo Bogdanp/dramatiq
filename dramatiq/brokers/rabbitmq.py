@@ -19,13 +19,14 @@ import errno
 import logging
 import pika
 import socket
+import time
 
 from itertools import chain
 from threading import local
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, xq_name
-from ..errors import ConnectionClosed
+from ..errors import ConnectionClosed, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message
 
@@ -308,7 +309,7 @@ class RabbitmqBroker(Broker):
             xq_queue_response.method.message_count,
         )
 
-    def join(self, queue_name, min_successes=10, idle_time=100):
+    def join(self, queue_name, min_successes=10, idle_time=100, *, timeout=None):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
@@ -324,9 +325,15 @@ class RabbitmqBroker(Broker):
             polled queues should be empty.
           idle_time(int): The number of milliseconds to wait between
             counts.
+          timeout(Optional[int]): The max amount of time, in
+            milliseconds, to wait on this queue.
         """
+        deadline = timeout and time.monotonic() + timeout / 1000
         successes = 0
         while successes < min_successes:
+            if deadline and time.monotonic() >= deadline:
+                raise QueueJoinTimeout(queue_name)
+
             total_messages = sum(self.get_queue_message_counts(queue_name)[:-1])
             if total_messages == 0:
                 successes += 1
