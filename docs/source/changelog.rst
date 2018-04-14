@@ -17,9 +17,9 @@ Added
   parameters to |RedisBroker|.
 * ``url`` parameters to |RedisRLBackend| rate limiter backend.
 * ``url`` parameters to |RedisResBackend| result backend.
-* ``timeout`` parameter to all the brokers' ``join`` methods.
-* ``flush`` and ``flush_all`` methods to |RedisBroker|.
-* ``flush`` and ``flush_all`` methods to |RabbitmqBroker|.
+* ``timeout`` parameter to all the brokers' ``join`` methods.  (`#57`_)
+* ``flush`` and ``flush_all`` methods to |RedisBroker|.  (`#62`_)
+* ``flush`` and ``flush_all`` methods to |RabbitmqBroker|.  (`#62`_)
 
 Changed
 ^^^^^^^
@@ -35,7 +35,9 @@ Fixed
 * reloading now uses ``sys.executable`` when exec'ing workers that
   were started with ``python -m dramatiq``.
 
+.. _#57: https://github.com/Bogdanp/dramatiq/issues/57
 .. _#60: https://github.com/Bogdanp/dramatiq/issues/60
+.. _#62: https://github.com/Bogdanp/dramatiq/issues/62
 .. _#66: https://github.com/Bogdanp/dramatiq/issues/66
 .. _@rpkilby: https://github.com/rpkilby
 
