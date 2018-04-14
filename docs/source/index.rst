@@ -101,6 +101,7 @@ Project Info
 
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
+   Discussion Board <https://discuss.dramatiq.io>
    license
 
 
