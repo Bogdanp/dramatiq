@@ -58,7 +58,7 @@ def redis_broker():
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
-    broker.flush_all()
+    broker.client.flushall()
     broker.close()
 
 
