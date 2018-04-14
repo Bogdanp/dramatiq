@@ -4,13 +4,11 @@ import pytest
 import random
 import subprocess
 import sys
-#import uuid
 
 from dramatiq import Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
-#from dramatiq.common import dq_name, xq_name
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
 
