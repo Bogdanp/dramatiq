@@ -39,4 +39,6 @@ that you list all pertinent information (operating system, message
 broker, Python implementation) as part of the issue description.
 Please include a minimal, reproducible test case with every bug
 report.  If the issue is actually a question, consider asking it on
-Stack Overflow first.
+the forum_ or Stack Overflow first.
+
+.. _forum: https://discuss.dramatiq.io

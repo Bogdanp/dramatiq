@@ -7,7 +7,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/2e03a54d3d3ee0bb93c4/maintainability)](https://codeclimate.com/github/Bogdanp/dramatiq/maintainability)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
-[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/dramatiq/dramatiq)
+[![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://discuss.dramatiq.io)
 
 **dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
