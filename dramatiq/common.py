@@ -80,7 +80,7 @@ def join_queue(queue, timeout=None):
         while queue.unfinished_tasks:
             finished_in_time = queue.all_tasks_done.wait(timeout=timeout)
             if not finished_in_time:
-                raise QueueJoinTimeout(f"timed out after {timeout} seconds")
+                raise QueueJoinTimeout("timed out after %.02f seconds" % timeout)
 
 
 def join_all(joinables, timeout):
