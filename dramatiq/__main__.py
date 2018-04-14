@@ -359,7 +359,7 @@ def main():  # noqa
                     log_file.flush()
                     continue
 
-                buffers[key.fd] += data.decode("utf-8")
+                buffers[key.fd] += data.decode("utf-8", errors="ignore")
                 while buffers[key.fd]:
                     index = buffers[key.fd].find("\n")
                     if index == -1:
