@@ -2,7 +2,7 @@
 
 ## Code
 
-Open an issue before attempting to make a contribution.  Any
+[Start a discussion] before attempting to make a contribution.  Any
 contribution that doesn't fit my design goals for the project will be
 rejected so it's always better to start a discussion first!
 
@@ -38,4 +38,5 @@ Please include a minimal, reproducible test case with every bug
 report.  If the issue is actually a question, consider asking it on
 the [discussion board] or Stack Overflow first.
 
+[Start a discussion]: https://discuss.dramatiq.io
 [discussion board]: https://discuss.dramatiq.io
