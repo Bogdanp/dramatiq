@@ -96,7 +96,7 @@ def test_redis_actors_can_have_their_messages_delayed(redis_broker, redis_worker
     assert run_time - start_time >= 1000
 
 
-def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker, redis_worker):
+def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker):
     # Given that I have a database
     results = []
 
@@ -106,7 +106,9 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker,
         results.append(x)
 
     # When I pause the worker
-    redis_worker.pause()
+    worker = Worker(redis_broker, worker_timeout=100, worker_threads=1)
+    worker.start()
+    worker.pause()
 
     # And I send it a delayed message
     append.send_with_options(args=(1,), delay=2000)
@@ -115,9 +117,9 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker,
     append.send_with_options(args=(2,), delay=1000)
 
     # Then resume the worker and join on the queue
-    redis_worker.resume()
+    worker.resume()
     redis_broker.join(append.queue_name)
-    redis_worker.join()
+    worker.join()
 
     # I expect the latter message to have been run first
     assert results == [2, 1]
