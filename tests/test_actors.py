@@ -412,9 +412,11 @@ def test_workers_can_be_paused(stub_broker, stub_worker):
     assert calls == [1]
 
 
-def test_actors_can_prioritize_work(stub_broker, stub_worker):
+def test_actors_can_prioritize_work(stub_broker):
     # Given that I a paused worker
-    stub_worker.pause()
+    worker = Worker(stub_broker, worker_timeout=100, worker_threads=1)
+    worker.start()
+    worker.pause()
 
     # And actors with different priorities
     calls = []
@@ -427,17 +429,18 @@ def test_actors_can_prioritize_work(stub_broker, stub_worker):
     def lo():
         calls.append("lo")
 
-    # When I send both actors a message
-    lo.send()
-    hi.send()
+    # When I send both actors a nubmer of messages
+    for _ in range(10):
+        lo.send()
+        hi.send()
 
     # Then resume the worker and join on the queue
-    stub_worker.resume()
+    worker.resume()
     stub_broker.join(lo.queue_name)
-    stub_worker.join()
+    worker.join()
 
     # Then the high priority actor should run first
-    assert calls == ["hi", "lo"]
+    assert calls == ["hi"] * 10 + ["lo"] * 10
 
 
 def test_actors_can_conditionally_retry(stub_broker, stub_worker):
