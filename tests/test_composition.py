@@ -151,10 +151,10 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     backend = result_backends[backend]
     stub_broker.add_middleware(Results(backend=backend))
 
-    # And I have an actor that sleeps for one second
+    # And I have an actor that sleeps for 100ms
     @dramatiq.actor(store_results=True)
     def wait():
-        time.sleep(1)
+        time.sleep(0.1)
 
     # When I group multiple of these actors together and run them
     t = time.monotonic()
@@ -164,8 +164,8 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     # And wait on the group to complete
     results = list(g.get_results(block=True))
 
-    # Then the total elapsed time should be less than 5 seconds
-    assert time.monotonic() - t <= 3
+    # Then the total elapsed time should be less than 500ms
+    assert time.monotonic() - t <= 0.5
 
     # And I should get back as many results as there were jobs in the group
     assert len(results) == len(g)
@@ -180,10 +180,10 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     backend = result_backends[backend]
     stub_broker.add_middleware(Results(backend=backend))
 
-    # And I have an actor that sleeps for one second
+    # And I have an actor that sleeps for 100ms
     @dramatiq.actor(store_results=True)
     def wait():
-        time.sleep(1)
+        time.sleep(0.1)
 
     # When I group multiple groups inside one group and run it
     t = time.monotonic()
@@ -193,8 +193,8 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     # And wait on the group to complete
     results = list(g.get_results(block=True))
 
-    # Then the total elapsed time should be less than 5 seconds
-    assert time.monotonic() - t <= 3
+    # Then the total elapsed time should be less than 500ms
+    assert time.monotonic() - t <= 0.5
 
     # And I should get back 3 results each with 2 results inside it
     assert results == [[None, None]] * 3
@@ -209,10 +209,10 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     backend = result_backends[backend]
     stub_broker.add_middleware(Results(backend=backend))
 
-    # And I have an actor that sleeps for 3 seconds
+    # And I have an actor that sleeps for 300ms
     @dramatiq.actor(store_results=True)
     def wait():
-        time.sleep(3)
+        time.sleep(0.3)
 
     # When I group a few jobs together and run it
     g = group(wait.message() for _ in range(2))
@@ -221,7 +221,7 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     # And wait for the group to complete with a timeout
     # Then a ResultTimeout error should be raised
     with pytest.raises(ResultTimeout):
-        g.wait(timeout=1000)
+        g.wait(timeout=100)
 
     # And the group should not be completed
     assert not g.completed

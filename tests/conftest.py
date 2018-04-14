@@ -3,18 +3,19 @@ import logging
 import pytest
 import random
 import subprocess
-import uuid
+import sys
+#import uuid
 
 from dramatiq import Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
-from dramatiq.common import dq_name, xq_name
+#from dramatiq.common import dq_name, xq_name
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=logfmt)
+logging.basicConfig(level=logging.INFO, format=logfmt)
 logging.getLogger("pika").setLevel(logging.WARN)
 
 random.seed(1337)
@@ -36,6 +37,7 @@ def stub_broker():
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
+    broker.flush_all()
     broker.close()
 
 
@@ -45,6 +47,7 @@ def rabbitmq_broker():
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
+    broker.flush_all()
     broker.close()
 
 
@@ -55,13 +58,13 @@ def redis_broker():
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
-    broker.client.flushall()
+    broker.flush_all()
     broker.close()
 
 
 @pytest.fixture()
 def stub_worker(stub_broker):
-    worker = Worker(stub_broker, worker_timeout=100)
+    worker = Worker(stub_broker, worker_timeout=100, worker_threads=32)
     worker.start()
     yield worker
     worker.stop()
@@ -69,7 +72,7 @@ def stub_worker(stub_broker):
 
 @pytest.fixture()
 def rabbitmq_worker(rabbitmq_broker):
-    worker = Worker(rabbitmq_broker)
+    worker = Worker(rabbitmq_broker, worker_threads=32)
     worker.start()
     yield worker
     worker.stop()
@@ -85,19 +88,10 @@ def urlrabbitmq_worker(urlrabbitmq_broker):
 
 @pytest.fixture()
 def redis_worker(redis_broker):
-    worker = Worker(redis_broker)
+    worker = Worker(redis_broker, worker_threads=32)
     worker.start()
     yield worker
     worker.stop()
-
-
-@pytest.fixture()
-def rabbitmq_random_queue(rabbitmq_broker):
-    queue_name = "rabbit-queue-%s" % uuid.uuid4()
-    yield queue_name
-    rabbitmq_broker.channel.queue_delete(queue_name)
-    rabbitmq_broker.channel.queue_delete(dq_name(queue_name))
-    rabbitmq_broker.channel.queue_delete(xq_name(queue_name))
 
 
 @pytest.fixture
@@ -114,7 +108,7 @@ def start_cli():
 
     def run(broker_module, *, extra_args=[], **kwargs):
         nonlocal proc
-        args = ["python", "-m", "dramatiq", broker_module]
+        args = [sys.executable, "-m", "dramatiq", broker_module]
         proc = subprocess.Popen(args + extra_args, **kwargs)
         return proc
 

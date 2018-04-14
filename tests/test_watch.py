@@ -31,7 +31,7 @@ def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     # Given that I have a shared file the processes can use to communicate with
     filename = "/tmp/dramatiq-loaded-at"
 
-    # If I start my workers
+    # When I start my workers
     start_cli("tests.test_watch:broker", extra_args=[
         "--processes", "1",
         "--threads", "1",
@@ -43,21 +43,21 @@ def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     write_loaded_at.send(filename)
     broker.join(write_loaded_at.queue_name)
 
-    # I expect a timestamp to have been written to the file
+    # Then I expect a timestamp to have been written to the file
     with open(filename, "r") as f:
         timestamp_1 = int(f.read())
 
-    # If I then update a watched file's mtime
+    # When I then update a watched file's mtime
     (Path("tests") / "test_watch.py").touch()
 
     # And wait for the workers to reload
     time.sleep(1)
 
-    # Then write another timestamp
+    # And write another timestamp
     write_loaded_at.send(filename)
     broker.join(write_loaded_at.queue_name)
 
-    # I expect another timestamp to have been written to the file
+    # Then I expect another timestamp to have been written to the file
     with open(filename, "r") as f:
         timestamp_2 = int(f.read())
 
