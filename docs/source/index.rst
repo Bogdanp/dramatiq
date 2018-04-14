@@ -5,7 +5,7 @@ Dramatiq: simple task processing
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_)
 
-.. _Chat: https://discuss.dramatiq.io
+.. _Discuss: https://discuss.dramatiq.io
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
@@ -100,7 +100,7 @@ Project Info
    :maxdepth: 1
 
    changelog
-   contributing
+   Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    license
 
 
