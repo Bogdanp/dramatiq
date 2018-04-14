@@ -20,6 +20,7 @@ import logging
 import pika
 import socket
 import time
+import warnings
 
 from itertools import chain
 from threading import local
@@ -367,6 +368,10 @@ def URLRabbitmqBroker(url, *, middleware=None):
       middleware(list[Middleware]): The middleware to add to this
         broker.
     """
+    warnings.warn(
+        "URLRabbitmqBroker in favour of the url parameter to RabbitmqBroker.",
+        DeprecationWarning, stacklevel=2,
+    )
     return RabbitmqBroker(url=url, middleware=middleware)
 
 
