@@ -34,6 +34,8 @@ Fixed
 * signal handling from the master process on FreeBSD 10.3.  (`#66`_)
 * reloading now uses ``sys.executable`` when exec'ing workers that
   were started with ``python -m dramatiq``.
+* an issue that caused logging to fail when non-utf-8 characters were
+  printed to stdout/err.  (`#63`_)
 
 .. _#57: https://github.com/Bogdanp/dramatiq/issues/57
 .. _#60: https://github.com/Bogdanp/dramatiq/issues/60
