@@ -26,6 +26,13 @@ Changed
 
 * Cleaned up command line argument descriptions.
 
+Deprecated
+^^^^^^^^^^
+
+* |URLRabbitmqBroker| is deprecated.  The |RabbitmqBroker| takes a
+  ``url`` parameter so use that instead.  |URLRabbitmqBroker| will be
+  removed in version 2.0.
+
 Fixed
 ^^^^^
 
