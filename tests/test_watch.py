@@ -1,4 +1,5 @@
 import dramatiq
+import os
 import platform
 import pytest
 import time
@@ -20,6 +21,7 @@ def write_loaded_at(filename):
         f.write(str(loaded_at))
 
 
+@pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
 @pytest.mark.skipif(_current_platform == "PyPy", reason="Code reloading is not supported on PyPy.")
 @pytest.mark.parametrize("extra_args", [
     (),
