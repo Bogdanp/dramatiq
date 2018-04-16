@@ -69,6 +69,8 @@ class RateLimiterBackend:
 
         Parameters:
           key(str): The key to increment.
+          keys(callable): A callable to return the list of keys to be
+            summed over.
           amount(int): The amount to decrement the value by.
           maximum(int): The maximum sum of the keys.
           ttl(int): The max amount of time in milliseconds the key can

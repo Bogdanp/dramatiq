@@ -81,13 +81,16 @@ class RedisBackend(RateLimiterBackend):
         with self.client.pipeline() as pipe:
             while True:
                 try:
-                    pipe.watch(key, *keys)
+                    # TODO: Drop non-callable keys in Dramatiq v2.
+                    key_list = keys() if callable(keys) else keys
+                    pipe.watch(key, *key_list)
                     value = int(pipe.get(key) or b"0")
                     value += amount
                     if value > maximum:
                         return False
 
-                    values = pipe.mget(keys)
+                    # Fetch keys again to account for net/server latency.
+                    values = pipe.mget(keys() if callable(keys) else keys)
                     total = amount + sum(int(n) for n in values if n)
                     if total > maximum:
                         return False

@@ -100,7 +100,9 @@ class MemcachedBackend(RateLimiterBackend):
                 if value > maximum:
                     return False
 
-                mapping = client.get_multi(keys)
+                # TODO: Drop non-callable keys in Dramatiq v2.
+                key_list = keys() if callable(keys) else keys
+                mapping = client.get_multi(key_list)
                 total = amount + sum(mapping.values())
                 if total > maximum:
                     return False
