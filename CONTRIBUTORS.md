@@ -17,3 +17,4 @@ of those changes to CLEARTYPE SRL.
 | [@najamansari](https://github.com/najamansari) | Najam Ahmed Ansari |
 | [@rpkilby](https://github.com/rpkilby) | Ryan P Kilby |
 | [@2miksyn](https://github.com/2miksyn) | Mikhail Smirnov |
+| [@gdvalle](https://github.com/gdvalle) | Greg Dallavalle |
