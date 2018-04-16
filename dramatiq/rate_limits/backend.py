@@ -64,8 +64,8 @@ class RateLimiterBackend:
         raise NotImplementedError
 
     def incr_and_sum(self, key, keys, amount, maximum, ttl):  # pragma: no cover
-        """Atomically increment a key and return the sum of a set of
-        keys, unless the sum is greater than the given maximum.
+        """Atomically increment a key unless the sum of keys is greater
+        than the given maximum.
 
         Parameters:
           key(str): The key to increment.
