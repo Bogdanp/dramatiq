@@ -28,6 +28,7 @@
 .. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<dramatiq.middleware.TimeLimitExceeded>`
 .. |TimeLimit| replace:: :class:`TimeLimit<dramatiq.middleware.TimeLimit>`
 .. |URLRabbitmqBroker| replace:: :class:`URLRabbitmqBroker<dramatiq.brokers.rabbitmq.URLRabbitmqBroker>`
+.. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<dramatiq.rate_limits.WindowRateLimiter>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`
 .. |Worker_resume| replace:: :meth:`Worker.resume<dramatiq.Worker.resume>`
 .. |actor| replace:: :func:`actor<dramatiq.actor>`

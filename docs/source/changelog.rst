@@ -43,12 +43,17 @@ Fixed
   were started with ``python -m dramatiq``.
 * an issue that caused logging to fail when non-utf-8 characters were
   printed to stdout/err.  (`#63`_)
+* an issue with potentially drifting keys in the |WindowRateLimiter|.
+  (`#69`_, `@gdvalle`_)
 
 .. _#57: https://github.com/Bogdanp/dramatiq/issues/57
 .. _#60: https://github.com/Bogdanp/dramatiq/issues/60
 .. _#62: https://github.com/Bogdanp/dramatiq/issues/62
+.. _#63: https://github.com/Bogdanp/dramatiq/issues/63
 .. _#66: https://github.com/Bogdanp/dramatiq/issues/66
+.. _#69: https://github.com/Bogdanp/dramatiq/issues/69
 .. _@rpkilby: https://github.com/rpkilby
+.. _@gdvalle: https://github.com/gdvalle
 
 
 `1.0.0`_ -- 2018-03-31
