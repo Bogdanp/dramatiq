@@ -3,10 +3,12 @@ import platform
 import pytest
 import time
 
-from dramatiq import Message, Middleware, Worker
+from dramatiq import Message, Middleware
 from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import SkipMessage
 from unittest.mock import patch
+
+from .common import worker
 
 _current_platform = platform.python_implementation()
 
@@ -259,19 +261,19 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
     def do_work():
         runs.append(1)
 
-    # If I send it a message
+    # When I send it a message
     do_work.send()
 
-    # And join on its queue after the age limit has passed
+    # And wait for its age limit to pass
     time.sleep(0.1)
-    worker = Worker(stub_broker, worker_timeout=100)
-    worker.start()
-    stub_broker.join(do_work.queue_name)
-    worker.join()
-    worker.stop()
 
-    # I expect the message to have been skipped
-    assert sum(runs) == 0
+    # Then join on its queue
+    with worker(stub_broker, worker_timeout=100) as stub_worker:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+        # I expect the message to have been skipped
+        assert sum(runs) == 0
 
 
 def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_worker):
@@ -413,34 +415,33 @@ def test_workers_can_be_paused(stub_broker, stub_worker):
 
 
 def test_actors_can_prioritize_work(stub_broker):
-    # Given that I a paused worker
-    worker = Worker(stub_broker, worker_timeout=100, worker_threads=1)
-    worker.start()
-    worker.pause()
+    with worker(stub_broker, worker_timeout=100, worker_threads=1) as stub_worker:
+        # Given that I a paused worker
+        stub_worker.pause()
 
-    # And actors with different priorities
-    calls = []
+        # And actors with different priorities
+        calls = []
 
-    @dramatiq.actor(priority=0)
-    def hi():
-        calls.append("hi")
+        @dramatiq.actor(priority=0)
+        def hi():
+            calls.append("hi")
 
-    @dramatiq.actor(priority=10)
-    def lo():
-        calls.append("lo")
+        @dramatiq.actor(priority=10)
+        def lo():
+            calls.append("lo")
 
-    # When I send both actors a nubmer of messages
-    for _ in range(10):
-        lo.send()
-        hi.send()
+        # When I send both actors a nubmer of messages
+        for _ in range(10):
+            lo.send()
+            hi.send()
 
-    # Then resume the worker and join on the queue
-    worker.resume()
-    stub_broker.join(lo.queue_name)
-    worker.join()
+        # Then resume the worker and join on the queue
+        stub_worker.resume()
+        stub_broker.join(lo.queue_name)
+        stub_worker.join()
 
-    # Then the high priority actor should run first
-    assert calls == ["hi"] * 10 + ["lo"] * 10
+        # Then the high priority actor should run first
+        assert calls == ["hi"] * 10 + ["lo"] * 10
 
 
 def test_actors_can_conditionally_retry(stub_broker, stub_worker):

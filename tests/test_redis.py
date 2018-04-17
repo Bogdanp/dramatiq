@@ -2,8 +2,10 @@ import dramatiq
 import pytest
 import time
 
-from dramatiq import Message, QueueJoinTimeout, Worker
+from dramatiq import Message, QueueJoinTimeout
 from dramatiq.common import current_millis, dq_name, xq_name
+
+from .common import worker
 
 
 def test_redis_actors_can_be_sent_messages(redis_broker, redis_worker):
@@ -106,23 +108,22 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker)
         results.append(x)
 
     # When I pause the worker
-    worker = Worker(redis_broker, worker_timeout=100, worker_threads=1)
-    worker.start()
-    worker.pause()
+    with worker(redis_broker, worker_timeout=100, worker_threads=1) as redis_worker:
+        redis_worker.pause()
 
-    # And I send it a delayed message
-    append.send_with_options(args=(1,), delay=2000)
+        # And I send it a delayed message
+        append.send_with_options(args=(1,), delay=2000)
 
-    # And then another delayed message with a smaller delay
-    append.send_with_options(args=(2,), delay=1000)
+        # And then another delayed message with a smaller delay
+        append.send_with_options(args=(2,), delay=1000)
 
-    # Then resume the worker and join on the queue
-    worker.resume()
-    redis_broker.join(append.queue_name)
-    worker.join()
+        # Then resume the worker and join on the queue
+        redis_worker.resume()
+        redis_broker.join(append.queue_name)
+        redis_worker.join()
 
-    # I expect the latter message to have been run first
-    assert results == [2, 1]
+        # I expect the latter message to have been run first
+        assert results == [2, 1]
 
 
 def test_redis_unacked_messages_can_be_requeued(redis_broker):
@@ -240,10 +241,8 @@ def test_redis_requeues_unhandled_messages_on_shutdown(redis_broker):
     message_2 = do_work.send()
 
     # Then start a worker and subsequently shut it down
-    worker = Worker(redis_broker, worker_threads=1)
-    worker.start()
-    time.sleep(0.25)
-    worker.stop()
+    with worker(redis_broker, worker_threads=1):
+        time.sleep(0.25)
 
     # I expect it to have processed one of the messages and re-enqueued the other
     messages = redis_broker.client.lrange("dramatiq:%s" % do_work.queue_name, 0, 10)
@@ -264,9 +263,8 @@ def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
     message = do_work.send_with_options(delay=10000)
 
     # Then start a worker and subsequently shut it down
-    worker = Worker(redis_broker, worker_threads=1)
-    worker.start()
-    worker.stop()
+    with worker(redis_broker, worker_threads=1):
+        pass
 
     # I expect it to have re-enqueued the message
     messages = redis_broker.client.lrange("dramatiq:%s" % dq_name(do_work.queue_name), 0, 10)
