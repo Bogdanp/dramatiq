@@ -36,3 +36,9 @@ __all__ = [
     "AgeLimit", "Callbacks", "Pipelines", "Prometheus", "Retries",
     "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
 ]
+
+#: The list of middleware that are enabled by default.
+default_middleware = [
+    Prometheus, AgeLimit, TimeLimit, ShutdownNotifications,
+    Callbacks, Pipelines, Retries
+]
