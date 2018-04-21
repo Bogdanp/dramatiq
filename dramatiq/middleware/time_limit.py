@@ -85,3 +85,5 @@ class TimeLimit(Middleware):
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         self.deadlines[threading.get_ident()] = None
+
+    after_skip_message = after_process_message
