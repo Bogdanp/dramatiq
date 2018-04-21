@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import ctypes
-import platform
 import signal
 import threading
 import time
@@ -24,17 +22,12 @@ import warnings
 
 from ..logging import get_logger
 from .middleware import Middleware
-
-_current_platform = platform.python_implementation()
-_supported_platforms = {"CPython"}
+from .threading import Interrupt, current_platform, supported_platforms, raise_thread_exception
 
 
-class TimeLimitExceeded(BaseException):
-    """Raised asynchronously inside worker threads when actors exceed
+class TimeLimitExceeded(Interrupt):
+    """Exception used to interrupt worker threads when actors exceed
     their time limits.
-
-    This is *not* a subclass of DramatiqError to avoid it being caught
-    unintentionally.
     """
 
 
@@ -67,20 +60,7 @@ class TimeLimit(Middleware):
             if deadline and current_time >= deadline:
                 self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
                 self.deadlines[thread_id] = None
-                if _current_platform == "CPython":
-                    self._kill_thread_cpython(thread_id)
-                else:  # pragma: no cover
-                    self.logger.critical("Cannot kill threads on platform %r.", _current_platform)
-
-    def _kill_thread_cpython(self, thread_id):
-        thread_id = ctypes.c_long(thread_id)
-        exception = ctypes.py_object(TimeLimitExceeded)
-        count = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, exception)
-        if count == 0:  # pragma: no cover
-            self.logger.critical("Failed to set exception in worker thread.")
-        elif count > 1:  # pragma: no cover
-            self.logger.critical("Exception was set in multiple threads.  Undoing...")
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.c_long(0))
+                raise_thread_exception(thread_id, TimeLimitExceeded)
 
     @property
     def actor_options(self):
@@ -91,9 +71,9 @@ class TimeLimit(Middleware):
         signal.setitimer(signal.ITIMER_REAL, self.interval / 1000, self.interval / 1000)
         signal.signal(signal.SIGALRM, self._handle)
 
-        if _current_platform not in _supported_platforms:  # pragma: no cover
+        if current_platform not in supported_platforms:  # pragma: no cover
             warnings.warn(
-                "TimeLimit cannot kill threads on your current platform (%r)." % _current_platform,
+                "TimeLimit cannot kill threads on your current platform (%r)." % current_platform,
                 category=RuntimeWarning, stacklevel=2,
             )
 
