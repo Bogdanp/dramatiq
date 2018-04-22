@@ -77,14 +77,6 @@ def rabbitmq_worker(rabbitmq_broker):
 
 
 @pytest.fixture()
-def urlrabbitmq_worker(urlrabbitmq_broker):
-    worker = Worker(urlrabbitmq_broker)
-    worker.start()
-    yield worker
-    worker.stop()
-
-
-@pytest.fixture()
 def redis_worker(redis_broker):
     worker = Worker(redis_broker, worker_threads=32)
     worker.start()
