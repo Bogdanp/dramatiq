@@ -72,10 +72,8 @@ class TimeLimit(Middleware):
         signal.signal(signal.SIGALRM, self._handle)
 
         if current_platform not in supported_platforms:  # pragma: no cover
-            warnings.warn(
-                "TimeLimit cannot kill threads on your current platform (%r)." % current_platform,
-                category=RuntimeWarning, stacklevel=2,
-            )
+            msg = "TimeLimit cannot kill threads on your current platform (%r)."
+            warnings.warn(msg % current_platform, category=RuntimeWarning, stacklevel=2)
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
