@@ -24,7 +24,7 @@ def setup_file_watcher(path, use_polling=False):
     return file_watcher
 
 
-class _SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):
+class _SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):  # pragma: no cover
     """Handles source code change events by sending a HUP signal to
     the current process.
     """
