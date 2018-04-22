@@ -9,6 +9,19 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* |Interrupt| base class for thread-interrupting exceptions. (`@rpkilby`_)
+* |ShutdownNotifications| middleware. (`@rpkilby`_)
+
+Changed
+^^^^^^^
+
+* |TimeLimitExceeded| is now a subclass of |Interrupt|.
+
+.. _@rpkilby: https://github.com/rpkilby
+
 
 `1.1.0`_ -- 2018-04-17
 ----------------------
