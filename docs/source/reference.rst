@@ -80,13 +80,30 @@ The following middleware are all enabled by default.
 .. autoclass:: dramatiq.middleware.Pipelines
 .. autoclass:: dramatiq.middleware.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
+.. autoclass:: dramatiq.middleware.ShutdownNotifications
 .. autoclass:: dramatiq.middleware.TimeLimit
 
 Errors
 ^^^^^^
 
-.. autoclass:: dramatiq.middleware.TimeLimitExceeded
+The class hierarchy for middleware exceptions:
+
+.. code-block:: none
+
+    BaseException
+    +-- Exception
+    |   +-- dramatiq.middleware.MiddlewareError
+    |       +-- dramatiq.middleware.SkipMessage
+    +-- dramatiq.middleware.Interrupt
+        +-- dramatiq.middleware.Shutdown
+        +-- dramatiq.middleware.TimeLimitExceeded
+
+
+.. autoclass:: dramatiq.middleware.MiddlewareError
 .. autoclass:: dramatiq.middleware.SkipMessage
+.. autoclass:: dramatiq.middleware.Interrupt
+.. autoclass:: dramatiq.middleware.TimeLimitExceeded
+.. autoclass:: dramatiq.middleware.Shutdown
 
 
 Results
