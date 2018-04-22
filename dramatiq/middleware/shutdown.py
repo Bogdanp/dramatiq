@@ -15,9 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import signal
 import threading
-import time
 import warnings
 
 from ..logging import get_logger
@@ -25,14 +23,15 @@ from .middleware import Middleware
 from .threading import Interrupt, current_platform, supported_platforms, raise_thread_exception
 
 
-class TimeLimitExceeded(Interrupt):
-    """Exception used to interrupt worker threads when actors exceed
-    their time limits.
+class Shutdown(Interrupt):
+    """Exception used to interrupt worker threads when their worker
+    processes have been signaled for termination.
     """
 
 
-class TimeLimit(Middleware):
-    """Middleware that cancels actors that run for too long.
+class ShutdownNotifications(Middleware):
+    """Middleware that interrupts actors whose worker process has been
+    signaled for termination.
     Currently, this is only available on CPython.
 
     Note:
@@ -42,48 +41,48 @@ class TimeLimit(Middleware):
       this means that this middleware can't cancel system calls.
 
     Parameters:
-      time_limit(int): The maximum number of milliseconds actors may
-        run for.
-      interval(int): The interval (in milliseconds) with which to
-        check for actors that have exceeded the limit.
+      notify_shutdown(bool): When true, the actor will be interrupted
+        if the worker process was terminated.
     """
 
-    def __init__(self, *, time_limit=600000, interval=1000):
+    def __init__(self, notify_shutdown=False):
         self.logger = get_logger(__name__, type(self))
-        self.time_limit = time_limit
-        self.interval = interval
-        self.deadlines = {}
-
-    def _handle(self, signum, mask):
-        current_time = time.monotonic()
-        for thread_id, deadline in self.deadlines.items():
-            if deadline and current_time >= deadline:
-                self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
-                self.deadlines[thread_id] = None
-                raise_thread_exception(thread_id, TimeLimitExceeded)
+        self.notify_shutdown = notify_shutdown
+        self.notifications = set()
 
     @property
     def actor_options(self):
-        return {"time_limit"}
+        return {"notify_shutdown"}
+
+    def should_notify(self, actor, message):
+        notify = message.options.get("notify_shutdown")
+        if notify is None:
+            notify = actor.options.get("notify_shutdown")
+        if notify is None:
+            notify = self.notify_shutdown
+        return bool(notify)
 
     def after_process_boot(self, broker):
-        self.logger.debug("Setting up timers...")
-        signal.setitimer(signal.ITIMER_REAL, self.interval / 1000, self.interval / 1000)
-        signal.signal(signal.SIGALRM, self._handle)
-
         if current_platform not in supported_platforms:  # pragma: no cover
-            warnings.warn(
-                "TimeLimit cannot kill threads on your current platform (%r)." % current_platform,
-                category=RuntimeWarning, stacklevel=2,
-            )
+            msg = "ShutdownNotifications cannot kill threads on your current platform (%r)."
+            warnings.warn(msg % current_platform, category=RuntimeWarning, stacklevel=2)
+
+    def before_worker_shutdown(self, broker, worker):
+        self.logger.debug("Sending shutdown notification to worker threads...")
+        for thread_id in self.notifications:
+            self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+            raise_thread_exception(thread_id, Shutdown)
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
-        limit = message.options.get("time_limit") or actor.options.get("time_limit", self.time_limit)
-        deadline = time.monotonic() + limit / 1000
-        self.deadlines[threading.get_ident()] = deadline
+
+        if self.should_notify(actor, message):
+            self.notifications.add(threading.get_ident())
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        self.deadlines[threading.get_ident()] = None
+        thread_id = threading.get_ident()
+
+        if thread_id in self.notifications:
+            self.notifications.remove(thread_id)
 
     after_skip_message = after_process_message

@@ -63,6 +63,45 @@ leveraging the |Results| middleware.  In most cases you can get by
 without needing this capability so the middleware is not turned on by
 default.  When you do need it, however, it's there.
 
+.. _message-interrupts:
+
+Message Interrupts
+^^^^^^^^^^^^^^^^^^
+
+Dramatiq may interrupt message processing mid-execution.  This is
+achieved by asynchronously raising an exception in the worker thread
+that is currently processing the message.
+
+.. attention::
+   Currently, interrupts are only supported on CPython and are subject
+   to the restrictions of the GIL.  This means the interupt exception
+   will only be raised the next time that thread acquires the GIL, and
+   they are unable to cancel system calls.
+
+Interrupts are used by the following middleware:
+
+* |ShutdownNotifications| (raises |Shutdown|)
+* |TimeLimit| (raises |TimeLimitExceeded|)
+
+In order to gracefully handle interrupts, wrap the code in a try/except
+block, catching the appropriate exception type.  To attempt to requeue
+the message, raise an exception to indicate failure.
+
+.. code-block:: python
+
+   import dramatiq
+   from dramatiq.middleware import Interrupt
+
+   @dramatiq.actor(max_retries=3, notify_shutdown=True)
+   def long_running_task:
+       try:
+           setup()
+           do_work()
+       except Shutdown:
+           cleanup()
+           raise
+
+
 Enqueueing Messages from Other Languages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
