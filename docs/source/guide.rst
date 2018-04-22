@@ -292,6 +292,8 @@ specifying the ``time_limit`` (in milliseconds) of each one::
    Time limits are best-effort.  They cannot cancel system calls or
    any function that doesn't currently hold the GIL under CPython.
 
+   For more information, see the section on :ref:`message-interrupts`.
+
 
 Handling Time Limits
 ^^^^^^^^^^^^^^^^^^^^
