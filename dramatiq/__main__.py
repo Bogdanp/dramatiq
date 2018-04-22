@@ -24,7 +24,6 @@ import os
 import selectors
 import signal
 import sys
-import textwrap
 import time
 
 from collections import defaultdict
@@ -32,9 +31,7 @@ from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker, g
 from threading import Thread
 
 try:
-    import watchdog.events
-    import watchdog.observers.polling
-    import watchdog_gevent
+    from .watcher import setup_file_watcher
 
     HAS_WATCHDOG = True
 except ImportError:  # pragma: no cover
@@ -61,6 +58,38 @@ verbosity = {
     0: logging.INFO,
     1: logging.DEBUG,
 }
+
+#: Message printed after the help text.
+HELP_EPILOG = """\
+examples:
+  # Run dramatiq workers with actors defined in `./some_module.py`.
+  $ dramatiq some_module
+
+  # Run with a broker named "redis_broker" defined in "some_module".
+  $ dramatiq some_module:redis_broker
+
+  # Auto-reload dramatiq when files in the current directory change.
+  $ dramatiq --watch . some_module
+
+  # Run dramatiq with 1 thread per process.
+  $ dramatiq --threads 1 some_module
+
+  # Run dramatiq with gevent.  Make sure you `pip install gevent` first.
+  $ dramatiq-gevent --processes 1 --threads 1024 some_module
+
+  # Import extra modules.  Useful when your main module doesn't import
+  # all the modules you need.
+  $ dramatiq some_module some_other_module
+
+  # Listen only to the "foo" and "bar" queues.
+  $ dramatiq some_module -Q foo bar
+
+  # Write the main process pid to a file.
+  $ dramatiq some_module --pid-file /tmp/dramatiq.pid
+
+  # Write logs to a file.
+  $ dramatiq some_module --log-file /tmp/dramatiq.log
+"""
 
 
 def import_broker(value):
@@ -91,36 +120,8 @@ def parse_arguments():
         prog="dramatiq",
         description="Run dramatiq workers.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=textwrap.dedent("""\
-        examples:
-          # Run dramatiq workers with actors defined in `./some_module.py`.
-          $ dramatiq some_module
-
-          # Run with a broker named "redis_broker" defined in "some_module".
-          $ dramatiq some_module:redis_broker
-
-          # Auto-reload dramatiq when files in the current directory change.
-          $ dramatiq --watch . some_module
-
-          # Run dramatiq with 1 thread per process.
-          $ dramatiq --threads 1 some_module
-
-          # Run dramatiq with gevent.  Make sure you `pip install gevent` first.
-          $ dramatiq-gevent --processes 1 --threads 1024 some_module
-
-          # Import extra modules.  Useful when your main module doesn't import
-          # all the modules you need.
-          $ dramatiq some_module some_other_module
-
-          # Listen only to the "foo" and "bar" queues.
-          $ dramatiq some_module -Q foo bar
-
-          # Write the main process pid to a file.
-          $ dramatiq some_module --pid-file /tmp/dramatiq.pid
-
-          # Write logs to a file.
-          $ dramatiq some_module --log-file /tmp/dramatiq.log
-"""))
+        epilog=HELP_EPILOG,
+    )
     parser.add_argument(
         "broker",
         help="the broker to use (eg: 'module' or 'module:a_broker')",
@@ -330,15 +331,7 @@ def main():  # noqa
         )
 
     if HAS_WATCHDOG and args.watch:
-        if args.watch_use_polling:
-            observer_class = watchdog.observers.polling.PollingObserver
-        else:
-            observer_class = watchdog_gevent.Observer
-
-        file_event_handler = SourceChangesHandler(patterns=["*.py"])
-        file_watcher = observer_class()
-        file_watcher.schedule(file_event_handler, args.watch, recursive=True)
-        file_watcher.start()
+        file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
 
     def watch_logs(worker_pipes):
         nonlocal running
@@ -423,14 +416,6 @@ def main():  # noqa
         return os.execvp(sys.argv[0], sys.argv)
 
     return retcode
-
-
-if HAS_WATCHDOG:
-    class SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):
-        def on_any_event(self, event):
-            logger = logging.getLogger("SourceChangesHandler")
-            logger.info("Detected changes to %r.", event.src_path)
-            os.kill(os.getpid(), signal.SIGHUP)
 
 
 if __name__ == "__main__":
