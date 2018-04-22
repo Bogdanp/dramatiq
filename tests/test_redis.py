@@ -1,7 +1,8 @@
-import dramatiq
-import pytest
 import time
 
+import pytest
+
+import dramatiq
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.common import current_millis, dq_name, xq_name
 
@@ -213,7 +214,7 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
     redis_worker.join()
 
     # I expect the message to end up on the dead letter queue
-    dead_queue_name = "dramatiq:%s" % xq_name('some-queue')
+    dead_queue_name = "dramatiq:%s" % xq_name("some-queue")
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert message.options["redis_message_id"].encode("utf-8") in dead_ids
 

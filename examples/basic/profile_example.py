@@ -1,8 +1,9 @@
-import dramatiq
 import logging
 import random
 import sys
 import time
+
+import dramatiq
 import yappi
 
 logger = logging.getLogger("example")

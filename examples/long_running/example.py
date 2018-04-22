@@ -1,8 +1,9 @@
-import dramatiq
 import os
 import random
 import sys
 import time
+
+import dramatiq
 
 if os.getenv("REDIS") == "1":
     from dramatiq.brokers.redis import RedisBroker

@@ -1,9 +1,10 @@
-import dramatiq
-import pytest
 import time
-
-from dramatiq import QueueNotFound, QueueJoinTimeout
 from unittest.mock import Mock
+
+import pytest
+
+import dramatiq
+from dramatiq import QueueJoinTimeout, QueueNotFound
 
 
 def test_stub_broker_raises_queue_error_when_consuming_undeclared_queues(stub_broker):

@@ -8,7 +8,6 @@ import dramatiq
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.middleware import shutdown, threading
 
-
 not_supported = threading.current_platform not in threading.supported_platforms
 
 

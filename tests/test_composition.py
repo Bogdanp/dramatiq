@@ -1,10 +1,11 @@
-import dramatiq
-import pytest
 import time
+from threading import Condition
 
+import pytest
+
+import dramatiq
 from dramatiq import group, pipeline
 from dramatiq.results import Results, ResultTimeout
-from threading import Condition
 
 
 def test_messages_can_be_piped(stub_broker):

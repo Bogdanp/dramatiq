@@ -20,7 +20,6 @@ import json
 import pickle
 import typing
 
-
 #: Represents the contents of a Message object as a dict.
 MessageData = typing.Dict[str, typing.Any]
 

@@ -21,7 +21,7 @@ import platform
 
 from ..logging import get_logger
 
-__all__ = ['Interrupt', 'raise_thread_exception']
+__all__ = ["Interrupt", "raise_thread_exception"]
 
 
 logger = get_logger(__name__)

@@ -17,7 +17,7 @@
 
 import time
 
-from ..backend import ResultBackend, Missing
+from ..backend import Missing, ResultBackend
 
 
 class StubBackend(ResultBackend):

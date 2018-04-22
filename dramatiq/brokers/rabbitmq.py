@@ -17,13 +17,13 @@
 
 import errno
 import logging
-import pika
 import socket
 import time
 import warnings
-
 from itertools import chain
 from threading import local
+
+import pika
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, xq_name

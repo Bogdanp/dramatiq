@@ -17,7 +17,7 @@
 
 from pylibmc import Client, ClientPool
 
-from ..backend import ResultBackend, Missing
+from ..backend import Missing, ResultBackend
 
 
 class MemcachedBackend(ResultBackend):

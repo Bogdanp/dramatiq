@@ -1,15 +1,16 @@
 import argparse
-import dramatiq
 import hashlib
 import logging
 import os
-import pylibmc
 import re
-import requests
 import sys
-
 from contextlib import closing
 from threading import local
+
+import pylibmc
+import requests
+
+import dramatiq
 
 logger = logging.getLogger("example")
 memcache_client = pylibmc.Client(["localhost"], binary=True)

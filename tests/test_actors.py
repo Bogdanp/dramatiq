@@ -1,12 +1,13 @@
-import dramatiq
 import platform
-import pytest
 import time
+from unittest.mock import patch
 
+import pytest
+
+import dramatiq
 from dramatiq import Message, Middleware
 from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import SkipMessage
-from unittest.mock import patch
 
 from .common import worker
 

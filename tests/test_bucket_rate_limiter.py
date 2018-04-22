@@ -1,5 +1,6 @@
-import pytest
 import time
+
+import pytest
 
 from dramatiq.rate_limits import BucketRateLimiter
 

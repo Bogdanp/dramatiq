@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import glob
-import redis
 import time
-
 from os import path
 from threading import Thread
 from uuid import uuid4
+
+import redis
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import compute_backoff, current_millis, dq_name, xq_name

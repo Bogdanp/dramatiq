@@ -1,5 +1,6 @@
-import dramatiq
 import pytest
+
+import dramatiq
 
 
 @pytest.fixture

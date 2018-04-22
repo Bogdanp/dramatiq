@@ -1,13 +1,14 @@
-import dramatiq
 import logging
 import os
-import pylibmc
-import pytest
 import random
-import redis
 import subprocess
 import sys
 
+import pylibmc
+import pytest
+import redis
+
+import dramatiq
 from dramatiq import Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker

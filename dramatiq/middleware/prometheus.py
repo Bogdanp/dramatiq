@@ -18,7 +18,6 @@
 import fcntl
 import glob
 import os
-
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread

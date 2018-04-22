@@ -17,7 +17,6 @@
 
 import os
 import time
-
 from collections import defaultdict
 from itertools import chain
 from queue import Empty, PriorityQueue, Queue

@@ -1,12 +1,13 @@
-import dramatiq
 import os
-import pytest
 import time
-
-from dramatiq import Message, QueueJoinTimeout
-from dramatiq.common import current_millis
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from unittest.mock import Mock
+
+import pytest
+
+import dramatiq
+from dramatiq import Message, QueueJoinTimeout
+from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
+from dramatiq.common import current_millis
 
 
 def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():

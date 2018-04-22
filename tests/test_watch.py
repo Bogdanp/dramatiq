@@ -1,13 +1,13 @@
-import dramatiq
 import os
 import platform
-import pytest
 import time
-
-from dramatiq.brokers.redis import RedisBroker
-from dramatiq.common import current_millis
 from pathlib import Path
 
+import pytest
+
+import dramatiq
+from dramatiq.brokers.redis import RedisBroker
+from dramatiq.common import current_millis
 
 broker = RedisBroker()
 loaded_at = current_millis()

@@ -17,14 +17,12 @@
 
 import time
 import uuid
-
 from collections import namedtuple
 
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .results import Results
-
 
 #: The global encoder instance.
 global_encoder = JSONEncoder()

@@ -1,7 +1,8 @@
-import dramatiq
+from collections import Counter
+
 import pytest
 
-from collections import Counter
+import dramatiq
 
 
 def test_actors_can_define_success_callbacks(stub_broker, stub_worker):

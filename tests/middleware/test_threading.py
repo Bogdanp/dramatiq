@@ -6,7 +6,6 @@ import pytest
 
 from dramatiq.middleware import threading
 
-
 not_supported = threading.current_platform not in threading.supported_platforms
 
 

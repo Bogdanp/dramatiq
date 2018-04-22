@@ -1,13 +1,13 @@
 import argparse
-import dramatiq
 import random
 import sys
 import time
 
+import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.encoder import PickleEncoder
-from dramatiq.results.backends import RedisBackend
 from dramatiq.results import Results
+from dramatiq.results.backends import RedisBackend
 
 result_backend = RedisBackend(encoder=PickleEncoder())
 broker = RabbitmqBroker()

@@ -1,7 +1,7 @@
-import dramatiq
 import sys
 import time
 
+import dramatiq
 from pympler import tracker
 
 from .example import crawl  # noqa

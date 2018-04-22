@@ -1,9 +1,10 @@
-import dramatiq
 import os
-import pytest
 import random
 import time
 
+import pytest
+
+import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 
 broker = RedisBroker()

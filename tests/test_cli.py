@@ -1,6 +1,6 @@
-import pytest
-
 from subprocess import PIPE, STDOUT
+
+import pytest
 
 fakebroker = object()
 

@@ -16,10 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .backend import RateLimiterBackend
-from .rate_limiter import RateLimiter, RateLimitExceeded
-
 from .bucket import BucketRateLimiter
 from .concurrent import ConcurrentRateLimiter
+from .rate_limiter import RateLimiter, RateLimitExceeded
 from .window import WindowRateLimiter
 
 __all__ = [

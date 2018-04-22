@@ -15,9 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
-
 from itertools import chain
-from queue import Queue, Empty
+from queue import Empty, Queue
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, iter_queue, join_queue

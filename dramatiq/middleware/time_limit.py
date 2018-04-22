@@ -22,7 +22,7 @@ import warnings
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, supported_platforms, raise_thread_exception
+from .threading import Interrupt, current_platform, raise_thread_exception, supported_platforms
 
 
 class TimeLimitExceeded(Interrupt):

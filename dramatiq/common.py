@@ -43,7 +43,8 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
 
 
 def current_millis():
-    "Returns the current UNIX time in milliseconds."
+    """Returns the current UNIX time in milliseconds.
+    """
     return int(time() * 1000)
 
 

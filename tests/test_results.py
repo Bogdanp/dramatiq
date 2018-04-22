@@ -1,8 +1,9 @@
-import dramatiq
-import pytest
 import time
 
-from dramatiq.results import Results, ResultTimeout, ResultMissing
+import pytest
+
+import dramatiq
+from dramatiq.results import ResultMissing, Results, ResultTimeout
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])

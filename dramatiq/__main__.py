@@ -25,10 +25,10 @@ import selectors
 import signal
 import sys
 import time
-
 from collections import defaultdict
-from dramatiq import __version__, Broker, ConnectionError, Worker, get_broker, get_logger
 from threading import Thread
+
+from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
 
 try:
     from .watcher import setup_file_watcher

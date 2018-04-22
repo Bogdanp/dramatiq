@@ -1,5 +1,6 @@
-import dramatiq
 import pytest
+
+import dramatiq
 
 
 def test_generic_actors_can_be_defined(stub_broker):
