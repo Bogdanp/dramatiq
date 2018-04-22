@@ -1,7 +1,10 @@
 import dramatiq
 import logging
+import os
+import pylibmc
 import pytest
 import random
+import redis
 import subprocess
 import sys
 
@@ -17,6 +20,29 @@ logging.basicConfig(level=logging.INFO, format=logfmt)
 logging.getLogger("pika").setLevel(logging.WARN)
 
 random.seed(1337)
+
+CI = os.environ.get("TRAVIS") == "true"
+
+
+def check_rabbitmq(broker):
+    try:
+        broker.connection
+    except Exception as e:
+        raise e if CI else pytest.skip("No connection to RabbmitMQ server.")
+
+
+def check_redis(client):
+    try:
+        client.ping()
+    except redis.ConnectionError as e:
+        raise e if CI else pytest.skip("No connection to Redis server.")
+
+
+def check_memcached(client):
+    try:
+        client.get_stats()
+    except pylibmc.SomeErrors as e:
+        raise e if CI else pytest.skip("No connection to memcached server.")
 
 
 @pytest.mark.hookwrapper
@@ -42,6 +68,7 @@ def stub_broker():
 @pytest.fixture()
 def rabbitmq_broker():
     broker = RabbitmqBroker()
+    check_rabbitmq(broker)
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
@@ -52,6 +79,7 @@ def rabbitmq_broker():
 @pytest.fixture()
 def redis_broker():
     broker = RedisBroker()
+    check_redis(broker.client)
     broker.client.flushall()
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
@@ -113,6 +141,7 @@ def start_cli():
 def memcached_rate_limiter_backend():
     backend = rl_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
     with backend.pool.reserve() as client:
+        check_memcached(client)
         client.flush_all()
     return backend
 
@@ -120,6 +149,7 @@ def memcached_rate_limiter_backend():
 @pytest.fixture
 def redis_rate_limiter_backend():
     backend = rl_backends.RedisBackend()
+    check_redis(backend.client)
     backend.client.flushall()
     return backend
 
@@ -142,6 +172,7 @@ def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_bac
 def memcached_result_backend():
     backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
     with backend.pool.reserve() as client:
+        check_memcached(client)
         client.flush_all()
     return backend
 
@@ -149,6 +180,7 @@ def memcached_result_backend():
 @pytest.fixture
 def redis_result_backend():
     backend = res_backends.RedisBackend()
+    check_redis(backend.client)
     backend.client.flushall()
     return backend
 
