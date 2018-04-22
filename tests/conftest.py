@@ -46,16 +46,6 @@ def check_memcached(client):
         raise e if CI else pytest.skip("No connection to memcached server.")
 
 
-@pytest.mark.hookwrapper
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    if item.get_marker("flaky"):
-        report = outcome.get_result()
-        if report.outcome == "failed":
-            report.outcome = "skipped"
-            report.wasxfail = "skipped flaky test"
-
-
 @pytest.fixture()
 def stub_broker():
     broker = StubBroker()
