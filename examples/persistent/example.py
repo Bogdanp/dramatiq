@@ -13,49 +13,60 @@ if os.getenv("REDIS") == "1":
     dramatiq.set_broker(broker)
 
 
-def get_state(n):
+def path_to(*xs):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), *(str(x) for x in xs)))
+
+
+def load_state(n):
     try:
-        with open(os.path.join("states", str(n)), "r") as state:
-            data = json.load(state)
-            i, x2, x1 = data["i"], data["x2"], data["x1"]
-            fib.logger.debug("Resuming fib(%d) from iteration %d ...", n, i)
-            return i, x2, x1
+        with open(path_to("states", n), "r") as f:
+            data = json.load(f)
     except Exception:
-        fib.logger.debug("Could not read state file, using defaults ...")
+        fib.logger.info("Could not read state file, using defaults.")
         return 1, 1, 0
 
+    i, x2, x1 = data["i"], data["x2"], data["x1"]
+    fib.logger.info("Resuming fib(%d) from iteration %d.", n, i)
+    return i, x2, x1
 
-def save_state(n, i, x2, x1):
+
+def dump_state(n, state):
     os.makedirs("states", exist_ok=True)
-    with open(os.path.join("states", str(n)), "w") as state:
-        json.dump({"i": i, "x2": x2, "x1": x1}, state)
-        fib.logger.debug("Saved fib(%d) state for iteration %d ...", n, i)
+    with open(path_to("states", n), "w") as f:
+        json.dump(state, f)
+
+    fib.logger.info("Dumped fib(%d) state for iteration %d.", n, state["i"])
 
 
-def del_state(n):
+def remove_state(n):
     try:
-        os.remove(os.path.join("states", str(n)))
-        fib.logger.debug("Deleted state for fib(%d) ...", n)
+        os.remove(path_to("states", n))
     except OSError:
         pass
+
+    fib.logger.info("Deleted state for fib(%d).", n)
 
 
 @dramatiq.actor(time_limit=float("inf"), notify_shutdown=True, max_retries=0)
 def fib(n):
-    i, x2, x1 = get_state(n)
+    i, x2, x1 = load_state(n)
 
     try:
         for i in range(i, n + 1):
-            state = {"i": i, "x2": x2, "x1": x1}
+            state = {
+                "i": i,
+                "x2": x2,
+                "x1": x1,
+            }
 
-            x2, x1 = x1, (x2 + x1)
+            x2, x1 = x1, x2 + x1
             fib.logger.info("fib(%d): %d", i, x1)
             time.sleep(.1)
 
-        del_state(n)
+        remove_state(n)
         fib.logger.info("Done!")
     except Shutdown:
-        save_state(n, **state)
+        dump_state(n, state)
 
 
 def main(args):
