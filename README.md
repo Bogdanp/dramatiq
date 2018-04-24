@@ -14,7 +14,7 @@
 <hr/>
 
 **Changelog**: https://dramatiq.io/changelog.html <br/>
-**Community**: https://dicsuss.dramatiq.io <br/>
+**Community**: https://discuss.dramatiq.io <br/>
 **Documentation**: https://dramatiq.io
 
 <hr/>
