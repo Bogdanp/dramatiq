@@ -1,0 +1,34 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
+      PYTHON_ARCH: "64"
+
+services:
+  - memcached
+  - rabbitmq-server
+  - redis-server
+
+install:
+  - choco install memcached rabbitmq redis-64
+  - ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "%CMD_IN_ENV% python --version"
+  - "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - "%CMD_IN_ENV% python -m pip install --upgrade pip"
+  - "%CMD_IN_ENV% pip install -r requirements/dev.txt"
+
+build_script:
+  - "%CMD_IN_ENV% python setup.py build"
+
+test_script:
+  - "%CMD_IN_ENV% py.test"
+
+after_test:
+  - "%CMD_IN_ENV% python setup.py bdist_wheel"
+  - "%CMD_IN_ENV% python setup.py bdist_wininst"
+  - "%CMD_IN_ENV% python setup.py bdist_msi"
+  - ps: "ls dist"
+
+on_failure:
+  - ps: "Get-Content \"C:\\ProgramData\\chocolatey\\logs\\chocolatey.log\" -Tail 30"
