@@ -97,6 +97,16 @@ if do_maintenance == "1" then
         redis.call("zrem", xqueue_full_name, unpack(dead_message_ids))
         redis.call("hdel", xqueue_messages, unpack(dead_message_ids))
     end
+
+    -- The following code is required for backwards-compatibility with
+    -- the old way acks used to be implemented.  It hoists any
+    -- existing acks zsets into the per-worker sets.
+    local compat_queue_acks = queue_full_name .. ".acks"
+    local compat_message_ids = redis.call("zrangebyscore", compat_queue_acks, 0, timestamp - 86400000 * 7.5)
+    if next(compat_message_ids) then
+        redis.call("sadd", queue_acks, unpack(compat_message_ids))
+        redis.call("zrem", compat_queue_acks, unpack(compat_message_ids))
+    end
 end
 
 

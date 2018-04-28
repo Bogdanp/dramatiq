@@ -4,7 +4,7 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout
-from dramatiq.brokers.redis import MAINTENANCE_SCALE
+from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
 
 from .common import worker
@@ -298,3 +298,55 @@ def test_redis_broker_can_flush_queues(redis_broker):
     # And then join on the actors's queue
     # Then it should join immediately
     assert redis_broker.join(do_work.queue_name, timeout=200) is None
+
+
+def test_redis_broker_can_connect_via_url():
+    # Given that I have a connection string
+    # When I pass that to RedisBroker
+    broker = RedisBroker(url="redis://127.1")
+
+    # Then I should get back a valid connection
+    assert broker.client.ping()
+
+
+def test_redis_broker_warns_about_deprecated_parameters():
+    # When I pass deprecated params to RedisBroker
+    # Then it should warn me that those params do nothing
+    with pytest.warns(DeprecationWarning) as record:
+        RedisBroker(requeue_deadline=1000)
+
+    assert str(record[0].message) == \
+        "requeue_{deadline,interval} have been deprecated and no longer do anything"
+
+
+def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(redis_broker):
+    # Given that I have a Redis broker
+    # When I try to access an attribute that doesn't exist
+    # Then I should get back an attribute error
+    with pytest.raises(AttributeError):
+        redis_broker.idontexist
+
+
+def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_work(self):
+        pass
+
+    # And that actor has some old-style unacked messages
+    expired_message_id = b"expired-old-school-ack"
+    valid_message_id = b"valid-old-school-ack"
+    redis_broker.client.zadd("dramatiq:default.acks", 0, expired_message_id)
+    redis_broker.client.zadd("dramatiq:default.acks", current_millis(), valid_message_id)
+
+    # When maintenance runs for that actor's queue
+    redis_broker.maintenance_chance = MAINTENANCE_SCALE
+    redis_broker.do_qsize(do_work.queue_name)
+
+    # Then maintenance should move the expired message to the new style acks set
+    unacked = redis_broker.client.smembers("dramatiq:__acks__.%s.default" % redis_broker.broker_id)
+    assert set(unacked) == {expired_message_id}
+
+    # And the valid message should stay in that set
+    compat_unacked = redis_broker.client.zrangebyscore("dramatiq:default.acks", 0, "+inf")
+    assert set(compat_unacked) == {valid_message_id}

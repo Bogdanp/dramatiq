@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
+* Support for worker heartbeats to |RedisBroker|.
 * |Interrupt| base class for thread-interrupting exceptions. (`@rpkilby`_)
 * |ShutdownNotifications| middleware. (`@rpkilby`_)
 
@@ -19,6 +20,12 @@ Changed
 ^^^^^^^
 
 * |TimeLimitExceeded| is now a subclass of |Interrupt|.
+
+Deprecated
+^^^^^^^^^^
+
+* ``requeue_{deadline,interval}`` parameters to |RedisBroker|.  These
+  two parameters no longer have any effect.
 
 .. _@rpkilby: https://github.com/rpkilby
 
