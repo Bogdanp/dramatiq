@@ -5,18 +5,30 @@ environment:
       PYTHON_ARCH: "64"
 
 services:
-  - memcached
   - rabbitmq-server
   - redis-server
 
 install:
-  - choco install memcached rabbitmq redis-64
+  # Download and start a binary version of memcached.
+  - appveyor DownloadFile "https://s3.amazonaws.com/downloads.northscale.com/memcached-win64-1.4.4-14.zip" -FileName memcached.zip
+  - 7z x memcached.zip -y
+  - ps: $Memcached = Start-Process memcached\memcached.exe -PassThru
+
+  # Download libmemcached sources to use when installing pylibmc.
+  - appveyor DownloadFile "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz" -FileName libmemcached.tar.gz
+  - 7z x libmemcached.tar.gz -so | 7z x -aoa -si -ttar -oC:\\
+  - ls C:\\libmemcached-1.0.18
+
+  # Install python and pip.
   - ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "%CMD_IN_ENV% python --version"
   - "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% python -m pip install --upgrade pip"
-  - "%CMD_IN_ENV% pip install -r requirements/dev.txt"
+
+  - choco install rabbitmq redis-64
+  - '%CMD_IN_ENV% pip install --global-option="build_ext" --global-option="-IC:\\libmemcached-1.0.18" --global-option="-LC:\\libmemcached-1.0.18" pylibmc'
+  - '%CMD_IN_ENV% pip install -r requirements/dev.txt'
 
 build_script:
   - "%CMD_IN_ENV% python setup.py build"
