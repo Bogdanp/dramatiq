@@ -21,6 +21,7 @@ import importlib
 import logging
 import multiprocessing
 import os
+import random
 import selectors
 import signal
 import sys
@@ -242,6 +243,11 @@ def setup_worker_logging(args, worker_id, logging_pipe):
 
 def worker_process(args, worker_id, logging_fd):
     try:
+        # Re-seed the random number generator from urandom on
+        # supported platforms.  This should make it so that worker
+        # processes don't all follow the same sequence.
+        random.seed()
+
         logging_pipe = os.fdopen(logging_fd, "w")
         logger = setup_worker_logging(args, worker_id, logging_pipe)
         module, broker = import_broker(args.broker)

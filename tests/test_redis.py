@@ -4,6 +4,7 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout
+from dramatiq.brokers.redis import MAINTENANCE_SCALE
 from dramatiq.common import current_millis, dq_name, xq_name
 
 from .common import worker
@@ -135,26 +136,30 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     # If I enqueue two messages
     message_ids = [b"message-1", b"message-2"]
     for message_id in message_ids:
-        redis_broker._enqueue(queue_name, message_id, b"message-data")
+        redis_broker.do_enqueue(queue_name, message_id, b"message-data")
 
-    # And then fetch them one second apart
-    redis_broker._fetch(queue_name, 1)
-    time.sleep(1)
-    redis_broker._fetch(queue_name, 1)
+    # And then fetch them
+    redis_broker.do_fetch(queue_name, 1)
+    redis_broker.do_fetch(queue_name, 1)
 
-    # I expect both to be in the acks set
-    unacked = redis_broker.client.zrangebyscore("dramatiq:%s.acks" % queue_name, 0, "+inf")
+    # Then both must be in the acks set
+    ack_group = "dramatiq:__acks__.%s.%s" % (redis_broker.broker_id, queue_name)
+    unacked = redis_broker.client.smembers(ack_group)
     assert sorted(unacked) == sorted(message_ids)
 
-    # If I then set the requeue deadline to 1 second and run a requeue
-    redis_broker.requeue_deadline = 1000
-    redis_broker._requeue()
+    # When I close that broker and open another and dispatch a command
+    redis_broker.broker_id = "some-other-id"
+    redis_broker.heartbeat_timeout = 0
+    redis_broker.maintenance_chance = MAINTENANCE_SCALE
+    redis_broker.do_qsize(queue_name)
 
-    # I expect only the first message to have been moved
-    unacked = redis_broker.client.zrangebyscore("dramatiq:%s.acks" % queue_name, 0, "+inf")
-    queued = redis_broker.client.lrange("dramatiq:%s" % queue_name, 0, 1)
-    assert unacked == message_ids[1:]
-    assert queued == message_ids[:1]
+    # Then both messages should be requeued
+    ack_group = "dramatiq:__acks__.%s.%s" % (redis_broker.broker_id, queue_name)
+    unacked = redis_broker.client.smembers(ack_group)
+    assert not unacked
+
+    queued = redis_broker.client.lrange("dramatiq:%s" % queue_name, 0, 5)
+    assert set(message_ids) == set(queued)
 
 
 def test_redis_messages_can_be_dead_lettered(redis_broker, redis_worker):
@@ -182,16 +187,19 @@ def test_redis_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker)
     def do_work():
         raise RuntimeError("failed")
 
-    # If I send it a message
+    # When I send it a message
     do_work.send()
 
     # And then join on its queue
     redis_broker.join(do_work.queue_name)
     redis_worker.join()
 
-    # I expect running the cleanup script to remove it
+    # And trigger maintenance
     redis_broker.dead_message_ttl = 0
-    redis_broker._cleanup()
+    redis_broker.maintenance_chance = MAINTENANCE_SCALE
+    redis_broker.do_qsize(do_work.queue_name)
+
+    # Then the message should be removed from the DLQ.
     dead_queue_name = "dramatiq:%s" % xq_name(do_work.queue_name)
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert not dead_ids
@@ -217,18 +225,6 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
     dead_queue_name = "dramatiq:%s" % xq_name("some-queue")
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert message.options["redis_message_id"].encode("utf-8") in dead_ids
-
-
-def test_redis_raises_an_exception_when_delaying_messages_for_too_long(redis_broker):
-    # Given that I have an actor
-    @dramatiq.actor
-    def do_nothing():
-        pass
-
-    # If I try to send it a delayed message farther than 7 days into the future
-    # I expect it to raise a value error
-    with pytest.raises(ValueError):
-        do_nothing.send_with_options(delay=7 * 86400 * 1000 + 1)
 
 
 def test_redis_requeues_unhandled_messages_on_shutdown(redis_broker):
