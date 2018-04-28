@@ -1,6 +1,5 @@
 flake8
 flake8-quotes
-hiredis  # Not included in the base distro because of PyPy
 isort
 twine
 
