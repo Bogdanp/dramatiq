@@ -13,6 +13,8 @@ Added
 ^^^^^
 
 * Support for worker heartbeats to |RedisBroker|.
+* ``maintenance_chance`` and ``heartbeat_timeout`` parameters to
+  |RedisBroker|.
 * |Interrupt| base class for thread-interrupting exceptions. (`@rpkilby`_)
 * |ShutdownNotifications| middleware. (`@rpkilby`_)
 
