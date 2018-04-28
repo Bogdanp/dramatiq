@@ -56,10 +56,17 @@ local acks = namespace .. ":__acks__." .. worker_id
 local heartbeats = namespace .. ":__heartbeats__"
 redis.call("zadd", heartbeats, timestamp, worker_id)
 
+-- This is used to ensure that we never have a DLQ like default.DQ.XQ
+-- since that wouldn't make much sense.
+local queue_canonical_name = queue_name
+if string.sub(queue_name, -3) == ".DQ" then
+    queue_canonical_name = string.sub(queue_name, 1, -4)
+end
+
 local queue_acks = acks .. "." .. queue_name
 local queue_full_name = namespace .. ":" .. queue_name
 local queue_messages = queue_full_name .. ".msgs"
-local xqueue_full_name = queue_full_name .. ".XQ"
+local xqueue_full_name = namespace .. ":" .. queue_canonical_name .. ".XQ"
 local xqueue_messages = xqueue_full_name .. ".msgs"
 
 -- Command-specific arguments.
