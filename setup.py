@@ -7,6 +7,10 @@ def rel(*xs):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), *xs)
 
 
+with open(rel("README.md")) as f:
+    long_description = f.read()
+
+
 with open(rel("dramatiq", "__init__.py"), "r") as f:
     version_marker = "__version__ = "
     for line in f:
@@ -45,8 +49,8 @@ extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
 setup(
     name="dramatiq",
     version=version,
-    description="A distributed task processing library.",
-    long_description="Visit http://dramatiq.io for more information.",
+    description="A fast and reliable distributed task processing library for Python 3.",
+    long_description=long_description,
     packages=[
         "dramatiq",
         "dramatiq.brokers",
