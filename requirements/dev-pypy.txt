@@ -1,4 +1,0 @@
--r common.txt
--r rabbitmq.txt
--r redis.txt
--r test.txt

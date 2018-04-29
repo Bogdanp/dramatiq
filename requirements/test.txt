@@ -1,9 +1,0 @@
-# Misc
-bumpversion
-
-# Testing
-pygal==2.0  # Version pin is needed for pytest-benchmark
-pytest
-pytest-benchmark[histogram]
-pytest-cov
-tox

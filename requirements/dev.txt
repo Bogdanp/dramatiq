@@ -1,12 +1,24 @@
+# Docs
+sphinx
+
+# Linting
 flake8
 flake8-quotes
-hiredis  # Not included in the base distro because of PyPy
 isort
+
+# Misc
+bumpversion
+hiredis  # Not included in the base distro because of PyPy
 twine
+
+# Testing
+pytest
+pytest-benchmark[histogram]
+pytest-cov
+tox
 
 -r common.txt
 -r memcached.txt
 -r rabbitmq.txt
 -r redis.txt
--r test.txt
 -r watch.txt

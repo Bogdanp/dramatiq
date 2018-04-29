@@ -1,10 +1,13 @@
 language: python
 sudo: required
+env:
+  global:
+    - CC_TEST_REPORTER_ID=27f6c9909e005594354ce88fdddb48b12205bb038725d7c94581bad3b751e15c
 python:
   - "3.5"
   - "3.6"
-  - "3.6-dev" # 3.6 development branch
-  - "3.7-dev" # 3.7 development branch
+  - "3.6-dev"
+  - "3.7-dev"
   - "nightly"
 matrix:
   include:
@@ -18,8 +21,12 @@ services:
   - rabbitmq
   - redis
 install:
-  - pip install -c requirements/constraints.txt codeclimate-test-reporter tox-travis
+  - pip install tox-travis
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 script:
   - TRAVIS=1 tox
-after_success:
-  - CODECLIMATE_REPO_TOKEN=27f6c9909e005594354ce88fdddb48b12205bb038725d7c94581bad3b751e15c codeclimate-test-reporter
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
