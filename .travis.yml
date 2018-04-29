@@ -29,4 +29,4 @@ before_script:
 script:
   - TRAVIS=1 tox
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT
