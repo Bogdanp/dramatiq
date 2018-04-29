@@ -8,7 +8,7 @@ isort
 
 # Misc
 bumpversion
-hiredis  # Not included in the base distro because of PyPy
+hiredis
 twine
 
 # Testing
