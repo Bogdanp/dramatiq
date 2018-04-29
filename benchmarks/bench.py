@@ -1,16 +1,17 @@
 import argparse
-import celery
-import dramatiq
 import logging
 import os
-import pylibmc
 import random
-import sys
 import subprocess
+import sys
 import time
 
-from dramatiq.brokers.redis import RedisBroker
+import celery
+import pylibmc
+
+import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
+from dramatiq.brokers.redis import RedisBroker
 
 logger = logging.getLogger("example")
 counter_key = "latench-bench-counter"
@@ -24,7 +25,7 @@ if os.getenv("REDIS") == "1":
     celery_app = celery.Celery(broker="redis:///")
 
 else:
-    broker = RabbitmqBroker()
+    broker = RabbitmqBroker(host="127.1")
     dramatiq.set_broker(broker)
     celery_app = celery.Celery(broker="amqp:///")
 

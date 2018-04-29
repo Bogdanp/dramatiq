@@ -19,7 +19,7 @@ import os
 import time
 from collections import defaultdict
 from itertools import chain
-from queue import Empty, PriorityQueue, Queue
+from queue import Empty, PriorityQueue
 from threading import Event, Thread
 
 from .common import current_millis, iter_queue, join_all, q_name
@@ -149,9 +149,11 @@ class Worker:
             # joining on the work queue then it shoud be safe to exit.
             # This could still miss stuff but the chances are slim.
             for consumer in self.consumers.values():
-                if consumer.delay_queue.qsize() > 0:
+                if consumer.delay_queue.unfinished_tasks:
                     break
             else:
+                if self.work_queue.unfinished_tasks:
+                    continue
                 return
 
     def _add_consumer(self, queue_name, *, delay=False):
@@ -211,7 +213,6 @@ class _ConsumerThread(Thread):
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
         self.delay_queue = PriorityQueue()
-        self.acks_queue = Queue()
 
     def run(self):
         self.logger.debug("Running consumer thread...")
@@ -228,17 +229,12 @@ class _ConsumerThread(Thread):
                     if message is not None:
                         self.handle_message(message)
 
-                    self.handle_acks()
                     self.handle_delayed_messages()
                     if not self.running:
                         break
 
             except ConnectionError as e:
                 self.logger.critical("Consumer encountered a connection error: %s", e)
-                # Acking is unsafe when the connection is abruptly closed
-                # so we must clear the queue.  All brokers have at-least
-                # once semantics so this is a safe operation.
-                self.acks_queue = Queue()
                 self.delay_queue = PriorityQueue()
 
             except Exception as e:
@@ -257,24 +253,6 @@ class _ConsumerThread(Thread):
         # If it's no longer running, then shut it down gracefully.
         self.broker.emit_before("consumer_thread_shutdown", self)
         self.logger.debug("Consumer thread stopped.")
-
-    def handle_acks(self):
-        """Perform any pending (n)acks.
-        """
-        for message in iter_queue(self.acks_queue):
-            if message.failed:
-                self.logger.debug("Rejecting message %r.", message.message_id)
-                self.broker.emit_before("nack", message)
-                self.consumer.nack(message)
-                self.broker.emit_after("nack", message)
-
-            else:
-                self.logger.debug("Acknowledging message %r.", message.message_id)
-                self.broker.emit_before("ack", message)
-                self.consumer.ack(message)
-                self.broker.emit_after("ack", message)
-
-            self.acks_queue.task_done()
 
     def handle_delayed_messages(self):
         """Enqueue any delayed messages whose eta has passed.
@@ -321,8 +299,17 @@ class _ConsumerThread(Thread):
         individual messages, signaling that each message is ready to
         be acked or rejected.
         """
-        self.acks_queue.put(message)
-        self.consumer.interrupt()
+        if message.failed:
+            self.logger.debug("Rejecting message %r.", message.message_id)
+            self.broker.emit_before("nack", message)
+            self.consumer.nack(message)
+            self.broker.emit_after("nack", message)
+
+        else:
+            self.logger.debug("Acknowledging message %r.", message.message_id)
+            self.broker.emit_before("ack", message)
+            self.consumer.ack(message)
+            self.broker.emit_after("ack", message)
 
     def requeue_messages(self, messages):
         """Called on worker shutdown and whenever there is a
@@ -345,7 +332,6 @@ class _ConsumerThread(Thread):
         """
         try:
             if self.consumer:
-                self.handle_acks()
                 self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
                 self.consumer.close()
         except ConnectionError:

@@ -1,5 +1,6 @@
 .. References
 
+.. |Broker| replace:: :class:`Broker<dramatiq.Broker>`
 .. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Callbacks| replace:: :class:`Callbacks<dramatiq.middleware.Callbacks>`
 .. |DramatiqError| replace:: :class:`DramatiqError<dramatiq.DramatiqError>`
@@ -26,13 +27,16 @@
 .. |ShutdownNotifications| replace:: :class:`ShutdownNotifications<dramatiq.middleware.ShutdownNotifications>`
 .. |Shutdown| replace:: :class:`Shutdown<dramatiq.middleware.Shutdown>`
 .. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
-.. |StubBroker_flush_all| replace:: :meth:`flush_all<dramatiq.brokers.stub.StubBroker.flush_all>`
-.. |StubBroker_flush| replace:: :meth:`flush<dramatiq.brokers.stub.StubBroker.flush>`
+.. |StubBroker_flush_all| replace:: :meth:`StubBroker.flush_all<dramatiq.brokers.stub.StubBroker.flush_all>`
+.. |StubBroker_flush| replace:: :meth:`StubBroker.flush<dramatiq.brokers.stub.StubBroker.flush>`
+.. |StubBroker_join| replace:: :meth:`StubBroker.join<dramatiq.brokers.stub.StubBroker.join>`
 .. |StubBroker| replace:: :class:`StubBroker<dramatiq.brokers.stub.StubBroker>`
 .. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<dramatiq.middleware.TimeLimitExceeded>`
 .. |TimeLimit| replace:: :class:`TimeLimit<dramatiq.middleware.TimeLimit>`
 .. |URLRabbitmqBroker| replace:: :class:`URLRabbitmqBroker<dramatiq.brokers.rabbitmq.URLRabbitmqBroker>`
 .. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<dramatiq.rate_limits.WindowRateLimiter>`
+.. |Worker| replace:: :meth:`Worker<dramatiq.Worker>`
+.. |Worker_join| replace:: :meth:`Worker.join<dramatiq.Worker.join>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`
 .. |Worker_resume| replace:: :meth:`Worker.resume<dramatiq.Worker.resume>`
 .. |actor| replace:: :func:`actor<dramatiq.actor>`

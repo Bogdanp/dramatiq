@@ -240,7 +240,7 @@ Option           Default       Description
 ===============  ============  =====================================================================================================================
 ``max_retries``  ``20``        The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
 ``min_backoff``  15 seconds    The minimum number of milliseconds of backoff to apply between retries.  Must be greater than 100 milliseconds.
-``max_backoff``  7 days        The maximum number of milliseconds of backoff to apply between retries.  Must be less than or equal to 7 days.
+``max_backoff``  7 days        The maximum number of milliseconds of backoff to apply between retries.  Higher values are less reliable.
 ``retry_when``   ``None``      A callable that determines whether or not a message should be retried.  When this is set, ``max_retries`` is ignored.
 ===============  ============  =====================================================================================================================
 
@@ -316,8 +316,8 @@ wrap its source code in a try block and catch |TimeLimitExceeded|::
 Scheduling Messages
 -------------------
 
-You can schedule messages to run up to 7 days into the future by
-calling |send_with_options| on actors and providing a ``delay`` (in
+You can schedule messages to run some time in the future by calling
+|send_with_options| on actors and providing a ``delay`` (in
 milliseconds)::
 
   >>> count_words.send_with_options(args=("https://example.com",), delay=10000)

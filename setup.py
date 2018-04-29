@@ -32,7 +32,7 @@ extra_dependencies = {
     ],
 
     "rabbitmq": [
-        "pika>=0.11,<0.12",
+        "pika>=0.12,<0.13",
     ],
 
     "redis": [

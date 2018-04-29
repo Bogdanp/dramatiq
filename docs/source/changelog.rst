@@ -13,6 +13,10 @@ Changed
 ^^^^^^^
 
 * Upgraded prometheus_client to 0.2.x.
+* Bumped pika to version 0.12.  Because of this change, the
+  ``interrupt`` method on |Broker| and its usages within |Worker| have
+  been dropped.
+* There is no longer a max message delay.
 
 Fixed
 ^^^^^
@@ -44,6 +48,7 @@ Changed
 Fixed
 ^^^^^
 
+* |StubBroker_join| and |Worker_join| are now more reliable.
 * Module import path is now prepended to search path rather than
   appended.  This fixes an issue where importing modules with the same
   name as modules from site-packages would end up importing the

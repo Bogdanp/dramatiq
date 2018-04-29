@@ -58,7 +58,7 @@ def stub_broker():
 
 @pytest.fixture()
 def rabbitmq_broker():
-    broker = RabbitmqBroker()
+    broker = RabbitmqBroker(host="127.1")
     check_rabbitmq(broker)
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)

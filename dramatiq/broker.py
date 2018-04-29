@@ -307,10 +307,6 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def interrupt(self):
-        """Wake up the consumer if it is idling.
-        """
-
     def close(self):
         """Close this consumer and perform any necessary cleanup actions.
         """

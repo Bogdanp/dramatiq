@@ -15,11 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import errno
 import logging
-import socket
 import time
 import warnings
+from functools import partial
 from itertools import chain
 from threading import local
 
@@ -32,14 +31,11 @@ from ..logging import get_logger
 from ..message import Message
 
 #: The maximum amount of time a message can be in the dead queue.
-DEAD_MESSAGE_TTL = 86400 * 7 * 1000
+DEAD_MESSAGE_TTL = 86400000 * 7
 
 #: The max number of times to attempt an enqueue operation in case of
 #: a connection error.
-MAX_ENQUEUE_ATTEMPTS = 2
-
-#: The max amount of time messages can be delayed by in ms.
-MAX_MESSAGE_DELAY = 86400000 * 7
+MAX_ENQUEUE_ATTEMPTS = 6
 
 
 class RabbitmqBroker(Broker):
@@ -147,9 +143,7 @@ class RabbitmqBroker(Broker):
         for channel_or_conn in chain(self.channels, self.connections):
             try:
                 channel_or_conn.close()
-
-            except (pika.exceptions.ChannelClosed,
-                    pika.exceptions.ConnectionClosed):
+            except pika.exceptions.AMQPError:
                 pass
 
             except Exception:  # pragma: no cover
@@ -193,8 +187,8 @@ class RabbitmqBroker(Broker):
                 self.emit_after("declare_delay_queue", delayed_name)
 
                 self._declare_xq_queue(queue_name)
-        except (pika.exceptions.ChannelClosed,
-                pika.exceptions.ConnectionClosed) as e:  # pragma: no cover
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
             # Delete the channel and the connection so that the next
             # caller may initiate new ones of each.
             del self.channel
@@ -235,12 +229,6 @@ class RabbitmqBroker(Broker):
         queue_name = message.queue_name
         properties = pika.BasicProperties(delivery_mode=2)
         if delay is not None:
-            if delay > MAX_MESSAGE_DELAY:
-                raise ValueError(
-                    "Messages cannot be delayed for longer than 7 days. "
-                    "Your message queue is not a Database."
-                )
-
             queue_name = dq_name(queue_name)
             message_eta = current_millis() + delay
             message = message.copy(
@@ -264,9 +252,8 @@ class RabbitmqBroker(Broker):
                 self.emit_after("enqueue", message, delay)
                 return message
 
-            except (pika.exceptions.ChannelClosed,
-                    pika.exceptions.ConnectionClosed) as e:
-
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:
                 # Delete the channel and the connection so that the
                 # next caller/attempt may initiate new ones of each.
                 del self.channel
@@ -369,7 +356,7 @@ def URLRabbitmqBroker(url, *, middleware=None):
         broker.
     """
     warnings.warn(
-        "URLRabbitmqBroker in favour of the url parameter to RabbitmqBroker.",
+        "Use RabbitmqBroker with the 'url' parameter instead of URLRabbitmqBroker.",
         DeprecationWarning, stacklevel=2,
     )
     return RabbitmqBroker(url=url, middleware=middleware)
@@ -378,18 +365,6 @@ def URLRabbitmqBroker(url, *, middleware=None):
 class _IgnoreScaryLogs(logging.Filter):
     def filter(self, record):
         return "Broken pipe" not in record.getMessage()
-
-
-class _InterruptEvent:
-    def dispatch(self):
-        pass
-
-
-class _InterruptMessage:
-    def __init__(self):
-        self.method = type(self)
-        self.properties = None
-        self.body = None
 
 
 class _RabbitmqConsumer(Consumer):
@@ -406,30 +381,18 @@ class _RabbitmqConsumer(Consumer):
             # we don't attempt to send invalid tags to Rabbit since
             # pika doesn't handle this very well.
             self.known_tags = set()
-
-            # We need to hook into Pika's ioloop so that we can
-            # interrupt the consumer when new ack requests come in.
-            # This is piggy, but the alternative of busy-looping is
-            # worse.  I wish pika exposed "add_handler" on the
-            # connection.
-            self.interrupt_event = _InterruptEvent()
-            self.interrupt_message = _InterruptMessage()
-            self.interrupt_sock_r, self.interrupt_sock_w = socket.socketpair()
-            self.interrupt_sock_r.setblocking(0)
-            self.interrupt_sock_w.setblocking(0)
-            self.connection._impl.ioloop.add_handler(
-                self.interrupt_sock_r.fileno(),
-                self._send_interrupt,
-                0x0001,  # READ
-            )
-        except pika.exceptions.ConnectionClosed as e:
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
 
     def ack(self, message):
         try:
             self.known_tags.remove(message._tag)
-            self.channel.basic_ack(message._tag)
-        except pika.exceptions.ChannelClosed as e:
+            self.connection.add_callback_threadsafe(
+                partial(self.channel.basic_ack, message._tag),
+            )
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
         except KeyError:
             self.logger.warning("Failed to ack message: not in known tags.")
@@ -439,8 +402,11 @@ class _RabbitmqConsumer(Consumer):
     def nack(self, message):
         try:
             self.known_tags.remove(message._tag)
-            self.channel.basic_nack(message._tag, requeue=False)
-        except pika.exceptions.ChannelClosed as e:
+            self.connection.add_callback_threadsafe(
+                partial(self.channel.basic_nack, message._tag, requeue=False),
+            )
+        except (pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
         except KeyError:
             self.logger.warning("Failed to nack message: not in known tags.")
@@ -454,67 +420,25 @@ class _RabbitmqConsumer(Consumer):
 
     def __next__(self):
         try:
-            frame = next(self.iterator)
-            if frame is None:
-                return None
-
-            method, properties, body = frame
-            if method is _InterruptMessage:
+            method, properties, body = next(self.iterator)
+            if method is None:
                 return None
 
             message = Message.decode(body)
             self.known_tags.add(method.delivery_tag)
             return _RabbitmqMessage(method.delivery_tag, message)
-        except (AssertionError,  # sometimes raised by pika
-                pika.exceptions.ChannelClosed,
-                pika.exceptions.ConnectionClosed) as e:
+        except (AssertionError,
+                pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
-
-    def interrupt(self):
-        self.interrupt_sock_w.send(b"X")
-
-    def _send_interrupt(self, fd, events, error=None, write_only=False):
-        try:
-            # Send a ready event to break Pika's is_done() loop in BlockingConnection._flush_output()
-            self.connection._ready_events.append(self.interrupt_event)
-            # Send a pending event to make the consumer generator yield in BlockingChannel.consume()
-            self.channel._queue_consumer_generator.pending_events.append(self.interrupt_message)
-            # Finally, drain the socket for select
-            self.interrupt_sock_r.recv(512)
-        except OSError as e:  # pragma: no cover
-            if e.errno != errno.EAGAIN:
-                raise
 
     def close(self):
         try:
-            try:
-                self.connection._impl.ioloop.remove_handler(self.interrupt_sock_r.fileno())
-                self.interrupt_sock_w.close()
-                self.interrupt_sock_r.close()
-            except KeyError:
-                pass
-
-            if self.channel.is_open:
-                # Remove all the interrupt events from the pending
-                # events queue before calling cancel so pika doesn't
-                # try to reject them.
-                pending_events = []
-                pending_events_queue = self.channel._queue_consumer_generator.pending_events
-                while pending_events_queue:
-                    event = pending_events_queue.popleft()
-                    if not isinstance(event, _InterruptMessage):
-                        pending_events.append(event)
-
-                for event in pending_events:
-                    pending_events_queue.append(event)
-
-                self.channel.cancel()
-
             self.channel.close()
             self.connection.close()
-        except (AssertionError,  # sometimes raised by pika
-                pika.exceptions.ChannelClosed,
-                pika.exceptions.ConnectionClosed) as e:
+        except (AssertionError,
+                pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
 
 

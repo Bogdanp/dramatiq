@@ -12,7 +12,7 @@ from dramatiq.common import current_millis
 
 def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     # Given a URL connection string
-    url = "amqp://localhost:5672"
+    url = "amqp://127.1:5672"
 
     # When I pass that to URLRabbitmqBroker
     broker = URLRabbitmqBroker(url)
@@ -220,18 +220,6 @@ def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rab
 
     # I expect the work to have been attempted at least once
     assert sum(attempts) >= 1
-
-
-def test_rabbitmq_raises_an_exception_when_delaying_messages_for_too_long(rabbitmq_broker):
-    # Given that I have an actor
-    @dramatiq.actor
-    def do_nothing():
-        pass
-
-    # If I try to send it a delayed message farther than 7 days into the future
-    # I expect it to raise a value error
-    with pytest.raises(ValueError):
-        do_nothing.send_with_options(delay=7 * 86400 * 1000 + 1)
 
 
 def test_rabbitmq_connections_can_be_deleted_multiple_times(rabbitmq_broker):
