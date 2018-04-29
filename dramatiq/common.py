@@ -67,9 +67,9 @@ def iter_queue(queue):
 
 def join_queue(queue, timeout=None):
     """The join() method of standard queues in Python doesn't support
-    timeouts.  This implements the same functionality as that join
-    method, with optional timeout support, by depending on Queue
-    internals.
+    timeouts.  This implements the same functionality as that method,
+    with optional timeout support, by depending the internals of
+    Queue.
 
     Raises:
       QueueJoinTimeout: When the timeout is reached.

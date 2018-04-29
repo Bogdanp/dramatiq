@@ -173,14 +173,14 @@ def test_actors_retry_a_max_number_of_times_on_failure(stub_broker, stub_worker)
         attempts.append(1)
         raise RuntimeError("failure")
 
-    # If I send it a message
+    # When I send it a message
     do_work.send()
 
-    # Then join on the queue
+    # And join on the queue
     stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
-    # I expect successes
+    # Then I expect 4 attempts to have occurred
     assert sum(attempts) == 4
 
 
@@ -194,14 +194,14 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
         attempts.append(1)
         raise RuntimeError("failure")
 
-    # If I send it a message
+    # When I send it a message
     do_work.send()
 
-    # Then join on the queue
+    # And join on the queue
     stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
-    # I expect successes
+    # Then I expect at least one attempt to have occurred
     assert sum(attempts) >= 1
 
 
@@ -217,14 +217,14 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
         time.sleep(2)
         successes.append(1)
 
-    # If I send it a message
+    # When I send it a message
     do_work.send()
 
-    # Then join on the queue
+    # And join on the queue
     stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
-    # I expect it to fail
+    # Then I expect it to fail
     assert sum(attempts) == 1
     assert sum(successes) == 0
 
@@ -400,8 +400,8 @@ def test_workers_can_be_paused(stub_broker, stub_worker):
     # When I send that actor a message
     track_call.send()
 
-    # And wait for half a second
-    time.sleep(0.5)
+    # And wait for 100ms
+    time.sleep(0.1)
 
     # Then no calls should be made
     assert calls == []

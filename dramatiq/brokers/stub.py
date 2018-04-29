@@ -111,7 +111,7 @@ class StubBroker(Broker):
           queue_name(str): The queue to flush.
         """
         for _ in iter_queue(self.queues[queue_name]):
-            pass
+            self.queues[queue_name].task_done()
 
     def flush_all(self):
         """Drop all messages from all declared queues.
@@ -135,9 +135,19 @@ class StubBroker(Broker):
         """
         try:
             deadline = timeout and time.monotonic() + timeout / 1000
-            for queue_name in (queue_name, dq_name(queue_name)):
-                timeout = deadline and deadline - time.monotonic()
-                join_queue(self.queues[queue_name], timeout=timeout)
+            while True:
+                for name in [queue_name, dq_name(queue_name)]:
+                    timeout = deadline and deadline - time.monotonic()
+                    join_queue(self.queues[name], timeout=timeout)
+
+                # We cycle through $queue then $queue.DQ then $queue
+                # again in case the messages that were on the DQ got
+                # moved back on $queue.
+                for name in [queue_name, dq_name(queue_name)]:
+                    if self.queues[name].unfinished_tasks:
+                        break
+                else:
+                    return
         except KeyError:
             raise QueueNotFound(queue_name)
 
@@ -154,9 +164,6 @@ class _StubConsumer(Consumer):
     def nack(self, message):
         self.queue.task_done()
         self.dead_letters.append(message)
-
-    def requeue(self, messages):
-        pass
 
     def __next__(self):
         try:
