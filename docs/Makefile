@@ -15,7 +15,7 @@ all:
 
 
 .PHONY: deploy
-deploy: html
+deploy: all
 	gcloud app deploy --project dramatiq-docs app.yaml
 
 
