@@ -6,7 +6,7 @@
     {% if versions.tags %}
       <optgroup label="Releases">
         {% for name, url in versions.tags %}
-          <option value="{{ url }}">{{ name }}</option>
+          <option value="{{ url }}" {% if name == current_version %}selected{% endif %}>{{ name }}</option>
         {% endfor %}
       </optgroup>
     {% endif %}
@@ -14,7 +14,7 @@
     {% if versions.branches %}
       <optgroup label="Branches">
         {% for name, url in versions.branches %}
-          <option value="{{ url }}">{{ name }}</option>
+          <option value="{{ url }}" {% if name == current_version %}selected{% endif %}>{{ name }}</option>
         {% endfor %}
       </optgroup>
     {% endif %}
