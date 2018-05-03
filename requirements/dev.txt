@@ -1,5 +1,8 @@
 # Docs
+alabaster
 sphinx
+sphinxcontrib-napoleon
+sphinxcontrib-versioning
 
 # Linting
 flake8

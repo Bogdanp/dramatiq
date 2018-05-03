@@ -1,0 +1,16 @@
+<div class="relations" >
+  <h3>Versions</h3>
+
+  <select id="versions">
+    {% for name, url in versions %}
+      <option value="{{ url }}">{{ name }}</option>
+    {% endfor %}
+  </select>
+
+  <script>
+    var versionsEl = document.querySelector("#versions");
+    versionEl.addEventListener('change', function(e) {
+      window.location.href = e.target.value;
+    });
+  </script>
+</div>
