@@ -54,11 +54,11 @@ Get It Now
 
 If you want to use it with RabbitMQ_::
 
-   $ pip install -U dramatiq[rabbitmq, watch]
+   $ pip install -U 'dramatiq[rabbitmq, watch]'
 
 Or if you want to use it with Redis_::
 
-   $ pip install -U dramatiq[redis, watch]
+   $ pip install -U 'dramatiq[redis, watch]'
 
 Read the :doc:`motivation` behind it or the :doc:`guide` if you're
 ready to get started.
