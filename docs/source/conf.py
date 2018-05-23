@@ -17,6 +17,7 @@ import os
 import sys
 
 import alabaster  # noqa
+
 import dramatiq  # noqa
 
 sys.path.insert(0, os.path.abspath('../..'))
@@ -110,7 +111,7 @@ html_theme_options = {
     'code_font_family': '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
     'code_font_size': '0.8em',
     'show_related': True,
-    'fixed_sidebar': True,
+    'fixed_sidebar': False,
     'github_banner': True,
     'github_button': True,
     'github_type': 'star',
@@ -131,6 +132,7 @@ html_sidebars = {
         'relations.html',
         'searchbox.html',
         'versions.html',
+        'codefund.html',
     ]
 }
 
