@@ -26,9 +26,15 @@ Changed
 Fixed
 ^^^^^
 
+* Module import path is now prepended to search path rather than
+  appended.  This fixes an issue where importing modules with the same
+  name as modules from site-packages would end up importing the
+  modules from site-packages. (`#88`_)
 * |Prometheus| middleware no longer wipes the prometheus data
   directory on startup.  This fixes an issue with exporting
   application metrics along with worker metrics.
+
+.. _#88: https://github.com/Bogdanp/dramatiq/issues/88
 
 Deprecated
 ^^^^^^^^^^

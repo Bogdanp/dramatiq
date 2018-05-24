@@ -291,7 +291,7 @@ def worker_process(args, worker_id, logging_fd):
 def main():  # noqa
     args = parse_arguments()
     for path in args.path:
-        sys.path.append(path)
+        sys.path.insert(0, path)
 
     try:
         if args.pid_file:
