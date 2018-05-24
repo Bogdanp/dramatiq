@@ -23,6 +23,13 @@ Changed
 
 * |TimeLimitExceeded| is now a subclass of |Interrupt|.
 
+Fixed
+^^^^^
+
+* |Prometheus| middleware no longer wipes the prometheus data
+  directory on startup.  This fixes an issue with exporting
+  application metrics along with worker metrics.
+
 Deprecated
 ^^^^^^^^^^
 

@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import fcntl
-import glob
 import os
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -185,7 +184,8 @@ class _ExpositionServer(Thread):
                 return
 
             self.logger.debug("Lock file acquired. Running exposition server.")
-            self.cleanup_db_path()
+            if not os.path.exists(DB_PATH):
+                os.makedirs(DB_PATH)
 
             try:
                 self.httpd = HTTPServer(self.address, metrics_handler)
@@ -197,16 +197,6 @@ class _ExpositionServer(Thread):
         if self.httpd:
             self.httpd.shutdown()
             self.join()
-
-    def cleanup_db_path(self):
-        if not os.path.exists(DB_PATH):
-            os.makedirs(DB_PATH)
-
-        for dbfile in glob.glob(os.path.join(DB_PATH, "*.db")):
-            try:
-                os.unlink(dbfile)
-            except OSError:
-                pass
 
 
 class metrics_handler(BaseHTTPRequestHandler):
