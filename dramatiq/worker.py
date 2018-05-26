@@ -214,49 +214,49 @@ class _ConsumerThread(Thread):
         self.acks_queue = Queue()
 
     def run(self):
-        try:
-            self.logger.debug("Running consumer thread...")
-            self.running = True
-            self.consumer = self.broker.consume(
-                queue_name=self.queue_name,
-                prefetch=self.prefetch,
-                timeout=self.worker_timeout,
-            )
+        self.logger.debug("Running consumer thread...")
+        self.running = True
+        while self.running:
+            try:
+                self.consumer = self.broker.consume(
+                    queue_name=self.queue_name,
+                    prefetch=self.prefetch,
+                    timeout=self.worker_timeout,
+                )
 
-            for message in self.consumer:
-                if message is not None:
-                    self.handle_message(message)
+                for message in self.consumer:
+                    if message is not None:
+                        self.handle_message(message)
 
-                self.handle_acks()
-                self.handle_delayed_messages()
-                if not self.running:
-                    break
+                    self.handle_acks()
+                    self.handle_delayed_messages()
+                    if not self.running:
+                        break
 
-        except ConnectionError as e:
-            self.logger.critical("Consumer encountered a connection error: %s", e)
-            # Acking is unsafe when the connection is abruptly closed
-            # so we must clear the queue.  All brokers have at-least
-            # once semantics so this is a safe operation.
-            self.acks_queue = Queue()
-            self.delay_queue = PriorityQueue()
+            except ConnectionError as e:
+                self.logger.critical("Consumer encountered a connection error: %s", e)
+                # Acking is unsafe when the connection is abruptly closed
+                # so we must clear the queue.  All brokers have at-least
+                # once semantics so this is a safe operation.
+                self.acks_queue = Queue()
+                self.delay_queue = PriorityQueue()
 
-        except Exception as e:
-            self.logger.critical("Consumer encountered an unexpected error.", exc_info=True)
-            # Avoid leaving any open file descriptors around when
-            # an exception occurs.
-            self.close()
+            except Exception as e:
+                self.logger.critical("Consumer encountered an unexpected error.", exc_info=True)
+                # Avoid leaving any open file descriptors around when
+                # an exception occurs.
+                self.close()
 
-        # While the consumer is running (i.e. hasn't been shut down),
-        # try to restart it once a second.
-        if self.running:
-            self.logger.info("Restarting consumer in %0.2f seconds.", CONSUMER_RESTART_DELAY_SECS)
-            self.close()
-            time.sleep(CONSUMER_RESTART_DELAY_SECS)
-            self.run()
+            # While the consumer is running (i.e. hasn't been shut down),
+            # try to restart it once a second.
+            if self.running:
+                self.logger.info("Restarting consumer in %0.2f seconds.", CONSUMER_RESTART_DELAY_SECS)
+                self.close()
+                time.sleep(CONSUMER_RESTART_DELAY_SECS)
 
-        else:
-            self.broker.emit_before("consumer_thread_shutdown", self)
-            self.logger.debug("Consumer thread stopped.")
+        # If it's no longer running, then shut it down gracefully.
+        self.broker.emit_before("consumer_thread_shutdown", self)
+        self.logger.debug("Consumer thread stopped.")
 
     def handle_acks(self):
         """Perform any pending (n)acks.

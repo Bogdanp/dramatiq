@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Potential stack overflow when restarting Consumer threads.  (`#89`_)
+
+.. _#89: https://github.com/Bogdanp/dramatiq/issues/89
+
+
 `1.2.0`_ -- 2018-05-24
 ----------------------
 
