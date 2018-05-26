@@ -22,29 +22,57 @@ with open(rel("dramatiq", "__init__.py"), "r") as f:
         raise RuntimeError("Version marker not found.")
 
 
-def parse_dependencies(filename):
-    with open(rel("requirements", filename)) as reqs:
-        for line in reqs:
-            line = line.strip()
-            if line.startswith("#"):
-                continue
+dependencies = [
+    "prometheus-client>=0.2,<0.3",
+]
 
-            elif line.startswith("-r"):
-                yield from parse_dependencies(line[len("-r "):])
+extra_dependencies = {
+    "memcached": [
+        "pylibmc>=1.5,<2.0",
+    ],
 
-            else:
-                yield line
+    "rabbitmq": [
+        "pika>=0.11,<0.12",
+    ],
 
+    "redis": [
+        "redis>=2.10",
+    ],
 
-dependencies = list(parse_dependencies("common.txt"))
-
-extras = ("memcached", "rabbitmq", "redis", "watch")
-extra_dependencies = {}
-for extra in extras:
-    filename = extra + ".txt"
-    extra_dependencies[extra] = list(parse_dependencies(filename))
+    "watch": [
+        "watchdog>=0.8,<0.9",
+        "watchdog_gevent==0.1",
+    ],
+}
 
 extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
+extra_dependencies["dev"] = extra_dependencies["all"] + [
+    # Constraints
+    "coverage>=4.0,<4.4",  # Pinned due to https://bitbucket.org/ned/coveragepy/issues/578/incomplete-file-path-in-xml-report
+
+    # Docs
+    "alabaster",
+    "sphinx",
+    "sphinxcontrib-napoleon",
+    "sphinxcontrib-versioning",
+
+    # Linting
+    "flake8",
+    "flake8-bugbear",
+    "flake8-quotes",
+    "isort",
+
+    # Misc
+    "bumpversion",
+    "hiredis",
+    "twine",
+
+    # Testing
+    "pytest",
+    "pytest-benchmark[histogram]",
+    "pytest-cov",
+    "tox",
+]
 
 setup(
     name="dramatiq",

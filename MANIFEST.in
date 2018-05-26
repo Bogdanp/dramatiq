@@ -6,4 +6,3 @@ include setup.py
 
 recursive-include bin *
 recursive-include dramatiq/brokers/redis *.lua
-recursive-include requirements *.txt
