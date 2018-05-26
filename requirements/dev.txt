@@ -6,6 +6,7 @@ sphinxcontrib-versioning
 
 # Linting
 flake8
+flake8-bugbear
 flake8-quotes
 isort
 

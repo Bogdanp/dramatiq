@@ -17,7 +17,7 @@ def test_raise_thread_exception():
     # And a function that waits for an interrupt
     def work():
         try:
-            for i in range(10):
+            for _ in range(10):
                 time.sleep(.1)
         except threading.Interrupt:
             caught.append(1)

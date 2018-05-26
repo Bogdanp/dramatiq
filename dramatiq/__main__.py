@@ -350,7 +350,7 @@ def main():  # noqa
         buffers = defaultdict(str)
         while running:
             events = selector.select(timeout=1)
-            for key, mask in events:
+            for key, _ in events:
                 data = os.read(key.fd, BUFSIZE)
                 if not data:
                     selector.unregister(key.fileobj)

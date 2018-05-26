@@ -117,7 +117,7 @@ class Broker:
             "provide either 'before' or 'after', but not both"
 
         if before or after:
-            for i, m in enumerate(self.middleware):
+            for i, m in enumerate(self.middleware):  # noqa
                 if isinstance(m, before or after):
                     break
             else:

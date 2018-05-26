@@ -88,7 +88,7 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
     # And get the results with a lower timeout than the tasks can complete in
     # Then a ResultTimeout error should be raised
     with pytest.raises(ResultTimeout):
-        for res in pipe.get_results(block=True, timeout=1000):
+        for _ in pipe.get_results(block=True, timeout=1000):
             pass
 
 

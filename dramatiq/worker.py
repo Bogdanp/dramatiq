@@ -418,7 +418,7 @@ class _WorkerThread(Thread):
 
         except BaseException as e:
             if isinstance(e, RateLimitExceeded):
-                self.logger.warning("Rate limit exceeded in message %s: %s.", message, e.message)
+                self.logger.warning("Rate limit exceeded in message %s: %s.", message, e)
             else:
                 self.logger.warning("Failed to process message %s with unhandled exception.", message, exc_info=True)
 

@@ -22,8 +22,8 @@ class generic_actor(type):
     """Meta for class-based actors.
     """
 
-    def __new__(cls, name, bases, attrs):
-        clazz = super().__new__(cls, name, bases, attrs)
+    def __new__(metacls, name, bases, attrs):
+        clazz = super().__new__(metacls, name, bases, attrs)
         meta = getattr(clazz, "Meta", object())
         if not getattr(meta, "abstract", False):
             options = {name: getattr(meta, name) for name in vars(meta) if not name.startswith("_")}
