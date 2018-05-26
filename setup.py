@@ -79,6 +79,7 @@ setup(
     version=version,
     description="A fast and reliable distributed task processing library for Python 3.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     packages=[
         "dramatiq",
         "dramatiq.brokers",
