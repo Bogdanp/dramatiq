@@ -77,7 +77,9 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
 setup(
     name="dramatiq",
     version=version,
-    description="A fast and reliable distributed task processing library for Python 3.",
+    author="Bogdan Popa",
+    author_email="bogdan@cleartype.io",
+    description="Background Processing for Python 3.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=[
