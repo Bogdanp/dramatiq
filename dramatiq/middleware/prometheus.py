@@ -124,6 +124,11 @@ class Prometheus(Middleware):
         self.server.start()
 
     def after_worker_shutdown(self, broker, worker):
+        from prometheus_client import multiprocess
+
+        self.logger.debug("Marking process dead...")
+        multiprocess.mark_process_dead(os.getpid(), DB_PATH)
+
         self.logger.debug("Shutting down exposition server...")
         self.server.stop()
 

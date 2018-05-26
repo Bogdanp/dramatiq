@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Upgraded prometheus_client to 0.2.x.
+
 Fixed
 ^^^^^
 
