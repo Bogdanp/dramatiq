@@ -1,5 +1,6 @@
 .. References
 
+.. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Callbacks| replace:: :class:`Callbacks<dramatiq.middleware.Callbacks>`
 .. |DramatiqError| replace:: :class:`DramatiqError<dramatiq.DramatiqError>`
 .. |Encoders| replace:: :class:`Encoders<dramatiq.Encoder>`

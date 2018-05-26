@@ -17,9 +17,11 @@ Changed
 Fixed
 ^^^^^
 
+* |Brokers| can now be passed an empty list of middleware.  (`#90`_)
 * Potential stack overflow when restarting Consumer threads.  (`#89`_)
 
 .. _#89: https://github.com/Bogdanp/dramatiq/issues/89
+.. _#90: https://github.com/Bogdanp/dramatiq/issues/90
 
 
 `1.2.0`_ -- 2018-05-24

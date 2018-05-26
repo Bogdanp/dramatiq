@@ -77,7 +77,9 @@ class Broker:
         self.actor_options = set()
         self.middleware = []
 
-        middleware = middleware or [m() for m in default_middleware]
+        if middleware is None:
+            middleware = [m() for m in default_middleware]
+
         for m in middleware:
             self.add_middleware(m)
 

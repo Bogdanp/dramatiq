@@ -61,3 +61,12 @@ def test_broker_middleware_cannot_be_addwed_both_before_and_after(stub_broker):
     # I expect an AssertionError to be raised
     with pytest.raises(AssertionError):
         stub_broker.add_middleware(empty_middleware, before=Prometheus, after=Prometheus)
+
+
+def test_can_instantiate_brokers_without_middleware():
+    # Given that I have an empty list of middleware
+    # When I pass that to the RMQ Broker
+    broker = RabbitmqBroker(middleware=[])
+
+    # Then I should get back a broker with not middleware
+    assert not broker.middleware
