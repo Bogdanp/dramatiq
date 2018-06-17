@@ -23,7 +23,6 @@ with open(rel("dramatiq", "__init__.py"), "r") as f:
 
 
 dependencies = [
-    "prometheus-client>=0.2,<0.3",
 ]
 
 extra_dependencies = {
@@ -42,6 +41,10 @@ extra_dependencies = {
     "watch": [
         "watchdog>=0.8,<0.9",
         "watchdog_gevent==0.1",
+    ],
+
+    "prometheus": [
+        "prometheus-client>=0.2,<0.3",
     ],
 }
 

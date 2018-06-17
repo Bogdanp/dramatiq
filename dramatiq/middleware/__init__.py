@@ -19,11 +19,16 @@ from .age_limit import AgeLimit
 from .callbacks import Callbacks
 from .middleware import Middleware, MiddlewareError, SkipMessage
 from .pipelines import Pipelines
-from .prometheus import Prometheus
 from .retries import Retries
 from .shutdown import Shutdown, ShutdownNotifications
 from .threading import Interrupt, raise_thread_exception
 from .time_limit import TimeLimit, TimeLimitExceeded
+
+try:
+    from .prometheus import Prometheus
+    HAS_PROMETHEUS = True
+except ImportError:
+    HAS_PROMETHEUS = False
 
 __all__ = [
     # Basics
@@ -33,12 +38,16 @@ __all__ = [
     "Interrupt", "raise_thread_exception",
 
     # Middlewares
-    "AgeLimit", "Callbacks", "Pipelines", "Prometheus", "Retries",
+    "AgeLimit", "Callbacks", "Pipelines", "Retries",
     "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
 ]
 
 #: The list of middleware that are enabled by default.
 default_middleware = [
-    Prometheus, AgeLimit, TimeLimit, ShutdownNotifications,
+    AgeLimit, TimeLimit, ShutdownNotifications,
     Callbacks, Pipelines, Retries
 ]
+
+if HAS_PROMETHEUS:
+    __all__ += ["Prometheus"]
+    default_middleware += [Prometheus]

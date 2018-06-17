@@ -31,6 +31,10 @@ or if you want to use it with [Redis]
     pipenv install 'dramatiq[redis, watch]'
 
 
+If you want to use it with [Prometheus]
+
+   pipenv install 'dramtiq[prometheus]'
+
 ## Quickstart
 
 Make sure you've got [RabbitMQ] running, then create a new file called
@@ -76,3 +80,4 @@ dramatiq is licensed under the LGPL.  Please see [COPYING] and
 [RabbitMQ]: https://www.rabbitmq.com/
 [Redis]: https://redis.io
 [user guide]: https://dramatiq.io/guide.html
+[Prometheus]: https://prometheus.io
