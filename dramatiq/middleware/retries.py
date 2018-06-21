@@ -34,7 +34,7 @@ class Retries(Middleware):
     exponential backoff.
 
     Parameters:
-      max_retires(int): The maximum number of times tasks can be retried.
+      max_retries(int): The maximum number of times tasks can be retried.
       min_backoff(int): The minimum amount of backoff milliseconds to
         apply to retried tasks.  Defaults to 15 seconds.
       max_backoff(int): The maximum amount of backoff milliseconds to
