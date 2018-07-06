@@ -3,9 +3,10 @@
 Dramatiq: simple task processing
 ================================
 
-Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_)
+Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
 
 .. _Discuss: https://discuss.dramatiq.io
+.. _Source Code: https://github.com/Bogdanp/dramatiq
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
@@ -99,6 +100,7 @@ Project Info
 .. toctree::
    :maxdepth: 1
 
+   Source Code <https://github.com/Bogdanp/dramatiq>
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    Discussion Board <https://discuss.dramatiq.io>
