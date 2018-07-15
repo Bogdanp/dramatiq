@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Allow ``pipe_ignore`` option to be set at the actor level.  (`#100`_)
+
+.. _#100: https://github.com/Bogdanp/dramatiq/issues/100
+
+
 `1.3.0`_ -- 2018-07-05
 ----------------------
 
