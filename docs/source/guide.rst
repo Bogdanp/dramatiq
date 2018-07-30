@@ -7,7 +7,7 @@ To follow along with this guide you'll need to install and run RabbitMQ_
 and then set up a new `virtual environment`_ in which you'll have
 to install Dramatiq and Requests_::
 
-  $ pip install dramatiq[rabbitmq, watch] requests
+  $ pip install 'dramatiq[rabbitmq, watch]' requests
 
 .. _requests: http://docs.python-requests.org
 .. _virtual environment: http://docs.python-guide.org/en/latest/starting/install3/osx/#virtual-environments

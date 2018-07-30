@@ -93,7 +93,7 @@ the message, raise an exception to indicate failure.
    from dramatiq.middleware import Interrupt
 
    @dramatiq.actor(max_retries=3, notify_shutdown=True)
-   def long_running_task:
+   def long_running_task():
        try:
            setup()
            do_work()
