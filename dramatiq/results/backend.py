@@ -50,8 +50,10 @@ class ResultBackend:
     """
 
     def __init__(self, *, namespace: str="dramatiq-results", encoder: Encoder=None):
+        from ..message import get_encoder
+
         self.namespace = namespace
-        self.encoder = encoder or JSONEncoder()
+        self.encoder = encoder or get_encoder()
 
     def get_result(self, message: "Message", *, block: bool=False, timeout: int=None) -> Result:
         """Get a result from the backend.
