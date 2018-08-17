@@ -50,7 +50,7 @@ class ResultBackend:
     """
 
     def __init__(self, *, namespace: str="dramatiq-results", encoder: Encoder=None):
-        # import it here to avoid cycle dependencies
+        # import it here to avoid cyclic dependencies
         from ..message import get_encoder
 
         self.namespace = namespace
