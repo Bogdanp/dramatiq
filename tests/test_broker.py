@@ -1,5 +1,3 @@
-import platform
-
 import pytest
 
 import dramatiq
@@ -7,8 +5,7 @@ import dramatiq.broker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.middleware import Middleware
 
-CURRENT_OS = platform.system()
-skip_on_windows = pytest.mark.skipif(CURRENT_OS == "Windows", reason="test skipped on Windows")
+from .common import skip_on_windows
 
 
 class EmptyMiddleware(Middleware):
