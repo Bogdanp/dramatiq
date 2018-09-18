@@ -22,11 +22,9 @@ import logging
 import multiprocessing
 import os
 import random
-import selectors
 import signal
 import sys
 import time
-from collections import defaultdict
 from threading import Thread
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
@@ -229,6 +227,20 @@ def setup_parent_logging(args, *, stream=sys.stderr):
     return get_logger("dramatiq", "MainProcess")
 
 
+class StreamablePipe:
+    def __init__(self, pipe):
+        self.pipe = pipe
+
+    def flush(self):
+        return
+
+    def close(self):
+        self.pipe.close()
+
+    def write(self, s):
+        self.pipe.send(s)
+
+
 def setup_worker_logging(args, worker_id, logging_pipe):
     # Redirect all output to the logging pipe so that all output goes
     # to stderr and output is serialized so there isn't any mangling.
@@ -241,14 +253,13 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
-def worker_process(args, worker_id, logging_fd):
+def worker_process(args, worker_id, logging_pipe):
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
         # processes don't all follow the same sequence.
         random.seed()
 
-        logging_pipe = os.fdopen(logging_fd, "w")
         logger = setup_worker_logging(args, worker_id, logging_pipe)
         module, broker = import_broker(args.broker)
         broker.emit_after("process_boot")
@@ -305,20 +316,18 @@ def main():  # noqa
     worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):
-        read_fd, write_fd = os.pipe()
-        pid = os.fork()
-        if pid != 0:
-            os.close(write_fd)
-            worker_pipes.append(os.fdopen(read_fd))
-            worker_processes.append(pid)
-            continue
+        read_pipe, write_pipe = multiprocessing.Pipe()
+        proc = multiprocessing.Process(
+            target=worker_process,
+            args=(args, worker_id, StreamablePipe(write_pipe))
+        )
+        proc.start()
+        worker_pipes.append(read_pipe)
+        worker_processes.append(proc)
 
-        os.close(read_fd)
-        return worker_process(args, worker_id, write_fd)
-
-    parent_read_fd, parent_write_fd = os.pipe()
-    parent_read_pipe = os.fdopen(parent_read_fd)
-    parent_write_pipe = os.fdopen(parent_write_fd, "w")
+    parent_read_mp_pipe, parent_write_mp_pipe = multiprocessing.Pipe()
+    parent_read_pipe = StreamablePipe(parent_read_mp_pipe)
+    parent_write_pipe = StreamablePipe(parent_write_mp_pipe)
     logger = setup_parent_logging(args, stream=parent_write_pipe)
     logger.info("Dramatiq %r is booting up." % __version__)
     if args.pid_file:
@@ -344,34 +353,20 @@ def main():  # noqa
         nonlocal running
 
         log_file = args.log_file or sys.stderr
-        selector = selectors.DefaultSelector()
-        for pipe in [parent_read_pipe] + worker_pipes:
-            selector.register(pipe, selectors.EVENT_READ)
-
-        buffers = defaultdict(str)
         while running:
-            events = selector.select(timeout=1)
-            for key, _ in events:
-                data = os.read(key.fd, BUFSIZE)
-                if not data:
-                    selector.unregister(key.fileobj)
-                    log_file.write(buffers[key.fd])
-                    log_file.flush()
-                    continue
-
-                buffers[key.fd] += data.decode("utf-8", errors="ignore")
-                while buffers[key.fd]:
-                    index = buffers[key.fd].find("\n")
-                    if index == -1:
+            pipes = [parent_read_mp_pipe] + worker_pipes
+            events = multiprocessing.connection.wait(pipes)
+            for event in events:
+                while event.poll():
+                    # StreamHandler writes newlines into the pipe separately
+                    # from the actual log entry; to avoid back-to-back newlines
+                    # in the events pipe (causing multiple entries on a single
+                    # line), discard newline-only data from the pipe
+                    data = event.recv()
+                    if data == "\n":
                         break
-
-                    line = buffers[key.fd][:index + 1]
-                    buffers[key.fd] = buffers[key.fd][index + 1:]
-                    log_file.write(line)
+                    log_file.write(data + "\n")
                     log_file.flush()
-
-        logger.debug("Closing selector...")
-        selector.close()
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
     log_watcher.start()
