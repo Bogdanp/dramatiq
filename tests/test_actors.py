@@ -1,4 +1,3 @@
-import platform
 import time
 from unittest.mock import patch
 
@@ -9,9 +8,7 @@ from dramatiq import Message, Middleware
 from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import SkipMessage
 
-from .common import worker
-
-_current_platform = platform.python_implementation()
+from .common import skip_on_pypy, worker
 
 
 def test_actors_can_be_defined(stub_broker):
@@ -205,7 +202,7 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     assert sum(attempts) >= 1
 
 
-@pytest.mark.skipif(_current_platform == "PyPy", reason="Time limits are not supported under PyPy.")
+@skip_on_pypy
 def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
     attempts, successes = [], []
@@ -229,7 +226,7 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     assert sum(successes) == 0
 
 
-@pytest.mark.skipif(_current_platform == "PyPy", reason="Time limits are not supported under PyPy.")
+@skip_on_pypy
 def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
     attempts, successes = [], []

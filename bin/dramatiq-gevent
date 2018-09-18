@@ -6,7 +6,9 @@ except ImportError:
     sys.stderr.write("error: gevent is missing. Run `pip install gevent`.")
     sys.exit(1)
 
-import dramatiq.__main__
 import sys
 
-sys.exit(dramatiq.__main__.main())
+from dramatiq.cli import main
+
+if __name__ == "__main__":
+    sys.exit(main())

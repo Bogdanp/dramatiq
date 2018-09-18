@@ -50,8 +50,7 @@ if CURRENT_OS != "Windows":
 
 #: The list of middleware that are enabled by default.
 default_middleware = [
-    AgeLimit, TimeLimit, ShutdownNotifications,
-    Callbacks, Pipelines, Retries
+    AgeLimit, TimeLimit, ShutdownNotifications, Callbacks, Pipelines, Retries
 ]
 
 if CURRENT_OS != "Windows":

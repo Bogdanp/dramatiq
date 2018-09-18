@@ -4,6 +4,8 @@ import time
 
 from dramatiq.brokers.stub import StubBroker
 
+from .common import skip_on_windows
+
 broker = StubBroker()
 
 
@@ -14,6 +16,7 @@ def remove(filename):
         pass
 
 
+@skip_on_windows
 def test_cli_scrubs_stale_pid_files(start_cli):
     try:
         # Given that I have an existing file containing an old pid
@@ -63,6 +66,7 @@ def test_cli_aborts_when_pidfile_contains_garbage(start_cli):
         remove(filename)
 
 
+@skip_on_windows
 def test_cli_with_pidfile_can_be_reloaded(start_cli):
     try:
         # Given that I have a PID file

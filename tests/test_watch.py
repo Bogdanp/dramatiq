@@ -1,5 +1,3 @@
-import os
-import platform
 import time
 from pathlib import Path
 
@@ -9,11 +7,10 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.common import current_millis
 
+from .common import skip_on_pypy, skip_on_travis, skip_on_windows
+
 broker = RedisBroker()
 loaded_at = current_millis()
-
-CURRENT_PLATFORM = platform.python_implementation()
-CURRENT_OS = platform.system()
 
 
 @dramatiq.actor(broker=broker)
@@ -22,9 +19,9 @@ def write_loaded_at(filename):
         f.write(str(loaded_at))
 
 
-@pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
-@pytest.mark.skipif(CURRENT_PLATFORM == "PyPy", reason="Code reloading is not supported on PyPy.")
-@pytest.mark.skipif(CURRENT_OS == "Windows", reason="Code reloading is not supported on Windows.")
+@skip_on_travis
+@skip_on_windows
+@skip_on_pypy
 @pytest.mark.parametrize("extra_args", [
     (),
     ("--watch-use-polling",),

@@ -63,6 +63,7 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "bumpversion",
     "hiredis",
     "twine",
+    "wheel",
 
     # Testing
     "pytest",
