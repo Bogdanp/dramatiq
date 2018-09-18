@@ -405,8 +405,9 @@ def main():  # noqa
     signal.signal(signal.SIGTERM, sighandler)
     if hasattr(signal, "SIGHUP"):
         signal.signal(signal.SIGHUP, sighandler)
-    for pid in worker_processes:
-        pid, rc = os.waitpid(pid, 0)
+    for proc in worker_processes:
+        proc.join()
+        rc = proc.exitcode
         retcode = max(retcode, rc >> 8)
 
     running = False
