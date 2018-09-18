@@ -277,7 +277,8 @@ def worker_process(args, worker_id, logging_fd):
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, termhandler)
-    signal.signal(signal.SIGHUP, termhandler)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, termhandler)
 
     running = True
     while running:
@@ -402,7 +403,8 @@ def main():  # noqa
     retcode = RET_OK
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
-    signal.signal(signal.SIGHUP, sighandler)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, sighandler)
     for pid in worker_processes:
         pid, rc = os.waitpid(pid, 0)
         retcode = max(retcode, rc >> 8)
