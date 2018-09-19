@@ -150,7 +150,7 @@ def parse_arguments():
         help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", type=argparse.FileType(mode="a", encoding="utf-8"),
+        "--log-file", type=str,
         help="write all logs to a file (default: sys.stderr)",
     )
 
@@ -352,7 +352,10 @@ def main():  # noqa
     def watch_logs(worker_pipes):
         nonlocal running
 
-        log_file = args.log_file or sys.stderr
+        if args.log_file is None:
+            log_file = sys.stderr
+        else:
+            log_file = open(args.log_file, mode="a", encoding="utf-8")
         while running:
             pipes = [parent_read_mp_pipe] + worker_pipes
             events = multiprocessing.connection.wait(pipes)
