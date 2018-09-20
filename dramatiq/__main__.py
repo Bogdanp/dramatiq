@@ -365,7 +365,10 @@ def main():  # noqa
                     # from the actual log entry; to avoid back-to-back newlines
                     # in the events pipe (causing multiple entries on a single
                     # line), discard newline-only data from the pipe
-                    data = event.recv()
+                    try:
+                        data = event.recv()
+                    except EOFError:
+                        continue
                     if data == "\n":
                         break
                     log_file.write(data + "\n")
