@@ -369,7 +369,6 @@ def main():  # noqa
                         try:
                             data = event.recv()
                         except EOFError:
-                            logger.critical("EOF")
                             break
                         if data == "\n":
                             break
