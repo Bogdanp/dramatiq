@@ -254,6 +254,12 @@ def setup_worker_logging(args, worker_id, logging_pipe):
 
 
 def worker_process(args, worker_id, logging_pipe):
+    start_method = multiprocessing.get_start_method()
+    if start_method == "spawn":
+        exit = sys.exit
+    else:
+        exit = os._exit
+
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
@@ -271,10 +277,10 @@ def worker_process(args, worker_id, logging_pipe):
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
-        return os._exit(RET_IMPORT)
+        return exit(RET_IMPORT)
     except ConnectionError:
         logger.exception("Broker connection failed.")
-        return os._exit(RET_CONNECT)
+        return exit(RET_CONNECT)
 
     def termhandler(signum, frame):
         nonlocal running
@@ -283,7 +289,7 @@ def worker_process(args, worker_id, logging_pipe):
             running = False
         else:
             logger.warning("Killing worker process...")
-            return os._exit(RET_KILLED)
+            return exit(RET_KILLED)
 
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -319,7 +325,8 @@ def main():  # noqa
         read_pipe, write_pipe = multiprocessing.Pipe()
         proc = multiprocessing.Process(
             target=worker_process,
-            args=(args, worker_id, StreamablePipe(write_pipe))
+            args=(args, worker_id, StreamablePipe(write_pipe)),
+            daemon=True,
         )
         proc.start()
         worker_pipes.append(read_pipe)
