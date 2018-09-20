@@ -365,10 +365,10 @@ def main():  # noqa
             log_file = open(args.log_file, mode="a", encoding="utf-8")
         while running:
             pipes = [parent_read_mp_pipe] + worker_pipes
-            events = multiprocessing.connection.wait(pipes)
+            events = multiprocessing.connection.wait(pipes, timeout=1)
             for event in events:
                 try:
-                    while event.poll():
+                    while event.poll(1):
                         # StreamHandler writes newlines into the pipe separately
                         # from the actual log entry; to avoid back-to-back newlines
                         # in the events pipe (causing multiple entries on a single
