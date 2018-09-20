@@ -360,19 +360,23 @@ def main():  # noqa
             pipes = [parent_read_mp_pipe] + worker_pipes
             events = multiprocessing.connection.wait(pipes)
             for event in events:
-                while event.poll():
-                    # StreamHandler writes newlines into the pipe separately
-                    # from the actual log entry; to avoid back-to-back newlines
-                    # in the events pipe (causing multiple entries on a single
-                    # line), discard newline-only data from the pipe
-                    try:
-                        data = event.recv()
-                    except EOFError:
-                        continue
-                    if data == "\n":
-                        break
-                    log_file.write(data + "\n")
-                    log_file.flush()
+                try:
+                    while event.poll():
+                        # StreamHandler writes newlines into the pipe separately
+                        # from the actual log entry; to avoid back-to-back newlines
+                        # in the events pipe (causing multiple entries on a single
+                        # line), discard newline-only data from the pipe
+                        try:
+                            data = event.recv()
+                        except EOFError:
+                            logger.critical("EOF")
+                            break
+                        if data == "\n":
+                            break
+                        log_file.write(data + "\n")
+                        log_file.flush()
+                except BrokenPipeError:
+                    continue
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
     log_watcher.start()
@@ -387,11 +391,11 @@ def main():  # noqa
         }[signum]
 
         logger.info("Sending %r to worker processes...", signum.name)
-        for pid in worker_processes:
+        for proc in worker_processes:
             try:
-                os.kill(pid, signum)
+                os.kill(proc.pid, signum)
             except OSError:  # pragma: no cover
-                logger.warning("Failed to send %r to pid %d.", signum.name, pid)
+                logger.warning("Failed to send %r to pid %d.", signum.name, proc.pid)
 
     # Now that the watcher threads have been started, it should be
     # safe to unblock the signals that were previously blocked.
