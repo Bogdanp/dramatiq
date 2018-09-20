@@ -382,7 +382,7 @@ def main():  # noqa
                         log_file.write(data + "\n")
                         log_file.flush()
                 except BrokenPipeError:
-                    continue
+                    pass
 
     log_watcher = Thread(target=watch_logs, args=(worker_pipes,), daemon=True)
     log_watcher.start()
