@@ -419,7 +419,7 @@ def main():  # noqa
     for proc in worker_processes:
         proc.join()
         rc = proc.exitcode
-        retcode = max(retcode, rc >> 8)
+        retcode = max(retcode, rc)
 
     running = False
     if HAS_WATCHDOG and args.watch:
