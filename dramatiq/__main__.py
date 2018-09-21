@@ -91,6 +91,28 @@ examples:
 """
 
 
+class StreamablePipe:
+    def __init__(self, pipe):
+        """Wrap a multiprocessing.connection.PipeConnection so it can be used
+        with logging's StreamHandler.
+
+        Parameters:
+            pipe(multiprocessing.connection.PipeConnection): writable end
+                of the pipe to be used for transmitting child worker logging
+                data to parent
+        """
+        self.pipe = pipe
+
+    def flush(self):
+        return
+
+    def close(self):
+        self.pipe.close()
+
+    def write(self, s):
+        self.pipe.send(s)
+
+
 def import_broker(value):
     modname, varname = value, None
     if ":" in value:
@@ -225,20 +247,6 @@ def setup_parent_logging(args, *, stream=sys.stderr):
     level = verbosity.get(args.verbose, logging.DEBUG)
     logging.basicConfig(level=level, format=logformat, stream=stream)
     return get_logger("dramatiq", "MainProcess")
-
-
-class StreamablePipe:
-    def __init__(self, pipe):
-        self.pipe = pipe
-
-    def flush(self):
-        return
-
-    def close(self):
-        self.pipe.close()
-
-    def write(self, s):
-        self.pipe.send(s)
 
 
 def setup_worker_logging(args, worker_id, logging_pipe):
