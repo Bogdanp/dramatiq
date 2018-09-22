@@ -3,8 +3,6 @@
 # dramatiq
 
 [![Build Status](https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master)](https://travis-ci.org/Bogdanp/dramatiq)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/2e03a54d3d3ee0bb93c4/test_coverage)](https://codeclimate.com/github/Bogdanp/dramatiq/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/2e03a54d3d3ee0bb93c4/maintainability)](https://codeclimate.com/github/Bogdanp/dramatiq/maintainability)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
 [![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://discuss.dramatiq.io)

@@ -12,10 +12,6 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
    :target: license.html
 .. image:: https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master
    :target: https://travis-ci.org/Bogdanp/dramatiq
-.. image:: https://api.codeclimate.com/v1/badges/2e03a54d3d3ee0bb93c4/test_coverage
-   :target: https://codeclimate.com/github/Bogdanp/dramatiq/test_coverage
-.. image:: https://api.codeclimate.com/v1/badges/2e03a54d3d3ee0bb93c4/maintainability
-   :target: https://codeclimate.com/github/Bogdanp/dramatiq/maintainability
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
 
