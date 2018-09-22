@@ -47,9 +47,6 @@ extra_dependencies = {
 
 extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
 extra_dependencies["dev"] = extra_dependencies["all"] + [
-    # Pinned due to https://bitbucket.org/ned/coveragepy/issues/578/incomplete-file-path-in-xml-report
-    "coverage>=4.0,<4.4",
-
     # Docs
     "alabaster",
     "sphinx",
