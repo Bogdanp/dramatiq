@@ -1,23 +1,50 @@
+image: Visual Studio 2015
+
+clone_folder: C:\projects\dramatiq
+
 environment:
   matrix:
     - PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
 
-services:
-  - rabbitmq-server
-  - redis-server
+  PROJ: C:\\projects\\dramatiq
+  DEPS: C:\\projects\\libs
+
+init:
+  - mkdir %DEPS%
+  - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+
+before_build:
+  - choco install rabbitmq --ignoredependencies -y
+  - choco install redis-64
+  - redis-server --service-install
+  - redis-server --service-start
 
 install:
   # Download and start a binary version of memcached.
-  - appveyor DownloadFile "https://s3.amazonaws.com/downloads.northscale.com/memcached-win64-1.4.4-14.zip" -FileName memcached.zip
-  - 7z x memcached.zip -y
-  - ps: $Memcached = Start-Process memcached\memcached.exe -PassThru
+  - ps: Invoke-WebRequest "https://s3.amazonaws.com/downloads.northscale.com/memcached-win64-1.4.4-14.zip" -OutFile "$ENV:DEPS\memcached.zip"
+  - 7z x %DEPS%\memcached.zip -y -o%DEPS%\
+  - ps: $Memcached = Start-Process $ENV:DEPS\memcached\memcached.exe -PassThru
 
   # Download libmemcached sources to use when installing pylibmc.
-  - appveyor DownloadFile "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz" -FileName libmemcached.tar.gz
-  - 7z x libmemcached.tar.gz -so | 7z x -aoa -si -ttar -oC:\\
-  - ls C:\\libmemcached-1.0.18
+  - ps: Invoke-WebRequest "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz" -OutFile "$ENV:DEPS\libmemcached.tar.gz"
+  - 7z x %DEPS%\libmemcached.tar.gz -so | 7z x -aoa -si -ttar -o%DEPS%\
+  - cd %DEPS%\libmemcached-1.0.18
+  # libmemcached's configure script doesn't appear to identify mingw correctly; specify a build argument to avoid fatal compiler errors
+  - bash -c "./configure --prefix=$(pwd) --disable-shared --disable-sasl --disable-dependency-tracking --with-memcached=/c/projects/dramatiq/memcached/memcached.exe --build=x86_64-w64-mingw32"
+  - bash -c "cd /c/projects/libs/libmemcached-1.0.18 && make && make install"
+  # libmemcached's script doesn't like building shared library in mingw, so do it manually
+  - bash -c "gcc -shared -o lib/memcached.dll libmemcached/*.o libmemcached/csl/*.o libhashkit/libmemcached*.o -Wl,--output-def,lib/memcached.def -static -lws2_32 -lstdc++"
+  - bash -c "dlltool -d lib/memcached.def -l lib/memcached.lib"
+  # Note the architecture! This won't work on x86; a better script should probably use variables in the build matrix to test x86 and x86_64.
+  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
+  - cd lib
+  - lib /machine:x64 /def:memcached.def
+  # Copy the libmemcached DLL to the project root so Python can find it.
+  - copy memcached.dll %PROJ%\memcached.dll
+  - cd ..
+  - set LMCD_DIR=%cd%
 
   # Install python and pip.
   - ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
@@ -26,9 +53,12 @@ install:
   - "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% python -m pip install --upgrade pip"
 
-  - choco install rabbitmq redis-64
-  - '%CMD_IN_ENV% pip install --global-option="build_ext" --global-option="-IC:\\libmemcached-1.0.18" --global-option="-LC:\\libmemcached-1.0.18" pylibmc'
-  - '%CMD_IN_ENV% pip install -r requirements/dev.txt'
+  # Install pylibmc
+  - '%CMD_IN_ENV% pip install --install-option="--without-zlib" --install-option="--with-libmemcached=%LMCD_DIR%" pylibmc'
+
+  # Install dramatiq
+  - cd %PROJ%
+  - "%CMD_IN_ENV% pip install -e .[dev]"
 
 build_script:
   - "%CMD_IN_ENV% python setup.py build"
