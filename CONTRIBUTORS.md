@@ -19,3 +19,4 @@ of those changes to CLEARTYPE SRL.
 | [@2miksyn](https://github.com/2miksyn) | Mikhail Smirnov |
 | [@gdvalle](https://github.com/gdvalle) | Greg Dallavalle |
 | [@viiicky](https://github.com/viiicky) | Vikas Prasad |
+| [@ryansm1](https://github.com/ryansm1) | Ryan Smith |
