@@ -13,8 +13,11 @@ Fixed
 ^^^^^
 
 * Allow ``pipe_ignore`` option to be set at the actor level.  (`#100`_)
+* Result encoder now defaults to the global encoder.  (`#108`_, `@xdmiodz`_)
 
 .. _#100: https://github.com/Bogdanp/dramatiq/issues/100
+.. _#108: https://github.com/Bogdanp/dramatiq/issues/108
+.. _@xdmiodz: https://github.com/xdmiodz
 
 
 `1.3.0`_ -- 2018-07-05
