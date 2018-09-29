@@ -14,6 +14,7 @@ environment:
 init:
   - mkdir %DEPS%
   - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+  - set APPVEYOR=true
 
 before_build:
   - choco install rabbitmq --ignoredependencies -y
@@ -64,7 +65,7 @@ build_script:
   - "%CMD_IN_ENV% python setup.py build"
 
 test_script:
-  - "%CMD_IN_ENV% py.test"
+  - "%CMD_IN_ENV% py.test --benchmark-skip"
 
 after_test:
   - "%CMD_IN_ENV% python setup.py bdist_wheel"

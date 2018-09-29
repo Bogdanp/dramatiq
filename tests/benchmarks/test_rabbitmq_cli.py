@@ -7,7 +7,7 @@ import pytest
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-broker = RabbitmqBroker(host="127.1")
+broker = RabbitmqBroker(host="127.0.0.1")
 
 
 @dramatiq.actor(queue_name="benchmark-throughput", broker=broker)

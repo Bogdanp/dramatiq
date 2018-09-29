@@ -12,7 +12,7 @@ from dramatiq.results.backends import RedisBackend
 
 encoder = PickleEncoder()
 backend = RedisBackend(encoder=encoder)
-broker = RabbitmqBroker(host="127.1")
+broker = RabbitmqBroker(host="127.0.0.1")
 broker.add_middleware(Results(backend=backend))
 dramatiq.set_broker(broker)
 dramatiq.set_encoder(encoder)

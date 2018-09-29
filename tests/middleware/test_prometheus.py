@@ -1,7 +1,10 @@
 import urllib.request as request
 
+import pytest
+
 from dramatiq.brokers.stub import StubBroker
-from dramatiq.middleware import Prometheus
+
+prometheus = pytest.importorskip("dramatiq.middleware.prometheus")
 
 
 def test_prometheus_middleware_exposes_metrics():
@@ -10,7 +13,7 @@ def test_prometheus_middleware_exposes_metrics():
         broker = StubBroker()
 
         # And an instance of the prometheus middleware
-        prom = Prometheus()
+        prom = prometheus.Prometheus()
         prom.after_process_boot(broker)
 
         # When I request metrics via HTTP

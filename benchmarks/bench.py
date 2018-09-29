@@ -25,7 +25,7 @@ if os.getenv("REDIS") == "1":
     celery_app = celery.Celery(broker="redis:///")
 
 else:
-    broker = RabbitmqBroker(host="127.1")
+    broker = RabbitmqBroker(host="127.0.0.1")
     dramatiq.set_broker(broker)
     celery_app = celery.Celery(broker="amqp:///")
 

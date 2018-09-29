@@ -12,7 +12,8 @@ from dramatiq.common import current_millis
 broker = RedisBroker()
 loaded_at = current_millis()
 
-_current_platform = platform.python_implementation()
+CURRENT_PLATFORM = platform.python_implementation()
+CURRENT_OS = platform.system()
 
 
 @dramatiq.actor(broker=broker)
@@ -22,7 +23,8 @@ def write_loaded_at(filename):
 
 
 @pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
-@pytest.mark.skipif(_current_platform == "PyPy", reason="Code reloading is not supported on PyPy.")
+@pytest.mark.skipif(CURRENT_PLATFORM == "PyPy", reason="Code reloading is not supported on PyPy.")
+@pytest.mark.skipif(CURRENT_OS == "Windows", reason="Code reloading is not supported on Windows.")
 @pytest.mark.parametrize("extra_args", [
     (),
     ("--watch-use-polling",),

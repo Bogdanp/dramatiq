@@ -12,7 +12,7 @@ from dramatiq.common import current_millis
 
 def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     # Given a URL connection string
-    url = "amqp://127.1:5672"
+    url = "amqp://127.0.0.1:5672"
 
     # When I pass that to URLRabbitmqBroker
     broker = URLRabbitmqBroker(url)

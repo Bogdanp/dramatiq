@@ -303,7 +303,7 @@ def test_redis_broker_can_flush_queues(redis_broker):
 def test_redis_broker_can_connect_via_url():
     # Given that I have a connection string
     # When I pass that to RedisBroker
-    broker = RedisBroker(url="redis://127.1")
+    broker = RedisBroker(url="redis://127.0.0.1")
 
     # Then I should get back a valid connection
     assert broker.client.ping()

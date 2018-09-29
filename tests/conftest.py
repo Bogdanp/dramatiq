@@ -22,7 +22,8 @@ logging.getLogger("pika").setLevel(logging.WARN)
 
 random.seed(1337)
 
-CI = os.environ.get("TRAVIS") == "true"
+CI = os.getenv("TRAVIS") == "true" or \
+    os.getenv("APPVEYOR") == "true"
 
 
 def check_rabbitmq(broker):
@@ -58,7 +59,7 @@ def stub_broker():
 
 @pytest.fixture()
 def rabbitmq_broker():
-    broker = RabbitmqBroker(host="127.1")
+    broker = RabbitmqBroker(host="127.0.0.1")
     check_rabbitmq(broker)
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
