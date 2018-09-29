@@ -14,9 +14,12 @@ Fixed
 
 * Allow ``pipe_ignore`` option to be set at the actor level.  (`#100`_)
 * Result encoder now defaults to the global encoder.  (`#108`_, `@xdmiodz`_)
+* Tests are now run on Windows. (`#113`_, `@ryansm1`_)
 
 .. _#100: https://github.com/Bogdanp/dramatiq/issues/100
 .. _#108: https://github.com/Bogdanp/dramatiq/issues/108
+.. _#113: https://github.com/Bogdanp/dramatiq/issues/113
+.. _@ryansm1: https://github.com/ryansm1
 .. _@xdmiodz: https://github.com/xdmiodz
 
 
