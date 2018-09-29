@@ -20,7 +20,7 @@ import time
 import typing
 
 from ..common import compute_backoff, q_name
-from ..encoder import Encoder, JSONEncoder
+from ..encoder import Encoder
 from .errors import ResultMissing, ResultTimeout
 
 #: The default timeout for blocking get operations in milliseconds.
