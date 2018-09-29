@@ -23,7 +23,7 @@ from .logging import get_logger
 from .message import Message
 
 #: The regular expression that represents valid queue names.
-_queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_-]*")
+_queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 
 
 def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=None, **options):
