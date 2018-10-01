@@ -24,12 +24,12 @@ from .pipelines import Pipelines
 from .retries import Retries
 from .shutdown import Shutdown, ShutdownNotifications
 from .threading import Interrupt, raise_thread_exception
-from .time_limit import TimeLimit, TimeLimitExceeded
 
 CURRENT_OS = platform.system()
 
 if CURRENT_OS != "Windows":
     from .prometheus import Prometheus
+    from .time_limit import TimeLimit, TimeLimitExceeded
 
 
 __all__ = [
@@ -41,18 +41,21 @@ __all__ = [
 
     # Middlewares
     "AgeLimit", "Callbacks", "Pipelines", "Retries",
-    "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
+    "Shutdown", "ShutdownNotifications",
 ]
 
 if CURRENT_OS != "Windows":
     __all__.append("Prometheus")
+    __all__.append("TimeLimit")
+    __all__.append("TimeLimitExceeded")
 
 
 #: The list of middleware that are enabled by default.
 default_middleware = [
-    AgeLimit, TimeLimit, ShutdownNotifications,
-    Callbacks, Pipelines, Retries
+    AgeLimit, ShutdownNotifications, Callbacks, Pipelines, Retries
 ]
 
 if CURRENT_OS != "Windows":
     default_middleware = [Prometheus, *default_middleware]
+    default_middleware.insert(0, Prometheus)
+    default_middleware.insert(2, TimeLimit)
