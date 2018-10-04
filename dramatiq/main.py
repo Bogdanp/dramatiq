@@ -403,7 +403,7 @@ def main():  # noqa
         }
         if hasattr(signal, "SIGHUP"):
             reload_process = signum == signal.SIGHUP
-            sigmap.update({signal.SIGHUP, signal.SIGHUP})
+            sigmap.update({signal.SIGHUP: signal.SIGHUP})
         else:
             # Windows can't handle SIGHUP so process reloading isn't supported
             reload_process = False
