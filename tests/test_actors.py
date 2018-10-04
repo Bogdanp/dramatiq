@@ -13,6 +13,9 @@ from .common import worker
 
 _current_platform = platform.python_implementation()
 
+CURRENT_OS = platform.system()
+skip_on_windows = pytest.mark.skipif(CURRENT_OS == "Windows", reason="test skipped on Windows")
+
 
 def test_actors_can_be_defined(stub_broker):
     # Given that I've decorated a function with @actor
@@ -205,6 +208,7 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     assert sum(attempts) >= 1
 
 
+@skip_on_windows
 @pytest.mark.skipif(_current_platform == "PyPy", reason="Time limits are not supported under PyPy.")
 def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
@@ -229,6 +233,7 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     assert sum(successes) == 0
 
 
+@skip_on_windows
 @pytest.mark.skipif(_current_platform == "PyPy", reason="Time limits are not supported under PyPy.")
 def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
