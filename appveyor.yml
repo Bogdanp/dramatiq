@@ -1,4 +1,4 @@
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 clone_folder: C:\projects\dramatiq
 
@@ -13,7 +13,6 @@ environment:
 
 init:
   - mkdir %DEPS%
-  - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
   - set APPVEYOR=true
 
 before_build:
@@ -29,22 +28,13 @@ install:
   - ps: $Memcached = Start-Process $ENV:DEPS\memcached\memcached.exe -PassThru
 
   # Download libmemcached sources to use when installing pylibmc.
-  - ps: Invoke-WebRequest "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz" -OutFile "$ENV:DEPS\libmemcached.tar.gz"
-  - 7z x %DEPS%\libmemcached.tar.gz -so | 7z x -aoa -si -ttar -o%DEPS%\
-  - cd %DEPS%\libmemcached-1.0.18
-  # libmemcached's configure script doesn't appear to identify mingw correctly; specify a build argument to avoid fatal compiler errors
-  - bash -c "./configure --prefix=$(pwd) --disable-shared --disable-sasl --disable-dependency-tracking --with-memcached=/c/projects/dramatiq/memcached/memcached.exe --build=x86_64-w64-mingw32"
-  - bash -c "cd /c/projects/libs/libmemcached-1.0.18 && make && make install"
-  # libmemcached's script doesn't like building shared library in mingw, so do it manually
-  - bash -c "gcc -shared -o lib/memcached.dll libmemcached/*.o libmemcached/csl/*.o libhashkit/libmemcached*.o -Wl,--output-def,lib/memcached.def -static -lws2_32 -lstdc++"
-  - bash -c "dlltool -d lib/memcached.def -l lib/memcached.lib"
-  # Note the architecture! This won't work on x86; a better script should probably use variables in the build matrix to test x86 and x86_64.
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
-  - cd lib
-  - lib /machine:x64 /def:memcached.def
-  # Copy the libmemcached DLL to the project root so Python can find it.
-  - copy memcached.dll %PROJ%\memcached.dll
-  - cd ..
+  - cd %DEPS%
+  - git clone --single-branch --branch=x64 https://github.com/ryansm1/libmemcached-win
+  - cd %DEPS%\libmemcached-win\win32
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+  - set INCLUDE=%DEPS%\libmemcached-win;%INCLUDE%
+  - msbuild libmemcached.vcxproj /p:UseEnv=true /p:Configuration=Release /t:Build;CopyFiles
+  - cp .\Lib\memcached.dll %PROJ%
   - set LMCD_DIR=%cd%
 
   # Install python and pip.
