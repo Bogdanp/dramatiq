@@ -21,3 +21,4 @@ of those changes to CLEARTYPE SRL.
 | [@viiicky](https://github.com/viiicky) | Vikas Prasad |
 | [@xdmiodz](https://github.com/xdmiodz) | Dmitry Odzerikho |
 | [@ryansm1](https://github.com/ryansm1) | Ryan Smith |
+| [@aericson](https://github.com/aericson) | André Ericson |
