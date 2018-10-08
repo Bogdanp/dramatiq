@@ -449,7 +449,3 @@ def main():  # noqa
         return os.execvp(sys.argv[0], sys.argv)
 
     return retcode
-
-
-if __name__ == "__main__":
-    sys.exit(main())
