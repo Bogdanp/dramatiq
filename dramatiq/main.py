@@ -231,7 +231,7 @@ def setup_parent_logging(args, *, stream=sys.stderr):
 def setup_worker_logging(args, worker_id, log_queue):
     qh = logging.handlers.QueueHandler(log_queue)
     level = verbosity.get(args.verbose, logging.DEBUG)
-    logging.basicConfig(level=level, format=logformat, handlers=[qh])
+    logging.basicConfig(level=level, handlers=[qh])
     logging.getLogger("pika").setLevel(logging.CRITICAL)
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
@@ -270,9 +270,10 @@ def worker_process(args, worker_id, log_queue, running):
 
     def termhandler(signum, frame):
         nonlocal running
-        if running:
+        if running.value:
             logger.info("Stopping worker process...")
-            running = False
+            with running.get_lock():
+                running.value = False
         else:
             logger.warning("Killing worker process...")
             return sys.exit(RET_KILLED)
@@ -285,7 +286,7 @@ def worker_process(args, worker_id, log_queue, running):
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, termhandler)
 
-    while running:
+    while running.value:
         time.sleep(1)
 
     worker.stop()
@@ -362,17 +363,14 @@ def main():  # noqa
         signum = sigmap[signum]
 
         logger.info("Sending %r to worker processes...", signum.name)
-        running = False
+        with running.get_lock():
+            running.value = False
         for proc in worker_processes:
-            try:
-                logger.critical("About to join")
-                proc.join(timeout=5)
-                logger.critical("Did join")
-            except multiprocessing.TimeoutError:
+            proc.join(timeout=2)
+            if proc.exitcode is None:
                 logger.warning("Worker %r failed to gracefully shut down, killing...", proc.pid)
                 try:
                     os.kill(proc.pid, signum)
-                    proc.exitcode = RET_KILLED
                 except OSError:  # pragma: no cover
                     logger.warning("Failed to send %r to pid %d.", signum.name, proc.pid)
 
@@ -395,7 +393,6 @@ def main():  # noqa
         proc.join()
         retcode = max(retcode, proc.exitcode)
 
-    running = False
     if HAS_WATCHDOG and args.watch:
         file_watcher.stop()
         file_watcher.join()
