@@ -366,7 +366,7 @@ def main():  # noqa
         with running.get_lock():
             running.value = False
         for proc in worker_processes:
-            proc.join(timeout=2)
+            proc.join(timeout=5)
             if proc.exitcode is None:
                 logger.warning("Worker %r failed to gracefully shut down, killing...", proc.pid)
                 try:
