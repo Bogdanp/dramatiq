@@ -268,13 +268,25 @@ def worker_process(args, worker_id, log_queue, running):
         logger.exception("Broker connection failed.")
         return sys.exit(RET_CONNECT)
 
+    def termhandler(signum, frame):
+        nonlocal running
+        if running:
+            logger.info("Stopping worker process...")
+            running = False
+        else:
+            logger.warning("Killing worker process...")
+            return sys.exit(RET_KILLED)
+
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, termhandler)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, termhandler)
+    if hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, termhandler)
 
     while running:
         time.sleep(1)
-
-    logger.info("Stopping worker process...")
 
     worker.stop()
     broker.close()
@@ -353,7 +365,9 @@ def main():  # noqa
         running = False
         for proc in worker_processes:
             try:
+                logger.critical("About to join")
                 proc.join(timeout=5)
+                logger.critical("Did join")
             except multiprocessing.TimeoutError:
                 logger.warning("Worker %r failed to gracefully shut down, killing...", proc.pid)
                 try:
