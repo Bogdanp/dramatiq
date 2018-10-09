@@ -231,7 +231,7 @@ def setup_parent_logging(args, *, stream=sys.stderr):
 def setup_worker_logging(args, worker_id, log_queue):
     qh = logging.handlers.QueueHandler(log_queue)
     level = verbosity.get(args.verbose, logging.DEBUG)
-    logging.basicConfig(level=level, handlers=[qh])
+    logging.basicConfig(level=level, format=logformat, handlers=[qh])
     logging.getLogger("pika").setLevel(logging.CRITICAL)
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
