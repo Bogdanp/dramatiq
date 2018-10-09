@@ -15,6 +15,12 @@ init:
   - mkdir %DEPS%
   - set APPVEYOR=true
 
+before_build:
+  - choco install rabbitmq --ignoredependencies -y
+  - choco install redis-64
+  - redis-server --service-install
+  - redis-server --service-start
+
 install:
   # Download and start a binary version of memcached.
   - ps: Invoke-WebRequest "https://s3.amazonaws.com/downloads.northscale.com/memcached-win64-1.4.4-14.zip" -OutFile "$ENV:DEPS\memcached.zip"
@@ -44,13 +50,6 @@ install:
   # Install dramatiq
   - cd %PROJ%
   - "%CMD_IN_ENV% pip install -e .[dev]"
-
-before_build:
-  - choco install rabbitmq --ignoredependencies -y
-  - choco install redis-64
-  - redis-server --service-install
-  - redis-server --service-start
-  - refreshenv
 
 build_script:
   - "%CMD_IN_ENV% python setup.py build"
