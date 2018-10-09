@@ -245,13 +245,7 @@ def watch_logs(q):
         logger.handle(record)
 
 
-def worker_process(args, worker_id, log_queue):
-    start_method = multiprocessing.get_start_method()
-    if start_method == "spawn":
-        exit = sys.exit
-    else:
-        exit = os._exit
-
+def worker_process(args, worker_id, log_queue, running):
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
@@ -269,29 +263,18 @@ def worker_process(args, worker_id, log_queue):
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
-        return exit(RET_IMPORT)
+        return sys.exit(RET_IMPORT)
     except ConnectionError:
         logger.exception("Broker connection failed.")
-        return exit(RET_CONNECT)
-
-    def termhandler(signum, frame):
-        nonlocal running
-        if running:
-            logger.info("Stopping worker process...")
-            running = False
-        else:
-            logger.warning("Killing worker process...")
-            return exit(RET_KILLED)
+        return sys.exit(RET_CONNECT)
 
     logger.info("Worker process is ready for action.")
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGTERM, termhandler)
-    if hasattr(signal, "SIGHUP"):
-        signal.signal(signal.SIGHUP, termhandler)
 
-    running = True
     while running:
         time.sleep(1)
+
+    logger.info("Stopping worker process...")
 
     worker.stop()
     broker.close()
@@ -313,11 +296,12 @@ def main():  # noqa
     worker_pipes = []
     worker_processes = []
     log_queue = multiprocessing.Queue(-1)
+    running = multiprocessing.Value("b", True)
     for worker_id in range(args.processes):
         read_pipe, write_pipe = multiprocessing.Pipe()
         proc = multiprocessing.Process(
             target=worker_process,
-            args=(args, worker_id, log_queue),
+            args=(args, worker_id, log_queue, running),
             daemon=True,
         )
         proc.start()
@@ -329,7 +313,7 @@ def main():  # noqa
     if args.pid_file:
         atexit.register(remove_pidfile, args.pid_file, logger)
 
-    running, reload_process = True, False
+    reload_process = False
 
     # To avoid issues with signal delivery to user threads on
     # platforms such as FreeBSD 10.3, we make the main thread block
@@ -349,7 +333,7 @@ def main():  # noqa
     log_watcher.start()
 
     def sighandler(signum, frame):
-        nonlocal reload_process, worker_processes
+        nonlocal reload_process, worker_processes, running
         sigmap = {
             signal.SIGINT: signal.SIGTERM,
             signal.SIGTERM: signal.SIGTERM,
@@ -357,17 +341,26 @@ def main():  # noqa
         if hasattr(signal, "SIGHUP"):
             reload_process = signum == signal.SIGHUP
             sigmap.update({signal.SIGHUP: signal.SIGHUP})
-        else:
+        elif hasattr(signal, "SIGBREAK"):
             # Windows can't handle SIGHUP so process reloading isn't supported
+            sigmap.update({signal.SIGBREAK: signal.SIGTERM})
+            reload_process = False
+        else:
             reload_process = False
         signum = sigmap[signum]
 
         logger.info("Sending %r to worker processes...", signum.name)
+        running = False
         for proc in worker_processes:
             try:
-                os.kill(proc.pid, signum)
-            except OSError:  # pragma: no cover
-                logger.warning("Failed to send %r to pid %d.", signum.name, proc.pid)
+                proc.join(timeout=5)
+            except multiprocessing.TimeoutError:
+                logger.warning("Worker %r failed to gracefully shut down, killing...", proc.pid)
+                try:
+                    os.kill(proc.pid, signum)
+                    proc.exitcode = RET_KILLED
+                except OSError:  # pragma: no cover
+                    logger.warning("Failed to send %r to pid %d.", signum.name, proc.pid)
 
     # Now that the watcher threads have been started, it should be
     # safe to unblock the signals that were previously blocked.
@@ -382,16 +375,18 @@ def main():  # noqa
     signal.signal(signal.SIGTERM, sighandler)
     if hasattr(signal, "SIGHUP"):
         signal.signal(signal.SIGHUP, sighandler)
+    if hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, sighandler)
     for proc in worker_processes:
         proc.join()
-        rc = proc.exitcode
-        retcode = max(retcode, rc)
+        retcode = max(retcode, proc.exitcode)
 
     running = False
     if HAS_WATCHDOG and args.watch:
         file_watcher.stop()
         file_watcher.join()
 
+    log_queue.put(None)
     log_watcher.join()
 
     if reload_process:
