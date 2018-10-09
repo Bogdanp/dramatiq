@@ -261,7 +261,7 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
-def worker_process(args, worker_id, logging_pipe, running):
+def worker_process(args, worker_id, logging_pipe):
     start_method = multiprocessing.get_start_method()
     if start_method == "spawn":
         exit = sys.exit
@@ -291,9 +291,10 @@ def worker_process(args, worker_id, logging_pipe, running):
         return exit(RET_CONNECT)
 
     def termhandler(signum, frame):
-        if running.is_set():
+        nonlocal running
+        if running:
             logger.info("Stopping worker process...")
-            running.clear()
+            running = False
         else:
             logger.warning("Killing worker process...")
             return exit(RET_KILLED)
@@ -304,9 +305,9 @@ def worker_process(args, worker_id, logging_pipe, running):
     if hasattr(signal, "SIGHUP"):
         signal.signal(signal.SIGHUP, termhandler)
 
-    running.set()
-    while running.is_set():
-        running.wait(1.0)
+    running = True
+    while running:
+        time.sleep(1)
 
     worker.stop()
     broker.close()
@@ -328,12 +329,11 @@ def main():  # noqa
 
     worker_pipes = []
     worker_processes = []
-    running = multiprocessing.Event()
     for worker_id in range(args.processes):
         read_pipe, write_pipe = multiprocessing.Pipe()
         proc = multiprocessing.Process(
             target=worker_process,
-            args=(args, worker_id, StreamablePipe(write_pipe), running),
+            args=(args, worker_id, StreamablePipe(write_pipe)),
             daemon=True,
         )
         proc.start()
@@ -348,8 +348,7 @@ def main():  # noqa
     if args.pid_file:
         atexit.register(remove_pidfile, args.pid_file, logger)
 
-    running.set()
-    reload_process = False
+    running, reload_process = True, False
 
     # To avoid issues with signal delivery to user threads on
     # platforms such as FreeBSD 10.3, we make the main thread block
@@ -366,11 +365,13 @@ def main():  # noqa
         file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
 
     def watch_logs(worker_pipes):
+        nonlocal running
+
         if args.log_file is None:
             log_file = sys.stderr
         else:
             log_file = open(args.log_file, mode="a", encoding="utf-8")
-        while running.is_set():
+        while running:
             pipes = [parent_read_mp_pipe] + worker_pipes
             events = multiprocessing.connection.wait(pipes, timeout=1)
             for event in events:
@@ -433,7 +434,7 @@ def main():  # noqa
         rc = proc.exitcode
         retcode = max(retcode, rc)
 
-    running.clear()
+    running = False
     if HAS_WATCHDOG and args.watch:
         file_watcher.stop()
         file_watcher.join()
