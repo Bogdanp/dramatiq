@@ -57,5 +57,4 @@ default_middleware = [
 
 if CURRENT_OS != "Windows":
     default_middleware = [Prometheus, *default_middleware]
-    default_middleware.insert(0, Prometheus)
     default_middleware.insert(2, TimeLimit)
