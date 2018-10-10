@@ -9,4 +9,5 @@ except ImportError:
 import dramatiq.__main__
 import sys
 
-sys.exit(dramatiq.__main__.main())
+if __name__ == "__main__":
+    sys.exit(dramatiq.__main__.main())
