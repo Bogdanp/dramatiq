@@ -29,7 +29,7 @@ CURRENT_OS = platform.system()
 
 if CURRENT_OS != "Windows":
     from .prometheus import Prometheus
-    from .time_limit import TimeLimit, TimeLimitExceeded
+    from .time_limit import TimeLimit, TimeLimitExceeded  # noqa: F401
 
 
 __all__ = [
