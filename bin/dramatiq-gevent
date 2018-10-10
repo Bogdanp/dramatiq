@@ -1,6 +1,6 @@
 #!python
 try:
-    from gevent import monkey; monkey.patch_all()  # noqa
+    from gevent import monkey; monkey.patch_all(thread=False)  # noqa
 except ImportError:
     import sys
     sys.stderr.write("error: gevent is missing. Run `pip install gevent`.")
