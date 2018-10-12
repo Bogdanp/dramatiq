@@ -169,31 +169,19 @@ class RabbitmqBroker(Broker):
 
         Parameters:
           queue_name(str): The name of the new queue.
-
-        Raises:
-          ConnectionClosed: If the underlying channel or connection
-            has been closed.
         """
-        try:
-            if queue_name not in self.queues:
-                self.emit_before("declare_queue", queue_name)
-                self._declare_queue(queue_name)
-                self.queues.add(queue_name)
-                self.emit_after("declare_queue", queue_name)
+        if queue_name not in self.queues:
+            self.emit_before("declare_queue", queue_name)
+            self._declare_queue(queue_name)
+            self.queues.add(queue_name)
+            self.emit_after("declare_queue", queue_name)
 
-                delayed_name = dq_name(queue_name)
-                self._declare_dq_queue(queue_name)
-                self.delay_queues.add(delayed_name)
-                self.emit_after("declare_delay_queue", delayed_name)
+            delayed_name = dq_name(queue_name)
+            self._declare_dq_queue(queue_name)
+            self.delay_queues.add(delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name)
 
-                self._declare_xq_queue(queue_name)
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
-            # Delete the channel and the connection so that the next
-            # caller may initiate new ones of each.
-            del self.channel
-            del self.connection
-            raise ConnectionClosed(e) from None
+            self._declare_xq_queue(queue_name)
 
     def _declare_queue(self, queue_name):
         return self.channel.queue_declare(queue=queue_name, durable=True, arguments={
@@ -241,6 +229,8 @@ class RabbitmqBroker(Broker):
         attempts = 1
         while True:
             try:
+                # Make sure queue is declared
+                self.declare_queue(queue_name)
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
                 self.emit_before("enqueue", message, delay)
                 self.channel.publish(

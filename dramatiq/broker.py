@@ -171,7 +171,6 @@ class Broker:
           actor(Actor): The actor being declared.
         """
         self.emit_before("declare_actor", actor)
-        self.declare_queue(actor.queue_name)
         self.actors[actor.actor_name] = actor
         self.emit_after("declare_actor", actor)
 

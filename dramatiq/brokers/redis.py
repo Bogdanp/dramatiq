@@ -169,6 +169,8 @@ class RedisBroker(Broker):
                 },
             )
 
+        # Make sure queue is declared
+        self.declare_queue(queue_name)
         self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
         self.emit_before("enqueue", message, delay)
         self.do_enqueue(queue_name, message.options["redis_message_id"], message.encode())
