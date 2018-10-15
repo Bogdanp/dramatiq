@@ -24,7 +24,7 @@ from threading import local
 
 import pika
 
-from ..broker import Broker, Consumer, MessageProxy
+from ..broker import Broker, Consumer, MessageProxy, get_broker
 from ..common import current_millis, dq_name, xq_name
 from ..errors import ConnectionClosed, QueueJoinTimeout
 from ..logging import get_logger
@@ -82,6 +82,7 @@ class RabbitmqBroker(Broker):
         self.channels = set()
         self.queues = set()
         self.state = local()
+        self.declared_in_rmq = set()
 
     @property
     def connection(self):
@@ -174,45 +175,47 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: If the underlying channel or connection
             has been closed.
         """
+        if queue_name not in self.queues:
+            self.emit_before("declare_queue", queue_name)
+            self.queues.add(queue_name)
+            self.emit_after("declare_queue", queue_name)
+
+            delayed_name = dq_name(queue_name)
+            self.delay_queues.add(delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name)
+
+    def set_rmq_queues(self, queue_name):
+        responses = []
         try:
-            if queue_name not in self.queues:
-                self.emit_before("declare_queue", queue_name)
-                self._declare_queue(queue_name)
-                self.queues.add(queue_name)
-                self.emit_after("declare_queue", queue_name)
+            responses.append(self.channel.queue_declare(queue=queue_name, durable=True, arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": xq_name(queue_name),
+            }))
+            self.declared_in_rmq.add(queue_name)
 
-                delayed_name = dq_name(queue_name)
-                self._declare_dq_queue(queue_name)
-                self.delay_queues.add(delayed_name)
-                self.emit_after("declare_delay_queue", delayed_name)
+            d_queue_name = dq_name(queue_name)
+            responses.append(self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": xq_name(queue_name),
+            }))
+            self.declared_in_rmq.add(d_queue_name)
 
-                self._declare_xq_queue(queue_name)
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
+            x_queue_name = xq_name(queue_name)
+            responses.append(self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments={
+                # This HAS to be a static value since messages are expired
+                # in order inside of RabbitMQ (head-first).
+                "x-message-ttl": DEAD_MESSAGE_TTL,
+            }))
+            self.declared_in_rmq.add(x_queue_name)
+
+            return tuple(responses)
+        except (pika.exceptions.AMQPConnectionError, pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
             # Delete the channel and the connection so that the next
             # caller may initiate new ones of each.
             del self.channel
             del self.connection
-            raise ConnectionClosed(e) from None
+            raise ConnectionClosed(e) from None        
 
-    def _declare_queue(self, queue_name):
-        return self.channel.queue_declare(queue=queue_name, durable=True, arguments={
-            "x-dead-letter-exchange": "",
-            "x-dead-letter-routing-key": xq_name(queue_name),
-        })
-
-    def _declare_dq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments={
-            "x-dead-letter-exchange": "",
-            "x-dead-letter-routing-key": xq_name(queue_name),
-        })
-
-    def _declare_xq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments={
-            # This HAS to be a static value since messages are expired
-            # in order inside of RabbitMQ (head-first).
-            "x-message-ttl": DEAD_MESSAGE_TTL,
-        })
 
     def enqueue(self, message, *, delay=None):
         """Enqueue a message.
@@ -288,14 +291,7 @@ class RabbitmqBroker(Broker):
           tuple: A triple representing the number of messages in the
           queue, its delayed queue and its dead letter queue.
         """
-        queue_response = self._declare_queue(queue_name)
-        dq_queue_response = self._declare_dq_queue(queue_name)
-        xq_queue_response = self._declare_xq_queue(queue_name)
-        return (
-            queue_response.method.message_count,
-            dq_queue_response.method.message_count,
-            xq_queue_response.method.message_count,
-        )
+        return tuple(response.method.message_count for response in self.set_rmq_queues(queue_name))
 
     def flush(self, queue_name):
         """Drop all the messages from a queue.
@@ -345,6 +341,13 @@ class RabbitmqBroker(Broker):
 
             self.connection.sleep(idle_time / 1000)
 
+    def ensure_set_in_rmq(self, queue_name):
+        if queue_name not in self.declared_in_rmq:
+            self.set_rmq_queues(queue_name)
+
+    def ensure_all_queues_set_in_rmq(self):
+        for queue_name in self.get_declared_queues():
+            self.ensure_set_in_rmq(queue_name)
 
 def URLRabbitmqBroker(url, *, middleware=None):
     """Alias for the RabbitMQ broker that takes a connection URL as a
@@ -375,6 +378,9 @@ class _RabbitmqConsumer(Consumer):
             self.channel = self.connection.channel()
             self.channel.basic_qos(prefetch_count=prefetch)
             self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
+
+            broker = get_broker()
+            broker.ensure_all_queues_set_in_rmq()
 
             # We need to keep track of known delivery tags so that
             # when connection errors occur and the consumer is reset,
