@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 
 import dramatiq
-from dramatiq.brokers.redis import RedisBroker
+from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.common import current_millis
 
-broker = RedisBroker()
+broker = RabbitmqBroker()
 loaded_at = current_millis()
 
 CURRENT_PLATFORM = platform.python_implementation()

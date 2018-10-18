@@ -11,7 +11,6 @@ import redis
 import dramatiq
 from dramatiq import Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
@@ -65,18 +64,6 @@ def rabbitmq_broker():
     dramatiq.set_broker(broker)
     yield broker
     broker.flush_all()
-    broker.close()
-
-
-@pytest.fixture()
-def redis_broker():
-    broker = RedisBroker()
-    check_redis(broker.client)
-    broker.client.flushall()
-    broker.emit_after("process_boot")
-    dramatiq.set_broker(broker)
-    yield broker
-    broker.client.flushall()
     broker.close()
 
 
