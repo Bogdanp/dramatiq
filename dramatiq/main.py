@@ -240,11 +240,16 @@ def setup_worker_logging(args, worker_id, log_queue):
 
 def watch_logs(q):
     while True:
-        record = q.get()
-        if record is None:
-            break
-        logger = logging.getLogger(record.name)
-        logger.handle(record)
+        try:
+            record = q.get()
+            if record is None:
+                break
+            logger = logging.getLogger(record.name)
+            logger.handle(record)
+        except Exception:
+            import traceback
+            with open("crash.log", "w+") as fh:
+                traceback.print_exc(file=fh)
 
 
 def worker_process(args, worker_id, log_queue, running):
