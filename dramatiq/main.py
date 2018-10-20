@@ -248,7 +248,7 @@ def watch_logs(q):
             logger.handle(record)
         except Exception:
             import traceback
-            with open("crash.log", "w+") as fh:
+            with open("crash.log", mode="a") as fh:
                 traceback.print_exc(file=fh)
 
 
