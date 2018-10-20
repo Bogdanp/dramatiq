@@ -313,7 +313,6 @@ def main():  # noqa
         logger.critical(e)
         return RET_PIDFILE
 
-    worker_pipes = []
     worker_processes = []
     log_queue = multiprocessing.Queue(-1)
     running = multiprocessing.Value("b", True)
@@ -325,7 +324,6 @@ def main():  # noqa
             daemon=True,
         )
         proc.start()
-        worker_pipes.append(read_pipe)
         worker_processes.append(proc)
 
     logger = setup_parent_logging(args, stream=args.log_file or sys.stderr)
