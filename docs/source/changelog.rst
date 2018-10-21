@@ -9,6 +9,20 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Actor "message received" and "completed in x ms" log messages are
+  now logged with the ``DEBUG`` level instead of ``INFO`` level.  This
+  improves throughput and makes logging much less verbose.
+* The |TimeLimit| middleware no longer uses signals to trigger time
+  limit handling.  Instead it uses a background thread per worker
+  process.
+* Dramatiq now shuts itself down if any of the workers die
+  unexpectedly (for example, if one of them is killed by the OOM
+  killer).
+* Windows is now supported (with some caveats)! (`#119`_, `@ryansm1`_)
+
 Fixed
 ^^^^^
 
@@ -21,6 +35,7 @@ Fixed
 .. _#108: https://github.com/Bogdanp/dramatiq/issues/108
 .. _#111: https://github.com/Bogdanp/dramatiq/issues/111
 .. _#113: https://github.com/Bogdanp/dramatiq/issues/113
+.. _#119: https://github.com/Bogdanp/dramatiq/issues/119
 .. _@ryansm1: https://github.com/ryansm1
 .. _@xdmiodz: https://github.com/xdmiodz
 
