@@ -214,7 +214,7 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     @dramatiq.actor(max_retries=0, time_limit=1000)
     def do_work():
         attempts.append(1)
-        time.sleep(2)
+        time.sleep(3)
         successes.append(1)
 
     # When I send it a message
