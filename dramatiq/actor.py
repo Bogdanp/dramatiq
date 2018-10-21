@@ -208,12 +208,12 @@ class Actor:
           Whatever the underlying function backing this actor returns.
         """
         try:
-            self.logger.info("Received args=%r kwargs=%r.", args, kwargs)
+            self.logger.debug("Received args=%r kwargs=%r.", args, kwargs)
             start = time.perf_counter()
             return self.fn(*args, **kwargs)
         finally:
             delta = time.perf_counter() - start
-            self.logger.info("Completed after %.02fms.", delta * 1000)
+            self.logger.debug("Completed after %.02fms.", delta * 1000)
 
     def __repr__(self):
         return "Actor(%(fn)r, queue_name=%(queue_name)r, actor_name=%(actor_name)r)" % vars(self)
