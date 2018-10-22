@@ -148,6 +148,8 @@ class RabbitmqBroker(Broker):
 
             except Exception:  # pragma: no cover
                 self.logger.debug("Encountered an error while closing %r.", channel_or_conn, exc_info=True)
+        self.channels = set()
+        self.connections = set()
         self.logger.debug("Channels and connections closed.")
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
@@ -161,6 +163,7 @@ class RabbitmqBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
+        self.emit_before('consume')
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):

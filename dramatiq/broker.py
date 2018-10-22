@@ -73,6 +73,7 @@ class Broker:
         self.actors = {}
         self.queues = {}
         self.delay_queues = set()
+        self.prepared_queues = set()
 
         self.actor_options = set()
         self.middleware = []
@@ -171,9 +172,21 @@ class Broker:
           actor(Actor): The actor being declared.
         """
         self.emit_before("declare_actor", actor)
-        self.declare_queue(actor.queue_name)
+        self.prepare_queue(actor.queue_name)
         self.actors[actor.actor_name] = actor
         self.emit_after("declare_actor", actor)
+
+    def prepare_queue(self, queue_name):  # pragma: no cover
+        """Maintain a list of queue to be declared when needed
+
+        Parameters:
+          queue_name(str): The name of the queue being prepared.
+        """
+        self.prepared_queues.add(queue_name)
+
+    def declare_prepared_queues(self):
+        for queue_name in self.prepared_queues:
+            self.declare_queue(queue_name)
 
     def declare_queue(self, queue_name):  # pragma: no cover
         """Declare a queue on this broker.  This method must be

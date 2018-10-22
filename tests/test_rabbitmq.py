@@ -42,6 +42,28 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     assert len(database) == 100
 
 
+def test_rabbitmq_queues_created_lazily(rabbitmq_broker, rabbitmq_worker):
+    # Given that rabbitMQ has no open connection
+    rabbitmq_broker.close()
+
+    # Given that I have an actor
+    @dramatiq.actor
+    def add(a, b):
+        return a + b
+
+    # queue_name should be in prepared_queues
+    assert add.queue_name in rabbitmq_broker.prepared_queues
+
+    # nothing is sent so RabbitMQ before sending a message
+    assert len(rabbitmq_broker.connections) == 0
+
+    # If I send that actor an async message
+    add.send(1, 2)
+
+    # RabbitMQ is connected to
+    assert len(rabbitmq_broker.connections) > 0
+
+
 def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
     failure_time, success_time = None, None

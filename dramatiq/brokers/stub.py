@@ -51,6 +51,7 @@ class StubBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from Redis.
         """
+        self.emit_before('consume')
         try:
             return _StubConsumer(self.queues[queue_name], self.dead_letters, timeout)
         except KeyError:
@@ -96,10 +97,11 @@ class StubBroker(Broker):
                 },
             )
 
+        self.emit_before("enqueue", message, delay)
+
         if queue_name not in self.queues:
             raise QueueNotFound(queue_name)
 
-        self.emit_before("enqueue", message, delay)
         self.queues[queue_name].put(message.encode())
         self.emit_after("enqueue", message, delay)
         return message
