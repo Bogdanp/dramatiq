@@ -45,11 +45,11 @@ class Pipelines(Middleware):
         if exception is not None:
             return
 
-        actor = broker.get_actor(message.actor_name)
         message_data = message.options.get("pipe_target")
         if message_data is not None:
             next_message = Message(**message_data)
-            pipe_ignore = message.options.get("pipe_ignore") or actor.options.get("pipe_ignore")
+            next_actor = broker.get_actor(next_message.actor_name)
+            pipe_ignore = next_message.options.get("pipe_ignore") or next_actor.options.get("pipe_ignore")
             if not pipe_ignore:
                 next_message = next_message.copy(args=next_message.args + (result,))
 

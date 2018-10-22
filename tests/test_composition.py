@@ -44,6 +44,56 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that return something
+    @dramatiq.actor
+    def do_nothing():
+        return 0
+
+    # Nothing should be sent to pipe ignored
+    @dramatiq.actor(store_results=True)
+    def pipe_ignored(*args):
+        assert len(args) == 0
+        return 1
+
+    pipe = do_nothing.message() | pipe_ignored.message_with_options(pipe_ignore=True)
+    pipe.run()
+
+    assert pipe.get_result(block=True) == 1
+
+
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that return something
+    @dramatiq.actor
+    def do_nothing():
+        return 0
+
+    # Nothing should be sent to pipe ignored
+    @dramatiq.actor(store_results=True, pipe_ignore=True)
+    def pipe_ignored(*args):
+        assert len(args) == 0
+        return 1
+
+    pipe = do_nothing.message() | pipe_ignored.message()
+    pipe.run()
+
+    assert pipe.get_result(block=True) == 1
+
+
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
 def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
