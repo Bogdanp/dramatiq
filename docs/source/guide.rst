@@ -238,7 +238,7 @@ The following retry options are configurable on a per-actor basis:
 ===============  ============  =====================================================================================================================
 Option           Default       Description
 ===============  ============  =====================================================================================================================
-``max_retries``  ``20``        The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
+``max_retries``  ``0``        The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
 ``min_backoff``  15 seconds    The minimum number of milliseconds of backoff to apply between retries.  Must be greater than 100 milliseconds.
 ``max_backoff``  7 days        The maximum number of milliseconds of backoff to apply between retries.  Higher values are less reliable.
 ``retry_when``   ``None``      A callable that determines whether or not a message should be retried.  When this is set, ``max_retries`` is ignored.

@@ -139,12 +139,33 @@ def test_actors_can_perform_work_with_kwargs(stub_broker, stub_worker):
     assert results == [3]
 
 
+def test_actors_do_not_retry_by_default(stub_broker, stub_worker):
+    # Given that I have a database
+    attempts = []
+
+    # And an actor that fails every time
+    @dramatiq.actor()
+    def do_work():
+        attempts.append(1)
+        raise RuntimeError("failure")
+
+    # When I send it a message
+    do_work.send()
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then I expect 1 attempts to have occurred
+    assert sum(attempts) == 1
+
+
 def test_actors_retry_on_failure(stub_broker, stub_worker):
     # Given that I have a database
     failures, successes = [], []
 
     # And an actor that fails the first time it's called
-    @dramatiq.actor(min_backoff=100, max_backoff=500)
+    @dramatiq.actor(max_retries=3, min_backoff=100, max_backoff=500)
     def do_work():
         if sum(failures) == 0:
             failures.append(1)

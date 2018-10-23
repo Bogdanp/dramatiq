@@ -62,7 +62,7 @@ def test_redis_actors_can_retry_multiple_times(redis_broker, redis_worker):
     attempts = []
 
     # And an actor that fails 3 times then succeeds
-    @dramatiq.actor(min_backoff=1000, max_backoff=1000)
+    @dramatiq.actor(max_retries=3, min_backoff=1000, max_backoff=1000)
     def do_work():
         attempts.append(1)
         if sum(attempts) < 4:

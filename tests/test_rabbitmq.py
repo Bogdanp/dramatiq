@@ -69,7 +69,7 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
     failure_time, success_time = None, None
 
     # And an actor that fails the first time it's called
-    @dramatiq.actor(min_backoff=1000, max_backoff=5000)
+    @dramatiq.actor(max_retries=3, min_backoff=1000, max_backoff=5000)
     def do_work():
         nonlocal failure_time, success_time
         if not failure_time:
@@ -94,7 +94,7 @@ def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_work
     attempts = []
 
     # And an actor that fails 3 times then succeeds
-    @dramatiq.actor(max_backoff=1000)
+    @dramatiq.actor(max_retries=3, max_backoff=1000)
     def do_work():
         attempts.append(1)
         if sum(attempts) < 4:
