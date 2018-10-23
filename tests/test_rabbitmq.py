@@ -6,19 +6,8 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
+from dramatiq.brokers.rabbitmq import _IgnoreScaryLogs
 from dramatiq.common import current_millis
-
-
-def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
-    # Given a URL connection string
-    url = "amqp://127.0.0.1:5672"
-
-    # When I pass that to URLRabbitmqBroker
-    broker = URLRabbitmqBroker(url)
-
-    # Then I should get back a RabbitmqBroker
-    assert isinstance(broker, RabbitmqBroker)
 
 
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
