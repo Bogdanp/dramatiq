@@ -13,10 +13,10 @@
 
 **Changelog**: https://dramatiq.io/changelog.html <br/>
 **Community**: https://discuss.dramatiq.io <br/>
-**Documentation**: https://dramatiq.io
+**Documentation**: https://dramatiq.io <br/>
+**Professional Support**: [https://tidelift.com](https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=readme)
 
 <hr/>
-
 
 ## Installation
 

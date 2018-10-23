@@ -3,10 +3,11 @@
 Dramatiq: simple task processing
 ================================
 
-Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
+Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_, `Professional Support`_)
 
 .. _Discuss: https://discuss.dramatiq.io
 .. _Source Code: https://github.com/Bogdanp/dramatiq
+.. _Professional Support: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
@@ -14,6 +15,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
    :target: https://travis-ci.org/Bogdanp/dramatiq
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
+.. image:: https://tidelift.com/badges/github/Bogdanp/dramatiq
+   :target: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
 
 **Dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
@@ -100,6 +103,7 @@ Project Info
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    Discussion Board <https://discuss.dramatiq.io>
+   Professional Support <https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs>
    license
 
 
