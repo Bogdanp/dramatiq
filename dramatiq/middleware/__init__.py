@@ -42,7 +42,8 @@ __all__ = [
 
     # Middlewares
     "AgeLimit", "Callbacks", "Pipelines", "Retries",
-    "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
+    "Shutdown", "ShutdownNotifications", "TimeLimit",
+    "TimeLimitExceeded", "DeclareQueuesMiddleware"
 ]
 
 if CURRENT_OS != "Windows":

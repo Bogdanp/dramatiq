@@ -17,6 +17,7 @@
 
 import warnings
 
+from .local import LocalBackend
 from .stub import StubBackend
 
 try:
@@ -35,4 +36,4 @@ except ImportError:  # pragma: no cover
         "to add support for that backend.", ImportWarning,
     )
 
-__all__ = ["StubBackend", "MemcachedBackend", "RedisBackend"]
+__all__ = ["StubBackend", "MemcachedBackend", "RedisBackend", "LocalBackend"]

@@ -10,6 +10,7 @@ import redis
 
 import dramatiq
 from dramatiq import Worker
+from dramatiq.brokers.local import LocalBroker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
@@ -60,6 +61,16 @@ def stub_broker():
 def rabbitmq_broker():
     broker = RabbitmqBroker(host="127.0.0.1")
     check_rabbitmq(broker)
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    broker.flush_all()
+    broker.close()
+
+
+@pytest.fixture()
+def local_broker():
+    broker = LocalBroker()
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
