@@ -162,7 +162,6 @@ class RabbitmqBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
-        self.emit_before('consume')
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):

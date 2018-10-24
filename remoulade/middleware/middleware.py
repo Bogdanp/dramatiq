@@ -140,9 +140,3 @@ class Middleware:
 
         There is no ``after_worker_thread_boot``.
         """
-
-    def before_consume(self, broker):
-        """Called before consuming
-
-        There is no ``after_consume``.
-        """
