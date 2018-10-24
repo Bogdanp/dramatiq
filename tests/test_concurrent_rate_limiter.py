@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from dramatiq.rate_limits import ConcurrentRateLimiter, RateLimitExceeded
+from remoulade.rate_limits import ConcurrentRateLimiter, RateLimitExceeded
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])

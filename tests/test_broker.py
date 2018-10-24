@@ -2,10 +2,10 @@ import platform
 
 import pytest
 
-import dramatiq
-import dramatiq.broker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.middleware import Middleware
+import remoulade
+import remoulade.broker
+from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.middleware import Middleware
 
 CURRENT_OS = platform.system()
 skip_on_windows = pytest.mark.skipif(CURRENT_OS == "Windows", reason="test skipped on Windows")
@@ -17,10 +17,10 @@ class EmptyMiddleware(Middleware):
 
 def test_broker_uses_rabbitmq_if_not_set():
     # Given that no global broker is set
-    dramatiq.broker.global_broker = None
+    remoulade.broker.global_broker = None
 
     # If I try to get the global broker
-    broker = dramatiq.get_broker()
+    broker = remoulade.get_broker()
 
     # I expect it to be a RabbitmqBroker instance
     assert isinstance(broker, RabbitmqBroker)
@@ -28,7 +28,7 @@ def test_broker_uses_rabbitmq_if_not_set():
 
 @skip_on_windows
 def test_broker_middleware_can_be_added_before_other_middleware(stub_broker):
-    from dramatiq.middleware import Prometheus
+    from remoulade.middleware import Prometheus
 
     # Given that I have a custom middleware
     empty_middleware = EmptyMiddleware()
@@ -42,7 +42,7 @@ def test_broker_middleware_can_be_added_before_other_middleware(stub_broker):
 
 @skip_on_windows
 def test_broker_middleware_can_be_added_after_other_middleware(stub_broker):
-    from dramatiq.middleware import Prometheus
+    from remoulade.middleware import Prometheus
 
     # Given that I have a custom middleware
     empty_middleware = EmptyMiddleware()
@@ -66,7 +66,7 @@ def test_broker_middleware_can_fail_to_be_added_before_or_after_missing_middlewa
 
 @skip_on_windows
 def test_broker_middleware_cannot_be_addwed_both_before_and_after(stub_broker):
-    from dramatiq.middleware import Prometheus
+    from remoulade.middleware import Prometheus
 
     # Given that I have a custom middleware
     empty_middleware = EmptyMiddleware()

@@ -3,27 +3,27 @@ import sys
 
 import requests
 
-import dramatiq
-from dramatiq import group
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.encoder import PickleEncoder
-from dramatiq.results import Results
-from dramatiq.results.backends import RedisBackend
+import remoulade
+from remoulade import group
+from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.encoder import PickleEncoder
+from remoulade.results import Results
+from remoulade.results.backends import RedisBackend
 
 encoder = PickleEncoder()
 backend = RedisBackend(encoder=encoder)
 broker = RabbitmqBroker(host="127.0.0.1")
 broker.add_middleware(Results(backend=backend))
-dramatiq.set_broker(broker)
-dramatiq.set_encoder(encoder)
+remoulade.set_broker(broker)
+remoulade.set_encoder(encoder)
 
 
-@dramatiq.actor
+@remoulade.actor
 def request(uri):
     return requests.get(uri)
 
 
-@dramatiq.actor(store_results=True)
+@remoulade.actor(store_results=True)
 def count_words(response):
     return len(response.text.split(" "))
 

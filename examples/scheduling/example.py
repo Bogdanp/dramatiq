@@ -4,10 +4,10 @@ from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-import dramatiq
+import remoulade
 
 
-@dramatiq.actor
+@remoulade.actor
 def print_current_date():
     print(datetime.now())
 

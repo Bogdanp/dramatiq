@@ -2,7 +2,7 @@ import os
 import signal
 import time
 
-from dramatiq.brokers.stub import StubBroker
+from remoulade.brokers.stub import StubBroker
 
 broker = StubBroker()
 

@@ -3,12 +3,12 @@ import random
 import sys
 import time
 
-import dramatiq
+import remoulade
 
 if os.getenv("REDIS") == "1":
-    from dramatiq.brokers.redis import RedisBroker
+    from remoulade.brokers.redis import RedisBroker
     broker = RedisBroker()
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
 
 
 def fib(n):
@@ -19,7 +19,7 @@ def fib(n):
     return x
 
 
-@dramatiq.actor(time_limit=86_400_000, max_retries=0)
+@remoulade.actor(time_limit=86_400_000, max_retries=0)
 def long_running(duration):
     deadline = time.monotonic() + duration
     while time.monotonic() < deadline:

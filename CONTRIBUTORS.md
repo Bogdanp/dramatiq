@@ -1,9 +1,9 @@
 # Contributors
 
-This file lists the contributors to the Dramatiq project.
+This file lists the contributors to the Remoulade project.
 
 By adding your name to the list below you disavow any rights or claims
-to any changes submitted to the Dramatiq project and assign copyright
+to any changes submitted to the Remoulade project and assign copyright
 of those changes to CLEARTYPE SRL.
 
 | Username | Name |

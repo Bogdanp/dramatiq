@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = dramatiq
+SPHINXPROJ    = remoulade
 SOURCEDIR     = source
 BUILDDIR      = build
 
@@ -16,7 +16,7 @@ all:
 
 .PHONY: deploy
 deploy: all
-	gcloud app deploy --project dramatiq-docs app.yaml
+	gcloud app deploy --project remoulade-docs app.yaml
 
 
 .PHONY: help

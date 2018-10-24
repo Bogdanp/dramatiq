@@ -4,7 +4,7 @@ from threading import Thread
 
 import pytest
 
-from dramatiq.middleware import threading
+from remoulade.middleware import threading
 
 not_supported = threading.current_platform not in threading.supported_platforms
 
@@ -42,7 +42,7 @@ def test_raise_thread_exception_on_nonexistent_thread(caplog):
 
     # I expect a 'failed to set exception' critical message to be logged
     assert caplog.record_tuples == [
-        ("dramatiq.middleware.threading", logging.CRITICAL, (
+        ("remoulade.middleware.threading", logging.CRITICAL, (
             "Failed to set exception (Interrupt) in thread -1."
         )),
     ]
@@ -57,7 +57,7 @@ def test_raise_thread_exception_unsupported_platform(caplog, monkeypatch):
 
     # I expect a 'platform not supported' critical message to be logged
     assert caplog.record_tuples == [
-        ("dramatiq.middleware.threading", logging.CRITICAL, (
+        ("remoulade.middleware.threading", logging.CRITICAL, (
             "Setting thread exceptions (Interrupt) is not supported "
             "for your current platform ('not supported')."
         )),

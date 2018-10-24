@@ -1,6 +1,6 @@
 import pytest
 
-from dramatiq.common import dq_name, q_name, xq_name
+from remoulade.common import dq_name, q_name, xq_name
 
 
 @pytest.mark.parametrize("given,expected", [

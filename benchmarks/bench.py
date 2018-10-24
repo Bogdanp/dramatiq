@@ -9,9 +9,9 @@ import time
 import celery
 import pylibmc
 
-import dramatiq
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.brokers.redis import RedisBroker
+import remoulade
+from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.brokers.redis import RedisBroker
 
 logger = logging.getLogger("example")
 counter_key = "latench-bench-counter"
@@ -21,12 +21,12 @@ random.seed(1337)
 
 if os.getenv("REDIS") == "1":
     broker = RedisBroker()
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
     celery_app = celery.Celery(broker="redis:///")
 
 else:
     broker = RabbitmqBroker(host="127.0.0.1")
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
     celery_app = celery.Celery(broker="amqp:///")
 
 
@@ -58,8 +58,8 @@ def latency_bench():
         client.incr(counter_key)
 
 
-dramatiq_fib_bench = dramatiq.actor(fib_bench)
-dramatiq_latency_bench = dramatiq.actor(latency_bench)
+remoulade_fib_bench = remoulade.actor(fib_bench)
+remoulade_latency_bench = remoulade.actor(latency_bench)
 
 celery_fib_bench = celery_app.task(name="fib-bench", acks_late=True)(fib_bench)
 celery_latency_bench = celery_app.task(name="latency-bench", acks_late=True)(latency_bench)
@@ -105,10 +105,10 @@ def main(args):
 
         else:
             if args.benchmark == "latency":
-                dramatiq_latency_bench.send()
+                remoulade_latency_bench.send()
 
             elif args.benchmark == "fib":
-                dramatiq_fib_bench.send(random.randint(1, 200))
+                remoulade_fib_bench.send(random.randint(1, 200))
 
     print("Done enqueing messages. Booting workers...")
     with memcache_pool.reserve() as client:
@@ -124,10 +124,10 @@ def main(args):
 
         else:
             if args.use_green_threads:
-                subprocess_args = ["dramatiq-gevent", "bench", "-p", "8", "-t", "250"]
+                subprocess_args = ["remoulade-gevent", "bench", "-p", "8", "-t", "250"]
 
             else:
-                subprocess_args = ["dramatiq", "bench", "-p", "8"]
+                subprocess_args = ["remoulade", "bench", "-p", "8"]
 
         proc = subprocess.Popen(subprocess_args)
         processed = 0

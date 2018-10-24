@@ -3,15 +3,15 @@ import os
 import sys
 import time
 
-import dramatiq
+import remoulade
 
 if os.getenv("REDIS") == "1":
-    from dramatiq.brokers.redis import RedisBroker
+    from remoulade.brokers.redis import RedisBroker
     broker = RedisBroker()
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
 
 
-@dramatiq.actor(time_limit=5000, max_retries=3)
+@remoulade.actor(time_limit=5000, max_retries=3)
 def long_running():
     logger = logging.getLogger("long_running")
 
@@ -20,7 +20,7 @@ def long_running():
         time.sleep(1)
 
 
-@dramatiq.actor(time_limit=5000, max_retries=0)
+@remoulade.actor(time_limit=5000, max_retries=0)
 def long_running_with_catch():
     logger = logging.getLogger("long_running_with_catch")
 
@@ -28,7 +28,7 @@ def long_running_with_catch():
         while True:
             logger.info("Sleeping...")
             time.sleep(1)
-    except dramatiq.middleware.time_limit.TimeLimitExceeded:
+    except remoulade.middleware.time_limit.TimeLimitExceeded:
         logger.warning("Time limit exceeded. Aborting...")
 
 

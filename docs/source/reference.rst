@@ -1,7 +1,7 @@
 API Reference
 =============
 
-.. module:: dramatiq
+.. module:: remoulade
 
 
 Functions
@@ -56,13 +56,13 @@ Brokers
    :members:  __iter__, __next__, ack, nack, close
 .. autoclass:: MessageProxy
    :members:
-.. autoclass:: dramatiq.brokers.rabbitmq.RabbitmqBroker
+.. autoclass:: remoulade.brokers.rabbitmq.RabbitmqBroker
    :members:
    :inherited-members:
-.. autoclass:: dramatiq.brokers.redis.RedisBroker
+.. autoclass:: remoulade.brokers.redis.RedisBroker
    :members:
    :inherited-members:
-.. autoclass:: dramatiq.brokers.stub.StubBroker
+.. autoclass:: remoulade.brokers.stub.StubBroker
    :members:
    :inherited-members:
 
@@ -75,13 +75,13 @@ The following middleware are all enabled by default.
 .. autoclass:: Middleware
    :members:
    :member-order: bysource
-.. autoclass:: dramatiq.middleware.AgeLimit
-.. autoclass:: dramatiq.middleware.Callbacks
-.. autoclass:: dramatiq.middleware.Pipelines
-.. autoclass:: dramatiq.middleware.Prometheus
-.. autoclass:: dramatiq.middleware.Retries
-.. autoclass:: dramatiq.middleware.ShutdownNotifications
-.. autoclass:: dramatiq.middleware.TimeLimit
+.. autoclass:: remoulade.middleware.AgeLimit
+.. autoclass:: remoulade.middleware.Callbacks
+.. autoclass:: remoulade.middleware.Pipelines
+.. autoclass:: remoulade.middleware.Prometheus
+.. autoclass:: remoulade.middleware.Retries
+.. autoclass:: remoulade.middleware.ShutdownNotifications
+.. autoclass:: remoulade.middleware.TimeLimit
 
 Errors
 ^^^^^^
@@ -92,18 +92,18 @@ The class hierarchy for middleware exceptions:
 
     BaseException
     +-- Exception
-    |   +-- dramatiq.middleware.MiddlewareError
-    |       +-- dramatiq.middleware.SkipMessage
-    +-- dramatiq.middleware.Interrupt
-        +-- dramatiq.middleware.Shutdown
-        +-- dramatiq.middleware.TimeLimitExceeded
+    |   +-- remoulade.middleware.MiddlewareError
+    |       +-- remoulade.middleware.SkipMessage
+    +-- remoulade.middleware.Interrupt
+        +-- remoulade.middleware.Shutdown
+        +-- remoulade.middleware.TimeLimitExceeded
 
 
-.. autoclass:: dramatiq.middleware.MiddlewareError
-.. autoclass:: dramatiq.middleware.SkipMessage
-.. autoclass:: dramatiq.middleware.Interrupt
-.. autoclass:: dramatiq.middleware.TimeLimitExceeded
-.. autoclass:: dramatiq.middleware.Shutdown
+.. autoclass:: remoulade.middleware.MiddlewareError
+.. autoclass:: remoulade.middleware.SkipMessage
+.. autoclass:: remoulade.middleware.Interrupt
+.. autoclass:: remoulade.middleware.TimeLimitExceeded
+.. autoclass:: remoulade.middleware.Shutdown
 
 
 Results
@@ -118,15 +118,15 @@ simply updating data in your database instead of using results.
 Middleware
 ^^^^^^^^^^
 
-.. autoclass:: dramatiq.results.Results
+.. autoclass:: remoulade.results.Results
 
 Backends
 ^^^^^^^^
 
-.. autoclass:: dramatiq.results.ResultBackend
-.. autoclass:: dramatiq.results.backends.MemcachedBackend
-.. autoclass:: dramatiq.results.backends.RedisBackend
-.. autoclass:: dramatiq.results.backends.StubBackend
+.. autoclass:: remoulade.results.ResultBackend
+.. autoclass:: remoulade.results.backends.MemcachedBackend
+.. autoclass:: remoulade.results.backends.RedisBackend
+.. autoclass:: remoulade.results.backends.StubBackend
 
 
 Rate Limiters
@@ -141,20 +141,20 @@ Backends
 
 Rate limiter backends are used to store metadata about rate limits.
 
-.. autoclass:: dramatiq.rate_limits.RateLimiterBackend
-.. autoclass:: dramatiq.rate_limits.backends.MemcachedBackend
-.. autoclass:: dramatiq.rate_limits.backends.RedisBackend
-.. autoclass:: dramatiq.rate_limits.backends.StubBackend
+.. autoclass:: remoulade.rate_limits.RateLimiterBackend
+.. autoclass:: remoulade.rate_limits.backends.MemcachedBackend
+.. autoclass:: remoulade.rate_limits.backends.RedisBackend
+.. autoclass:: remoulade.rate_limits.backends.StubBackend
 
 
 Limiters
 ^^^^^^^^
 
-.. autoclass:: dramatiq.rate_limits.RateLimiter
+.. autoclass:: remoulade.rate_limits.RateLimiter
    :members:
-.. autoclass:: dramatiq.rate_limits.BucketRateLimiter
-.. autoclass:: dramatiq.rate_limits.ConcurrentRateLimiter
-.. autoclass:: dramatiq.rate_limits.WindowRateLimiter
+.. autoclass:: remoulade.rate_limits.BucketRateLimiter
+.. autoclass:: remoulade.rate_limits.ConcurrentRateLimiter
+.. autoclass:: remoulade.rate_limits.WindowRateLimiter
 
 
 Workers
@@ -167,7 +167,7 @@ Workers
 Errors
 ------
 
-.. autoclass:: DramatiqError
+.. autoclass:: RemouladeError
    :members:
 .. autoclass:: BrokerError
    :members:
@@ -183,9 +183,9 @@ Errors
    :members:
 .. autoclass:: RateLimitExceeded
    :members:
-.. autoclass:: dramatiq.results.ResultError
+.. autoclass:: remoulade.results.ResultError
    :members:
-.. autoclass:: dramatiq.results.ResultMissing
+.. autoclass:: remoulade.results.ResultMissing
    :members:
-.. autoclass:: dramatiq.results.ResultTimeout
+.. autoclass:: remoulade.results.ResultTimeout
    :members:

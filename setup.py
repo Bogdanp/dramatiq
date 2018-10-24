@@ -11,7 +11,7 @@ with open(rel("README.md")) as f:
     long_description = f.read()
 
 
-with open(rel("dramatiq", "__init__.py"), "r") as f:
+with open(rel("remoulade", "__init__.py"), "r") as f:
     version_marker = "__version__ = "
     for line in f:
         if line.startswith(version_marker):
@@ -72,28 +72,28 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
 ]
 
 setup(
-    name="dramatiq",
+    name="remoulade",
     version=version,
-    author="Bogdan Popa",
-    author_email="bogdan@cleartype.io",
+    author="Wiremind",
+    author_email="dev@wiremind.fr",
     description="Background Processing for Python 3.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=[
-        "dramatiq",
-        "dramatiq.brokers",
-        "dramatiq.middleware",
-        "dramatiq.rate_limits",
-        "dramatiq.rate_limits.backends",
-        "dramatiq.results",
-        "dramatiq.results.backends",
+        "remoulade",
+        "remoulade.brokers",
+        "remoulade.middleware",
+        "remoulade.rate_limits",
+        "remoulade.rate_limits.backends",
+        "remoulade.results",
+        "remoulade.results.backends",
     ],
     include_package_data=True,
     install_requires=dependencies,
     python_requires=">=3.5",
     extras_require=extra_dependencies,
-    entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
-    scripts=["bin/dramatiq-gevent"],
+    entry_points={"console_scripts": ["remoulade = remoulade.__main__:main"]},
+    scripts=["bin/remoulade-gevent"],
     classifiers=[
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",

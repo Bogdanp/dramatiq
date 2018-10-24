@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-import dramatiq
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.common import current_millis
+import remoulade
+from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.common import current_millis
 
 broker = RabbitmqBroker()
 loaded_at = current_millis()
@@ -16,7 +16,7 @@ CURRENT_PLATFORM = platform.python_implementation()
 CURRENT_OS = platform.system()
 
 
-@dramatiq.actor(broker=broker)
+@remoulade.actor(broker=broker)
 def write_loaded_at(filename):
     with open(filename, "w") as f:
         f.write(str(loaded_at))
@@ -31,7 +31,7 @@ def write_loaded_at(filename):
 ])
 def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     # Given that I have a shared file the processes can use to communicate with
-    filename = "/tmp/dramatiq-loaded-at"
+    filename = "/tmp/remoulade-loaded-at"
 
     # When I start my workers
     start_cli("tests.test_watch:broker", extra_args=[

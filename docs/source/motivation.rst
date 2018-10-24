@@ -3,18 +3,18 @@
 Motivation
 ==========
 
-Dramatiq's primary reason for being is the fact that I wanted a
+Remoulade's primary reason for being is the fact that I wanted a
 distributed task queueing library that is simple and has sane defaults
 for most SaaS workloads.  In that sense, it draws a lot of inspiration
 from `GAE Push Queues`_ and Sidekiq_.
 
-Dramatiq's driving principles are as follows:
+Remoulade's driving principles are as follows:
 
 * high reliability and performance
 * simple and easy to understand core
 * convention over configuration
 
-If you've ever had to use Celery in anger, Dramatiq could be the tool
+If you've ever had to use Celery in anger, Remoulade could be the tool
 for you.
 
 
@@ -26,11 +26,11 @@ Compared to *
 -------------
 
 I've used Celery_ professionally for years and my growing frustration
-with it is one of the reasons why I developed dramatiq.  Here are some
-of the main differences between Dramatiq, Celery and RQ:
+with it is one of the reasons why I developed remoulade.  Here are some
+of the main differences between Remoulade, Celery and RQ:
 
 +------------------------------+----------+-------------+--------------+
-|                              | Dramatiq | Celery_     | RQ_          |
+|                              | Remoulade | Celery_     | RQ_          |
 +------------------------------+----------+-------------+--------------+
 | Python 2 support             | No       | Yes         | Yes          |
 |                              |          |             |              |
@@ -70,14 +70,14 @@ of the main differences between Dramatiq, Celery and RQ:
 +------------------------------+----------+-------------+--------------+
 
 .. [#] Celery acks tasks as soon as they’re pulled by a worker by
-       default.  This is easy to change, but a bad default.  Dramatiq
+       default.  This is easy to change, but a bad default.  Remoulade
        doesn’t let you change this: tasks are only ever acked when
        they’re done processing.
 
 .. [#] Celery has poor support for delayed tasks.  Delayed tasks are
        put on the same queue that is used for normal tasks and they’re
        simply pulled into worker memory until they can be executed,
-       making it hard to autoscale workers by queue size.  Dramatiq
+       making it hard to autoscale workers by queue size.  Remoulade
        enqueues delayed tasks on a separate queue and moves them back
        when they're ready to be executed.
 
@@ -88,7 +88,7 @@ of the main differences between Dramatiq, Celery and RQ:
 
 .. [#prio] Celery and RQ don't support task prioritization.  You have
            to deploy multiple sets of workers in order to prioritize
-           queues.  Dramatiq lets you prioritize down to the
+           queues.  Remoulade lets you prioritize down to the
            individual |Actor| level.
 
 

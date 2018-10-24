@@ -5,9 +5,9 @@ User Guide
 
 To follow along with this guide you'll need to install and run RabbitMQ_
 and then set up a new `virtual environment`_ in which you'll have
-to install Dramatiq and Requests_::
+to install Remoulade and Requests_::
 
-  $ pip install 'dramatiq[rabbitmq, watch]' requests
+  $ pip install 'remoulade[rabbitmq, watch]' requests
 
 .. _requests: http://docs.python-requests.org
 .. _virtual environment: http://docs.python-guide.org/en/latest/starting/install3/osx/#virtual-environments
@@ -40,16 +40,16 @@ interpreter yields about what we expect::
   There are 338 words at 'http://example.com'.
 
 To turn this into a function that can be processed asynchronously
-using Dramatiq, all we have to do is decorate it with |actor|:
+using Remoulade, all we have to do is decorate it with |actor|:
 
 .. code-block:: python
    :caption: count_words.py
    :emphasize-lines: 1, 4
 
-   import dramatiq
+   import remoulade
    import requests
 
-   @dramatiq.actor
+   @remoulade.actor
    def count_words(url):
      response = requests.get(url)
      count = len(response.text.split(" "))
@@ -74,7 +74,7 @@ asynchronously by calling its |send| method::
 
 Doing so immediately enqueues a message (via our local RabbitMQ
 server) that can be processed asynchronously but *doesn't actually run
-the function*.  In order to run it, we'll have to boot up a Dramatiq
+the function*.  In order to run it, we'll have to boot up a Remoulade
 worker.
 
 .. note::
@@ -85,32 +85,32 @@ worker.
 Workers
 -------
 
-Dramatiq comes with a command line utility called, predictably,
-``dramatiq``.  This utility is able to spin up multiple concurrent
+Remoulade comes with a command line utility called, predictably,
+``remoulade``.  This utility is able to spin up multiple concurrent
 worker processes that pop messages off the queue and send them to
 actor functions for execution.
 
 To spawn workers for our ``count_words.py`` example, run the following
 command in a new terminal window::
 
-  $ dramatiq count_words
+  $ remoulade count_words
 
 This will spin up as many processes as there are CPU cores on your
-machine with 8 worker threads per process.  Run ``dramatiq -h`` if you
+machine with 8 worker threads per process.  Run ``remoulade -h`` if you
 want to see a list of the available command line flags.
 
 As soon as you run that command you'll see log output along these
 lines::
 
-  [2017-11-19 13:03:48,188] [PID 22370] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.13.1' is booting up.
-  [2017-11-19 13:03:48,349] [PID 22377] [MainThread] [dramatiq.WorkerProcess(3)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,350] [PID 22375] [MainThread] [dramatiq.WorkerProcess(1)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,357] [PID 22376] [MainThread] [dramatiq.WorkerProcess(2)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,357] [PID 22374] [MainThread] [dramatiq.WorkerProcess(0)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,358] [PID 22379] [MainThread] [dramatiq.WorkerProcess(5)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,362] [PID 22381] [MainThread] [dramatiq.WorkerProcess(7)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,364] [PID 22380] [MainThread] [dramatiq.WorkerProcess(6)] [INFO] Worker process is ready for action.
-  [2017-11-19 13:03:48,366] [PID 22378] [MainThread] [dramatiq.WorkerProcess(4)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,188] [PID 22370] [MainThread] [remoulade.MainProcess] [INFO] Remoulade '0.13.1' is booting up.
+  [2017-11-19 13:03:48,349] [PID 22377] [MainThread] [remoulade.WorkerProcess(3)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,350] [PID 22375] [MainThread] [remoulade.WorkerProcess(1)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,357] [PID 22376] [MainThread] [remoulade.WorkerProcess(2)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,357] [PID 22374] [MainThread] [remoulade.WorkerProcess(0)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,358] [PID 22379] [MainThread] [remoulade.WorkerProcess(5)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,362] [PID 22381] [MainThread] [remoulade.WorkerProcess(7)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,364] [PID 22380] [MainThread] [remoulade.WorkerProcess(6)] [INFO] Worker process is ready for action.
+  [2017-11-19 13:03:48,366] [PID 22378] [MainThread] [remoulade.WorkerProcess(4)] [INFO] Worker process is ready for action.
   [2017-11-19 13:03:48,369] [PID 22377] [Thread-4] [count_words.count_words] [INFO] Received args=('http://example.com',) kwargs={}.
   There are 338 words at 'http://example.com'.
   [2017-11-19 13:03:48,679] [PID 22377] [Thread-4] [count_words.count_words] [INFO] Completed after 310.42ms.
@@ -150,26 +150,26 @@ actor an invalid URL.  Let's try it::
 Error Handling
 --------------
 
-Dramatiq assumes all actors are idempotent so when an exception occurs
+Remoulade assumes all actors are idempotent so when an exception occurs
 during message processing, it automatically enqueues a retry for that
 message with exponential backoff.
 
 That last message we sent will cause something along these lines to be
 printed in your worker process::
 
-  [2017-06-27 13:11:22,059] [PID 13053] [Thread-8] [dramatiq.worker.WorkerThread] [WARNING] Failed to process message count_words('foo') with unhandled exception.
+  [2017-06-27 13:11:22,059] [PID 13053] [Thread-8] [remoulade.worker.WorkerThread] [WARNING] Failed to process message count_words('foo') with unhandled exception.
   Traceback (most recent call last):
     ...
   requests.exceptions.MissingSchema: Invalid URL 'foo': No schema supplied. Perhaps you meant http://foo?
-  [2017-06-27 13:11:22,062] [PID 13053] [Thread-8] [dramatiq.middleware.retries.Retries] [INFO] Retrying message 'a53a5a7d-74e1-48ae-a5a8-0b72af2a8708' in 8104 milliseconds.
+  [2017-06-27 13:11:22,062] [PID 13053] [Thread-8] [remoulade.middleware.retries.Retries] [INFO] Retrying message 'a53a5a7d-74e1-48ae-a5a8-0b72af2a8708' in 8104 milliseconds.
 
-Dramatiq will keep retrying the message with longer and longer delays
+Remoulade will keep retrying the message with longer and longer delays
 in between runs until we fix our code or for up to about 30 days from
 when it was first enqueued.
 
 Change ``count_words`` to catch the missing schema error::
 
-   @dramatiq.actor
+   @remoulade.actor
    def count_words(url):
      try:
        response = requests.get(url)
@@ -185,7 +185,7 @@ pick up the source code changes::
 
 Substitute the process ID of your own main process for ``13047``.  You
 can find the PID by looking at the log lines from the worker starting
-up.  Look for lines containing the string ``[dramatiq.MainProcess]``.
+up.  Look for lines containing the string ``[remoulade.MainProcess]``.
 
 The next time your message is retried you should see::
 
@@ -201,7 +201,7 @@ with the ``--watch`` flag pointing to the folder it should watch for
 source code changes.  It'll reload the workers whenever Python files
 under that folder or any of its sub-folders change::
 
-  $ dramatiq count_words --watch .
+  $ remoulade count_words --watch .
 
 .. warning::
    Although this is a handy feature to use when developing your code,
@@ -211,7 +211,7 @@ under that folder or any of its sub-folders change::
 Message Retries
 ---------------
 
-As mentioned in the error handling section, Dramatiq automatically
+As mentioned in the error handling section, Remoulade automatically
 retries failures with exponential backoff.
 
 You can specify how failures should be retried on a per-actor basis.
@@ -219,7 +219,7 @@ For example, if you want to limit the maximum number of retries for
 ``count_words`` you can pass the ``max_retries`` keyword argument to
 |actor|::
 
-  @dramatiq.actor(max_retries=3)
+  @remoulade.actor(max_retries=3)
   def count_words(url):
     ...
 
@@ -229,7 +229,7 @@ predicate function via the ``retry_when`` parameter::
   def should_retry(retries_so_far, exception):
     return retries_so_far < 3 and isinstance(exception, HttpTimeout)
 
-  @dramatiq.actor(retry_when=should_retry)
+  @remoulade.actor(retry_when=should_retry)
   def count_words(url):
     ...
 
@@ -252,7 +252,7 @@ Instead of limiting the number of times messages can be retried, you
 might want to expire old messages.  You can specify the ``max_age`` of
 messages (given in milliseconds) on a per-actor basis::
 
-  @dramatiq.actor(max_age=3600000)
+  @remoulade.actor(max_age=3600000)
   def count_words(url):
     ...
 
@@ -271,14 +271,14 @@ Message Time Limits
 
 In ``count_words``, we didn't set an explicit timeout for the outbound
 request which means that it can take a very long time to complete if
-the server we're requesting is timing out.  Dramatiq has a default
+the server we're requesting is timing out.  Remoulade has a default
 actor time limit of 10 minutes, which means that any actor running for
 longer than 10 minutes is killed with a |TimeLimitExceeded| error.
 
 You can control these time limits at the individual actor level by
 specifying the ``time_limit`` (in milliseconds) of each one::
 
-  @dramatiq.actor(time_limit=60000)
+  @remoulade.actor(time_limit=60000)
   def count_words(url):
     ...
 
@@ -301,9 +301,9 @@ Handling Time Limits
 If you want to gracefully handle time limits within an actor, you can
 wrap its source code in a try block and catch |TimeLimitExceeded|::
 
-  from dramatiq.middleware import TimeLimitExceeded
+  from remoulade.middleware import TimeLimitExceeded
 
-  @dramatiq.actor(time_limit=1000)
+  @remoulade.actor(time_limit=1000)
   def long_running():
     try:
       setup_missiles()
@@ -339,16 +339,16 @@ Prioritizing Messages
 Say your app has some actors that are higher priority than others: for
 example, actors that affect your UI and make users wait, or are
 otherwise user-facing, versus actors that aren't.  When choosing
-between two concurrent messages to run, Dramatiq will run the Message
+between two concurrent messages to run, Remoulade will run the Message
 that belongs to the actor with the highest priority.
 
 You can set an Actor's priority via the ``priority`` keyword argument::
 
-  @dramatiq.actor(priority=0)  # 0 is the default
+  @remoulade.actor(priority=0)  # 0 is the default
   def generate_report(user_id):
     ...
 
-  @dramatiq.actor(priority=10)
+  @remoulade.actor(priority=10)
   def sync_order_to_warehouse(order_id):
     ...
 
@@ -374,7 +374,7 @@ various priorities you plan to use::
 Message Brokers
 ---------------
 
-Dramatiq abstracts over the notion of a message broker and currently
+Remoulade abstracts over the notion of a message broker and currently
 supports both RabbitMQ and Redis out of the box.  By default, it'll
 set up a RabbitMQ broker instance pointing at the local host.
 
@@ -385,32 +385,32 @@ To configure the RabbitMQ host, instantiate a |RabbitmqBroker| and set
 it as the global broker as early as possible during your program's
 execution::
 
-  import dramatiq
+  import remoulade
 
-  from dramatiq.brokers.rabbitmq import RabbitmqBroker
+  from remoulade.brokers.rabbitmq import RabbitmqBroker
 
   rabbitmq_broker = RabbitmqBroker(host="rabbitmq")
-  dramatiq.set_broker(rabbitmq_broker)
+  remoulade.set_broker(rabbitmq_broker)
 
 Redis Broker
 ^^^^^^^^^^^^
 
-To use Dramatiq with the Redis broker, create an instance of it and
+To use Remoulade with the Redis broker, create an instance of it and
 set it as the global broker as early as possible during your program’s
 execution::
 
-  import dramatiq
+  import remoulade
 
-  from dramatiq.brokers.redis import RedisBroker
+  from remoulade.brokers.redis import RedisBroker
 
   redis_broker = RedisBroker(host="redis", port=6537)
-  dramatiq.set_broker(redis_broker)
+  remoulade.set_broker(redis_broker)
 
 
 Unit Testing
 ------------
 
-Dramatiq provides a |StubBroker| that can be used in unit tests so you
+Remoulade provides a |StubBroker| that can be used in unit tests so you
 don't have to have a running RabbitMQ or Redis instance in order to
 run your tests.  My recommendation is to use it in conjunction with
 `pytest fixtures`_:
@@ -420,8 +420,8 @@ run your tests.  My recommendation is to use it in conjunction with
 
    import os
 
-   from dramatiq.brokers.rabbitmq import RabbitmqBroker
-   from dramatiq.brokers.stub import StubBroker
+   from remoulade.brokers.rabbitmq import RabbitmqBroker
+   from remoulade.brokers.stub import StubBroker
 
    if os.getenv("UNIT_TESTS") == "1":
      broker = StubBroker()
@@ -432,10 +432,10 @@ run your tests.  My recommendation is to use it in conjunction with
 .. code-block:: python
    :caption: conftest.py
 
-   import dramatiq
+   import remoulade
    import pytest
 
-   from dramatiq import Worker
+   from remoulade import Worker
    from yourapp import broker
 
    @pytest.fixture()

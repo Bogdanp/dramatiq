@@ -1,21 +1,21 @@
 .. include:: global.rst
 
-Dramatiq: simple task processing
+Remoulade: simple task processing
 ================================
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
 
-.. _Discuss: https://discuss.dramatiq.io
-.. _Source Code: https://github.com/Bogdanp/dramatiq
+.. _Discuss: https://discuss.remoulade.io
+.. _Source Code: https://github.com/wiremind/remoulade
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
-.. image:: https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master
-   :target: https://travis-ci.org/Bogdanp/dramatiq
-.. image:: https://badge.fury.io/py/dramatiq.svg
-   :target: https://badge.fury.io/py/dramatiq
+.. image:: https://travis-ci.org/wiremind/remoulade.svg?branch=master
+   :target: https://travis-ci.org/wiremind/remoulade
+.. image:: https://badge.fury.io/py/remoulade.svg
+   :target: https://badge.fury.io/py/remoulade
 
-**Dramatiq** is a distributed task processing library for Python with
+**Remoulade** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
 
 .. raw:: html
@@ -26,10 +26,10 @@ Here's what it looks like:
 
 ::
 
-  import dramatiq
+  import remoulade
   import requests
 
-  @dramatiq.actor
+  @remoulade.actor
   def count_words(url):
      response = requests.get(url)
      count = len(response.text.split(" "))
@@ -42,7 +42,7 @@ Here's what it looks like:
   # later, in a separate process.
   count_words.send("http://example.com")
 
-**Dramatiq** is :doc:`licensed<license>` under the LGPL and it
+**Remoulade** is :doc:`licensed<license>` under the LGPL and it
 officially supports Python 3.5 and later.
 
 
@@ -51,11 +51,11 @@ Get It Now
 
 If you want to use it with RabbitMQ_::
 
-   $ pip install -U 'dramatiq[rabbitmq, watch]'
+   $ pip install -U 'remoulade[rabbitmq, watch]'
 
 Or if you want to use it with Redis_::
 
-   $ pip install -U 'dramatiq[redis, watch]'
+   $ pip install -U 'remoulade[redis, watch]'
 
 Read the :doc:`motivation` behind it or the :doc:`guide` if you're
 ready to get started.
@@ -65,7 +65,7 @@ User Guide
 ----------
 
 This part of the documentation is focused primarily on teaching you
-how to use Dramatiq.
+how to use Remoulade.
 
 .. toctree::
    :maxdepth: 2
@@ -82,7 +82,7 @@ API Reference
 -------------
 
 This part of the documentation is focused on detailing the various
-bits and pieces of the Dramatiq developer interface.
+bits and pieces of the Remoulade developer interface.
 
 .. toctree::
    :maxdepth: 2
@@ -96,10 +96,10 @@ Project Info
 .. toctree::
    :maxdepth: 1
 
-   Source Code <https://github.com/Bogdanp/dramatiq>
+   Source Code <https://github.com/wiremind/remoulade>
    changelog
-   Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
-   Discussion Board <https://discuss.dramatiq.io>
+   Contributing <https://github.com/wiremind/remoulade/blob/master/CONTRIBUTING.md>
+   Discussion Board <https://discuss.remoulade.io>
    license
 
 
@@ -107,7 +107,7 @@ Newsletter
 ----------
 
 Subscribe to our occasional newsletter to receive up-to-date info on
-Dramatiq features and changes.
+Remoulade features and changes.
 
 .. raw:: html
 

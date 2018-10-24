@@ -4,18 +4,18 @@ import time
 
 import pytest
 
-import dramatiq
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
+import remoulade
+from remoulade.brokers.rabbitmq import RabbitmqBroker
 
 broker = RabbitmqBroker(host="127.0.0.1")
 
 
-@dramatiq.actor(queue_name="benchmark-throughput", broker=broker)
+@remoulade.actor(queue_name="benchmark-throughput", broker=broker)
 def throughput():
     pass
 
 
-@dramatiq.actor(queue_name="benchmark-fib", broker=broker)
+@remoulade.actor(queue_name="benchmark-fib", broker=broker)
 def fib(n):
     x, y = 1, 1
     while n > 2:
@@ -24,7 +24,7 @@ def fib(n):
     return x
 
 
-@dramatiq.actor(queue_name="benchmark-latency", broker=broker)
+@remoulade.actor(queue_name="benchmark-latency", broker=broker)
 def latency():
     p = random.randint(1, 100)
     if p == 1:

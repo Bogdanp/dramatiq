@@ -2,9 +2,9 @@ import urllib.request as request
 
 import pytest
 
-from dramatiq.brokers.stub import StubBroker
+from remoulade.brokers.stub import StubBroker
 
-prometheus = pytest.importorskip("dramatiq.middleware.prometheus")
+prometheus = pytest.importorskip("remoulade.middleware.prometheus")
 
 
 def test_prometheus_middleware_exposes_metrics():

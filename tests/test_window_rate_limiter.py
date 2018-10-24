@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from dramatiq.rate_limits import WindowRateLimiter
+from remoulade.rate_limits import WindowRateLimiter
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])

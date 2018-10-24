@@ -1,21 +1,21 @@
 import pytest
 
-import dramatiq
+import remoulade
 
 
 @pytest.fixture
 def pickle_encoder():
-    old_encoder = dramatiq.get_encoder()
-    new_encoder = dramatiq.PickleEncoder()
-    dramatiq.set_encoder(new_encoder)
+    old_encoder = remoulade.get_encoder()
+    new_encoder = remoulade.PickleEncoder()
+    remoulade.set_encoder(new_encoder)
     yield new_encoder
-    dramatiq.set_encoder(old_encoder)
+    remoulade.set_encoder(old_encoder)
 
 
 def test_set_encoder_sets_the_global_encoder(pickle_encoder):
     # Given that I've set a Pickle encoder as the global encoder
     # When I get the global encoder
-    encoder = dramatiq.get_encoder()
+    encoder = remoulade.get_encoder()
 
     # Then it should be the same as the encoder that was set
     assert encoder == pickle_encoder
@@ -26,7 +26,7 @@ def test_pickle_encoder(pickle_encoder, stub_broker, stub_worker):
     # And I have an actor that adds a value to a db
     db = []
 
-    @dramatiq.actor
+    @remoulade.actor
     def add_value(x):
         db.append(x)
 

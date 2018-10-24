@@ -4,9 +4,9 @@ from unittest import mock
 
 import pytest
 
-import dramatiq
-from dramatiq.brokers.stub import StubBroker
-from dramatiq.middleware import shutdown, threading
+import remoulade
+from remoulade.brokers.stub import StubBroker
+from remoulade.middleware import shutdown, threading
 
 not_supported = threading.current_platform not in threading.supported_platforms
 
@@ -27,7 +27,7 @@ def test_shutdown_notifications_platform_not_supported(recwarn, monkeypatch):
                                        "on your current platform ('not supported').")
 
 
-@mock.patch("dramatiq.middleware.shutdown.raise_thread_exception")
+@mock.patch("remoulade.middleware.shutdown.raise_thread_exception")
 def test_shutdown_notifications_worker_shutdown_messages(raise_thread_exception, caplog):
     # capture all messages
     caplog.set_level(logging.NOTSET)
@@ -51,13 +51,13 @@ def test_shutdown_notifications_worker_shutdown_messages(raise_thread_exception,
     # And shutdown notifications are logged
     assert len(caplog.record_tuples) == 3
     assert caplog.record_tuples == [
-        ("dramatiq.middleware.shutdown.ShutdownNotifications", logging.DEBUG, (
+        ("remoulade.middleware.shutdown.ShutdownNotifications", logging.DEBUG, (
             "Sending shutdown notification to worker threads..."
         )),
-        ("dramatiq.middleware.shutdown.ShutdownNotifications", logging.INFO, (
+        ("remoulade.middleware.shutdown.ShutdownNotifications", logging.INFO, (
             "Worker shutdown notification. Raising exception in worker thread 1."
         )),
-        ("dramatiq.middleware.shutdown.ShutdownNotifications", logging.INFO, (
+        ("remoulade.middleware.shutdown.ShutdownNotifications", logging.INFO, (
             "Worker shutdown notification. Raising exception in worker thread 2."
         )),
     ]
@@ -73,7 +73,7 @@ def test_shutdown_notifications_options(stub_broker, actor_opt, message_opt, sho
     middleware = shutdown.ShutdownNotifications()
 
     # And an actor
-    @dramatiq.actor(notify_shutdown=actor_opt)
+    @remoulade.actor(notify_shutdown=actor_opt)
     def do_work():
         pass
 
@@ -90,7 +90,7 @@ def test_shutdown_notifications_are_received(stub_broker, stub_worker):
     shutdowns, successes = [], []
 
     # And an actor that handles shutdown interrupts
-    @dramatiq.actor(notify_shutdown=True, max_retries=0)
+    @remoulade.actor(notify_shutdown=True, max_retries=0)
     def do_work():
         try:
             for _ in range(10):
@@ -122,7 +122,7 @@ def test_shutdown_notifications_can_be_ignored(stub_broker, stub_worker):
     shutdowns, successes = [], []
 
     # And an actor
-    @dramatiq.actor(max_retries=0)
+    @remoulade.actor(max_retries=0)
     def do_work():
         try:
             time.sleep(.2)
@@ -153,7 +153,7 @@ def test_shutdown_notifications_dont_notify_completed_threads(stub_broker, stub_
     shutdowns, successes = [], []
 
     # And an actor that handles shutdown interrupts
-    @dramatiq.actor(notify_shutdown=True, max_retries=0)
+    @remoulade.actor(notify_shutdown=True, max_retries=0)
     def do_work(n=10, i=.1):
         try:
             for _ in range(n):

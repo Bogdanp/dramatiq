@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# dramatiq documentation build configuration file, created by
+# remoulade documentation build configuration file, created by
 # sphinx-quickstart on Sat Mar 18 19:48:26 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -18,7 +18,7 @@ import sys
 
 import alabaster  # noqa
 
-import dramatiq  # noqa
+import remoulade  # noqa
 
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('./'))
@@ -58,7 +58,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Dramatiq'
+project = 'Remoulade'
 copyright = '2017, CLEARTYPE SRL'
 author = 'CLEARTYPE SRL'
 
@@ -67,9 +67,9 @@ author = 'CLEARTYPE SRL'
 # built documents.
 #
 # The short X.Y version.
-version = dramatiq.__version__
+version = remoulade.__version__
 # The full version, including alpha/beta/rc tags.
-release = dramatiq.__version__
+release = remoulade.__version__
 
 # Use the current release as the root of the docs site.
 scv_root_ref = 'v' + release
@@ -115,8 +115,8 @@ html_theme_options = {
     'github_banner': True,
     'github_button': True,
     'github_type': 'star',
-    'github_user': 'Bogdanp',
-    'github_repo': 'dramatiq',
+    'github_user': 'wiremind',
+    'github_repo': 'remoulade',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -138,7 +138,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'dramatiqdoc'
+htmlhelp_basename = 'remouladedoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -165,7 +165,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'dramatiq.tex', 'dramatiq Documentation',
+    (master_doc, 'remoulade.tex', 'remoulade Documentation',
      'Bogdan Popa', 'manual'),
 ]
 
@@ -175,7 +175,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'dramatiq', 'dramatiq Documentation',
+    (master_doc, 'remoulade', 'remoulade Documentation',
      [author], 1)
 ]
 
@@ -186,8 +186,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'dramatiq', 'dramatiq Documentation',
-     author, 'dramatiq', 'One line description of project.',
+    (master_doc, 'remoulade', 'remoulade Documentation',
+     author, 'remoulade', 'One line description of project.',
      'Miscellaneous'),
 ]
 

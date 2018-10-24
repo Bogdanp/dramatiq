@@ -7,8 +7,8 @@ contribution that doesn't fit my design goals for the project will be
 rejected so it's always better to start a discussion first!
 
 By submitting contributions, you disavow any rights or claims to any
-changes submitted to the Dramatiq project and assign the copyright of
-those changes to CLEARTYPE SRL.  If you cannot or do not want to
+changes submitted to the Remoulade project and assign the copyright of
+those changes to WIREMIND SAS.  If you cannot or do not want to
 reassign those rights, you shouldn't submit a PR.  Instead, you should
 open an issue and let someone else do that work.
 
@@ -22,7 +22,7 @@ open an issue and let someone else do that work.
 Run the test suite with `tox`.  The tests require running [RabbitMQ],
 [Redis] and [Memcached] servers.
 
-[CONTRIBUTORS]: https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTORS.md
+[CONTRIBUTORS]: https://github.com/wiremind/remoulade/blob/master/CONTRIBUTORS.md
 [RabbitMQ]: https://www.rabbitmq.com/
 [Redis]: https://redis.io
 [Memcached]: https://memcached.org/
@@ -38,7 +38,4 @@ broker, Python implementation) as part of the issue description.
 
 Please include a minimal, reproducible test case with every bug
 report.  If the issue is actually a question, consider asking it on
-the [discussion board] or Stack Overflow first.
-
-[Start a discussion]: https://discuss.dramatiq.io
-[discussion board]: https://discuss.dramatiq.io
+Stack Overflow first.

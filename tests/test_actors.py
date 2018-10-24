@@ -4,10 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
-import dramatiq
-from dramatiq import Message, Middleware
-from dramatiq.errors import RateLimitExceeded
-from dramatiq.middleware import SkipMessage
+import remoulade
+from remoulade import Message, Middleware
+from remoulade.errors import RateLimitExceeded
+from remoulade.middleware import SkipMessage
 
 from .common import worker
 
@@ -16,18 +16,18 @@ _current_platform = platform.python_implementation()
 
 def test_actors_can_be_defined(stub_broker):
     # Given that I've decorated a function with @actor
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         return x + y
 
     # I expect that function to become an instance of Actor
-    assert isinstance(add, dramatiq.Actor)
+    assert isinstance(add, remoulade.Actor)
 
 
 def test_actors_can_be_assigned_predefined_options(stub_broker):
     # Given that I have a stub broker with the retries middleware
     # If I define an actor with a max_retries number
-    @dramatiq.actor(max_retries=32)
+    @remoulade.actor(max_retries=32)
     def add(x, y):
         return x + y
 
@@ -40,14 +40,14 @@ def test_actors_cannot_be_assigned_arbitrary_options(stub_broker):
     # If I define an actor with a nonexistent option
     # I expect it to raise a ValueError
     with pytest.raises(ValueError):
-        @dramatiq.actor(invalid_option=32)
+        @remoulade.actor(invalid_option=32)
         def add(x, y):
             return x + y
 
 
 def test_actors_can_be_named(stub_broker):
     # Given that I've decorated a function with @actor and named it explicitly
-    @dramatiq.actor(actor_name="foo")
+    @remoulade.actor(actor_name="foo")
     def add(x, y):
         return x + y
 
@@ -57,7 +57,7 @@ def test_actors_can_be_named(stub_broker):
 
 def test_actors_can_be_assigned_custom_queues(stub_broker):
     # Given that I've decorated a function with @actor and given it an explicit queue
-    @dramatiq.actor(queue_name="foo")
+    @remoulade.actor(queue_name="foo")
     def foo():
         pass
 
@@ -69,14 +69,14 @@ def test_actors_fail_given_invalid_queue_names(stub_broker):
     # If I define an actor with an invalid queue name
     # I expect a ValueError to be raised
     with pytest.raises(ValueError):
-        @dramatiq.actor(queue_name="$2@!@#")
+        @remoulade.actor(queue_name="$2@!@#")
         def foo():
             pass
 
 
 def test_actors_can_be_called(stub_broker):
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         return x + y
 
@@ -87,7 +87,7 @@ def test_actors_can_be_called(stub_broker):
 
 def test_actors_can_be_sent_messages(stub_broker):
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         return x + y
 
@@ -103,7 +103,7 @@ def test_actors_can_perform_work(stub_broker, stub_worker):
     database = {}
 
     # And an actor that can write data to that database
-    @dramatiq.actor
+    @remoulade.actor
     def put(key, value):
         database[key] = value
 
@@ -124,7 +124,7 @@ def test_actors_can_perform_work_with_kwargs(stub_broker, stub_worker):
     results = []
 
     # And an actor
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         results.append(x + y)
 
@@ -144,7 +144,7 @@ def test_actors_do_not_retry_by_default(stub_broker, stub_worker):
     attempts = []
 
     # And an actor that fails every time
-    @dramatiq.actor()
+    @remoulade.actor()
     def do_work():
         attempts.append(1)
         raise RuntimeError("failure")
@@ -165,7 +165,7 @@ def test_actors_retry_on_failure(stub_broker, stub_worker):
     failures, successes = [], []
 
     # And an actor that fails the first time it's called
-    @dramatiq.actor(max_retries=3, min_backoff=100, max_backoff=500)
+    @remoulade.actor(max_retries=3, min_backoff=100, max_backoff=500)
     def do_work():
         if sum(failures) == 0:
             failures.append(1)
@@ -189,7 +189,7 @@ def test_actors_retry_a_max_number_of_times_on_failure(stub_broker, stub_worker)
     attempts = []
 
     # And an actor that fails every time
-    @dramatiq.actor(max_retries=3, min_backoff=100, max_backoff=500)
+    @remoulade.actor(max_retries=3, min_backoff=100, max_backoff=500)
     def do_work():
         attempts.append(1)
         raise RuntimeError("failure")
@@ -210,7 +210,7 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     attempts = []
 
     # And an actor that fails every time
-    @dramatiq.actor(max_age=100, min_backoff=50, max_backoff=500)
+    @remoulade.actor(max_age=100, min_backoff=50, max_backoff=500)
     def do_work():
         attempts.append(1)
         raise RuntimeError("failure")
@@ -232,7 +232,7 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     attempts, successes = [], []
 
     # And an actor with a time limit
-    @dramatiq.actor(max_retries=0, time_limit=1000)
+    @remoulade.actor(max_retries=0, time_limit=1000)
     def do_work():
         attempts.append(1)
         time.sleep(2)
@@ -256,7 +256,7 @@ def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
     attempts, successes = [], []
 
     # And an actor without an explicit time limit
-    @dramatiq.actor(max_retries=0)
+    @remoulade.actor(max_retries=0)
     def do_work():
         attempts.append(1)
         time.sleep(2)
@@ -279,7 +279,7 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
     runs = []
 
     # And an actor whose messages have an age limit
-    @dramatiq.actor(max_age=100)
+    @remoulade.actor(max_age=100)
     def do_work():
         runs.append(1)
 
@@ -303,7 +303,7 @@ def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_w
     results = []
 
     # And an actor that appends a number to the database
-    @dramatiq.actor
+    @remoulade.actor
     def append(x):
         results.append(x)
 
@@ -355,7 +355,7 @@ def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
     database = []
 
     # And an actor that appends values to the database
-    @dramatiq.actor
+    @remoulade.actor
     def append(x):
         database.append(x)
 
@@ -389,7 +389,7 @@ def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
     # And an actor that keeps track of its calls
     calls = []
 
-    @dramatiq.actor
+    @remoulade.actor
     def track_call():
         calls.append(1)
 
@@ -414,7 +414,7 @@ def test_workers_can_be_paused(stub_broker, stub_worker):
     # And an actor that keeps track of its calls
     calls = []
 
-    @dramatiq.actor
+    @remoulade.actor
     def track_call():
         calls.append(1)
 
@@ -444,11 +444,11 @@ def test_actors_can_prioritize_work(stub_broker):
         # And actors with different priorities
         calls = []
 
-        @dramatiq.actor(priority=0)
+        @remoulade.actor(priority=0)
         def hi():
             calls.append("hi")
 
-        @dramatiq.actor(priority=10)
+        @remoulade.actor(priority=10)
         def lo():
             calls.append("lo")
 
@@ -474,7 +474,7 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
     # And an actor that raises different types of errors
     attempts = []
 
-    @dramatiq.actor(retry_when=should_retry, max_retries=0, min_backoff=100, max_backoff=100)
+    @remoulade.actor(retry_when=should_retry, max_retries=0, min_backoff=100, max_backoff=100)
     def raises_errors(raise_runtime_error):
         attempts.append(1)
         if raise_runtime_error:
@@ -505,7 +505,7 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
 
 def test_can_call_str_on_actors():
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def test():
         pass
 
@@ -516,7 +516,7 @@ def test_can_call_str_on_actors():
 
 def test_can_call_repr_on_actors():
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def test():
         pass
 
@@ -529,7 +529,7 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
     # Given that I've mocked the logging class
     with patch("logging.Logger.warning") as warning_mock:
         # And I have an actor that raises RateLimitExceeded
-        @dramatiq.actor(max_retries=0)
+        @remoulade.actor(max_retries=0)
         def raise_rate_limit_exceeded():
             raise RateLimitExceeded("exceeded")
 

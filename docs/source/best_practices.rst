@@ -17,7 +17,7 @@ database.
 Retriable Actors
 ----------------
 
-Dramatiq actors may receive the same message multiple times in the
+Remoulade actors may receive the same message multiple times in the
 event of a worker failure (hardware, network or power failure).  This
 means that, for any given message, running your actor multiple times
 must be safe.  This is also known as being "idempotent".

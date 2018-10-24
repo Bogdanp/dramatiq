@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from dramatiq import Worker
+from remoulade import Worker
 
 
 @contextmanager

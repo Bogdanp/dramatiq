@@ -4,13 +4,13 @@ import os
 import sys
 import time
 
-import dramatiq
-from dramatiq.middleware import Shutdown
+import remoulade
+from remoulade.middleware import Shutdown
 
 if os.getenv("REDIS") == "1":
-    from dramatiq.brokers.redis import RedisBroker
+    from remoulade.brokers.redis import RedisBroker
     broker = RedisBroker()
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
 
 
 def path_to(*xs):
@@ -47,7 +47,7 @@ def remove_state(n):
     fib.logger.info("Deleted state for fib(%d).", n)
 
 
-@dramatiq.actor(time_limit=float("inf"), notify_shutdown=True, max_retries=0)
+@remoulade.actor(time_limit=float("inf"), notify_shutdown=True, max_retries=0)
 def fib(n):
     i, x2, x1 = load_state(n)
 

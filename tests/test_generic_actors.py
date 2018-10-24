@@ -1,16 +1,16 @@
 import pytest
 
-import dramatiq
+import remoulade
 
 
 def test_generic_actors_can_be_defined(stub_broker):
     # Given that I've subclassed GenericActor
-    class Add(dramatiq.GenericActor):
+    class Add(remoulade.GenericActor):
         def perform(self, x, y):
             return x + y
 
     # Then Add.__actor__ should be an instance of Actor
-    assert isinstance(Add.__actor__, dramatiq.Actor)
+    assert isinstance(Add.__actor__, remoulade.Actor)
 
     # And it should be callable
     assert Add(1, 2) == 3
@@ -18,7 +18,7 @@ def test_generic_actors_can_be_defined(stub_broker):
 
 def test_generic_actors_can_be_assigned_options(stub_broker):
     # Given that I've subclassed GenericActor
-    class Add(dramatiq.GenericActor):
+    class Add(remoulade.GenericActor):
         # When I set its max_retries value to 32
         class Meta:
             max_retries = 32
@@ -32,7 +32,7 @@ def test_generic_actors_can_be_assigned_options(stub_broker):
 
 def test_generic_actors_raise_not_implemented_if_perform_is_missing(stub_broker):
     # Given that I've subclassed GenericActor without implementing perform
-    class Foo(dramatiq.GenericActor):
+    class Foo(remoulade.GenericActor):
         pass
 
     # When I call that actor
@@ -46,7 +46,7 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
     calls = set()
 
     # And I've subclassed GenericActor
-    class BaseTask(dramatiq.GenericActor):
+    class BaseTask(remoulade.GenericActor):
         # When I set abstract to True
         class Meta:
             abstract = True
@@ -59,7 +59,7 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
             calls.add(self.get_task_name())
 
     # Then BaseTask should not be an Actor
-    assert not isinstance(BaseTask, dramatiq.Actor)
+    assert not isinstance(BaseTask, remoulade.Actor)
 
     # When I subclass BaseTask
     class FooTask(BaseTask):
@@ -72,8 +72,8 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
 
     # Then both subclasses should be actors
     # And they should inherit the parent's meta
-    assert isinstance(FooTask.__actor__, dramatiq.Actor)
-    assert isinstance(BarTask.__actor__, dramatiq.Actor)
+    assert isinstance(FooTask.__actor__, remoulade.Actor)
+    assert isinstance(BarTask.__actor__, remoulade.Actor)
     assert FooTask.queue_name == BarTask.queue_name == "tasks"
 
     # When I send both actors a message
@@ -89,7 +89,7 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
 
 def test_generic_actors_can_have_class_attributes(stub_broker):
     # Given a generic actor with class attributes
-    class DoSomething(dramatiq.GenericActor):
+    class DoSomething(remoulade.GenericActor):
         STATUS_RUNNING = "running"
         STATUS_DONE = "done"
 

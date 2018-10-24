@@ -1,0 +1,50 @@
+# This file is a part of Remoulade.
+#
+# Copyright (C) 2017,2018 CLEARTYPE SRL <bogdan@cleartype.io>
+#
+# Remoulade is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Remoulade is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from ..common import current_millis
+from ..logging import get_logger
+from .middleware import Middleware
+
+
+class AgeLimit(Middleware):
+    """Middleware that drops messages that have been in the queue for
+    too long.
+
+    Parameters:
+      max_age(int): The default message age limit in millseconds.
+        Defaults to ``None``, meaning that messages can exist
+        indefinitely.
+    """
+
+    def __init__(self, *, max_age=None):
+        self.logger = get_logger(__name__, type(self))
+        self.max_age = None
+
+    @property
+    def actor_options(self):
+        return {"max_age"}
+
+    def before_process_message(self, broker, message):
+        actor = broker.get_actor(message.actor_name)
+        max_age = actor.options.get("max_age", self.max_age)
+        if not max_age:
+            return
+
+        if current_millis() - message.message_timestamp >= max_age:
+            self.logger.warning("Message %r has exceeded its age limit.", message.message_id)
+            message.fail()
+            return

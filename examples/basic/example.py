@@ -3,15 +3,15 @@ import os
 import random
 import sys
 
-import dramatiq
+import remoulade
 
 if os.getenv("REDIS") == "1":
-    from dramatiq.brokers.redis import RedisBroker
+    from remoulade.brokers.redis import RedisBroker
     broker = RedisBroker()
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
 
 
-@dramatiq.actor
+@remoulade.actor
 def add(x, y):
     add.logger.info("The sum of %d and %d is %d.", x, y, x + y)
 

@@ -4,33 +4,33 @@ Cookbook
 ========
 
 This part of the docs contains recipes for various things you might
-want to do using Dramatiq.  Each section will be light on prose and
+want to do using Remoulade.  Each section will be light on prose and
 code heavy, so if you have any questions about one of the recipes,
 open an `issue on GitHub`_.
 
-.. _issue on GitHub: https://github.com/Bogdanp/dramatiq/issues
+.. _issue on GitHub: https://github.com/wiremind/remoulade/issues
 
 
 Callbacks
 ---------
 
-Dramatiq has built-in support for sending actors messages when other
+Remoulade has built-in support for sending actors messages when other
 actors succeed or fail.  The ``on_failure`` callback is called every
 time an actor fails, even if the message is going to be retried.
 
 .. code-block:: python
 
-   import dramatiq
+   import remoulade
 
-   @dramatiq.actor
+   @remoulade.actor
    def identity(x):
      return x
 
-   @dramatiq.actor
+   @remoulade.actor
    def print_result(message_data, result):
      print(f"The result of message {message_data['message_id']} was {result}.")
 
-   @dramatiq.actor
+   @remoulade.actor
    def print_error(message_data, exception_data):
      print(f"Message {message_data['message_id']} failed:")
      print(f"  * type: {exception_data['type']}")
@@ -47,7 +47,7 @@ time an actor fails, even if the message is going to be retried.
 Composition
 -----------
 
-Dramatiq has built-in support for a couple high-level composition
+Remoulade has built-in support for a couple high-level composition
 constructs.  You can use these to combine generalized tasks that don't
 know about one another into complex workflows.
 
@@ -93,11 +93,11 @@ and one that counts the number of "words" in a piece of text:
 
 .. code-block:: python
 
-   @dramatiq.actor
+   @remoulade.actor
    def get_uri_contents(uri):
      return requests.get(uri).text
 
-   @dramatiq.actor
+   @remoulade.actor
    def count_words(uri, text):
      count = len(text.split(" "))
      print(f"There are {count} words at {uri}.")
@@ -156,10 +156,10 @@ Save the following middleware to a module inside your project:
 
 .. code-block:: python
 
-   import dramatiq
+   import remoulade
    import rollbar
 
-   class RollbarMiddleware(dramatiq.Middleware):
+   class RollbarMiddleware(remoulade.Middleware):
      def after_process_message(self, broker, message, *, result=None, exception=None):
        if exception is not None:
          rollbar.report_exc_info()
@@ -186,9 +186,9 @@ Save the following middleware to a module inside your project:
 
 .. code-block:: python
 
-   import dramatiq
+   import remoulade
 
-   class SentryMiddleware(dramatiq.Middleware):
+   class SentryMiddleware(remoulade.Middleware):
      def __init__(self, raven_client):
        self.raven_client = raven_client
 
@@ -216,32 +216,32 @@ Frameworks
 API Star
 ^^^^^^^^
 
-The `apistar_dramatiq`_ library lets you use API Star dependency
-injection with your Dramatiq actors.
+The `apistar_remoulade`_ library lets you use API Star dependency
+injection with your Remoulade actors.
 
-.. _apistar_dramatiq: https://github.com/Bogdanp/apistar_dramatiq
+.. _apistar_remoulade: https://github.com/wiremind/apistar_remoulade
 .. _API Star: https://github.com/encode/apistar
 
 
 Django
 ^^^^^^
 
-Check out the `django_dramatiq`_ project if you want to use Dramatiq
-with Django_.  The `django_dramatiq_example`_ repo is an example app
-build with Django and Dramatiq.
+Check out the `django_remoulade`_ project if you want to use Remoulade
+with Django_.  The `django_remoulade_example`_ repo is an example app
+build with Django and Remoulade.
 
-.. _django_dramatiq: https://github.com/Bogdanp/django_dramatiq
-.. _django_dramatiq_example: https://github.com/Bogdanp/django_dramatiq_example
+.. _django_remoulade: https://github.com/wiremind/django_remoulade
+.. _django_remoulade_example: https://github.com/wiremind/django_remoulade_example
 .. _django: https://djangoproject.com
 
 
 Flask
 ^^^^^
 
-The `flask_dramatiq_example`_ repo is an example app built with Flask_
-and Dramatiq.
+The `flask_remoulade_example`_ repo is an example app built with Flask_
+and Remoulade.
 
-.. _flask_dramatiq_example: https://github.com/Bogdanp/flask_dramatiq_example
+.. _flask_remoulade_example: https://github.com/wiremind/flask_remoulade_example
 .. _flask: http://flask.pocoo.org
 
 
@@ -251,7 +251,7 @@ Operations
 Auto-discovering "tasks" modules with bash
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Dramatiq doesn't attempt to auto-discover tasks modules.  Assuming you
+Remoulade doesn't attempt to auto-discover tasks modules.  Assuming you
 follow a convention where all your tasks modules are named
 ``tasks.py`` then you can discover them using bash:
 
@@ -271,12 +271,12 @@ follow a convention where all your tasks modules are named
    done
    echo
 
-   pipenv run dramatiq-gevent $all_modules --watch . --watch-use-polling
+   pipenv run remoulade-gevent $all_modules --watch . --watch-use-polling
 
 Retrying connection errors on startup
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Dramatiq does not retry connection errors that occur on worker
+Remoulade does not retry connection errors that occur on worker
 startup.  It does, however, return a specific exit code (``3``) when
 that happens.  Using that, you can build a wrapper script around it if
 you need to retry with backoff when connection errors happen during
@@ -288,7 +288,7 @@ startup (eg. in Docker):
 
    delay=1
    while true; do
-     dramatiq $@
+     remoulade $@
      if [ $? -eq 3 ]; then
        echo "Connection error encountered on startup. Retrying in $delay second(s)..."
        sleep $delay
@@ -301,16 +301,16 @@ startup (eg. in Docker):
 Binding Worker Groups to Queues
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, Dramatiq workers consume all declared queues, but it's
+By default, Remoulade workers consume all declared queues, but it's
 common to want to bind worker groups to specific queues in order to
 have better control over throughput.  For example, given the following
 actors::
 
-   @dramatiq.actor
+   @remoulade.actor
    def very_slow():
      ...
 
-   @dramatiq.actor(queue_name="ui-blocking")
+   @remoulade.actor(queue_name="ui-blocking")
    def very_important():
      ...
 
@@ -322,10 +322,10 @@ the appropriate queue on the command line:
 .. code-block:: bash
 
    # Only consume the "default" queue
-   $ dramatiq an_app --queues default
+   $ remoulade an_app --queues default
 
    # Only consume the "ui-blocking" queue
-   $ dramatiq an_app --queues ui-blocking
+   $ remoulade an_app --queues ui-blocking
 
 Messages sent to ``very_slow`` will always be delievered to those
 workers that consume the ``default`` queue and messages sent to
@@ -338,20 +338,20 @@ Rate Limiting
 Rate limiting work
 ^^^^^^^^^^^^^^^^^^
 
-You can use Dramatiq's |RateLimiters| to constrain actor concurrency.
+You can use Remoulade's |RateLimiters| to constrain actor concurrency.
 
 .. code-block:: python
 
-   import dramatiq
+   import remoulade
    import time
 
-   from dramatiq.rate_limits import ConcurrentRateLimiter
-   from dramatiq.rate_limits.backends import RedisBackend
+   from remoulade.rate_limits import ConcurrentRateLimiter
+   from remoulade.rate_limits.backends import RedisBackend
 
    backend = RedisBackend()
    DISTRIBUTED_MUTEX = ConcurrentRateLimiter(backend, "distributed-mutex", limit=1)
 
-   @dramatiq.actor
+   @remoulade.actor
    def one_at_a_time():
      with DISTRIBUTED_MUTEX.acquire():
        time.sleep(1)
@@ -378,24 +378,24 @@ Results
 Storing message results
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-You can use Dramatiq's result backends to store and retrieve message
+You can use Remoulade's result backends to store and retrieve message
 return values.  To enable result storage, you need to instantiate and
 add the |Results| middleware to your broker.
 
 .. code-block:: python
 
-   import dramatiq
+   import remoulade
 
-   from dramatiq.brokers.rabbitmq import RabbitmqBroker
-   from dramatiq.results.backends import RedisBackend
-   from dramatiq.results import Results
+   from remoulade.brokers.rabbitmq import RabbitmqBroker
+   from remoulade.results.backends import RedisBackend
+   from remoulade.results import Results
 
    result_backend = RedisBackend()
    broker = RabbitmqBroker()
    broker.add_middleware(Results(backend=result_backend))
-   dramatiq.set_broker(broker)
+   remoulade.set_broker(broker)
 
-   @dramatiq.actor(store_results=True)
+   @remoulade.actor(store_results=True)
    def add(x, y):
      return x + y
 
@@ -415,18 +415,18 @@ Scheduling
 Scheduling messages
 ^^^^^^^^^^^^^^^^^^^
 
-APScheduler_ is the recommended scheduler to use with Dramatiq:
+APScheduler_ is the recommended scheduler to use with Remoulade:
 
 .. code-block:: python
 
-   import dramatiq
+   import remoulade
    import sys
 
    from apscheduler.schedulers.blocking import BlockingScheduler
    from apscheduler.triggers.cron import CronTrigger
    from datetime import datetime
 
-   @dramatiq.actor
+   @remoulade.actor
    def print_current_date():
      print(datetime.now())
 

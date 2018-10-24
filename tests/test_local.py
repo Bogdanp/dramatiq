@@ -1,9 +1,9 @@
 import pytest
 
-import dramatiq
-from dramatiq import group
-from dramatiq.results import Results
-from dramatiq.results.backends import LocalBackend
+import remoulade
+from remoulade import group
+from remoulade.results import Results
+from remoulade.results.backends import LocalBackend
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
@@ -21,7 +21,7 @@ def test_local_broker_cannot_have_non_local_backend(local_broker, backend, resul
 
 def test_local_broker_get_result_in_message(local_broker):
     # Given that I have an actor that stores its results
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def do_work():
         return 1
 
@@ -34,7 +34,7 @@ def test_local_broker_get_result_in_message(local_broker):
 
 def test_local_broker_with_pipes(local_broker):
     # Given that I have an actor that stores its results
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def add(a, b):
         return a + b
 
@@ -48,7 +48,7 @@ def test_local_broker_with_pipes(local_broker):
 
 def test_local_broker_with_groups(local_broker):
     # Given that I have an actor that stores its results
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def add(a, b):
         return a + b
 

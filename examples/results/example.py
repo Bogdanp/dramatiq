@@ -3,19 +3,19 @@ import random
 import sys
 import time
 
-import dramatiq
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.encoder import PickleEncoder
-from dramatiq.results import Results
-from dramatiq.results.backends import RedisBackend
+import remoulade
+from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.encoder import PickleEncoder
+from remoulade.results import Results
+from remoulade.results.backends import RedisBackend
 
 result_backend = RedisBackend(encoder=PickleEncoder())
 broker = RabbitmqBroker()
 broker.add_middleware(Results(backend=result_backend))
-dramatiq.set_broker(broker)
+remoulade.set_broker(broker)
 
 
-@dramatiq.actor(store_results=True)
+@remoulade.actor(store_results=True)
 def sleep_then_add(t, x, y):
     time.sleep(t)
     return x + y

@@ -8,13 +8,13 @@ import pylibmc
 import pytest
 import redis
 
-import dramatiq
-from dramatiq import Worker
-from dramatiq.brokers.local import LocalBroker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from dramatiq.brokers.stub import StubBroker
-from dramatiq.rate_limits import backends as rl_backends
-from dramatiq.results import backends as res_backends
+import remoulade
+from remoulade import Worker
+from remoulade.brokers.local import LocalBroker
+from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.brokers.stub import StubBroker
+from remoulade.rate_limits import backends as rl_backends
+from remoulade.results import backends as res_backends
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=logfmt)
@@ -51,7 +51,7 @@ def check_memcached(client):
 def stub_broker():
     broker = StubBroker()
     broker.emit_after("process_boot")
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
     yield broker
     broker.flush_all()
     broker.close()
@@ -62,7 +62,7 @@ def rabbitmq_broker():
     broker = RabbitmqBroker(host="127.0.0.1")
     check_rabbitmq(broker)
     broker.emit_after("process_boot")
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
     yield broker
     broker.flush_all()
     broker.close()
@@ -72,7 +72,7 @@ def rabbitmq_broker():
 def local_broker():
     broker = LocalBroker()
     broker.emit_after("process_boot")
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
     yield broker
     broker.flush_all()
     broker.close()
@@ -116,7 +116,7 @@ def start_cli():
 
     def run(broker_module, *, extra_args=None, **kwargs):
         nonlocal proc
-        args = [sys.executable, "-m", "dramatiq", broker_module]
+        args = [sys.executable, "-m", "remoulade", broker_module]
         proc = subprocess.Popen(args + (extra_args or []), **kwargs)
         return proc
 

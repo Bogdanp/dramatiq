@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from dramatiq.rate_limits import BucketRateLimiter
+from remoulade.rate_limits import BucketRateLimiter
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])

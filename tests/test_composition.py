@@ -3,14 +3,14 @@ from threading import Condition
 
 import pytest
 
-import dramatiq
-from dramatiq import group, pipeline
-from dramatiq.results import Results, ResultTimeout
+import remoulade
+from remoulade import group, pipeline
+from remoulade.results import Results, ResultTimeout
 
 
 def test_messages_can_be_piped(stub_broker):
     # Given an actor that adds two numbers together
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         return x + y
 
@@ -28,7 +28,7 @@ def test_messages_can_be_piped(stub_broker):
 
 def test_pipelines_flatten_child_pipelines(stub_broker):
     # Given an actor that adds two numbers together
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         return x + y
 
@@ -52,12 +52,12 @@ def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_b
     stub_broker.add_middleware(Results(backend=backend))
 
     # And an actor that return something
-    @dramatiq.actor
+    @remoulade.actor
     def do_nothing():
         return 0
 
     # Nothing should be sent to pipe ignored
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def pipe_ignored(*args):
         assert len(args) == 0
         return 1
@@ -77,12 +77,12 @@ def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_bac
     stub_broker.add_middleware(Results(backend=backend))
 
     # And an actor that return something
-    @dramatiq.actor
+    @remoulade.actor
     def do_nothing():
         return 0
 
     # Nothing should be sent to pipe ignored
-    @dramatiq.actor(store_results=True, pipe_ignore=True)
+    @remoulade.actor(store_results=True, pipe_ignore=True)
     def pipe_ignored(*args):
         assert len(args) == 0
         return 1
@@ -102,7 +102,7 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, re
     stub_broker.add_middleware(Results(backend=backend))
 
     # And an actor that adds two numbers together and stores the result
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def add(x, y):
         return x + y
 
@@ -126,7 +126,7 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
     stub_broker.add_middleware(Results(backend=backend))
 
     # And an actor that waits some amount of time then doubles that amount
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def wait(n):
         time.sleep(n)
         return n * 2
@@ -153,7 +153,7 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, re
     # And an actor that waits some amount of time
     condition = Condition()
 
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def wait(n):
         time.sleep(n)
         with condition:
@@ -183,7 +183,7 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
     stub_broker.add_middleware(Results(backend=backend))
 
     # And I have an actor that does nothing
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def do_nothing():
         return None
 
@@ -203,7 +203,7 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     stub_broker.add_middleware(Results(backend=backend))
 
     # And I have an actor that sleeps for 100ms
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def wait():
         time.sleep(0.1)
 
@@ -232,7 +232,7 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     stub_broker.add_middleware(Results(backend=backend))
 
     # And I have an actor that sleeps for 100ms
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def wait():
         time.sleep(0.1)
 
@@ -261,7 +261,7 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     stub_broker.add_middleware(Results(backend=backend))
 
     # And I have an actor that sleeps for 300ms
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def wait():
         time.sleep(0.3)
 
@@ -287,7 +287,7 @@ def test_groups_expose_completion_stats(stub_broker, stub_worker, backend, resul
     # And an actor that waits some amount of time
     condition = Condition()
 
-    @dramatiq.actor(store_results=True)
+    @remoulade.actor(store_results=True)
     def wait(n):
         time.sleep(n)
         with condition:

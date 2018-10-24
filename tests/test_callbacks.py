@@ -2,19 +2,19 @@ from collections import Counter
 
 import pytest
 
-import dramatiq
+import remoulade
 
 
 def test_actors_can_define_success_callbacks(stub_broker, stub_worker):
     # Given an actor that returns the sum of two numbers
-    @dramatiq.actor
+    @remoulade.actor
     def add(x, y):
         return x + y
 
     # And an actor that takes in a number and stores it in a db
     db = []
 
-    @dramatiq.actor
+    @remoulade.actor
     def save(message_data, result):
         db.append(result)
 
@@ -32,14 +32,14 @@ def test_actors_can_define_success_callbacks(stub_broker, stub_worker):
 
 def test_actors_can_define_failure_callbacks(stub_broker, stub_worker):
     # Given an actor that fails with an exception
-    @dramatiq.actor(max_retries=0)
+    @remoulade.actor(max_retries=0)
     def do_work():
         raise Exception()
 
     # And an actor that reports on exceptions
     exceptions = Counter()
 
-    @dramatiq.actor
+    @remoulade.actor
     def report_exceptions(message_data, exception_data):
         exceptions.update({message_data["actor_name"]})
 
@@ -57,7 +57,7 @@ def test_actors_can_define_failure_callbacks(stub_broker, stub_worker):
 
 def test_actor_callbacks_raise_type_error_when_given_a_normal_callable(stub_broker):
     # Given an actor that does nothing
-    @dramatiq.actor
+    @remoulade.actor
     def do_work():
         pass
 

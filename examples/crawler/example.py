@@ -10,7 +10,7 @@ from threading import local
 import pylibmc
 import requests
 
-import dramatiq
+import remoulade
 
 logger = logging.getLogger("example")
 memcache_client = pylibmc.Client(["localhost"], binary=True)
@@ -19,9 +19,9 @@ anchor_re = re.compile(rb'<a href="([^"]+)">')
 state = local()
 
 if os.getenv("REDIS") == "1":
-    from dramatiq.brokers.redis import RedisBroker
+    from remoulade.brokers.redis import RedisBroker
     broker = RedisBroker()
-    dramatiq.set_broker(broker)
+    remoulade.set_broker(broker)
 
 
 def get_session():
@@ -31,7 +31,7 @@ def get_session():
     return session
 
 
-@dramatiq.actor(max_retries=3, time_limit=10000)
+@remoulade.actor(max_retries=3, time_limit=10000)
 def crawl(url):
     url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
     with memcache_pool.reserve() as client:

@@ -4,10 +4,10 @@ from unittest.mock import Mock
 
 import pytest
 
-import dramatiq
-from dramatiq import Message, QueueJoinTimeout
-from dramatiq.brokers.rabbitmq import _IgnoreScaryLogs
-from dramatiq.common import current_millis
+import remoulade
+from remoulade import Message, QueueJoinTimeout
+from remoulade.brokers.rabbitmq import _IgnoreScaryLogs
+from remoulade.common import current_millis
 
 
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
@@ -15,7 +15,7 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     database = {}
 
     # And an actor that can write data to that database
-    @dramatiq.actor
+    @remoulade.actor
     def put(key, value):
         database[key] = value
 
@@ -36,7 +36,7 @@ def test_rabbitmq_queues_created_lazily(rabbitmq_broker, rabbitmq_worker):
     rabbitmq_broker.close()
 
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def add(a, b):
         return a + b
 
@@ -58,7 +58,7 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
     failure_time, success_time = None, None
 
     # And an actor that fails the first time it's called
-    @dramatiq.actor(max_retries=3, min_backoff=1000, max_backoff=5000)
+    @remoulade.actor(max_retries=3, min_backoff=1000, max_backoff=5000)
     def do_work():
         nonlocal failure_time, success_time
         if not failure_time:
@@ -83,7 +83,7 @@ def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_work
     attempts = []
 
     # And an actor that fails 3 times then succeeds
-    @dramatiq.actor(max_retries=3, max_backoff=1000)
+    @remoulade.actor(max_retries=3, max_backoff=1000)
     def do_work():
         attempts.append(1)
         if sum(attempts) < 4:
@@ -105,7 +105,7 @@ def test_rabbitmq_actors_can_have_their_messages_delayed(rabbitmq_broker, rabbit
     start_time, run_time = current_millis(), None
 
     # And an actor that records the time it ran
-    @dramatiq.actor
+    @remoulade.actor
     def record():
         nonlocal run_time
         run_time = current_millis()
@@ -126,7 +126,7 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_b
     results = []
 
     # And an actor that appends a number to the database
-    @dramatiq.actor
+    @remoulade.actor
     def append(x):
         results.append(x)
 
@@ -150,7 +150,7 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_b
 
 def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_worker):
     # Given that I have an actor that always fails
-    @dramatiq.actor(max_retries=0)
+    @remoulade.actor(max_retries=0)
     def do_work():
         raise RuntimeError("failed")
 
@@ -189,7 +189,7 @@ def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_bro
 
 def test_rabbitmq_broker_reconnects_after_enqueue_failure(rabbitmq_broker):
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def do_nothing():
         pass
 
@@ -209,7 +209,7 @@ def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rab
     attempts = []
 
     # And an actor that adds 1 to the attempts database
-    @dramatiq.actor
+    @remoulade.actor
     def do_work():
         attempts.append(1)
         time.sleep(1)
@@ -276,7 +276,7 @@ def test_ignore_scary_logs_filter_ignores_logs():
 
 def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker):
     # Given that I have an actor that takes a long time to run
-    @dramatiq.actor
+    @remoulade.actor
     def do_work():
         time.sleep(1)
 
@@ -291,7 +291,7 @@ def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker)
 
 def test_rabbitmq_broker_can_flush_queues(rabbitmq_broker):
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def do_work():
         pass
 

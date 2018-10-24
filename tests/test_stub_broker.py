@@ -3,8 +3,8 @@ from unittest.mock import Mock
 
 import pytest
 
-import dramatiq
-from dramatiq import QueueJoinTimeout, QueueNotFound
+import remoulade
+from remoulade import QueueJoinTimeout, QueueNotFound
 
 
 def test_stub_broker_raises_queue_error_when_consuming_undeclared_queues(stub_broker):
@@ -33,7 +33,7 @@ def test_stub_broker_raises_queue_error_when_joining_on_undeclared_queues(stub_b
 
 def test_stub_broker_can_be_flushed(stub_broker):
     # Given that I have an actor
-    @dramatiq.actor
+    @remoulade.actor
     def do_work():
         pass
 
@@ -53,7 +53,7 @@ def test_stub_broker_can_be_flushed(stub_broker):
 
 def test_stub_broker_can_join_with_timeout(stub_broker, stub_worker):
     # Given that I have an actor that takes a long time to run
-    @dramatiq.actor
+    @remoulade.actor
     def do_work():
         time.sleep(1)
 
