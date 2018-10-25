@@ -22,7 +22,6 @@ import argparse
 import atexit
 import importlib
 import logging
-import logging.handlers
 import multiprocessing
 import os
 import random
@@ -32,6 +31,7 @@ import time
 from threading import Thread
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
+from dramatiq.compat import StreamablePipe
 
 try:
     from .watcher import setup_file_watcher
@@ -154,7 +154,7 @@ def parse_arguments():
         help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", type=str,
+        "--log-file", default=sys.stderr, type=argparse.FileType(mode="a", encoding="utf-8"),
         help="write all logs to a file (default: sys.stderr)",
     )
 
@@ -231,37 +231,50 @@ def setup_parent_logging(args, *, stream=sys.stderr):
     return get_logger("dramatiq", "MainProcess")
 
 
-def setup_worker_logging(args, worker_id, log_queue):
-    queue_handler = logging.handlers.QueueHandler(log_queue)
-    root_logger = logging.getLogger()
-    root_logger.setLevel(VERBOSITY.get(args.verbose, logging.DEBUG))
-    root_logger.addHandler(queue_handler)
+def setup_worker_logging(args, worker_id, logging_pipe):
+    # Redirect all output to the logging pipe so that all output goes
+    # to stderr and output is serialized so there isn't any mangling.
+    sys.stdout = logging_pipe
+    sys.stderr = logging_pipe
+
+    level = VERBOSITY.get(args.verbose, logging.DEBUG)
+    logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
     logging.getLogger("pika").setLevel(logging.CRITICAL)
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
-def watch_logs(log_queue):
-    watch_logger = get_logger("dramatiq", "LogWatcher")
+def watch_logs(log_file, pipes):
     while True:
-        try:
-            record = log_queue.get()
-            if record is None:
-                break
+        events = multiprocessing.connection.wait(pipes, timeout=1)
+        for event in events:
+            try:
+                while event.poll(1):
+                    # StreamHandler writes newlines into the pipe separately
+                    # from the actual log entry; to avoid back-to-back newlines
+                    # in the events pipe (causing multiple entries on a single
+                    # line), discard newline-only data from the pipe
+                    try:
+                        data = event.recv()
+                    except EOFError:
+                        break
 
-            logger = logging.getLogger(record.name)
-            logger.handle(record)
-        except Exception:
-            watch_logger.exception("Failed to handle log from worker process.")
+                    if data == "\n":
+                        break
+
+                    log_file.write(data + "\n")
+                    log_file.flush()
+            except BrokenPipeError:
+                pass
 
 
-def worker_process(args, worker_id, log_queue):
+def worker_process(args, worker_id, logging_pipe):
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
         # processes don't all follow the same sequence.
         random.seed()
 
-        logger = setup_worker_logging(args, worker_id, log_queue)
+        logger = setup_worker_logging(args, worker_id, logging_pipe)
         module, broker = import_broker(args.broker)
         broker.emit_after("process_boot")
 
@@ -300,6 +313,7 @@ def worker_process(args, worker_id, log_queue):
 
     worker.stop()
     broker.close()
+    logging_pipe.close()
 
 
 def main():  # noqa
@@ -311,22 +325,27 @@ def main():  # noqa
         if args.pid_file:
             setup_pidfile(args.pid_file)
     except RuntimeError as e:
-        logger = setup_parent_logging(args, stream=args.log_file or sys.stderr)
+        logger = setup_parent_logging(args, stream=args.log_file)
         logger.critical(e)
         return RET_PIDFILE
 
+    worker_pipes = []
     worker_processes = []
-    log_queue = multiprocessing.Queue(-1)
     for worker_id in range(args.processes):
+        read_pipe, write_pipe = multiprocessing.Pipe()
         proc = multiprocessing.Process(
             target=worker_process,
-            args=(args, worker_id, log_queue),
+            args=(args, worker_id, StreamablePipe(write_pipe)),
             daemon=True,
         )
         proc.start()
+        worker_pipes.append(read_pipe)
         worker_processes.append(proc)
 
-    logger = setup_parent_logging(args, stream=args.log_file or sys.stderr)
+    parent_read_mp_pipe, parent_write_mp_pipe = multiprocessing.Pipe()
+    parent_read_pipe = StreamablePipe(parent_read_mp_pipe)
+    parent_write_pipe = StreamablePipe(parent_write_mp_pipe)
+    logger = setup_parent_logging(args, stream=parent_write_pipe)
     logger.info("Dramatiq %r is booting up." % __version__)
     if args.pid_file:
         atexit.register(remove_pidfile, args.pid_file, logger)
@@ -347,7 +366,11 @@ def main():  # noqa
     if HAS_WATCHDOG and args.watch:
         file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
 
-    log_watcher = Thread(target=watch_logs, args=(log_queue,), daemon=True)
+    log_watcher = Thread(
+        target=watch_logs,
+        args=(args.log_file, [parent_read_mp_pipe, *worker_pipes]),
+        daemon=True,
+    )
     log_watcher.start()
 
     def stop_worker_processes(signum):
@@ -367,7 +390,7 @@ def main():  # noqa
         if signum == signal.SIGINT:
             signum = signal.SIGTERM
 
-        logger.info("Sending %r to worker processes...", getattr(signum, "name", signum))
+        logger.info("Sending signal %r to worker processes...", getattr(signum, "name", signum))
         stop_worker_processes(signum)
 
     # Now that the watcher threads have been started, it should be
@@ -404,12 +427,12 @@ def main():  # noqa
             else:
                 retcode = max(retcode, proc.exitcode)
 
+    for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes]:
+        pipe.close()
+
     if HAS_WATCHDOG and args.watch:
         file_watcher.stop()
         file_watcher.join()
-
-    log_queue.put(None)
-    log_watcher.join()
 
     if reload_process:
         if sys.argv[0].endswith("/dramatiq/__main__.py"):
