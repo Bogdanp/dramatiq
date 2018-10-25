@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 
 
 
-`1.0.0`_ -- 2018-10-24
+`0.1.0`_ -- 2018-10-24
 ----------------------
 
 Added
@@ -18,7 +18,7 @@ Added
 Changed
 ^^^^^^^
 
-* Name of project to Remoulade
+* Name of project to Remoulade (fork of Dramatiq v1.3.0)
 * Delete |URLRabbitmqBroker|
 * Delete |RedisBroker|
 * Set default |max_retries| to 0
