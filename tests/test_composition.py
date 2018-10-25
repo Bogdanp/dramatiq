@@ -5,7 +5,7 @@ import pytest
 
 import remoulade
 from remoulade import group, pipeline
-from remoulade.results import Results, ResultTimeout
+from remoulade.results import Results, ResultTimeout, ErrorStored
 
 
 def test_messages_can_be_piped(stub_broker):
@@ -194,6 +194,42 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
     # When I check if the pipeline has completed
     # Then it should return False
     assert not pipe.completed
+
+
+@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+def test_pipelines_store_results_error(stub_broker, backend, result_backends, stub_worker):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that stores results and fail
+    @remoulade.actor(store_results=True)
+    def do_work_fail():
+        raise ValueError()
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # And I've run a pipeline
+    pipe = do_work_fail.message() | do_work.message() | do_work.message()
+    pipe.run()
+
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # I get an error
+    with pytest.raises(ErrorStored) as e:
+        pipe.messages[0].get_result(block=True)
+    assert str(e.value) == 'ValueError()'
+
+    for i in [1, 2]:
+        with pytest.raises(ErrorStored) as e:
+            pipe.messages[i].get_result(block=True)
+        assert str(e.value).startswith('ParentFailed')
 
 
 @pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])

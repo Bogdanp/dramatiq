@@ -17,7 +17,7 @@
 
 import redis
 
-from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
+from ..backend import DEFAULT_TIMEOUT, Result, ResultBackend, ResultMissing, ResultTimeout
 
 
 class RedisBackend(ResultBackend):
@@ -84,7 +84,7 @@ class RedisBackend(ResultBackend):
             if data is None:
                 raise ResultMissing(message)
 
-        return self.encoder.decode(data)
+        return Result(**self.encoder.decode(data))
 
     def _store(self, message_key, result, ttl):
         with self.client.pipeline() as pipe:

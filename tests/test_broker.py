@@ -28,13 +28,13 @@ def test_broker_uses_rabbitmq_if_not_set():
 
 @skip_on_windows
 def test_broker_middleware_can_be_added_before_other_middleware(stub_broker):
-    from remoulade.middleware import Prometheus
+    from remoulade.middleware import AgeLimit
 
     # Given that I have a custom middleware
     empty_middleware = EmptyMiddleware()
 
-    # If I add it before the Prometheus middleware
-    stub_broker.add_middleware(empty_middleware, before=Prometheus)
+    # If I add it before the AgeLimit middleware
+    stub_broker.add_middleware(empty_middleware, before=AgeLimit)
 
     # I expect it to be the first middleware
     assert stub_broker.middleware[0] == empty_middleware
@@ -42,13 +42,13 @@ def test_broker_middleware_can_be_added_before_other_middleware(stub_broker):
 
 @skip_on_windows
 def test_broker_middleware_can_be_added_after_other_middleware(stub_broker):
-    from remoulade.middleware import Prometheus
+    from remoulade.middleware import AgeLimit
 
     # Given that I have a custom middleware
     empty_middleware = EmptyMiddleware()
 
-    # If I add it after the Prometheus middleware
-    stub_broker.add_middleware(empty_middleware, after=Prometheus)
+    # If I add it after the AgeLimit middleware
+    stub_broker.add_middleware(empty_middleware, after=AgeLimit)
 
     # I expect it to be the second middleware
     assert stub_broker.middleware[1] == empty_middleware
@@ -65,8 +65,8 @@ def test_broker_middleware_can_fail_to_be_added_before_or_after_missing_middlewa
 
 
 @skip_on_windows
-def test_broker_middleware_cannot_be_addwed_both_before_and_after(stub_broker):
-    from remoulade.middleware import Prometheus
+def test_broker_middleware_cannot_be_added_both_before_and_after(stub_broker):
+    from remoulade.middleware import AgeLimit
 
     # Given that I have a custom middleware
     empty_middleware = EmptyMiddleware()
@@ -74,7 +74,7 @@ def test_broker_middleware_cannot_be_addwed_both_before_and_after(stub_broker):
     # If I add it with both before and after parameters
     # I expect an AssertionError to be raised
     with pytest.raises(AssertionError):
-        stub_broker.add_middleware(empty_middleware, before=Prometheus, after=Prometheus)
+        stub_broker.add_middleware(empty_middleware, before=AgeLimit, after=AgeLimit)
 
 
 def test_can_instantiate_brokers_without_middleware():

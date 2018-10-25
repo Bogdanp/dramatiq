@@ -12,9 +12,6 @@ def test_cli_fails_to_start_given_an_invalid_broker_name(start_cli):
     # Then the process return code should be 2
     assert proc.returncode == 2
 
-    # And the output should contain an error
-    assert b"Module 'tests.test_cli' does not define a 'idontexist' variable." in proc.stderr.read()
-
 
 def test_cli_fails_to_start_given_an_invalid_broker_instance(start_cli):
     # Given that this module defines a "fakebroker" variable that's not a Broker
@@ -24,6 +21,3 @@ def test_cli_fails_to_start_given_an_invalid_broker_instance(start_cli):
 
     # Then the process return code should be 2
     assert proc.returncode == 2
-
-    # And the output should contain an error
-    assert b"Variable 'fakebroker' from module 'tests.test_cli' is not a Broker." in proc.stderr.read()

@@ -33,7 +33,7 @@ BACKOFF_FACTOR = 100
 Missing = type("Missing", (object,), {})()
 
 #: A type alias representing backend results.
-Result = typing.Any
+Result = typing.NamedTuple("Result", [('result', typing.Any), ('error', typing.Any)])
 
 #: A union representing a Result that may or may not be there.
 MResult = typing.Union[type(Missing), Result]
@@ -93,7 +93,7 @@ class ResultBackend:
                 raise ResultMissing(message)
 
             else:
-                return result
+                return Result(**result)
 
     def store_result(self, message: "Message", result: Result, ttl: int) -> None:  # noqa: F821
         """Store a result in the backend.
@@ -105,7 +105,7 @@ class ResultBackend:
             stored in the backend for.
         """
         message_key = self.build_message_key(message)
-        return self._store(message_key, result, ttl)
+        return self._store(message_key, result._asdict(), ttl)
 
     def build_message_key(self, message: "Message") -> str:  # noqa: F821
         """Given a message, return its globally-unique key.
@@ -133,7 +133,7 @@ class ResultBackend:
             "classname": type(self).__name__,
         })
 
-    def _store(self, message_key: str, result: Result, ttl: int) -> None:  # pragma: no cover
+    def _store(self, message_key: str, result: typing.Dict, ttl: int) -> None:  # pragma: no cover
         """Store a result in the backend.  Subclasses may implement
         this method if they want to use the default implementation of
         set_result.

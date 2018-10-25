@@ -111,7 +111,7 @@ class pipeline:
         self.broker.enqueue(self.messages[0], delay=delay)
         return self
 
-    def get_result(self, *, block=False, timeout=None):
+    def get_result(self, *, block=False, timeout=None, raise_on_error=True):
         """Get the result of this pipeline.
 
         Pipeline results are represented by the result of the last
@@ -121,27 +121,33 @@ class pipeline:
           block(bool): Whether or not to block until a result is set.
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
+          raise_on_error(bool): raise an error if the result stored in
+            an error
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
           ResultTimeout: When waiting for a result times out.
+          ErrorStored: When the result is an error and raise_on_error is True
 
         Returns:
           object: The result.
         """
-        return self.messages[-1].get_result(block=block, timeout=timeout)
+        return self.messages[-1].get_result(block=block, timeout=timeout, raise_on_error=raise_on_error)
 
-    def get_results(self, *, block=False, timeout=None):
+    def get_results(self, *, block=False, timeout=None, raise_on_error=True):
         """Get the results of each job in the pipeline.
 
         Parameters:
           block(bool): Whether or not to block until a result is set.
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
+          raise_on_error(bool): raise an error if the result stored in
+            an error
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
           ResultTimeout: When waiting for a result times out.
+          ErrorStored: When the result is an error and raise_on_error is True
 
         Returns:
           A result generator.
@@ -154,7 +160,7 @@ class pipeline:
             if deadline:
                 timeout = max(0, int((deadline - time.monotonic()) * 1000))
 
-            yield message.get_result(block=block, timeout=timeout)
+            yield message.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error)
 
 
 class group:
@@ -232,7 +238,7 @@ class group:
 
         return self
 
-    def get_results(self, *, block=False, timeout=None):
+    def get_results(self, *, block=False, timeout=None, raise_on_error=True):
         """Get the results of each job in the group.
 
         Parameters:
@@ -240,10 +246,13 @@ class group:
           timeout(int): The maximum amount of time, in milliseconds,
             to wait for results when block is True.  Defaults to 10
             seconds.
+          raise_on_error(bool): raise an error if the result stored in
+            an error
 
         Raises:
           ResultMissing: When block is False and the results aren't set.
           ResultTimeout: When waiting for results times out.
+          ErrorStored: When the result is an error and raise_on_error is True
 
         Returns:
           A result generator.
@@ -257,17 +266,19 @@ class group:
                 timeout = max(0, int((deadline - time.monotonic()) * 1000))
 
             if isinstance(child, group):
-                yield list(child.get_results(block=block, timeout=timeout))
+                yield list(child.get_results(block=block, timeout=timeout, raise_on_error=raise_on_error))
             else:
-                yield child.get_result(block=block, timeout=timeout)
+                yield child.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error)
 
-    def wait(self, *, timeout=None):
+    def wait(self, *, timeout=None, raise_on_error=True):
         """Block until all the jobs in the group have finished or
         until the timeout expires.
 
         Parameters:
           timeout(int): The maximum amount of time, in ms, to wait.
             Defaults to 10 seconds.
+          raise_on_error(bool): raise an error if one of the result stored in
+            an error
         """
-        for _ in self.get_results(block=True, timeout=timeout):  # pragma: no cover
+        for _ in self.get_results(block=True, timeout=timeout, raise_on_error=raise_on_error):  # pragma: no cover
             pass

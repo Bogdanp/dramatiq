@@ -102,7 +102,8 @@ class Broker:
 
     def add_middleware(self, middleware, *, before=None, after=None):
         """Add a middleware object to this broker.  The middleware is
-        appended to the end of the middleware list by default.
+        appended to the end of the middleware list by default, or to
+        the default point of the middleware.
 
         You can specify another middleware (by class) as a reference
         point for where the new middleware should be added.
@@ -116,6 +117,9 @@ class Broker:
           ValueError: When either ``before`` or ``after`` refer to a
             middleware that hasn't been registered yet.
         """
+        before = before or middleware.default_before
+        after = after or middleware.default_after
+
         assert not (before and after), \
             "provide either 'before' or 'after', but not both"
 

@@ -15,12 +15,4 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .middleware import Middleware
-
-
-class DeclareQueuesMiddleware(Middleware):
-    def after_worker_boot(self, broker, _):
-        broker.declare_prepared_queues()
-
-    def before_enqueue(self, broker, *_):
-        broker.declare_prepared_queues()
+FAILURE_RESULT = object()

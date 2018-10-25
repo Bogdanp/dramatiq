@@ -31,3 +31,13 @@ class ResultTimeout(ResultError):
 class ResultMissing(ResultError):
     """Raised when a result can't be found.
     """
+
+
+class ErrorStored(ResultError):
+    """Raised when an error is stored in the result backend and raise_on_error is True
+    """
+
+
+class ParentFailed(ResultError):
+    """Error stored when a parent actor in the pipeline failed
+    """

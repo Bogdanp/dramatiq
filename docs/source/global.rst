@@ -52,6 +52,12 @@
 .. |send_with_options| replace:: :meth:`send_with_options<remoulade.Actor.send_with_options>`
 .. |send| replace:: :meth:`send<remoulade.Actor.send>`
 .. |LocalBroker| replace:: :class:`LocalBroker<remoulade.brokers.local.LocalBroker>`
+.. |ErrorStored| replace:: :class:`ErrorStored<remoulade.results.errors.ErrorStored>`
+.. |message_get_result| replace:: :meth:`get_result<remoulade.message.get_result>`
+.. |Middleware| replace:: :class:`Middleware<remoulade.Middleware>`
+.. |FAILURE_RESULT| replace:: :data:`FAILURE_RESULT<remoulade.results.constants.FAILURE_RESULT>`
+
+
 
 .. _gevent: http://www.gevent.org/
 .. _Memcached: http://memcached.org

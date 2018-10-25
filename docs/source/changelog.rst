@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
 Changed
 ^^^^^^^
 
+* |Results| now stores errors as well as results and will raise an |ErrorStored| the actor fail
+* |message_get_result| has a raise_on_error parameter, True by default. If False, the method return |FAILURE_RESULT| if
+there is no Error else raise an |ErrorStored|.
+* |Middleware| have a ``default_before`` and  ``default_after`` to place them by default in the middleware list
+* |Results| needs to be before |Retries|
 * |Promotheus| removed from default middleware
 
 `0.1.0`_ -- 2018-10-24

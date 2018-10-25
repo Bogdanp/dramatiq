@@ -14,9 +14,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 from ..logging import get_logger
-from ..middleware import Middleware
+from ..middleware import Middleware, Retries
+from .backend import Result
+from .errors import ParentFailed
 
 #: The maximum amount of milliseconds results are allowed to exist in
 #: the backend.
@@ -51,6 +52,8 @@ class Results(Middleware):
         allowed to exist in the backend.  Defaults to 10 minutes and
         can be set on a per-actor basis.
     """
+    # Warning: Results need to be before Retries to work
+    default_before = Retries
 
     def __init__(self, *, backend=None, store_results=False, result_ttl=None):
         self.logger = get_logger(__name__, type(self))
@@ -62,12 +65,33 @@ class Results(Middleware):
     def actor_options(self):
         return {
             "store_results",
-            "result_ttl",
+            "result_ttl"
         }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         actor = broker.get_actor(message.actor_name)
+
         store_results = actor.options.get("store_results", self.store_results)
+        if not store_results:
+            return
+
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
-        if store_results and exception is None:
-            self.backend.store_result(message, result, result_ttl)
+
+        if exception is None:
+            self.backend.store_result(message, Result(result=result, error=None), result_ttl)
+        # If the message will not be retried
+        elif message.failed:
+            self.backend.store_result(message, Result(result=None, error=repr(exception)), result_ttl)
+
+            exception = ParentFailed("%s failed because of %s" % (message, repr(exception)))
+            self.store_error_children(message, exception, result_ttl)
+
+    def store_error_children(self, message, exception, result_ttl):
+        """ Store an error for each actor following the failed one in the pipeline"""
+        from ..message import Message
+
+        message_data = message.options.get("pipe_target")
+        if message_data is not None:
+            next_message = Message(**message_data)
+            self.backend.store_result(next_message, Result(result=None, error=repr(exception)), result_ttl)
+            self.store_error_children(next_message, exception, result_ttl)

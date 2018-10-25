@@ -33,6 +33,11 @@ class Middleware:
     subset of hooks they like.
     """
 
+    # Used to placed the middleware in the middleware list.
+    # Warning: should not be both set and should belong to default middleware
+    default_before = None
+    default_after = None
+
     @property
     def actor_options(self):
         """The set of options that may be configured on each actor.
