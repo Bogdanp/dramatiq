@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 def setup(app):
-    app.connect("build-finished", build_sitemap)
+    # app.connect("build-finished", build_sitemap)
     return {"version": "1.0"}
 
 
@@ -43,10 +43,10 @@ def build_sitemap(app, exception):
         loc = ET.SubElement(url, "loc")
         lastmod = ET.SubElement(url, "lastmod")
         priority = ET.SubElement(url, "priority")
-        loc.text = f"https://remoulade.io/{page}"
+        loc.text = "https://remoulade.io/{page}"
         lastmod.text = mod
-        priority.text = f"{prio:.02f}"
+        priority.text = "{prio:.02f}"
 
-    filename = f"{app.outdir}/sitemap.xml"
+    filename = "{app.outdir}/sitemap.xml"
     tree = ET.ElementTree(root)
     tree.write(filename, xml_declaration=True, encoding="utf-8", method="xml")

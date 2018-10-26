@@ -1,7 +1,7 @@
 .. include:: global.rst
 
 Remoulade: simple task processing
-================================
+=================================
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
 

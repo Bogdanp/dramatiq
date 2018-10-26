@@ -30,7 +30,7 @@ with it is one of the reasons why I developed remoulade.  Here are some
 of the main differences between Remoulade, Celery and RQ:
 
 +------------------------------+----------+-------------+--------------+
-|                              | Remoulade | Celery_     | RQ_          |
+|                              | Remoulade| Celery_     | RQ_          |
 +------------------------------+----------+-------------+--------------+
 | Python 2 support             | No       | Yes         | Yes          |
 |                              |          |             |              |

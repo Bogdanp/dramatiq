@@ -16,7 +16,6 @@
 .. |RabbitmqBroker| replace:: :class:`RabbitmqBroker<remoulade.brokers.rabbitmq.RabbitmqBroker>`
 .. |RateLimitExceeded| replace:: :class:`RateLimitExceeded<remoulade.RateLimitExceeded>`
 .. |RateLimiters| replace:: :class:`RateLimiters<remoulade.rate_limits.RateLimiter>`
-.. |RedisBroker| replace:: :class:`RedisBroker<remoulade.brokers.redis.RedisBroker>`
 .. |RedisRLBackend| replace:: :class:`Redis<remoulade.rate_limits.backends.RedisBackend>`
 .. |RedisResBackend| replace:: :class:`Redis<remoulade.results.backends.RedisBackend>`
 .. |ResultBackends| replace:: :class:`ResultBackends<remoulade.results.ResultBackend>`
@@ -53,6 +52,7 @@
 .. |rate_limits| replace:: :mod:`remoulade.rate_limits`
 .. |send_with_options| replace:: :meth:`send_with_options<remoulade.Actor.send_with_options>`
 .. |send| replace:: :meth:`send<remoulade.Actor.send>`
+.. |LocalBroker| replace:: :class:`LocalBroker<remoulade.brokers.local.LocalBroker>`
 
 .. _gevent: http://www.gevent.org/
 .. _Memcached: http://memcached.org

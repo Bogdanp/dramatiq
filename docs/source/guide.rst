@@ -238,7 +238,7 @@ The following retry options are configurable on a per-actor basis:
 ===============  ============  =====================================================================================================================
 Option           Default       Description
 ===============  ============  =====================================================================================================================
-``max_retries``  ``0``        The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
+``max_retries``  ``0``         The maximum number of times a message should be retried.  ``None`` means the message should be retried indefinitely.
 ``min_backoff``  15 seconds    The minimum number of milliseconds of backoff to apply between retries.  Must be greater than 100 milliseconds.
 ``max_backoff``  7 days        The maximum number of milliseconds of backoff to apply between retries.  Higher values are less reliable.
 ``retry_when``   ``None``      A callable that determines whether or not a message should be retried.  When this is set, ``max_retries`` is ignored.
@@ -391,20 +391,6 @@ execution::
 
   rabbitmq_broker = RabbitmqBroker(host="rabbitmq")
   remoulade.set_broker(rabbitmq_broker)
-
-Redis Broker
-^^^^^^^^^^^^
-
-To use Remoulade with the Redis broker, create an instance of it and
-set it as the global broker as early as possible during your program’s
-execution::
-
-  import remoulade
-
-  from remoulade.brokers.redis import RedisBroker
-
-  redis_broker = RedisBroker(host="redis", port=6537)
-  remoulade.set_broker(redis_broker)
 
 
 Unit Testing

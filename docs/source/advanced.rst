@@ -27,12 +27,6 @@ You can then pass that vhost to |RabbitmqBroker| when you instantiate it.
 
 .. _virtual hosts:  https://www.rabbitmq.com/vhosts.html
 
-Redis
-~~~~~
-
-The |RedisBroker| takes a ``namespace`` parameter that you can use to
-logically split queues across multiple apps.
-
 
 Messages
 --------

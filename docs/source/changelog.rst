@@ -19,12 +19,14 @@ Changed
 ^^^^^^^
 
 * Name of project to Remoulade (fork of Dramatiq v1.3.0)
-* Delete |URLRabbitmqBroker|
-* Delete |RedisBroker|
-* Set default |max_retries| to 0
+* Delete URLRabbitmqBroker
+* Delete RedisBroker
+* Set default max_retries to 0
 * Declare RabbitMQ Queue on first message enqueuing
 
 Fixed
 ^^^^^
 
-* |pipe_ignore| was not recovered from right message
+* pipe_ignore was not recovered from right message
+
+.. _0.1.0: https://github.com/wiremind/remoulade/v0.1.0

@@ -59,9 +59,6 @@ Brokers
 .. autoclass:: remoulade.brokers.rabbitmq.RabbitmqBroker
    :members:
    :inherited-members:
-.. autoclass:: remoulade.brokers.redis.RedisBroker
-   :members:
-   :inherited-members:
 .. autoclass:: remoulade.brokers.stub.StubBroker
    :members:
    :inherited-members:

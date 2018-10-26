@@ -59,8 +59,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Remoulade'
-copyright = '2017, CLEARTYPE SRL'
-author = 'CLEARTYPE SRL'
+copyright = '2017, CLEARTYPE SRL, WIREMIND SAS'
+author = 'CLEARTYPE SRL, WIREMIND SAS'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
