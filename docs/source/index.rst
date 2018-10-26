@@ -17,10 +17,7 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
 
 **Remoulade** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
-
-.. raw:: html
-
-   <iframe width="660" height="371" src="https://www.youtube-nocookie.com/embed/RdMQZpITX4k?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+This is a fork of _Dramatiq.
 
 Here's what it looks like:
 

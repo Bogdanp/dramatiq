@@ -393,6 +393,20 @@ execution::
   remoulade.set_broker(rabbitmq_broker)
 
 
+Local Broker
+^^^^^^^^^^^^^^^
+
+If you just want to execute the actors when the message is enqueued
+without running any Worker (for example in a development environment)::
+
+  import remoulade
+
+  from remoulade.brokers.local import LocalBroker
+
+  local_broker = LocalBroker(middleware=[])
+  remoulade.set_broker(local_broker)
+
+
 Unit Testing
 ------------
 
