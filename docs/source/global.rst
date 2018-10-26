@@ -33,7 +33,6 @@
 .. |StubBroker| replace:: :class:`StubBroker<remoulade.brokers.stub.StubBroker>`
 .. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<remoulade.middleware.TimeLimitExceeded>`
 .. |TimeLimit| replace:: :class:`TimeLimit<remoulade.middleware.TimeLimit>`
-.. |URLRabbitmqBroker| replace:: :class:`URLRabbitmqBroker<remoulade.brokers.rabbitmq.URLRabbitmqBroker>`
 .. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<remoulade.rate_limits.WindowRateLimiter>`
 .. |Worker_join| replace:: :meth:`Worker.join<remoulade.Worker.join>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<remoulade.Worker.pause>`

@@ -29,4 +29,4 @@ Fixed
 
 * pipe_ignore was not recovered from right message
 
-.. _0.1.0: https://github.com/wiremind/remoulade/v0.1.0
+.. _0.1.0: https://github.com/wiremind/remoulade/releases/tag/v0.1.0
