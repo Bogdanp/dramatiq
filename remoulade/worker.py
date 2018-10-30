@@ -393,8 +393,7 @@ class _WorkerThread(Thread):
 
             res = None
             if not message.failed:
-                actor = self.broker.get_actor(message.actor_name)
-                res = actor(*message.args, **message.kwargs)
+                res = self.call_actor(message)
 
             self.broker.emit_after("process_message", message, result=res)
 
@@ -417,6 +416,28 @@ class _WorkerThread(Thread):
             # this is safe.  Probably.
             self.consumers[message.queue_name].post_process_message(message)
             self.work_queue.task_done()
+
+    def call_actor(self, message):
+        """Call an actor with the arguments stored in the message
+
+        Handle the logging of the start/end of the actor with runtime measure
+
+        Parameters:
+          message(MessageProxy)
+
+        Returns:
+          Whatever the actor returns.
+        """
+        actor = self.broker.get_actor(message.actor_name)
+        message_id = message.message_id
+        try:
+            self.logger.info("Started Actor %s", message, extra={'message_id': message_id})
+            start = time.perf_counter()
+            return actor(*message.args, **message.kwargs)
+        finally:
+            runtime = (time.perf_counter() - start) * 1000
+            extra = {'message_id': message_id, 'runtime': runtime}
+            self.logger.info("Finished Actor %s after %.02fms.", message, runtime, extra=extra)
 
     def pause(self):
         """Pause this worker.

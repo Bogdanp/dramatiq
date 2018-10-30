@@ -147,9 +147,4 @@ class Message(namedtuple("Message", (
         return backend.get_result(self, block=block, timeout=timeout)
 
     def __str__(self):
-        params = ", ".join(repr(arg) for arg in self.args)
-        if self.kwargs:
-            params += ", " if params else ""
-            params += ", ".join("%s=%r" % (name, value) for name, value in self.kwargs.items())
-
-        return "%s(%s)" % (self.actor_name, params)
+        return "%s / %s" % (self.actor_name, self.message_id)
