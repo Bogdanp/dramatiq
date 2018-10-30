@@ -48,13 +48,13 @@ class TimeLimit(Middleware):
         check for actors that have exceeded the limit.
     """
 
-    def __init__(self, *, time_limit=600000, interval=1000):
+    def __init__(self, *, time_limit=1800000, interval=1000):
         self.logger = get_logger(__name__, type(self))
         self.time_limit = time_limit
         self.interval = interval
         self.deadlines = {}
 
-    def _handle(self, signum, mask):
+    def _handle(self, *_):
         current_time = time.monotonic()
         for thread_id, deadline in self.deadlines.items():
             if deadline and current_time >= deadline:
