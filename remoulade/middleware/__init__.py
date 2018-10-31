@@ -55,6 +55,3 @@ default_middleware = [
     AgeLimit, TimeLimit, ShutdownNotifications,
     Callbacks, Pipelines, Retries, DeclareQueuesMiddleware
 ]
-
-if CURRENT_OS != "Windows":
-    default_middleware = [Prometheus, *default_middleware]

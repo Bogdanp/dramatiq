@@ -5,7 +5,13 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+`Unreleased`_
+-------------
 
+Changed
+^^^^^^^
+
+* |Promotheus| removed from default middleware
 
 `0.1.0`_ -- 2018-10-24
 ----------------------
@@ -29,4 +35,5 @@ Fixed
 
 * pipe_ignore was not recovered from right message
 
+.. _Unreleased: https://github.com/wiremind/remoulade/compare/v0.1.0...HEAD
 .. _0.1.0: https://github.com/wiremind/remoulade/releases/tag/v0.1.0
