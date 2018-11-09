@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+
+
+`0.2.0`_ -- 2018-11-09
+----------------------
+
 Changed
 ^^^^^^^
 
@@ -40,5 +45,6 @@ Fixed
 
 * pipe_ignore was not recovered from right message
 
-.. _Unreleased: https://github.com/wiremind/remoulade/compare/v0.1.0...HEAD
+.. _Unreleased: https://github.com/wiremind/remoulade/compare/v0.2.0...HEAD
+.. _0.2.0: https://github.com/wiremind/remoulade/releases/tag/v0.2.0
 .. _0.1.0: https://github.com/wiremind/remoulade/releases/tag/v0.1.0
