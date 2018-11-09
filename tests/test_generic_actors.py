@@ -76,6 +76,10 @@ def test_generic_actors_can_be_abstract(stub_broker, stub_worker):
     assert isinstance(BarTask.__actor__, remoulade.Actor)
     assert FooTask.queue_name == BarTask.queue_name == "tasks"
 
+    # If i declare them
+    stub_broker.declare_actor(BarTask.__actor__)
+    stub_broker.declare_actor(FooTask.__actor__)
+
     # When I send both actors a message
     # And wait for them to get processed
     FooTask.send()

@@ -37,6 +37,9 @@ def test_stub_broker_can_be_flushed(stub_broker):
     def do_work():
         pass
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     do_work.send()
 
@@ -56,6 +59,9 @@ def test_stub_broker_can_join_with_timeout(stub_broker, stub_worker):
     @remoulade.actor
     def do_work():
         time.sleep(1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send that actor a message
     do_work.send()

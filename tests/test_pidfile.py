@@ -2,9 +2,11 @@ import os
 import signal
 import time
 
+import remoulade
 from remoulade.brokers.stub import StubBroker
 
 broker = StubBroker()
+remoulade.set_broker(broker)
 
 
 def remove(filename):
@@ -22,7 +24,7 @@ def test_cli_scrubs_stale_pid_files(start_cli):
             f.write("999999")
 
         # When I try to start the cli and pass that file as a PID file
-        proc = start_cli("tests.test_pidfile:broker", extra_args=["--pid-file", filename])
+        proc = start_cli("tests.test_pidfile", extra_args=["--pid-file", filename])
 
         # And I wait for it to write the pid file
         time.sleep(1)
@@ -69,7 +71,7 @@ def test_cli_with_pidfile_can_be_reloaded(start_cli):
         filename = "test_reload.pid"
 
         # When I try to start the cli and pass that file as a PID file
-        proc = start_cli("tests.test_pidfile:broker", extra_args=["--pid-file", filename])
+        proc = start_cli("tests.test_pidfile", extra_args=["--pid-file", filename])
         time.sleep(1)
 
         # And send the proc a HUP signal

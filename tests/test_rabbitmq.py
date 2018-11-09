@@ -19,6 +19,9 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     def put(key, value):
         database[key] = value
 
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(put)
+
     # If I send that actor many async messages
     for i in range(100):
         assert put.send("key-%d" % i, i)
@@ -39,6 +42,9 @@ def test_rabbitmq_queues_created_lazily(rabbitmq_broker, rabbitmq_worker):
     @remoulade.actor
     def add(a, b):
         return a + b
+
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(add)
 
     # queue_name should be in prepared_queues
     assert add.queue_name in rabbitmq_broker.prepared_queues
@@ -67,6 +73,9 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
         else:
             success_time = current_millis()
 
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_work)
+
     # If I send it a message
     do_work.send()
 
@@ -89,6 +98,9 @@ def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_work
         if sum(attempts) < 4:
             raise RuntimeError("Failure #%d" % sum(attempts))
 
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_work)
+
     # If I send it a message
     do_work.send()
 
@@ -110,6 +122,9 @@ def test_rabbitmq_actors_can_have_their_messages_delayed(rabbitmq_broker, rabbit
         nonlocal run_time
         run_time = current_millis()
 
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(record)
+
     # If I send it a delayed message
     record.send_with_options(delay=1000)
 
@@ -129,6 +144,9 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_b
     @remoulade.actor
     def append(x):
         results.append(x)
+
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(append)
 
     # When I pause the worker
     rabbitmq_worker.pause()
@@ -153,6 +171,9 @@ def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_worker)
     @remoulade.actor(max_retries=0)
     def do_work():
         raise RuntimeError("failed")
+
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_work)
 
     # If I send it a message
     do_work.send()
@@ -193,6 +214,9 @@ def test_rabbitmq_broker_reconnects_after_enqueue_failure(rabbitmq_broker):
     def do_nothing():
         pass
 
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_nothing)
+
     # If I close my connection
     rabbitmq_broker.connection.close()
 
@@ -213,6 +237,9 @@ def test_rabbitmq_workers_handle_rabbit_failures_gracefully(rabbitmq_broker, rab
     def do_work():
         attempts.append(1)
         time.sleep(1)
+
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_work)
 
     # If I send that actor a delayed message
     do_work.send_with_options(delay=1000)
@@ -280,6 +307,9 @@ def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker)
     def do_work():
         time.sleep(1)
 
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_work)
+
     # When I send that actor a message
     do_work.send()
 
@@ -294,6 +324,9 @@ def test_rabbitmq_broker_can_flush_queues(rabbitmq_broker):
     @remoulade.actor
     def do_work():
         pass
+
+    # And this actor is declared
+    rabbitmq_broker.declare_actor(do_work)
 
     # When I send that actor a message
     do_work.send()

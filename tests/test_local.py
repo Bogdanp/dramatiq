@@ -25,6 +25,9 @@ def test_local_broker_get_result_in_message(local_broker):
     def do_work():
         return 1
 
+    # And this actor is declared
+    local_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -37,6 +40,9 @@ def test_local_broker_with_pipes(local_broker):
     @remoulade.actor(store_results=True)
     def add(a, b):
         return a + b
+
+    # And this actor is declared
+    local_broker.declare_actor(add)
 
     # When I run a pipe
     pipe = add.message(1, 2) | add.message(3)
@@ -51,6 +57,9 @@ def test_local_broker_with_groups(local_broker):
     @remoulade.actor(store_results=True)
     def add(a, b):
         return a + b
+
+    # And this actor is declared
+    local_broker.declare_actor(add)
 
     # When I run a group
     g = group([add.message(1, 2), add.message(3, 4), add.message(4, 5)])

@@ -14,6 +14,9 @@ def test_messages_can_be_piped(stub_broker):
     def add(x, y):
         return x + y
 
+    # And this actor is declared
+    stub_broker.declare_actor(add)
+
     # When I pipe some messages intended for that actor together
     pipe = add.message(1, 2) | add.message(3) | add.message(4)
 
@@ -31,6 +34,9 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
     @remoulade.actor
     def add(x, y):
         return x + y
+
+    # And this actor is declared
+    stub_broker.declare_actor(add)
 
     # When I pipe a message intended for that actor and another pipeline together
     pipe = pipeline([add.message(1, 2), add.message(3) | add.message(4), add.message(5)])
@@ -62,6 +68,10 @@ def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_b
         assert len(args) == 0
         return 1
 
+    # And these actors are declared
+    stub_broker.declare_actor(do_nothing)
+    stub_broker.declare_actor(pipe_ignored)
+
     pipe = do_nothing.message() | pipe_ignored.message_with_options(pipe_ignore=True)
     pipe.run()
 
@@ -87,6 +97,10 @@ def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_bac
         assert len(args) == 0
         return 1
 
+    # And these actors are declared
+    stub_broker.declare_actor(do_nothing)
+    stub_broker.declare_actor(pipe_ignored)
+
     pipe = do_nothing.message() | pipe_ignored.message()
     pipe.run()
 
@@ -105,6 +119,9 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, re
     @remoulade.actor(store_results=True)
     def add(x, y):
         return x + y
+
+    # And this actor is declared
+    stub_broker.declare_actor(add)
 
     # When I pipe some messages intended for that actor together and run the pipeline
     pipe = add.message(1, 2) | (add.message(3) | add.message(4))
@@ -130,6 +147,9 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
     def wait(n):
         time.sleep(n)
         return n * 2
+
+    # And this actor is declared
+    stub_broker.declare_actor(wait)
 
     # When I pipe some messages intended for that actor together and run the pipeline
     pipe = wait.message(1) | wait.message() | wait.message()
@@ -160,6 +180,9 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, re
             condition.notify_all()
             return n
 
+    # And this actor is declared
+    stub_broker.declare_actor(wait)
+
     # When I pipe some messages intended for that actor together and run the pipeline
     pipe = wait.message(1) | wait.message()
     pipe.run()
@@ -187,6 +210,9 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
     def do_nothing():
         return None
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_nothing)
+
     # And I've run a pipeline
     pipe = do_nothing.message() | do_nothing.message_with_options(pipe_ignore=True)
     pipe.run()
@@ -213,6 +239,10 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
     @remoulade.actor(store_results=True)
     def do_work():
         return 42
+
+    # And these actors are declared
+    stub_broker.declare_actor(do_work_fail)
+    stub_broker.declare_actor(do_work)
 
     # And I've run a pipeline
     pipe = do_work_fail.message() | do_work.message() | do_work.message()
@@ -246,6 +276,9 @@ def test_pipelines_forget(stub_broker, backend, result_backends, stub_worker, bl
     def do_work():
         return 42
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # And I've run a pipeline
     pipe = do_work.message() | do_work.message() | do_work.message()
     pipe.run()
@@ -276,6 +309,9 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     def wait():
         time.sleep(0.1)
 
+    # And this actor is declared
+    stub_broker.declare_actor(wait)
+
     # When I group multiple of these actors together and run them
     t = time.monotonic()
     g = group([wait.message() for _ in range(5)])
@@ -304,6 +340,9 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     @remoulade.actor(store_results=True)
     def wait():
         time.sleep(0.1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(wait)
 
     # When I group multiple groups inside one group and run it
     t = time.monotonic()
@@ -334,6 +373,9 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     def wait():
         time.sleep(0.3)
 
+    # And this actor is declared
+    stub_broker.declare_actor(wait)
+
     # When I group a few jobs together and run it
     g = group(wait.message() for _ in range(2))
     g.run()
@@ -363,6 +405,9 @@ def test_groups_expose_completion_stats(stub_broker, stub_worker, backend, resul
             condition.notify_all()
             return n
 
+    # And this actor is declared
+    stub_broker.declare_actor(wait)
+
     # When I group messages of varying durations together and run the group
     g = group(wait.message(n) for n in range(1, 4))
     g.run()
@@ -391,6 +436,9 @@ def test_group_forget(stub_broker, backend, result_backends, stub_worker, block)
     @remoulade.actor(store_results=True)
     def do_work():
         return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # And I've run a group
     messages = [do_work.message() for _ in range(5)]
@@ -424,6 +472,9 @@ def test_group_wait_forget(stub_broker, backend, result_backends, stub_worker):
     @remoulade.actor(store_results=True)
     def do_work():
         return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # And I've run a group
     messages = [do_work.message() for _ in range(5)]

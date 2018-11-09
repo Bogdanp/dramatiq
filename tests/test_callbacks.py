@@ -15,8 +15,12 @@ def test_actors_can_define_success_callbacks(stub_broker, stub_worker):
     db = []
 
     @remoulade.actor
-    def save(message_data, result):
+    def save(_, result):
         db.append(result)
+
+    # And these actors are declared
+    stub_broker.declare_actor(add)
+    stub_broker.declare_actor(save)
 
     # When I send the first actor a message and tell it to call the
     # second actor on success
@@ -40,8 +44,12 @@ def test_actors_can_define_failure_callbacks(stub_broker, stub_worker):
     exceptions = Counter()
 
     @remoulade.actor
-    def report_exceptions(message_data, exception_data):
+    def report_exceptions(message_data, _):
         exceptions.update({message_data["actor_name"]})
+
+    # And these actors are declared
+    stub_broker.declare_actor(do_work)
+    stub_broker.declare_actor(report_exceptions)
 
     # When I send the first actor a message and tell it to call the
     # second actor on failure
@@ -62,8 +70,11 @@ def test_actor_callbacks_raise_type_error_when_given_a_normal_callable(stub_brok
         pass
 
     # And a non-actor callable
-    def callback(message, res):
+    def callback(*_):
         pass
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I try to set that callable as an on success callback
     # Then I should get back a TypeError

@@ -29,18 +29,12 @@ def get_broker() -> "Broker":
 
     Returns:
       Broker: The default Broker.
+    Raises:
+      ValueError if no broker is set
     """
     global global_broker
     if global_broker is None:
-        from .brokers.rabbitmq import RabbitmqBroker
-
-        set_broker(RabbitmqBroker(
-            host="127.0.0.1",
-            port=5672,
-            heartbeat=5,
-            connection_attempts=5,
-            blocked_connection_timeout=30,
-        ))
+        raise ValueError('Broker not found, are you sure you called set_broker(broker) ?')
     return global_broker
 
 
@@ -51,6 +45,20 @@ def set_broker(broker: "Broker"):
       broker(Broker): The broker instance to use by default.
     """
     global global_broker
+    global_broker = broker
+
+
+def change_broker(broker: "Broker"):
+    """Change of broker instance
+
+    It will take all the actors of the current broker and add them to the new one
+
+    Parameters:
+      broker(Broker): The broker instance to use by default.
+    """
+    global global_broker
+    for actor in global_broker.actors.values():
+        broker.declare_actor(actor)
     global_broker = broker
 
 
@@ -175,6 +183,7 @@ class Broker:
         Parameters:
           actor(Actor): The actor being declared.
         """
+        actor.set_broker(self)
         self.emit_before("declare_actor", actor)
         self.prepare_queue(actor.queue_name)
         self.actors[actor.actor_name] = actor

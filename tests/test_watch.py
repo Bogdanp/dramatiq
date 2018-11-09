@@ -10,16 +10,21 @@ from remoulade.brokers.rabbitmq import RabbitmqBroker
 from remoulade.common import current_millis
 
 broker = RabbitmqBroker()
+remoulade.set_broker(broker)
+
 loaded_at = current_millis()
 
 CURRENT_PLATFORM = platform.python_implementation()
 CURRENT_OS = platform.system()
 
 
-@remoulade.actor(broker=broker)
+@remoulade.actor()
 def write_loaded_at(filename):
     with open(filename, "w") as f:
         f.write(str(loaded_at))
+
+
+broker.declare_actor(write_loaded_at)
 
 
 @pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
@@ -34,7 +39,7 @@ def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     filename = "/tmp/remoulade-loaded-at"
 
     # When I start my workers
-    start_cli("tests.test_watch:broker", extra_args=[
+    start_cli("tests.test_watch", extra_args=[
         "--processes", "1",
         "--threads", "1",
         "--watch", "tests",

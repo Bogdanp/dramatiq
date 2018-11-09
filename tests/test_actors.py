@@ -38,11 +38,13 @@ def test_actors_can_be_assigned_predefined_options(stub_broker):
 def test_actors_cannot_be_assigned_arbitrary_options(stub_broker):
     # Given that I have a stub broker
     # If I define an actor with a nonexistent option
-    # I expect it to raise a ValueError
+    @remoulade.actor(invalid_option=32)
+    def add(x, y):
+        return x + y
+
+    # I expect it to raise a ValueError when I add it to a broker
     with pytest.raises(ValueError):
-        @remoulade.actor(invalid_option=32)
-        def add(x, y):
-            return x + y
+        stub_broker.declare_actor(add)
 
 
 def test_actors_can_be_named(stub_broker):
@@ -91,11 +93,27 @@ def test_actors_can_be_sent_messages(stub_broker):
     def add(x, y):
         return x + y
 
+    # And this actor is declared
+    stub_broker.declare_actor(add)
+
     # If I send it a message,
     # I expect it to enqueue a message
     enqueued_message = add.send(1, 2)
     enqueued_message_data = stub_broker.queues["default"].get(timeout=1)
     assert enqueued_message == Message.decode(enqueued_message_data)
+
+
+def test_actors_no_broker():
+    # Given an actor
+    @remoulade.actor
+    def do_work():
+        return 42
+
+    # If I send it a message
+    # I expect an error explaining it has no broker
+    with pytest.raises(ValueError) as e:
+        do_work.send()
+    assert str(e.value) == 'No broker is set, did you forget to call set_broker ?'
 
 
 def test_actors_can_perform_work(stub_broker, stub_worker):
@@ -106,6 +124,9 @@ def test_actors_can_perform_work(stub_broker, stub_worker):
     @remoulade.actor
     def put(key, value):
         database[key] = value
+
+    # And this actor is declared
+    stub_broker.declare_actor(put)
 
     # If I send that actor many async messages
     for i in range(100):
@@ -128,6 +149,9 @@ def test_actors_can_perform_work_with_kwargs(stub_broker, stub_worker):
     def add(x, y):
         results.append(x + y)
 
+    # And this actor is declared
+    stub_broker.declare_actor(add)
+
     # If I send it a message with kwargs
     add.send(x=1, y=2)
 
@@ -148,6 +172,9 @@ def test_actors_do_not_retry_by_default(stub_broker, stub_worker):
     def do_work():
         attempts.append(1)
         raise RuntimeError("failure")
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send it a message
     do_work.send()
@@ -173,6 +200,9 @@ def test_actors_retry_on_failure(stub_broker, stub_worker):
         else:
             successes.append(1)
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # If I send it a message
     do_work.send()
 
@@ -194,6 +224,9 @@ def test_actors_retry_a_max_number_of_times_on_failure(stub_broker, stub_worker)
         attempts.append(1)
         raise RuntimeError("failure")
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send it a message
     do_work.send()
 
@@ -214,6 +247,9 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     def do_work():
         attempts.append(1)
         raise RuntimeError("failure")
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send it a message
     do_work.send()
@@ -237,6 +273,9 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
         attempts.append(1)
         time.sleep(2)
         successes.append(1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send it a message
     do_work.send()
@@ -262,6 +301,9 @@ def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
         time.sleep(2)
         successes.append(1)
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # If I send it a message with a custom time limit
     do_work.send_with_options(time_limit=1000)
 
@@ -282,6 +324,9 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
     @remoulade.actor(max_age=100)
     def do_work():
         runs.append(1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send it a message
     do_work.send()
@@ -306,6 +351,9 @@ def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_w
     @remoulade.actor
     def append(x):
         results.append(x)
+
+    # And this actor is declared
+    stub_broker.declare_actor(append)
 
     # If I send it a delayed message
     append.send_with_options(args=(1,), delay=1500)
@@ -359,6 +407,9 @@ def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
     def append(x):
         database.append(x)
 
+    # And this actor is declared
+    stub_broker.declare_actor(append)
+
     # If add that middleware to my broker
     stub_broker.add_middleware(BrokenMiddleware())
 
@@ -393,6 +444,9 @@ def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
     def track_call():
         calls.append(1)
 
+    # And this actor is declared
+    stub_broker.declare_actor(track_call)
+
     # When I send that actor a message
     track_call.send()
 
@@ -417,6 +471,9 @@ def test_workers_can_be_paused(stub_broker, stub_worker):
     @remoulade.actor
     def track_call():
         calls.append(1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(track_call)
 
     # When I send that actor a message
     track_call.send()
@@ -452,6 +509,10 @@ def test_actors_can_prioritize_work(stub_broker):
         def lo():
             calls.append("lo")
 
+        # And these actors are declared
+        for actor in [hi, lo]:
+            stub_broker.declare_actor(actor)
+
         # When I send both actors a nubmer of messages
         for _ in range(10):
             lo.send()
@@ -480,6 +541,9 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
         if raise_runtime_error:
             raise RuntimeError("Runtime error")
         raise ValueError("Value error")
+
+    # And this actor is declared
+    stub_broker.declare_actor(raises_errors)
 
     # When I send that actor a message that makes it raise a value error
     raises_errors.send(False)
@@ -532,6 +596,9 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
         @remoulade.actor(max_retries=0)
         def raise_rate_limit_exceeded():
             raise RateLimitExceeded("exceeded")
+
+        # And this actor is declared
+        stub_broker.declare_actor(raise_rate_limit_exceeded)
 
         # When I send that actor a message
         raise_rate_limit_exceeded.send()

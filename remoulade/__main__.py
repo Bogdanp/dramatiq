@@ -29,7 +29,7 @@ import time
 from collections import defaultdict
 from threading import Thread
 
-from remoulade import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
+from remoulade import ConnectionError, Worker, __version__, get_broker, get_logger
 
 try:
     from .watcher import setup_file_watcher
@@ -66,9 +66,6 @@ examples:
   # Run remoulade workers with actors defined in `./some_module.py`.
   $ remoulade some_module
 
-  # Run with a broker named "redis_broker" defined in "some_module".
-  $ remoulade some_module:redis_broker
-
   # Auto-reload remoulade when files in the current directory change.
   $ remoulade --watch . some_module
 
@@ -93,23 +90,6 @@ examples:
 """
 
 
-def import_broker(value):
-    modname, varname = value, None
-    if ":" in value:
-        modname, varname = value.split(":", 1)
-
-    module = importlib.import_module(modname)
-    if varname is not None:
-        if not hasattr(module, varname):
-            raise ImportError("Module %r does not define a %r variable." % (modname, varname))
-
-        broker = getattr(module, varname)
-        if not isinstance(broker, Broker):
-            raise ImportError("Variable %r from module %r is not a Broker." % (varname, modname))
-        return module, broker
-    return module, get_broker()
-
-
 def folder_path(value):
     if not os.path.isdir(value):
         raise argparse.ArgumentError("%r is not a valid directory" % value)
@@ -122,10 +102,6 @@ def parse_arguments():
         description="Run remoulade workers.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=HELP_EPILOG,
-    )
-    parser.add_argument(
-        "broker",
-        help="the broker to use (eg: 'module' or 'module:a_broker')",
     )
     parser.add_argument(
         "modules", metavar="module", nargs="*",
@@ -250,11 +226,12 @@ def worker_process(args, worker_id, logging_fd):
 
         logging_pipe = os.fdopen(logging_fd, "w")
         logger = setup_worker_logging(args, worker_id, logging_pipe)
-        module, broker = import_broker(args.broker)
-        broker.emit_after("process_boot")
 
         for module in args.modules:
             importlib.import_module(module)
+
+        broker = get_broker()
+        broker.emit_after("process_boot")
 
         worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
         worker.start()

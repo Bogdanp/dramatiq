@@ -22,6 +22,9 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
     def do_work():
         return 42
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -51,6 +54,9 @@ def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, 
         time.sleep(0.2)
         return 42
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -75,6 +81,9 @@ def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, res
         time.sleep(0.2)
         return 42
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -98,6 +107,9 @@ def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend
     def do_work():
         return 42
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -115,6 +127,9 @@ def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker
     def do_work():
         return 42
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -128,6 +143,9 @@ def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, st
     @remoulade.actor
     def do_work():
         return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send that actor a message
     message = do_work.send()
@@ -174,6 +192,9 @@ def test_raise_on_error(stub_broker, backend, result_backends, stub_worker, bloc
     def do_work():
         raise ValueError()
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -202,6 +223,9 @@ def test_store_errors(stub_broker, backend, result_backends, stub_worker, block)
     def do_work():
         raise ValueError()
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # When I send that actor a message
     message = do_work.send()
 
@@ -228,6 +252,9 @@ def test_store_errors_after_no_more_retry(stub_broker, backend, result_backends,
     def do_work():
         failures.append(1)
         raise ValueError()
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send that actor a message,
     message = do_work.send()
@@ -257,6 +284,9 @@ def test_messages_can_get_results_and_forget(stub_broker, stub_worker, backend, 
     @remoulade.actor(store_results=True)
     def do_work():
         return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # When I send that actor a message
     message = do_work.send()

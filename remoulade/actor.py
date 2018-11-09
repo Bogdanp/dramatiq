@@ -17,7 +17,6 @@
 
 import re
 
-from .broker import get_broker
 from .logging import get_logger
 from .message import Message
 
@@ -25,7 +24,7 @@ from .message import Message
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 
 
-def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=None, **options):
+def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, **options):
     """Declare an actor.
 
     Examples:
@@ -38,6 +37,10 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
       ...
       >>> add
       Actor(<function add at 0x106c6d488>, queue_name='default', actor_name='add')
+
+      You need to declare an actor before using it
+      >>> get_broker().declare_actor(add)
+      None
 
       >>> add(1, 2)
       3
@@ -58,7 +61,6 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
         been pulled on a worker concurrently and one has a higher
         priority than the other then it will be processed first.
         Lower numbers represent higher priorities.
-      broker(Broker): The broker to use with this actor.
       **options(dict): Arbitrary options that vary with the set of
         middleware that you use.  See ``get_broker().actor_options``.
 
@@ -66,7 +68,7 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
       Actor: The decorated function.
     """
     def decorator(fn):
-        nonlocal actor_name, broker
+        nonlocal actor_name
         actor_name = actor_name or fn.__name__
         if not _queue_name_re.fullmatch(queue_name):
             raise ValueError(
@@ -74,19 +76,7 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
                 "by any number of letters, digits, dashes or underscores."
             )
 
-        broker = broker or get_broker()
-        invalid_options = set(options) - broker.actor_options
-        if invalid_options:
-            invalid_options_list = ", ".join(invalid_options)
-            raise ValueError((
-                "The following actor options are undefined: %s. "
-                "Did you forget to add a middleware to your Broker?"
-            ) % invalid_options_list)
-
-        return Actor(
-            fn, actor_name=actor_name, queue_name=queue_name,
-            priority=priority, broker=broker, options=options,
-        )
+        return Actor(fn, actor_name=actor_name, queue_name=queue_name, priority=priority, options=options)
 
     if fn is None:
         return decorator
@@ -108,15 +98,23 @@ class Actor:
         and middleware.
     """
 
-    def __init__(self, fn, *, broker, actor_name, queue_name, priority, options):
+    def __init__(self, fn, *, actor_name, queue_name, priority, options):
         self.logger = get_logger(fn.__module__, actor_name)
         self.fn = fn
-        self.broker = broker
+        self.broker = None
         self.actor_name = actor_name
         self.queue_name = queue_name
         self.priority = priority
         self.options = options
-        self.broker.declare_actor(self)
+
+    def set_broker(self, broker):
+        invalid_options = set(self.options) - broker.actor_options
+        if invalid_options:
+            invalid_options_list = ", ".join(invalid_options)
+            message = "The following actor options are undefined: %s. " % invalid_options_list
+            message += "Did you forget to add a middleware to your Broker?"
+            raise ValueError(message)
+        self.broker = broker
 
     def message(self, *args, **kwargs):
         """Build a message.  This method is useful if you want to
@@ -193,6 +191,8 @@ class Actor:
         Returns:
           Message: The enqueued message.
         """
+        if not self.broker:
+            raise ValueError("No broker is set, did you forget to call set_broker ?")
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 

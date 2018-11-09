@@ -40,7 +40,8 @@ interpreter yields about what we expect::
   There are 338 words at 'http://example.com'.
 
 To turn this into a function that can be processed asynchronously
-using Remoulade, all we have to do is decorate it with |actor|:
+using Remoulade, all we have to do is decorate it with |actor|
+and declare it to the broker:
 
 .. code-block:: python
    :caption: count_words.py
@@ -48,12 +49,15 @@ using Remoulade, all we have to do is decorate it with |actor|:
 
    import remoulade
    import requests
+   from remoulade import get_broker()
 
    @remoulade.actor
    def count_words(url):
      response = requests.get(url)
      count = len(response.text.split(" "))
      print(f"There are {count} words at {url!r}.")
+
+   get_broker().declare_actor(count_words)
 
 Like before, if we call the function in the interactive interpreter,
 it will run synchronously and we'll get the same result out::
@@ -375,8 +379,7 @@ Message Brokers
 ---------------
 
 Remoulade abstracts over the notion of a message broker and currently
-supports both RabbitMQ and Redis out of the box.  By default, it'll
-set up a RabbitMQ broker instance pointing at the local host.
+supports RabbitMQ out of the box.
 
 RabbitMQ Broker
 ^^^^^^^^^^^^^^^

@@ -30,6 +30,9 @@ def test_pickle_encoder(pickle_encoder, stub_broker, stub_worker):
     def add_value(x):
         db.append(x)
 
+    # And this actor is declared
+    stub_broker.declare_actor(add_value)
+
     # When I send that actor a message
     add_value.send(1)
 

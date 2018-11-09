@@ -77,6 +77,9 @@ def test_shutdown_notifications_options(stub_broker, actor_opt, message_opt, sho
     def do_work():
         pass
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # And a message
     message = do_work.message_with_options(notify_shutdown=message_opt)
 
@@ -99,6 +102,9 @@ def test_shutdown_notifications_are_received(stub_broker, stub_worker):
             shutdowns.append(1)
             raise
         successes.append(1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # If I send it a message
     do_work.send()
@@ -131,6 +137,9 @@ def test_shutdown_notifications_can_be_ignored(stub_broker, stub_worker):
         else:
             successes.append(1)
 
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
     # If I send it a message
     do_work.send()
 
@@ -162,6 +171,9 @@ def test_shutdown_notifications_dont_notify_completed_threads(stub_broker, stub_
             shutdowns.append(1)
             raise
         successes.append(1)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
 
     # If I send it two message of different execution times
     do_work.send(n=1)

@@ -5,6 +5,7 @@ import pytest
 import remoulade
 import remoulade.broker
 from remoulade.brokers.rabbitmq import RabbitmqBroker
+from remoulade.brokers.stub import StubBroker
 from remoulade.middleware import Middleware
 
 CURRENT_OS = platform.system()
@@ -20,10 +21,34 @@ def test_broker_uses_rabbitmq_if_not_set():
     remoulade.broker.global_broker = None
 
     # If I try to get the global broker
-    broker = remoulade.get_broker()
+    # I expect a ValueError to be raised
+    with pytest.raises(ValueError) as e:
+        remoulade.get_broker()
 
-    # I expect it to be a RabbitmqBroker instance
-    assert isinstance(broker, RabbitmqBroker)
+    assert str(e.value) == 'Broker not found, are you sure you called set_broker(broker) ?'
+
+
+def test_change_broker(stub_broker):
+    # Given that some actors
+    @remoulade.actor
+    def add(x, y):
+        return x + y
+
+    @remoulade.actor
+    def modulo(x, y):
+        return x % y
+
+    # And these actors are declared
+    stub_broker.declare_actor(add)
+    stub_broker.declare_actor(modulo)
+
+    # Given a new broker
+    new_broker = StubBroker()
+
+    remoulade.change_broker(new_broker)
+
+    # I expect them to have the same actors
+    assert stub_broker.actors == new_broker.actors
 
 
 @skip_on_windows
