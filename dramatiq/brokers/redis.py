@@ -76,7 +76,7 @@ class RedisBroker(Broker):
         dead-lettered messages are kept in Redis for.
       requeue_deadline(int): Deprecated.  Does nothing.
       requeue_interval(int): Deprecated.  Does nothing.
-      \**parameters(dict): Connection parameters are passed directly
+      **parameters(dict): Connection parameters are passed directly
         to :class:`redis.StrictRedis`.
 
     .. _StrictRedis: http://redis-py.readthedocs.io/en/latest/#redis.StrictRedis

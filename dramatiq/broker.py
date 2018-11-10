@@ -87,7 +87,7 @@ class Broker:
         for middleware in self.middleware:
             try:
                 getattr(middleware, "before_" + signal)(self, *args, **kwargs)
-            except MiddlewareError as e:
+            except MiddlewareError:
                 raise
             except Exception:
                 self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
