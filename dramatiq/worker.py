@@ -123,7 +123,7 @@ class Worker:
         for queue_name, messages in messages_by_queue.items():
             try:
                 self.consumers[queue_name].requeue_messages(messages)
-            except ConnectionError as e:
+            except ConnectionError:
                 self.logger.warning("Failed to requeue messages on queue %r.", queue_name, exc_info=True)
         self.logger.debug("Done requeueing in-progress messages.")
 
@@ -237,7 +237,7 @@ class _ConsumerThread(Thread):
                 self.logger.critical("Consumer encountered a connection error: %s", e)
                 self.delay_queue = PriorityQueue()
 
-            except Exception as e:
+            except Exception:
                 self.logger.critical("Consumer encountered an unexpected error.", exc_info=True)
                 # Avoid leaving any open file descriptors around when
                 # an exception occurs.
@@ -398,7 +398,7 @@ class _WorkerThread(Thread):
 
             self.broker.emit_after("process_message", message, result=res)
 
-        except SkipMessage as e:
+        except SkipMessage:
             self.logger.warning("Message %s was skipped.", message)
             self.broker.emit_after("skip_message", message)
 

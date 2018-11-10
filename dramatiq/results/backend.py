@@ -49,13 +49,13 @@ class ResultBackend:
         result data.  Defaults to :class:`.JSONEncoder`.
     """
 
-    def __init__(self, *, namespace: str="dramatiq-results", encoder: Encoder=None):
+    def __init__(self, *, namespace: str = "dramatiq-results", encoder: Encoder = None):
         from ..message import get_encoder
 
         self.namespace = namespace
         self.encoder = encoder or get_encoder()
 
-    def get_result(self, message: "Message", *, block: bool=False, timeout: int=None) -> Result:
+    def get_result(self, message, *, block: bool = False, timeout: int = None) -> Result:
         """Get a result from the backend.
 
         Parameters:
@@ -95,7 +95,7 @@ class ResultBackend:
             else:
                 return result
 
-    def store_result(self, message: "Message", result: Result, ttl: int) -> None:
+    def store_result(self, message, result: Result, ttl: int) -> None:
         """Store a result in the backend.
 
         Parameters:
@@ -107,7 +107,7 @@ class ResultBackend:
         message_key = self.build_message_key(message)
         return self._store(message_key, result, ttl)
 
-    def build_message_key(self, message: "Message") -> str:
+    def build_message_key(self, message) -> str:
         """Given a message, return its globally-unique key.
 
         Parameters:

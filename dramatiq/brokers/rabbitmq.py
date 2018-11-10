@@ -63,7 +63,7 @@ class RabbitmqBroker(Broker):
         connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
-      \**parameters(dict): The (pika) connection parameters to use to
+      **parameters(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
 
     .. _ConnectionParameters: https://pika.readthedocs.io/en/0.10.0/modules/parameters.html
