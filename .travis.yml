@@ -1,24 +1,33 @@
 language: python
 sudo: required
 python:
-  - "3.5"
-  - "3.6"
-  - "3.6-dev"
-  - "3.7-dev"
-  - "nightly"
+- '3.5'
+- '3.6'
+- 3.6-dev
+- 3.7-dev
+- nightly
 matrix:
   include:
-    - { python: "3.6", env: TOXENV=lint }
-    - { python: "3.6", env: TOXENV=docs }
+  - python: '3.6'
+    env: TOXENV=lint
+  - python: '3.6'
+    env: TOXENV=docs
   allow_failures:
-    - python: "3.6-dev"
-    - python: "3.7-dev"
-    - python: "nightly"
-    - env: TOXENV=docs
+  - python: 3.6-dev
+  - python: 3.7-dev
+  - python: nightly
+  - env: TOXENV=docs
 services:
-  - rabbitmq
-  - redis
+- rabbitmq
+- redis
 install:
-  - pip install '.[dev]' tox-travis
+- pip install '.[dev]' tox-travis
 script:
-  - TRAVIS=1 tox
+- TRAVIS=1 tox
+deploy:
+  provider: pypi
+  user: wiremind-travis
+  password:
+    secure: r0LiEzVwvFkALe0hYeIHxiIgaMWut0uZw0vIqOT8HG5mq8hfRn0Z6oNCBWS+gtPUr2o4Pvokhi+kbSSrpjAo2ygwc1ffSV7FwzEY2F1vTN7LRqMShVQ/kUbVSAJvVjJSwGOhunl6Gnkeg3CkEagYmBQCsabXHE+SNehMeFwK2YMbAgx+c26l2+nCAJrORFjmhqbG9H229WVBz28PgZJByO+h9/r3z/T+7xFqsiNPfEqkqcdGYXw6FOY4zVkWKsCbRzbQUc4zGcOXY2+O7LbOq2DSz55ZUgWFJTZfpUvUET60lK4/k3UQAY52OourjzSm8XwY1gh1Ea3YBNAxfthPdbBJDGn+Y5KCZ8uGbu/d8Qa7vp8AUKE+B/BSux8UoXF4+nJUEQcRExO+ulDl6u4NUrW2G390Ubv84nCe+6H0hKdiiHogvjSmEwW9lWuj6WqYulNx/pRw19Tu4uORXfYQSfUEDhRTxYzx2vmwk4DVh9XY8jpVm41LvxEy0l7IlW7S/czWE4sZvLNtpF6dmyiHZN86uCGCZ/dqjCrKZvw2k0SzxEvqUmZ23yWDXrBUL1jmD4oi8IbiJCOz00DRte7i8jOina95L+32J/Tv22Gr+DuQQIOyj6GvrPJK1J8dxsB0OP9KNqJQvHoLuFK5gzkrPbnN9y5+9d6tosgaAc/NQ8s=
+  on:
+    tags: true
