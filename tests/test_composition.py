@@ -5,7 +5,7 @@ import pytest
 
 import remoulade
 from remoulade import group, pipeline
-from remoulade.results import Results, ResultTimeout, ErrorStored
+from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing
 
 
 def test_messages_can_be_piped(stub_broker):
@@ -233,6 +233,39 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
+@pytest.mark.parametrize("block", [True, False])
+def test_pipelines_forget(stub_broker, backend, result_backends, stub_worker, block):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True, pipe_ignore=True)
+    def do_work():
+        return 42
+
+    # And I've run a pipeline
+    pipe = do_work.message() | do_work.message() | do_work.message()
+    pipe.run()
+
+    # If i wait for the pipeline to be completed
+    if not block:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+    # If i forget the results
+    result = pipe.get_result(block=block, forget=True)
+    assert result == 42
+
+    # All messages have been forgotten
+    for message in pipe.messages:
+        with pytest.raises(ResultMissing):
+            message.get_result()
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]
@@ -343,3 +376,64 @@ def test_groups_expose_completion_stats(stub_broker, stub_worker, backend, resul
 
     # Finally, completed should be true
     assert g.completed
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+@pytest.mark.parametrize("block", [True, False])
+def test_group_forget(stub_broker, backend, result_backends, stub_worker, block):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # And I've run a group
+    messages = [do_work.message() for _ in range(5)]
+    g = group(messages)
+    g.run()
+
+    # If i wait for the group to be completed
+    if not block:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+    # If i forget the results
+    results = g.get_results(block=block, forget=True)
+    assert list(results) == [42] * 5
+
+    # All messages have been forgotten
+    for message in messages:
+        with pytest.raises(ResultMissing):
+            message.get_result()
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_group_wait_forget(stub_broker, backend, result_backends, stub_worker):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # And I've run a group
+    messages = [do_work.message() for _ in range(5)]
+    g = group(messages)
+    g.run()
+
+    # If i forget the results
+    g.wait(forget=True)
+
+    # All messages have been forgotten
+    for message in messages:
+        with pytest.raises(ResultMissing):
+            message.get_result()

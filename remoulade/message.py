@@ -108,7 +108,7 @@ class Message(namedtuple("Message", (
         options.update(updated_options)
         return self._replace(**attributes, options=options)
 
-    def get_result(self, *, backend=None, block=False, timeout=None, raise_on_error=True):
+    def get_result(self, *, backend=None, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the result associated with this message from a result
         backend.
 
@@ -127,6 +127,8 @@ class Message(namedtuple("Message", (
             while waiting for a result.
           raise_on_error(bool): raise an error if the result stored in
             an error
+          forget(bool): if true the result is discarded from the result
+            backend
 
         Raises:
           RuntimeError: If there is no result backend on the default
@@ -147,7 +149,7 @@ class Message(namedtuple("Message", (
             else:
                 raise RuntimeError("The default broker doesn't have a results backend.")
 
-        result = backend.get_result(self, block=block, timeout=timeout)
+        result = backend.get_result(self, block=block, timeout=timeout, forget=forget)
         if result.error:
             if raise_on_error:
                 raise ErrorStored(result.error)

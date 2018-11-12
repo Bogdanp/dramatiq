@@ -55,7 +55,8 @@ class ResultBackend:
         self.namespace = namespace
         self.encoder = encoder or get_encoder()
 
-    def get_result(self, message: "Message", *, block: bool = False, timeout: int = None) -> Result:  # noqa: F821
+    def get_result(self, message: "Message", *, block: bool = False, timeout: int = None,  # noqa: F821
+                   forget: bool = False) -> Result:
         """Get a result from the backend.
 
         Parameters:
@@ -63,6 +64,7 @@ class ResultBackend:
           block(bool): Whether or not to block until a result is set.
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
+          forget(bool): Whether or not the result need to be kept. The
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
@@ -79,7 +81,7 @@ class ResultBackend:
 
         attempts = 0
         while True:
-            result = self._get(message_key)
+            result = self._get(message_key, forget)
             if result is Missing and block:
                 attempts, delay = compute_backoff(attempts, factor=BACKOFF_FACTOR)
                 delay /= 1000
@@ -124,7 +126,7 @@ class ResultBackend:
         }
         return hashlib.md5(message_key.encode("utf-8")).hexdigest()
 
-    def _get(self, message_key: str) -> MResult:  # pragma: no cover
+    def _get(self, message_key: str, forget: bool) -> MResult:  # pragma: no cover
         """Get a result from the backend.  Subclasses may implement
         this method if they want to use the default, polling,
         implementation of get_result.

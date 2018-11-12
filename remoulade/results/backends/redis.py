@@ -46,7 +46,7 @@ class RedisBackend(ResultBackend):
 
         self.client = client or redis.StrictRedis(**parameters)
 
-    def get_result(self, message, *, block=False, timeout=None):
+    def get_result(self, message, *, block=False, timeout=None, forget=False):
         """Get a result from the backend.
 
         Warning:
@@ -57,6 +57,7 @@ class RedisBackend(ResultBackend):
           block(bool): Whether or not to block until a result is set.
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
+          forget(bool): Whether or not the result need to be kept.
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
@@ -69,10 +70,10 @@ class RedisBackend(ResultBackend):
             timeout = DEFAULT_TIMEOUT
 
         message_key = self.build_message_key(message)
-        if block:
-            timeout = int(timeout / 1000)
-            if timeout == 0:
-                data = self.client.rpoplpush(message_key, message_key)
+        timeout = int(timeout / 1000)
+        if block and timeout > 0:
+            if forget:
+                _, data = self.client.brpop(message_key)
             else:
                 data = self.client.brpoplpush(message_key, message_key, timeout)
 
@@ -80,8 +81,15 @@ class RedisBackend(ResultBackend):
                 raise ResultTimeout(message)
 
         else:
-            data = self.client.lindex(message_key, 0)
-            if data is None:
+            if forget:
+                data = self.client.rpop(message_key)
+            else:
+                data = self.client.rpoplpush(message_key, message_key)
+
+        if data is None:
+            if block:
+                raise ResultTimeout(message)
+            else:
                 raise ResultMissing(message)
 
         return Result(**self.encoder.decode(data))

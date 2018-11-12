@@ -11,8 +11,9 @@ class LocalBackend(ResultBackend):
 
     results = {}
 
-    def _get(self, message_key):
+    def _get(self, message_key, _):
         try:
+            # We do not care about the forget parameter here because it's always forgot
             return self.results.pop(message_key)
         except KeyError:
             message = 'The result corresponding to the message %s was not saved (have you set store_result = True)'

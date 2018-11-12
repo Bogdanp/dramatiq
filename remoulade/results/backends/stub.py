@@ -31,8 +31,12 @@ class StubBackend(ResultBackend):
 
     results = {}
 
-    def _get(self, message_key):
-        data, expiration = self.results.get(message_key, (None, None))
+    def _get(self, message_key, forget: bool = False):
+        if forget:
+            data, expiration = self.results.pop(message_key, (None, None))
+        else:
+            data, expiration = self.results.get(message_key, (None, None))
+
         if data is not None and time.monotonic() < expiration:
             return self.encoder.decode(data)
         return Missing

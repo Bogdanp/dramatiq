@@ -8,7 +8,9 @@ from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_actors_can_store_results(stub_broker, stub_worker, backend, result_backends):
+@pytest.mark.parametrize("forget", [True, False])
+@pytest.mark.parametrize("block", [True, False])
+def test_actors_can_store_results(stub_broker, stub_worker, backend, result_backends, forget, block):
     # Given a result backend
     backend = result_backends[backend]
 
@@ -23,18 +25,20 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
     # When I send that actor a message
     message = do_work.send()
 
-    stub_broker.join(do_work.queue_name)
-    stub_worker.join()
-
     # And wait for a result
-    result = message.get_result(block=True)
+    if not block:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+    result = message.get_result(block=block, forget=forget)
 
     # Then the result should be what the actor returned
     assert result == 42
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, backend, result_backends):
+@pytest.mark.parametrize("forget", [True, False])
+def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, backend, result_backends, forget):
     # Given a result backend
     backend = result_backends[backend]
 
@@ -53,11 +57,12 @@ def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, 
     # And get the result without blocking
     # Then a ResultMissing error should be raised
     with pytest.raises(ResultMissing):
-        backend.get_result(message)
+        backend.get_result(message, forget=forget)
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, result_backends):
+@pytest.mark.parametrize("forget", [True, False])
+def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, result_backends, forget):
     # Given a result backend
     backend = result_backends[backend]
 
@@ -76,11 +81,12 @@ def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, res
     # And wait for a result
     # Then a ResultTimeout error should be raised
     with pytest.raises(ResultTimeout):
-        backend.get_result(message, block=True, timeout=100)
+        backend.get_result(message, block=True, timeout=100, forget=forget)
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend, result_backends):
+@pytest.mark.parametrize("forget", [True, False])
+def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend, result_backends, forget):
     # Given a result backend
     backend = result_backends[backend]
 
@@ -97,16 +103,12 @@ def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend
 
     # And wait for a result
     # Then I should get that result back
-    assert message.get_result(backend=backend, block=True) == 42
+    assert message.get_result(backend=backend, block=True, forget=forget) == 42
 
 
-@pytest.mark.parametrize("backend", ["redis"])
-def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, backend, result_backends):
-    # Given a result backend
-    backend = result_backends[backend]
-
+def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, redis_result_backend):
     # And a broker with the results middleware
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=redis_result_backend))
 
     # And an actor that stores a result
     @remoulade.actor(store_results=True)
@@ -159,7 +161,8 @@ def test_result_default_before_retries(stub_broker, backend, result_backends, st
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_raise_on_error(stub_broker, backend, result_backends, stub_worker):
+@pytest.mark.parametrize("block", [True, False])
+def test_raise_on_error(stub_broker, backend, result_backends, stub_worker, block):
     # Given a result backend
     backend = result_backends[backend]
 
@@ -174,17 +177,20 @@ def test_raise_on_error(stub_broker, backend, result_backends, stub_worker):
     # When I send that actor a message
     message = do_work.send()
 
-    stub_broker.join(do_work.queue_name)
-    stub_worker.join()
-
     # And wait for a result
+    if not block:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+    # It should raise an error
     with pytest.raises(ErrorStored) as e:
-        message.get_result(block=True)
+        message.get_result(block=block)
     assert str(e.value) == 'ValueError()'
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_store_errors(stub_broker, backend, result_backends, stub_worker):
+@pytest.mark.parametrize("block", [True, False])
+def test_store_errors(stub_broker, backend, result_backends, stub_worker, block):
     # Given a result backend
     backend = result_backends[backend]
 
@@ -199,11 +205,13 @@ def test_store_errors(stub_broker, backend, result_backends, stub_worker):
     # When I send that actor a message
     message = do_work.send()
 
-    stub_broker.join(do_work.queue_name)
-    stub_worker.join()
-
     # And wait for a result
-    assert message.get_result(block=True, raise_on_error=False) == FAILURE_RESULT
+    if not block:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+    # Then I should get a FAILURE_RESULT
+    assert message.get_result(block=block, raise_on_error=False) == FAILURE_RESULT
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -234,3 +242,33 @@ def test_store_errors_after_no_more_retry(stub_broker, backend, result_backends,
 
     # all the retries have been made
     assert sum(failures) == 4
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+@pytest.mark.parametrize("block", [True, False])
+def test_messages_can_get_results_and_forget(stub_broker, stub_worker, backend, result_backends, block):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores a result
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    if not block:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+    # Then I should get that result back
+    assert message.get_result(block=block, forget=True) == 42
+
+    # If I ask again for the same result it should have been forgotten
+    with pytest.raises(ResultMissing):
+        message.get_result()

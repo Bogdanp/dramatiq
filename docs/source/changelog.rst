@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 
 `Unreleased`_
 -------------
+* |message_get_result| has a forget parameter, if True, the result will be deleted from the result backend when
+retrieved
+* Remove support for memcached
 * Log an error when an exception is raised while processing a message (previously it was a warning)
 
 

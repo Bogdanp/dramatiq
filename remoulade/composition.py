@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+from collections import deque
 
 from .broker import get_broker
 from .results import ResultMissing
@@ -111,7 +112,7 @@ class pipeline:
         self.broker.enqueue(self.messages[0], delay=delay)
         return self
 
-    def get_result(self, *, block=False, timeout=None, raise_on_error=True):
+    def get_result(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the result of this pipeline.
 
         Pipeline results are represented by the result of the last
@@ -123,6 +124,8 @@ class pipeline:
             a result when block is True.  Defaults to 10 seconds.
           raise_on_error(bool): raise an error if the result stored in
             an error
+          forget(bool): if true the result is discarded from the result
+            backend
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
@@ -132,9 +135,12 @@ class pipeline:
         Returns:
           object: The result.
         """
-        return self.messages[-1].get_result(block=block, timeout=timeout, raise_on_error=raise_on_error)
+        if forget:
+            results = list(self.get_results(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=True))
+            return results[-1]
+        return self.messages[-1].get_result(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=False)
 
-    def get_results(self, *, block=False, timeout=None, raise_on_error=True):
+    def get_results(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the results of each job in the pipeline.
 
         Parameters:
@@ -143,6 +149,8 @@ class pipeline:
             a result when block is True.  Defaults to 10 seconds.
           raise_on_error(bool): raise an error if the result stored in
             an error
+          forget(bool): if true the result is discarded from the result
+            backend
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
@@ -160,7 +168,7 @@ class pipeline:
             if deadline:
                 timeout = max(0, int((deadline - time.monotonic()) * 1000))
 
-            yield message.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error)
+            yield message.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
 
 
 class group:
@@ -238,7 +246,7 @@ class group:
 
         return self
 
-    def get_results(self, *, block=False, timeout=None, raise_on_error=True):
+    def get_results(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the results of each job in the group.
 
         Parameters:
@@ -248,6 +256,8 @@ class group:
             seconds.
           raise_on_error(bool): raise an error if the result stored in
             an error
+          forget(bool): if true the result is discarded from the result
+            backend
 
         Raises:
           ResultMissing: When block is False and the results aren't set.
@@ -266,11 +276,12 @@ class group:
                 timeout = max(0, int((deadline - time.monotonic()) * 1000))
 
             if isinstance(child, group):
-                yield list(child.get_results(block=block, timeout=timeout, raise_on_error=raise_on_error))
+                results = child.get_results(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
+                yield list(results)
             else:
-                yield child.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error)
+                yield child.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
 
-    def wait(self, *, timeout=None, raise_on_error=True):
+    def wait(self, *, timeout=None, raise_on_error=True, forget=False):
         """Block until all the jobs in the group have finished or
         until the timeout expires.
 
@@ -279,6 +290,9 @@ class group:
             Defaults to 10 seconds.
           raise_on_error(bool): raise an error if one of the result stored in
             an error
+          forget(bool): if true the result is discarded from the result
+            backend
         """
-        for _ in self.get_results(block=True, timeout=timeout, raise_on_error=raise_on_error):  # pragma: no cover
-            pass
+        iterator = self.get_results(block=True, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
+        # Consume the iterator (https://docs.python.org/3/library/itertools.html#itertools-recipes)
+        deque(iterator, maxlen=0)
