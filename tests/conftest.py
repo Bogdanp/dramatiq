@@ -4,7 +4,6 @@ import random
 import subprocess
 import sys
 
-import pylibmc
 import pytest
 import redis
 
