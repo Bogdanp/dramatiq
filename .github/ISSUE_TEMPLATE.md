@@ -1,6 +1,6 @@
 # Issues
 
-GitHub issues are for bugs.  If you have questions, please ask them on stac.
+GitHub issues are for bugs.  If you have questions, please ask them on stackoverflow.
 
 ## Checklist
 
