@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 
 `Unreleased`_
 -------------
-
+* Log an error when an exception is raised while processing a message (previously it was a warning)
 
 
 `0.2.0`_ -- 2018-11-09
