@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 
 `Unreleased`_
 -------------
+
+
+`0.3.0`_ -- 2018-11-12
+----------------------
+
+Changed
+^^^^^^^
+
 * |message_get_result| has a forget parameter, if True, the result will be deleted from the result backend when
 retrieved
 * Remove support for memcached

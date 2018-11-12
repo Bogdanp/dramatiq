@@ -43,7 +43,7 @@ def build_sitemap(app, exception):
         loc = ET.SubElement(url, "loc")
         lastmod = ET.SubElement(url, "lastmod")
         priority = ET.SubElement(url, "priority")
-        loc.text = "https://remoulade.io/{page}"
+        loc.text = "https://remoulade.readthedocs.io/{page}"
         lastmod.text = mod
         priority.text = "{prio:.02f}"
 

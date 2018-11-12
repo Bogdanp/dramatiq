@@ -3,9 +3,8 @@
 Remoulade: simple task processing
 =================================
 
-Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
+Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Source Code`_)
 
-.. _Discuss: https://discuss.remoulade.io
 .. _Source Code: https://github.com/wiremind/remoulade
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
@@ -96,7 +95,6 @@ Project Info
    Source Code <https://github.com/wiremind/remoulade>
    changelog
    Contributing <https://github.com/wiremind/remoulade/blob/master/CONTRIBUTING.md>
-   Discussion Board <https://discuss.remoulade.io>
    license
 
 

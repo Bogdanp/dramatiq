@@ -1,17 +1,17 @@
-<img src="https://remoulade.io/_static/logo.png" align="right" width="131" />
+<img src="https://remoulade.readthedocs.io/_static/logo.png" align="right" width="131" />
 
 # remoulade
 
 [![Build Status](https://travis-ci.org/wiremind/remoulade.svg?branch=master)](https://travis-ci.org/wiremind/remoulade)
 [![PyPI version](https://badge.fury.io/py/remoulade.svg)](https://badge.fury.io/py/remoulade)
-[![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://remoulade.io)
+[![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://remoulade.readthedocs.io)
 
 *A fast and reliable distributed task processing library for Python 3.*
 
 <hr/>
 
-**Changelog**: https://remoulade.io/changelog.html <br/>
-**Documentation**: https://remoulade.io
+**Changelog**: https://remoulade.readthedocs.io/changelog.html <br/>
+**Documentation**: https://remoulade.readthedocs.io
 
 <hr/>
 
@@ -71,4 +71,4 @@ remoulade is licensed under the LGPL.  Please see [COPYING] and
 [COPYING]: https://github.com/wiremind/remoulade/blob/master/COPYING
 [RabbitMQ]: https://www.rabbitmq.com/
 [Redis]: https://redis.io
-[user guide]: https://remoulade.io/guide.html
+[user guide]: https://remoulade.readthedocs.io/guide.html

@@ -1,6 +1,6 @@
 # Issues
 
-GitHub issues are for bugs.  If you have questions, please ask them on the [discussion board](https://discuss.remoulade.io).
+GitHub issues are for bugs.  If you have questions, please ask them on stac.
 
 ## Checklist
 
