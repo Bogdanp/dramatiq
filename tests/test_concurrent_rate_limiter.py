@@ -6,7 +6,7 @@ import pytest
 from remoulade.rate_limits import ConcurrentRateLimiter, RateLimitExceeded
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_concurrent_rate_limiter_releases_the_lock_after_each_call(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 
@@ -26,7 +26,7 @@ def test_concurrent_rate_limiter_releases_the_lock_after_each_call(backend, rate
     assert calls == 8
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_concurrent_rate_limiter_can_act_as_a_mutex(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 
@@ -56,7 +56,7 @@ def test_concurrent_rate_limiter_can_act_as_a_mutex(backend, rate_limiter_backen
     assert sum(calls) == 1
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_concurrent_rate_limiter_limits_concurrency(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 

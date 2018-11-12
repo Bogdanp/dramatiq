@@ -40,13 +40,6 @@ def check_redis(client):
         raise e if CI else pytest.skip("No connection to Redis server.")
 
 
-def check_memcached(client):
-    try:
-        client.get_stats()
-    except pylibmc.SomeErrors as e:
-        raise e if CI else pytest.skip("No connection to memcached server.")
-
-
 @pytest.fixture()
 def stub_broker():
     broker = StubBroker()
@@ -128,15 +121,6 @@ def start_cli():
 
 
 @pytest.fixture
-def memcached_rate_limiter_backend():
-    backend = rl_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
-    with backend.pool.reserve() as client:
-        check_memcached(client)
-        client.flush_all()
-    return backend
-
-
-@pytest.fixture
 def redis_rate_limiter_backend():
     backend = rl_backends.RedisBackend()
     check_redis(backend.client)
@@ -150,21 +134,11 @@ def stub_rate_limiter_backend():
 
 
 @pytest.fixture
-def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_backend, stub_rate_limiter_backend):
+def rate_limiter_backends(redis_rate_limiter_backend, stub_rate_limiter_backend):
     return {
-        "memcached": memcached_rate_limiter_backend,
         "redis": redis_rate_limiter_backend,
         "stub": stub_rate_limiter_backend,
     }
-
-
-@pytest.fixture
-def memcached_result_backend():
-    backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
-    with backend.pool.reserve() as client:
-        check_memcached(client)
-        client.flush_all()
-    return backend
 
 
 @pytest.fixture
@@ -181,9 +155,8 @@ def stub_result_backend():
 
 
 @pytest.fixture
-def result_backends(memcached_result_backend, redis_result_backend, stub_result_backend):
+def result_backends(redis_result_backend, stub_result_backend):
     return {
-        "memcached": memcached_result_backend,
         "redis": redis_result_backend,
         "stub": stub_result_backend,
     }

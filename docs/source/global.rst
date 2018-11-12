@@ -8,7 +8,6 @@
 .. |GenericActors| replace:: :class:`class-based actors<remoulade.GenericActor>`
 .. |Groups| replace:: :func:`Groups<remoulade.group>`
 .. |Interrupt| replace:: :class:`Interrupt<remoulade.middleware.Interrupt>`
-.. |MemcachedRLBackend| replace:: :class:`Memcached<remoulade.rate_limits.backends.MemcachedBackend>`
 .. |Messages| replace:: :class:`Messages<remoulade.Message>`
 .. |MiddlewareError| replace:: :class:`MiddlewareError<remoulade.middleware.MiddlewareError>`
 .. |Prometheus| replace:: :class:`Prometheus<remoulade.middleware.Prometheus>`
@@ -60,7 +59,6 @@
 
 
 .. _gevent: http://www.gevent.org/
-.. _Memcached: http://memcached.org
 .. _RabbitMQ: https://www.rabbitmq.com
 .. _Redis: https://redis.io
 .. _Dramatiq: https://dramatiq.io

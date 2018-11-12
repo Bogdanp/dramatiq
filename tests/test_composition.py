@@ -43,7 +43,7 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
     assert pipe.messages[3].args == (5,)
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -68,7 +68,7 @@ def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_b
     assert pipe.get_result(block=True) == 1
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -93,7 +93,7 @@ def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_bac
     assert pipe.get_result(block=True) == 1
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -117,7 +117,7 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, re
     assert list(pipe.get_results()) == [3, 6, 10]
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -142,7 +142,7 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
             pass
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -175,7 +175,7 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, re
     assert pipe.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
     # Given that I am not running a worker
     # And I have a result backend
@@ -196,7 +196,7 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
     assert not pipe.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_pipelines_store_results_error(stub_broker, backend, result_backends, stub_worker):
     # Given a result backend
     backend = result_backends[backend]
@@ -232,7 +232,7 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
         assert str(e.value).startswith('ParentFailed')
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]
@@ -261,7 +261,7 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     assert g.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]
@@ -290,7 +290,7 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     assert g.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]
@@ -314,7 +314,7 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     assert not g.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_expose_completion_stats(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]

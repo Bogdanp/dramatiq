@@ -5,7 +5,7 @@ import pytest
 from remoulade.rate_limits import BucketRateLimiter
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_bucket_rate_limiter_limits_per_bucket(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 

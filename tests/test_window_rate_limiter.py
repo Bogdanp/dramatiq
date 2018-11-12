@@ -7,7 +7,7 @@ import pytest
 from remoulade.rate_limits import WindowRateLimiter
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_window_rate_limiter_limits_per_window(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 

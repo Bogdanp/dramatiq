@@ -32,7 +32,6 @@ extra requirements:
 =============  =======================================================================================
 Name           Description
 =============  =======================================================================================
-``memcached``  Installs the required dependencies for the Memcached rate limiter backend.
 ``rabbitmq``   Installs the required dependencies for using Remoulade with RabbitMQ.
 ``redis``      Installs the required dependencies for using Remoulade with Redis.
 ``watch``      Installs the required dependencies for the ``--watch`` flag.

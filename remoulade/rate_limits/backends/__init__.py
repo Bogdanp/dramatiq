@@ -20,14 +20,6 @@ import warnings
 from .stub import StubBackend
 
 try:
-    from .memcached import MemcachedBackend
-except ImportError:  # pragma: no cover
-    warnings.warn(
-        "MemcachedBackend is not available.  Run `pip install remoulade[memcached]` "
-        "to add support for that backend.", ImportWarning,
-    )
-
-try:
     from .redis import RedisBackend
 except ImportError:  # pragma: no cover
     warnings.warn(
@@ -36,4 +28,4 @@ except ImportError:  # pragma: no cover
     )
 
 
-__all__ = ["StubBackend", "MemcachedBackend", "RedisBackend"]
+__all__ = ["StubBackend", "RedisBackend"]

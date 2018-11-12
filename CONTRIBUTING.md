@@ -19,13 +19,11 @@ open an issue and let someone else do that work.
 * If this is your first contribution, add yourself to the [CONTRIBUTORS] file.
 * If your branch is behind master, [rebase] on top of it.
 
-Run the test suite with `tox`.  The tests require running [RabbitMQ],
-[Redis] and [Memcached] servers.
+Run the test suite with `tox`.  The tests require running [RabbitMQ] and [Redis].
 
 [CONTRIBUTORS]: https://github.com/wiremind/remoulade/blob/master/CONTRIBUTORS.md
 [RabbitMQ]: https://www.rabbitmq.com/
 [Redis]: https://redis.io
-[Memcached]: https://memcached.org/
 [isort]: https://github.com/timothycrosley/isort
 [rebase]: https://github.com/edx/edx-platform/wiki/How-to-Rebase-a-Pull-Request
 

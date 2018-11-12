@@ -2,11 +2,11 @@
 
 ## Setup
 
-1. Install [memcached][memcached] and [RabbitMQ][rabbitmq] or [Redis][redis]
+1. Install [RabbitMQ][rabbitmq] and [Redis][redis]
 1. Install Remoulade: `pip install remoulade[rabbitmq]` or `pip install remoulade[redis]`
 1. Install the dependencies: `pip install -r requirements.txt`
 1. Run `redis-server` or `rabbitmq-server` in a terminal window.
-1. In a separate terminal window, run `memcached`.
+1. In a separate terminal window, run `redis-server`.
 
 ## Running the benchmarks
 
@@ -22,6 +22,5 @@ As with any benchmark, take it with a grain of salt.  Remoulade has an
 advantage over Celery in most of these benchmarks by design.
 
 
-[memcached]: https://memcached.org
 [rabbitmq]: https://www.rabbitmq.com
 [redis]: https://redis.io

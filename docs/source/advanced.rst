@@ -52,10 +52,9 @@ recovers) or another worker.
 Message Results
 ^^^^^^^^^^^^^^^
 
-Remoulade can store actor return values to Memcached and Redis by
-leveraging the |Results| middleware.  In most cases you can get by
-without needing this capability so the middleware is not turned on by
-default.  When you do need it, however, it's there.
+Remoulade can store actor return values to Redis by leveraging the |Results| middleware.
+In most cases you can get by without needing this capability so the middleware is not turned on by
+default. When you do need it, however, it's there.
 
 .. _message-interrupts:
 

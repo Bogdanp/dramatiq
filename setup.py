@@ -27,10 +27,6 @@ dependencies = [
 ]
 
 extra_dependencies = {
-    "memcached": [
-        "pylibmc>=1.5,<2.0",
-    ],
-
     "rabbitmq": [
         "pika>=0.12,<0.13",
     ],

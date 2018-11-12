@@ -7,7 +7,7 @@ from remoulade.middleware import Retries
 from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored, FAILURE_RESULT
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_actors_can_store_results(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -33,7 +33,7 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
     assert result == 42
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -56,7 +56,7 @@ def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, 
         backend.get_result(message)
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -79,7 +79,7 @@ def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, backend, res
         backend.get_result(message, block=True, timeout=100)
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -100,7 +100,7 @@ def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend
     assert message.get_result(backend=backend, block=True) == 42
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis"])
+@pytest.mark.parametrize("backend", ["redis"])
 def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
     backend = result_backends[backend]
@@ -136,7 +136,7 @@ def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, st
         message.get_result()
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_result_default_before_retries(stub_broker, backend, result_backends, stub_worker):
     # Given a result backend
     backend = result_backends[backend]
@@ -158,7 +158,7 @@ def test_result_default_before_retries(stub_broker, backend, result_backends, st
     assert retries_index > results_index
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_raise_on_error(stub_broker, backend, result_backends, stub_worker):
     # Given a result backend
     backend = result_backends[backend]
@@ -183,7 +183,7 @@ def test_raise_on_error(stub_broker, backend, result_backends, stub_worker):
     assert str(e.value) == 'ValueError()'
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_store_errors(stub_broker, backend, result_backends, stub_worker):
     # Given a result backend
     backend = result_backends[backend]
@@ -206,7 +206,7 @@ def test_store_errors(stub_broker, backend, result_backends, stub_worker):
     assert message.get_result(block=True, raise_on_error=False) == FAILURE_RESULT
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_store_errors_after_no_more_retry(stub_broker, backend, result_backends, stub_worker):
     # Given that I have a database
     failures = []

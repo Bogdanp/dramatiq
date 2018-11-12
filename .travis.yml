@@ -16,7 +16,6 @@ matrix:
     - python: "nightly"
     - env: TOXENV=docs
 services:
-  - memcached
   - rabbitmq
   - redis
 install:

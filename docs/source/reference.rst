@@ -121,7 +121,6 @@ Backends
 ^^^^^^^^
 
 .. autoclass:: remoulade.results.ResultBackend
-.. autoclass:: remoulade.results.backends.MemcachedBackend
 .. autoclass:: remoulade.results.backends.RedisBackend
 .. autoclass:: remoulade.results.backends.StubBackend
 
@@ -139,7 +138,6 @@ Backends
 Rate limiter backends are used to store metadata about rate limits.
 
 .. autoclass:: remoulade.rate_limits.RateLimiterBackend
-.. autoclass:: remoulade.rate_limits.backends.MemcachedBackend
 .. autoclass:: remoulade.rate_limits.backends.RedisBackend
 .. autoclass:: remoulade.rate_limits.backends.StubBackend
 
