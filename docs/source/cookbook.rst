@@ -399,6 +399,8 @@ add the |Results| middleware to your broker.
    def add(x, y):
      return x + y
 
+   broker.declare_actor(add)
+
    if __name__ == "__main__":
      message = add.send(1, 2)
      print(message.get_result(block=True))
@@ -406,8 +408,39 @@ add the |Results| middleware to your broker.
 Getting a result raises |ResultMissing| when a result hasn't been
 stored yet or if it has already expired (results expire after 10
 minutes by default).  When the ``block`` parameter is ``True``,
-|ResultTimeout| is raised instead.
+|ResultTimeout| is raised instead. When the ``forget`` parameter
+is ``True`` the result will be deleted from the backend when retrieved.
 
+MessageResults
+^^^^^^^^^^^^^^
+.. code-block:: python
+
+   import remoulade
+
+   from remoulade.brokers.rabbitmq import RabbitmqBroker
+   from remoulade.results.backends import RedisBackend
+   from remoulade.results import Results
+   from remoulade.message_result import MessageResult
+
+   result_backend = RedisBackend()
+   broker = RabbitmqBroker()
+   broker.add_middleware(Results(backend=result_backend))
+   remoulade.set_broker(broker)
+
+   @remoulade.actor(store_results=True)
+   def add(x, y):
+     return x + y
+
+   broker.declare_actor(add)
+
+   if __name__ == "__main__":
+     message = add.send(1, 2)
+     message_result = MessageResult(message_id=message.message_id)
+     print(message_result.get_result(block=True))
+
+
+With |MessageResults|, you can get the result of a message even if you only
+have its id.
 
 Scheduling
 ----------

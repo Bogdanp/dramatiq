@@ -15,13 +15,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import hashlib
 import time
 import typing
 
-from ..common import compute_backoff, q_name
+from ..common import compute_backoff
 from ..encoder import Encoder
-from .errors import ResultMissing, ResultTimeout
+from .errors import ErrorStored, ResultMissing, ResultTimeout
 
 #: The default timeout for blocking get operations in milliseconds.
 DEFAULT_TIMEOUT = 10000
@@ -31,6 +30,9 @@ BACKOFF_FACTOR = 100
 
 #: Canary value that is returned when a result hasn't been set yet.
 Missing = type("Missing", (object,), {})()
+
+#: Canary value that is returned when a result is an error and the error is not raised
+FailureResult = type("FailureResult", (object,), {})()
 
 #: A type alias representing backend results.
 Result = typing.NamedTuple("Result", [('result', typing.Any), ('error', typing.Any)])
@@ -55,20 +57,23 @@ class ResultBackend:
         self.namespace = namespace
         self.encoder = encoder or get_encoder()
 
-    def get_result(self, message: "Message", *, block: bool = False, timeout: int = None,  # noqa: F821
-                   forget: bool = False) -> Result:
+    def get_result(self, message_id: str, *, block: bool = False, timeout: int = None,  # noqa: F821
+                   forget: bool = False, raise_on_error: bool = True) -> Result:
         """Get a result from the backend.
 
         Parameters:
-          message(Message)
+          message_id(str)
           block(bool): Whether or not to block until a result is set.
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
-          forget(bool): Whether or not the result need to be kept. The
+          forget(bool): Whether or not the result need to be kept.
+          raise_on_error(bool): raise an error if the result stored in
+            an error
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
           ResultTimeout: When waiting for a result times out.
+          ErrorStored: When the result is an error and raise_on_error is True
 
         Returns:
           object: The result.
@@ -77,7 +82,7 @@ class ResultBackend:
             timeout = DEFAULT_TIMEOUT
 
         end_time = time.monotonic() + timeout / 1000
-        message_key = self.build_message_key(message)
+        message_key = self.build_message_key(message_id)
 
         attempts = 0
         while True:
@@ -86,45 +91,54 @@ class ResultBackend:
                 attempts, delay = compute_backoff(attempts, factor=BACKOFF_FACTOR)
                 delay /= 1000
                 if time.monotonic() + delay > end_time:
-                    raise ResultTimeout(message)
+                    raise ResultTimeout(message_id)
 
                 time.sleep(delay)
                 continue
 
             elif result is Missing:
-                raise ResultMissing(message)
+                raise ResultMissing(message_id)
 
             else:
-                return Result(**result)
+                result = Result(**result)
+                return self.process_result(result, raise_on_error)
 
-    def store_result(self, message: "Message", result: Result, ttl: int) -> None:  # noqa: F821
+    @staticmethod
+    def process_result(result: Result, raise_on_error: bool):
+        """ Raise an error if the result is an error and raise_on_error is true
+
+        Parameters:
+          result(Result): the result retrieved from the backend
+          raise_on_error(boolean): raise an error if the result stored in an error
+        """
+        if result.error:
+            if raise_on_error:
+                raise ErrorStored(result.error)
+            return FailureResult
+        return result.result
+
+    def store_result(self, message_id: str, result: Result, ttl: int) -> None:  # noqa: F821
         """Store a result in the backend.
 
         Parameters:
-          message(Message)
+          message_id(str)
           result(object): Must be serializable.
           ttl(int): The maximum amount of time the result may be
             stored in the backend for.
         """
-        message_key = self.build_message_key(message)
+        message_key = self.build_message_key(message_id)
         return self._store(message_key, result._asdict(), ttl)
 
-    def build_message_key(self, message: "Message") -> str:  # noqa: F821
+    def build_message_key(self, message_id: str) -> str:  # noqa: F821
         """Given a message, return its globally-unique key.
 
         Parameters:
-          message(Message)
+          message_id(str)
 
         Returns:
           str
         """
-        message_key = "%(namespace)s:%(queue_name)s:%(actor_name)s:%(message_id)s" % {
-            "namespace": self.namespace,
-            "queue_name": q_name(message.queue_name),
-            "actor_name": message.actor_name,
-            "message_id": message.message_id,
-        }
-        return hashlib.md5(message_key.encode("utf-8")).hexdigest()
+        return "{}:{}".format(self.namespace, message_id)
 
     def _get(self, message_key: str, forget: bool) -> MResult:  # pragma: no cover
         """Get a result from the backend.  Subclasses may implement

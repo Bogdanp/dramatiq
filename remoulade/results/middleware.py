@@ -78,10 +78,10 @@ class Results(Middleware):
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
 
         if exception is None:
-            self.backend.store_result(message, Result(result=result, error=None), result_ttl)
+            self.backend.store_result(message.message_id, Result(result=result, error=None), result_ttl)
         # If the message will not be retried
         elif message.failed:
-            self.backend.store_result(message, Result(result=None, error=repr(exception)), result_ttl)
+            self.backend.store_result(message.message_id, Result(result=None, error=repr(exception)), result_ttl)
 
             exception = ParentFailed("%s failed because of %s" % (message, repr(exception)))
             self.store_error_children(message, exception, result_ttl)
@@ -93,5 +93,5 @@ class Results(Middleware):
         message_data = message.options.get("pipe_target")
         if message_data is not None:
             next_message = Message(**message_data)
-            self.backend.store_result(next_message, Result(result=None, error=repr(exception)), result_ttl)
+            self.backend.store_result(next_message.message_id, Result(result=None, error=repr(exception)), result_ttl)
             self.store_error_children(next_message, exception, result_ttl)

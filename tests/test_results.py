@@ -3,8 +3,10 @@ import time
 import pytest
 
 import remoulade
+from remoulade import MessageResult
 from remoulade.middleware import Retries
-from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored, FAILURE_RESULT
+from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored
+from remoulade.results.backend import FailureResult
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -115,7 +117,34 @@ def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend
 
     # And wait for a result
     # Then I should get that result back
-    assert message.get_result(backend=backend, block=True, forget=forget) == 42
+    assert message.get_result(block=True, forget=forget) == 42
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_messages_results_can_get_results_from_backend(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores a result
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And create a message result
+    message_result = MessageResult(message_id=message.message_id)
+
+    # And wait for a result
+    # Then I should get that result back
+    assert message_result.get_result(block=True) == 42
 
 
 def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, redis_result_backend):
@@ -234,8 +263,8 @@ def test_store_errors(stub_broker, backend, result_backends, stub_worker, block)
         stub_broker.join(do_work.queue_name)
         stub_worker.join()
 
-    # Then I should get a FAILURE_RESULT
-    assert message.get_result(block=block, raise_on_error=False) == FAILURE_RESULT
+    # Then I should get a FailureResult
+    assert message.get_result(block=block, raise_on_error=False) == FailureResult
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])

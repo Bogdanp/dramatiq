@@ -7,7 +7,9 @@ All notable changes to this project will be documented in this file.
 
 `Unreleased`_
 -------------
-
+* Rename FAILURE_RESULT to |FailureResult| (for consistency)
+* Add |MessageResult| which can be created from a message_id and can be used to retrieved the result of the linked
+message
 
 `0.3.0`_ -- 2018-11-12
 ----------------------
@@ -28,7 +30,7 @@ Changed
 ^^^^^^^
 
 * |Results| now stores errors as well as results and will raise an |ErrorStored| the actor fail
-* |message_get_result| has a raise_on_error parameter, True by default. If False, the method return |FAILURE_RESULT| if
+* |message_get_result| has a raise_on_error parameter, True by default. If False, the method return |FailureResult| if
 there is no Error else raise an |ErrorStored|.
 * |Middleware| have a ``default_before`` and  ``default_after`` to place them by default in the middleware list
 * |Results| needs to be before |Retries|

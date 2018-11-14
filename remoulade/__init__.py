@@ -26,6 +26,7 @@ from .errors import (
 from .generic import GenericActor
 from .logging import get_logger
 from .message import Message, get_encoder, set_encoder
+from .message_result import MessageResult
 from .middleware import Middleware
 from .worker import Worker
 
@@ -53,7 +54,7 @@ __all__ = [
     "get_logger",
 
     # Messages
-    "Message", "get_encoder", "set_encoder",
+    "Message", "get_encoder", "set_encoder", "MessageResult",
 
     # Middlware
     "Middleware",

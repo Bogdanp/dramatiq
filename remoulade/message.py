@@ -22,7 +22,6 @@ from collections import namedtuple
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
-from .results import FAILURE_RESULT, ErrorStored, Results
 
 #: The global encoder instance.
 global_encoder = JSONEncoder()
@@ -108,19 +107,11 @@ class Message(namedtuple("Message", (
         options.update(updated_options)
         return self._replace(**attributes, options=options)
 
-    def get_result(self, *, backend=None, block=False, timeout=None, raise_on_error=True, forget=False):
+    def get_result(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the result associated with this message from a result
         backend.
 
-        Warning:
-          If you use multiple result backends or brokers you should
-          always pass the backend parameter.  This method is only able
-          to infer the result backend off of the default broker.
-
         Parameters:
-          backend(ResultBackend): The result backend to use to get the
-            result.  If omitted, this method will try to find and use
-            the result backend on the default broker instance.
           block(bool): Whether or not to block while waiting for a
             result.
           timeout(int): The maximum amount of time, in ms, to block
@@ -140,21 +131,11 @@ class Message(namedtuple("Message", (
         Returns:
           object: The result.
         """
-        if not backend:
-            broker = get_broker()
-            for middleware in broker.middleware:
-                if isinstance(middleware, Results):
-                    backend = middleware.backend
-                    break
-            else:
-                raise RuntimeError("The default broker doesn't have a results backend.")
+        broker = get_broker()
+        backend = broker.get_result_backend()
 
-        result = backend.get_result(self, block=block, timeout=timeout, forget=forget)
-        if result.error:
-            if raise_on_error:
-                raise ErrorStored(result.error)
-            return FAILURE_RESULT
-        return result.result
+        return backend.get_result(self.message_id, block=block, timeout=timeout, forget=forget,
+                                  raise_on_error=raise_on_error)
 
     def __str__(self):
         return "%s / %s" % (self.actor_name, self.message_id)

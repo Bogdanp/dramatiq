@@ -54,7 +54,8 @@
 .. |ErrorStored| replace:: :class:`ErrorStored<remoulade.results.errors.ErrorStored>`
 .. |message_get_result| replace:: :meth:`get_result<remoulade.message.get_result>`
 .. |Middleware| replace:: :class:`Middleware<remoulade.Middleware>`
-.. |FAILURE_RESULT| replace:: :data:`FAILURE_RESULT<remoulade.results.constants.FAILURE_RESULT>`
+.. |FailureResult| replace:: :class:`FailureResult<remoulade.results.backend.FailureResult>`
+.. |MessageResult| replace:: :class:`MessageResult<remoulade.MessageResult>`
 
 
 

@@ -46,7 +46,7 @@ class RedisBackend(ResultBackend):
 
         self.client = client or redis.StrictRedis(**parameters)
 
-    def get_result(self, message, *, block=False, timeout=None, forget=False):
+    def get_result(self, message, *, block=False, timeout=None, forget=False, raise_on_error=True):
         """Get a result from the backend.
 
         Warning:
@@ -58,6 +58,8 @@ class RedisBackend(ResultBackend):
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
           forget(bool): Whether or not the result need to be kept.
+          raise_on_error(bool): raise an error if the result stored in
+            an error
 
         Raises:
           ResultMissing: When block is False and the result isn't set.
@@ -92,7 +94,8 @@ class RedisBackend(ResultBackend):
             else:
                 raise ResultMissing(message)
 
-        return Result(**self.encoder.decode(data))
+        result = Result(**self.encoder.decode(data))
+        return self.process_result(result, raise_on_error)
 
     def _store(self, message_key, result, ttl):
         with self.client.pipeline() as pipe:
