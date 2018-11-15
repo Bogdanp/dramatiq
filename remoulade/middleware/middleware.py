@@ -114,6 +114,10 @@ class Middleware:
         """Called immediately after subprocess start up.
         """
 
+    def before_process_stop(self, broker):
+        """Called before after subprocess stop.
+        """
+
     def before_worker_boot(self, broker, worker):
         """Called before the worker process starts up.
         """

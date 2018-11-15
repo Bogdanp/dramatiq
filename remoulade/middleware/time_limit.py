@@ -66,7 +66,8 @@ class TimeLimit(Middleware):
     def actor_options(self):
         return {"time_limit"}
 
-    def after_process_boot(self, broker):
+    def after_process_boot(self, _):
+        # Used because only the main thread can set a signal handler
         self.logger.debug("Setting up timers...")
         signal.setitimer(signal.ITIMER_REAL, self.interval / 1000, self.interval / 1000)
         signal.signal(signal.SIGALRM, self._handle)
@@ -74,6 +75,10 @@ class TimeLimit(Middleware):
         if current_platform not in supported_platforms:  # pragma: no cover
             msg = "TimeLimit cannot kill threads on your current platform (%r)."
             warnings.warn(msg % current_platform, category=RuntimeWarning, stacklevel=2)
+
+    def before_process_stop(self, _):
+        self.logger.debug("Clear timers...")
+        signal.setitimer(signal.ITIMER_REAL, 0)
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)

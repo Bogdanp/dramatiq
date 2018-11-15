@@ -261,6 +261,7 @@ def worker_process(args, worker_id, logging_fd):
         time.sleep(1)
 
     worker.stop()
+    broker.emit_before("process_stop")
     broker.close()
     logging_pipe.close()
 

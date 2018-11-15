@@ -7,9 +7,21 @@ All notable changes to this project will be documented in this file.
 
 `Unreleased`_
 -------------
+Changed
+^^^^^^^
+
 * Rename FAILURE_RESULT to |FailureResult| (for consistency)
+
+Added
+^^^^^
+
 * Add |MessageResult| which can be created from a message_id and can be used to retrieved the result of the linked
 message
+
+Fixed
+^^^^^
+
+* Clear timer on before_process_stop
 
 `0.3.0`_ -- 2018-11-12
 ----------------------

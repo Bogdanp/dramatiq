@@ -46,6 +46,7 @@ def stub_broker():
     remoulade.set_broker(broker)
     yield broker
     broker.flush_all()
+    broker.emit_before("process_stop")
     broker.close()
 
 
@@ -57,6 +58,7 @@ def rabbitmq_broker():
     remoulade.set_broker(broker)
     yield broker
     broker.flush_all()
+    broker.emit_before("process_stop")
     broker.close()
 
 
@@ -67,6 +69,7 @@ def local_broker():
     remoulade.set_broker(broker)
     yield broker
     broker.flush_all()
+    broker.emit_before("process_stop")
     broker.close()
 
 
