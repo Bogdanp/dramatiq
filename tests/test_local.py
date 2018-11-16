@@ -32,7 +32,7 @@ def test_local_broker_get_result_in_message(local_broker):
     message = do_work.send()
 
     # I should get the right result
-    assert message.get_result() == 1
+    assert message.result.get() == 1
 
 
 def test_local_broker_with_pipes(local_broker):
@@ -49,7 +49,7 @@ def test_local_broker_with_pipes(local_broker):
     pipe.run()
 
     # I should get the right result
-    assert pipe.get_result() == 6
+    assert pipe.result.get() == 6
 
 
 def test_local_broker_with_groups(local_broker):
@@ -65,4 +65,4 @@ def test_local_broker_with_groups(local_broker):
     g = group([add.message(1, 2), add.message(3, 4), add.message(4, 5)])
     g.run()
 
-    assert list(g.get_results()) == [3, 7, 9]
+    assert list(g.results.get()) == [3, 7, 9]

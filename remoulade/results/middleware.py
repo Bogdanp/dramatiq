@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from ..logging import get_logger
 from ..middleware import Middleware, Retries
-from .backend import Result
+from .backend import BackendResult
 from .errors import ParentFailed
 
 #: The maximum amount of milliseconds results are allowed to exist in
@@ -38,8 +38,9 @@ class Results(Middleware):
       ... def add(x, y):
       ...   return x + y
 
+      >>> broker.declare_actor(add)
       >>> message = add.send(1, 2)
-      >>> message.get_result(backend=backend)
+      >>> message.result.get()
       3
 
     Parameters:
@@ -78,10 +79,10 @@ class Results(Middleware):
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
 
         if exception is None:
-            self.backend.store_result(message.message_id, Result(result=result, error=None), result_ttl)
+            self.backend.store_result(message.message_id, BackendResult(result=result, error=None), result_ttl)
         # If the message will not be retried
         elif message.failed:
-            self.backend.store_result(message.message_id, Result(result=None, error=repr(exception)), result_ttl)
+            self.backend.store_result(message.message_id, BackendResult(result=None, error=repr(exception)), result_ttl)
 
             exception = ParentFailed("%s failed because of %s" % (message, repr(exception)))
             self.store_error_children(message, exception, result_ttl)
@@ -93,5 +94,5 @@ class Results(Middleware):
         message_data = message.options.get("pipe_target")
         if message_data is not None:
             next_message = Message(**message_data)
-            self.backend.store_result(next_message.message_id, Result(result=None, error=repr(exception)), result_ttl)
+            self.backend.store_result(next_message.message_id, BackendResult(result=None, error=repr(exception)), result_ttl)
             self.store_error_children(next_message, exception, result_ttl)

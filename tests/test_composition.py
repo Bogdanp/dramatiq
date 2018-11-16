@@ -4,7 +4,7 @@ from threading import Condition
 import pytest
 
 import remoulade
-from remoulade import group, pipeline
+from remoulade import group, pipeline, PipelineResult, GroupResults
 from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing
 
 
@@ -27,6 +27,7 @@ def test_messages_can_be_piped(stub_broker):
     assert pipe.messages[0].options["pipe_target"] == pipe.messages[1].asdict()
     assert pipe.messages[1].options["pipe_target"] == pipe.messages[2].asdict()
     assert "pipe_target" not in pipe.messages[2].options
+    assert isinstance(pipe.result, PipelineResult)
 
 
 def test_pipelines_flatten_child_pipelines(stub_broker):
@@ -75,7 +76,7 @@ def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_b
     pipe = do_nothing.message() | pipe_ignored.message_with_options(pipe_ignore=True)
     pipe.run()
 
-    assert pipe.get_result(block=True) == 1
+    assert pipe.result.get(block=True) == 1
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -104,7 +105,7 @@ def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_bac
     pipe = do_nothing.message() | pipe_ignored.message()
     pipe.run()
 
-    assert pipe.get_result(block=True) == 1
+    assert pipe.result.get(block=True) == 1
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -128,10 +129,10 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, re
     pipe.run()
 
     # Then the pipeline result should be the sum of 1, 2, 3 and 4
-    assert pipe.get_result(block=True) == 10
+    assert pipe.result.get(block=True) == 10
 
     # And I should be able to retrieve individual results
-    assert list(pipe.get_results()) == [3, 6, 10]
+    assert list(pipe.result.get_all()) == [3, 6, 10]
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -158,7 +159,7 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
     # And get the results with a lower timeout than the tasks can complete in
     # Then a ResultTimeout error should be raised
     with pytest.raises(ResultTimeout):
-        for _ in pipe.get_results(block=True, timeout=1000):
+        for _ in pipe.result.get_all(block=True, timeout=1000):
             pass
 
 
@@ -192,10 +193,10 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, re
         with condition:
             condition.wait(2)
             time.sleep(0.1)  # give the worker time to set the result
-            assert pipe.completed_count == count
+            assert pipe.result.completed_count == count
 
     # Finally, completed should be true
-    assert pipe.completed
+    assert pipe.result.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -219,7 +220,7 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
 
     # When I check if the pipeline has completed
     # Then it should return False
-    assert not pipe.completed
+    assert not pipe.result.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -253,12 +254,12 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
 
     # I get an error
     with pytest.raises(ErrorStored) as e:
-        pipe.messages[0].get_result(block=True)
+        pipe.messages[0].result.get(block=True)
     assert str(e.value) == 'ValueError()'
 
     for i in [1, 2]:
         with pytest.raises(ErrorStored) as e:
-            pipe.messages[i].get_result(block=True)
+            pipe.messages[i].result.get(block=True)
         assert str(e.value).startswith('ParentFailed')
 
 
@@ -289,13 +290,13 @@ def test_pipelines_forget(stub_broker, backend, result_backends, stub_worker, bl
         stub_worker.join()
 
     # If i forget the results
-    result = pipe.get_result(block=block, forget=True)
+    result = pipe.result.get(block=block, forget=True)
     assert result == 42
 
     # All messages have been forgotten
     for message in pipe.messages:
         with pytest.raises(ResultMissing):
-            message.get_result()
+            message.result.get()
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -318,7 +319,7 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     g.run()
 
     # And wait on the group to complete
-    results = list(g.get_results(block=True))
+    results = list(g.results.get(block=True))
 
     # Then the total elapsed time should be less than 500ms
     assert time.monotonic() - t <= 0.5
@@ -327,7 +328,8 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     assert len(results) == len(g)
 
     # And the group should be completed
-    assert g.completed
+    assert g.results.completed
+    assert isinstance(g.results, GroupResults)
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -350,7 +352,7 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     g.run()
 
     # And wait on the group to complete
-    results = list(g.get_results(block=True))
+    results = list(g.results.get(block=True))
 
     # Then the total elapsed time should be less than 500ms
     assert time.monotonic() - t <= 0.5
@@ -359,7 +361,7 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     assert results == [[None, None]] * 3
 
     # And the group should be completed
-    assert g.completed
+    assert g.results.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -383,10 +385,10 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     # And wait for the group to complete with a timeout
     # Then a ResultTimeout error should be raised
     with pytest.raises(ResultTimeout):
-        g.wait(timeout=100)
+        g.results.wait(timeout=100)
 
     # And the group should not be completed
-    assert not g.completed
+    assert not g.results.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -417,10 +419,10 @@ def test_groups_expose_completion_stats(stub_broker, stub_worker, backend, resul
         with condition:
             condition.wait(5)
             time.sleep(0.1)  # give the worker time to set the result
-            assert g.completed_count == count
+            assert g.results.completed_count == count
 
     # Finally, completed should be true
-    assert g.completed
+    assert g.results.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -451,13 +453,13 @@ def test_group_forget(stub_broker, backend, result_backends, stub_worker, block)
         stub_worker.join()
 
     # If i forget the results
-    results = g.get_results(block=block, forget=True)
+    results = g.results.get(block=block, forget=True)
     assert list(results) == [42] * 5
 
     # All messages have been forgotten
     for message in messages:
         with pytest.raises(ResultMissing):
-            message.get_result()
+            message.result.get()
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -482,9 +484,9 @@ def test_group_wait_forget(stub_broker, backend, result_backends, stub_worker):
     g.run()
 
     # If i forget the results
-    g.wait(forget=True)
+    g.results.wait(forget=True)
 
     # All messages have been forgotten
     for message in messages:
         with pytest.raises(ResultMissing):
-            message.get_result()
+            message.result.get()

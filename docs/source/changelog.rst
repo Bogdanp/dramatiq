@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`0.5.0`_ -- 2018-11-15
+----------------------
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Added property result to |Message| (type: |Result|), and |pipeline| (type: |PipelineResult|) and results to |group|
+ (type: |GroupResults|). These new Class get the all result linked logic (get instead of get_result)
+* Rename MessageResult to |Result|
+* Removed get_results from |Message|, |group| and |pipeline| (and all results related methods like completed_count, .
+..). Use the new result property for |Message| and |pipeline|, and results for |group|.
+
 `0.4.0`_ -- 2018-11-15
 ----------------------
 
@@ -19,7 +30,7 @@ Changed
 Added
 ^^^^^
 
-* Add |MessageResult| which can be created from a message_id and can be used to retrieved the result of the linked
+* Add MessageResult which can be created from a message_id and can be used to retrieved the result of the linked
 message
 
 Fixed

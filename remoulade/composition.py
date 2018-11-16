@@ -14,12 +14,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-import time
-from collections import deque
-
 from .broker import get_broker
-from .results import ResultMissing
+from .composition_result import GroupResults, PipelineResult
 
 
 class pipeline:
@@ -37,12 +33,16 @@ class pipeline:
     def __init__(self, children, *, broker=None):
         self.broker = broker or get_broker()
         self.messages = messages = []
+        self._results = []
 
         for child in children:
             if isinstance(child, pipeline):
-                messages.extend(message.copy() for message in child.messages)
+                for message in child.messages:
+                    messages.append(message.copy())
+                    self._results.append(message.result)
             else:
                 messages.append(child.copy())
+                self._results.append(child.result)
 
         for message, next_message in zip(messages, messages[1:]):
             message.options["pipe_target"] = next_message.asdict()
@@ -60,45 +60,6 @@ class pipeline:
     def __str__(self):  # pragma: no cover
         return "pipeline([%s])" % ", ".join(str(m) for m in self.messages)
 
-    @property
-    def completed(self):
-        """Returns True when all the jobs in the pipeline have been
-        completed.  This will always return False if the last actor in
-        the pipeline doesn't store results.
-
-       Raises:
-          RuntimeError: If your broker doesn't have a result backend
-            set up.
-        """
-        try:
-            self.messages[-1].get_result()
-
-            return True
-        except ResultMissing:
-            return False
-
-    @property
-    def completed_count(self):
-        """Returns the total number of jobs that have been completed.
-        Actors that don't store results are not counted, meaning this
-        may be inaccurate if all or some of your actors don't store
-        results.
-
-        Raises:
-          RuntimeError: If your broker doesn't have a result backend
-            set up.
-
-        Returns:
-          int: The total number of results.
-        """
-        for count, message in enumerate(self.messages, start=1):
-            try:
-                message.get_result()
-            except ResultMissing:
-                return count - 1
-
-        return count
-
     def run(self, *, delay=None):
         """Run this pipeline.
 
@@ -112,63 +73,10 @@ class pipeline:
         self.broker.enqueue(self.messages[0], delay=delay)
         return self
 
-    def get_result(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
-        """Get the result of this pipeline.
-
-        Pipeline results are represented by the result of the last
-        message in the chain.
-
-        Parameters:
-          block(bool): Whether or not to block until a result is set.
-          timeout(int): The maximum amount of time, in ms, to wait for
-            a result when block is True.  Defaults to 10 seconds.
-          raise_on_error(bool): raise an error if the result stored in
-            an error
-          forget(bool): if true the result is discarded from the result
-            backend
-
-        Raises:
-          ResultMissing: When block is False and the result isn't set.
-          ResultTimeout: When waiting for a result times out.
-          ErrorStored: When the result is an error and raise_on_error is True
-
-        Returns:
-          object: The result.
-        """
-        if forget:
-            results = list(self.get_results(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=True))
-            return results[-1]
-        return self.messages[-1].get_result(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=False)
-
-    def get_results(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
-        """Get the results of each job in the pipeline.
-
-        Parameters:
-          block(bool): Whether or not to block until a result is set.
-          timeout(int): The maximum amount of time, in ms, to wait for
-            a result when block is True.  Defaults to 10 seconds.
-          raise_on_error(bool): raise an error if the result stored in
-            an error
-          forget(bool): if true the result is discarded from the result
-            backend
-
-        Raises:
-          ResultMissing: When block is False and the result isn't set.
-          ResultTimeout: When waiting for a result times out.
-          ErrorStored: When the result is an error and raise_on_error is True
-
-        Returns:
-          A result generator.
-        """
-        deadline = None
-        if timeout:
-            deadline = time.monotonic() + timeout / 1000
-
-        for message in self.messages:
-            if deadline:
-                timeout = max(0, int((deadline - time.monotonic()) * 1000))
-
-            yield message.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
+    @property
+    def result(self):
+        """ PipelineResult created from this pipeline, used for result related methods"""
+        return PipelineResult(self._results)
 
 
 class group:
@@ -193,44 +101,6 @@ class group:
     def __str__(self):  # pragma: no cover
         return "group([%s])" % ", ".join(str(c) for c in self.children)
 
-    @property
-    def completed(self):
-        """Returns True when all the jobs in the group have been
-        completed.  Actors that don't store results are not counted,
-        meaning this may be inaccurate if all or some of your actors
-        don't store results.
-
-        Raises:
-          RuntimeError: If your broker doesn't have a result backend
-            set up.
-        """
-        return self.completed_count == len(self)
-
-    @property
-    def completed_count(self):
-        """Returns the total number of jobs that have been completed.
-        Actors that don't store results are not counted, meaning this
-        may be inaccurate if all or some of your actors don't store
-        results.
-
-        Raises:
-          RuntimeError: If your broker doesn't have a result backend
-            set up.
-
-        Returns:
-          int: The total number of results.
-        """
-        for count, child in enumerate(self.children, start=1):
-            try:
-                if isinstance(child, group):
-                    child.get_results()
-                else:
-                    child.get_result()
-            except ResultMissing:
-                return count - 1
-
-        return count
-
     def run(self, *, delay=None):
         """Run the actors in this group.
 
@@ -246,53 +116,13 @@ class group:
 
         return self
 
-    def get_results(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
-        """Get the results of each job in the group.
-
-        Parameters:
-          block(bool): Whether or not to block until the results are stored.
-          timeout(int): The maximum amount of time, in milliseconds,
-            to wait for results when block is True.  Defaults to 10
-            seconds.
-          raise_on_error(bool): raise an error if the result stored in
-            an error
-          forget(bool): if true the result is discarded from the result
-            backend
-
-        Raises:
-          ResultMissing: When block is False and the results aren't set.
-          ResultTimeout: When waiting for results times out.
-          ErrorStored: When the result is an error and raise_on_error is True
-
-        Returns:
-          A result generator.
-        """
-        deadline = None
-        if timeout:
-            deadline = time.monotonic() + timeout / 1000
-
+    @property
+    def results(self):
+        """ GroupResults created from this group, used for result related methods"""
+        children = []
         for child in self.children:
-            if deadline:
-                timeout = max(0, int((deadline - time.monotonic()) * 1000))
-
             if isinstance(child, group):
-                results = child.get_results(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
-                yield list(results)
+                children.append(child.results)
             else:
-                yield child.get_result(block=block, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
-
-    def wait(self, *, timeout=None, raise_on_error=True, forget=False):
-        """Block until all the jobs in the group have finished or
-        until the timeout expires.
-
-        Parameters:
-          timeout(int): The maximum amount of time, in ms, to wait.
-            Defaults to 10 seconds.
-          raise_on_error(bool): raise an error if one of the result stored in
-            an error
-          forget(bool): if true the result is discarded from the result
-            backend
-        """
-        iterator = self.get_results(block=True, timeout=timeout, raise_on_error=raise_on_error, forget=forget)
-        # Consume the iterator (https://docs.python.org/3/library/itertools.html#itertools-recipes)
-        deque(iterator, maxlen=0)
+                children.append(child.result)
+        return GroupResults(children=children)

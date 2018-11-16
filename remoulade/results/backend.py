@@ -35,10 +35,10 @@ Missing = type("Missing", (object,), {})()
 FailureResult = type("FailureResult", (object,), {})()
 
 #: A type alias representing backend results.
-Result = typing.NamedTuple("Result", [('result', typing.Any), ('error', typing.Any)])
+BackendResult = typing.NamedTuple("Result", [('result', typing.Any), ('error', typing.Any)])
 
 #: A union representing a Result that may or may not be there.
-MResult = typing.Union[type(Missing), Result]
+MResult = typing.Union[type(Missing), BackendResult]
 
 
 class ResultBackend:
@@ -58,7 +58,7 @@ class ResultBackend:
         self.encoder = encoder or get_encoder()
 
     def get_result(self, message_id: str, *, block: bool = False, timeout: int = None,  # noqa: F821
-                   forget: bool = False, raise_on_error: bool = True) -> Result:
+                   forget: bool = False, raise_on_error: bool = True) -> BackendResult:
         """Get a result from the backend.
 
         Parameters:
@@ -100,11 +100,11 @@ class ResultBackend:
                 raise ResultMissing(message_id)
 
             else:
-                result = Result(**result)
+                result = BackendResult(**result)
                 return self.process_result(result, raise_on_error)
 
     @staticmethod
-    def process_result(result: Result, raise_on_error: bool):
+    def process_result(result: BackendResult, raise_on_error: bool):
         """ Raise an error if the result is an error and raise_on_error is true
 
         Parameters:
@@ -117,7 +117,7 @@ class ResultBackend:
             return FailureResult
         return result.result
 
-    def store_result(self, message_id: str, result: Result, ttl: int) -> None:  # noqa: F821
+    def store_result(self, message_id: str, result: BackendResult, ttl: int) -> None:  # noqa: F821
         """Store a result in the backend.
 
         Parameters:

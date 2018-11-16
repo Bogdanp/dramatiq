@@ -78,7 +78,7 @@ the whole group to finish::
 
 Or you can iterate over the results::
 
-  for res in g.get_results(block=True, timeout=5_000):
+  for res in g.results.get(block=True, timeout=5_000):
     ...
 
 Results are returned in the same order that the messages were added to
@@ -130,14 +130,14 @@ Here, the result of ``bust_caches()`` will not be passed to
 ``prepare_codes()``, but the result of ``prepare_codes()`` will be
 passed to ``launch_missiles(codes)``.  To get the end result of a
 pipeline -- that is, the result of the last actor in the pipeline --
-you can call |pipeline_get_result|::
+you can call |pipeline_result_get|::
 
-  pipe.get_result(block=True, timeout=5_000)
+  pipe.result.get(block=True, timeout=5_000)
 
 To get the intermediate results of each step in the pipeline, you can
-call |pipeline_get_results|::
+call |pipeline_result_get_all|::
 
-  for res in pipe.get_results(block=True):
+  for res in pipe.result.get_all(block=True):
     ...
 
 
@@ -403,7 +403,7 @@ add the |Results| middleware to your broker.
 
    if __name__ == "__main__":
      message = add.send(1, 2)
-     print(message.get_result(block=True))
+     print(message.result.get(block=True))
 
 Getting a result raises |ResultMissing| when a result hasn't been
 stored yet or if it has already expired (results expire after 10
@@ -411,8 +411,8 @@ minutes by default).  When the ``block`` parameter is ``True``,
 |ResultTimeout| is raised instead. When the ``forget`` parameter
 is ``True`` the result will be deleted from the backend when retrieved.
 
-MessageResults
-^^^^^^^^^^^^^^
+Result
+^^^^^^
 .. code-block:: python
 
    import remoulade
@@ -435,12 +435,12 @@ MessageResults
 
    if __name__ == "__main__":
      message = add.send(1, 2)
-     message_result = MessageResult(message_id=message.message_id)
-     print(message_result.get_result(block=True))
+     result = Result(message_id=message.message_id)
+     print(result.get(block=True))
 
 
-With |MessageResults|, you can get the result of a message even if you only
-have its id.
+The property result of |Message| return a |Result| instance which can be used to get the result.
+But you can also create a |Result| from a message_id and access to the result the same way.
 
 Scheduling
 ----------

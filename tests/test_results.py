@@ -3,7 +3,7 @@ import time
 import pytest
 
 import remoulade
-from remoulade import MessageResult
+from remoulade import Result
 from remoulade.middleware import Retries
 from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored
 from remoulade.results.backend import FailureResult
@@ -35,7 +35,8 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
         stub_broker.join(do_work.queue_name)
         stub_worker.join()
 
-    result = message.get_result(block=block, forget=forget)
+    result = message.result.get(block=block, forget=forget)
+    assert isinstance(message.result, Result)
 
     # Then the result should be what the actor returned
     assert result == 42
@@ -117,7 +118,7 @@ def test_messages_can_get_results_from_backend(stub_broker, stub_worker, backend
 
     # And wait for a result
     # Then I should get that result back
-    assert message.get_result(block=True, forget=forget) == 42
+    assert message.result.get(block=True, forget=forget) == 42
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -140,11 +141,11 @@ def test_messages_results_can_get_results_from_backend(stub_broker, stub_worker,
     message = do_work.send()
 
     # And create a message result
-    message_result = MessageResult(message_id=message.message_id)
+    result = Result(message_id=message.message_id)
 
     # And wait for a result
     # Then I should get that result back
-    assert message_result.get_result(block=True) == 42
+    assert result.get(block=True) == 42
 
 
 def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, redis_result_backend):
@@ -164,7 +165,7 @@ def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker
 
     # And wait for a result
     # Then I should get that result back
-    assert message.get_result(block=True) == 42
+    assert message.result.get(block=True) == 42
 
 
 def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):
@@ -182,7 +183,7 @@ def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, st
     # And wait for a result
     # Then I should get a RuntimeError back
     with pytest.raises(RuntimeError):
-        message.get_result()
+        message.result.get()
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -234,7 +235,7 @@ def test_raise_on_error(stub_broker, backend, result_backends, stub_worker, bloc
 
     # It should raise an error
     with pytest.raises(ErrorStored) as e:
-        message.get_result(block=block)
+        message.result.get(block=block)
     assert str(e.value) == 'ValueError()'
 
 
@@ -264,7 +265,7 @@ def test_store_errors(stub_broker, backend, result_backends, stub_worker, block)
         stub_worker.join()
 
     # Then I should get a FailureResult
-    assert message.get_result(block=block, raise_on_error=False) == FailureResult
+    assert message.result.get(block=block, raise_on_error=False) == FailureResult
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -293,7 +294,7 @@ def test_store_errors_after_no_more_retry(stub_broker, backend, result_backends,
 
     # I get an error
     with pytest.raises(Exception) as e:
-        message.get_result(block=True)
+        message.result.get(block=True)
     assert str(e.value) == 'ValueError()'
 
     # all the retries have been made
@@ -326,8 +327,8 @@ def test_messages_can_get_results_and_forget(stub_broker, stub_worker, backend, 
         stub_worker.join()
 
     # Then I should get that result back
-    assert message.get_result(block=block, forget=True) == 42
+    assert message.result.get(block=block, forget=True) == 42
 
     # If I ask again for the same result it should have been forgotten
     with pytest.raises(ResultMissing):
-        message.get_result()
+        message.result.get()

@@ -35,7 +35,7 @@ def main(args):
         ))
 
     for message in messages:
-        print(message.get_result(block=True))
+        print(message.result.get(block=True))
 
 
 if __name__ == "__main__":

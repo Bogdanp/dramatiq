@@ -18,6 +18,7 @@
 from .actor import Actor, actor
 from .broker import Broker, Consumer, MessageProxy, change_broker, get_broker, set_broker
 from .composition import group, pipeline
+from .composition_result import GroupResults, PipelineResult
 from .encoder import Encoder, JSONEncoder, PickleEncoder
 from .errors import (
     ActorNotFound, BrokerError, ConnectionClosed, ConnectionError, ConnectionFailed, QueueJoinTimeout, QueueNotFound,
@@ -26,8 +27,8 @@ from .errors import (
 from .generic import GenericActor
 from .logging import get_logger
 from .message import Message, get_encoder, set_encoder
-from .message_result import MessageResult
 from .middleware import Middleware
+from .result import Result
 from .worker import Worker
 
 __all__ = [
@@ -38,7 +39,7 @@ __all__ = [
     "Broker", "Consumer", "MessageProxy", "get_broker", "set_broker", "change_broker",
 
     # Composition
-    "group", "pipeline",
+    "group", "pipeline", "GroupResults", "PipelineResult",
 
     # Encoding
     "Encoder", "JSONEncoder", "PickleEncoder",
@@ -54,7 +55,7 @@ __all__ = [
     "get_logger",
 
     # Messages
-    "Message", "get_encoder", "set_encoder", "MessageResult",
+    "Message", "get_encoder", "set_encoder", "Result",
 
     # Middlware
     "Middleware",

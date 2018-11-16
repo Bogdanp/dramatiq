@@ -17,7 +17,7 @@
 
 import redis
 
-from ..backend import DEFAULT_TIMEOUT, Result, ResultBackend, ResultMissing, ResultTimeout
+from ..backend import DEFAULT_TIMEOUT, BackendResult, ResultBackend, ResultMissing, ResultTimeout
 
 
 class RedisBackend(ResultBackend):
@@ -94,7 +94,7 @@ class RedisBackend(ResultBackend):
             else:
                 raise ResultMissing(message)
 
-        result = Result(**self.encoder.decode(data))
+        result = BackendResult(**self.encoder.decode(data))
         return self.process_result(result, raise_on_error)
 
     def _store(self, message_key, result, ttl):

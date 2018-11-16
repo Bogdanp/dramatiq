@@ -16,22 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 
-from remoulade import get_broker
+from .broker import get_broker
 
 
-class MessageResult(namedtuple("MessageResult", ("message_id",))):
+class Result(namedtuple("Result", ("message_id",))):
     """Encapsulates metadata needed to retrieve the result of a message
 
-    Parameters:
-      message_id(str): The id of the message sent to the broker.
-    """
+        Parameters:
+          message_id(str): The id of the message sent to the broker.
+        """
 
     def __new__(cls, *, message_id=None):
         return super().__new__(cls, message_id=message_id)
 
-    def get_result(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
-        """Get the result associated with this message from a result
-        backend.
+    def get(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
+        """Get the result associated with a message_id from a result backend.
 
         Parameters:
           block(bool): Whether or not to block while waiting for a
