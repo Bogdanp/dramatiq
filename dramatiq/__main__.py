@@ -17,7 +17,7 @@
 
 import sys
 
-from dramatiq.cli import main
+from dramatiq.cli import entrypoint
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(entrypoint())
