@@ -16,8 +16,8 @@ Breaking Changes
 * Added property result to |Message| (type: |Result|), and |pipeline| (type: |PipelineResult|) and results to |group|
  (type: |GroupResults|). These new Class get the all result linked logic (get instead of get_result)
 * Rename MessageResult to |Result|
-* Removed get_results from |Message|, |group| and |pipeline| (and all results related methods like completed_count, .
-..). Use the new result property for |Message| and |pipeline|, and results for |group|.
+* Removed get_results from |Message|, |group| and |pipeline| (and all results related methods
+like completed_count, ...). Use the new result property for |Message| and |pipeline|, and results for |group|.
 
 `0.4.0`_ -- 2018-11-15
 ----------------------
@@ -85,7 +85,8 @@ Fixed
 
 * pipe_ignore was not recovered from right message
 
-.. _Unreleased: https://github.com/wiremind/remoulade/compare/v0.4.0...HEAD
+.. _Unreleased: https://github.com/wiremind/remoulade/compare/v0.5.0...HEAD
+.. _0.5.0: https://github.com/wiremind/remoulade/releases/tag/v0.5.0
 .. _0.4.0: https://github.com/wiremind/remoulade/releases/tag/v0.4.0
 .. _0.3.0: https://github.com/wiremind/remoulade/releases/tag/v0.3.0
 .. _0.2.0: https://github.com/wiremind/remoulade/releases/tag/v0.2.0
