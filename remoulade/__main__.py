@@ -116,6 +116,13 @@ def parse_arguments():
         help="the number of worker threads per process (default: 8)",
     )
     parser.add_argument(
+        "--prefetch-multiplier", default=2, type=int,
+        help="""
+            the number of messages to prefetch at a time to be multiplied by the number of concurrent processes
+            (default:2)
+        """,
+    )
+    parser.add_argument(
         "--path", "-P", default=".", nargs="*", type=str,
         help="the module import path (default: .)"
     )
@@ -233,7 +240,8 @@ def worker_process(args, worker_id, logging_fd):
         broker = get_broker()
         broker.emit_after("process_boot")
 
-        worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
+        worker = Worker(broker, queues=args.queues, worker_threads=args.threads,
+                        prefetch_multiplier=args.prefetch_multiplier)
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")

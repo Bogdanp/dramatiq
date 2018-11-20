@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`0.6.0`_ -- 2018-11-23
+----------------------
+
 Fixed
 ^^^^^
 
@@ -17,6 +20,11 @@ Changed
 ^^^^^^^
 
 * Prevent access to |Message| result if the linked actor do not have store_results=True
+
+Added
+^^^^^
+
+* Add Prefetch multiplier to cli parameters
 
 `0.5.0`_ -- 2018-11-15
 ----------------------
@@ -96,6 +104,7 @@ Fixed
 * pipe_ignore was not recovered from right message
 
 .. _Unreleased: https://github.com/wiremind/remoulade/compare/v0.5.0...HEAD
+.. _0.6.0: https://github.com/wiremind/remoulade/releases/tag/v0.6.0
 .. _0.5.0: https://github.com/wiremind/remoulade/releases/tag/v0.5.0
 .. _0.4.0: https://github.com/wiremind/remoulade/releases/tag/v0.4.0
 .. _0.3.0: https://github.com/wiremind/remoulade/releases/tag/v0.3.0

@@ -475,3 +475,25 @@ APScheduler_ is the recommended scheduler to use with Remoulade:
        scheduler.shutdown()
 
 .. _APScheduler: https://apscheduler.readthedocs.io
+
+
+Optimizing
+----------
+
+Prefetch Limits
+^^^^^^^^^^^^^^^
+
+The prefetch count is the number of message a worker can reserve for itself
+(the limit of unacknowledged message it can get from RabbitMQ).
+
+The prefetch count is set by multiplying the prefetch_multiplier with the number
+of worker threads (default: 2)
+
+If you have many actors with a long duration you want the multiplier value to be one,
+it’ll only reserve one task per worker process at a time.
+
+But if you have short actors, you may want to increase this multiplier to reduce I/O.
+
+.. code-block:: bash
+
+    remoulade package --prefetch-multiplier 1

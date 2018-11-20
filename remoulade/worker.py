@@ -49,9 +49,10 @@ class Worker:
       worker_timeout(int): The number of milliseconds workers should
         wake up after if the queue is idle.
       worker_threads(int): The number of worker threads to spawn.
+      prefetch_multiplier(int): The number of message to prefetch at a time, to be multiplied with the number of threads
     """
 
-    def __init__(self, broker, *, queues=None, worker_timeout=1000, worker_threads=8):
+    def __init__(self, broker, *, queues=None, worker_timeout=1000, worker_threads=8, prefetch_multiplier=2):
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
 
@@ -60,7 +61,7 @@ class Worker:
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
         # must be small so we don't starve other workers out.
-        self.queue_prefetch = min(worker_threads * 2, 65535)
+        self.queue_prefetch = min(worker_threads * max(prefetch_multiplier, 1), 65535)
         # Load a large factor more delay messages than there are
         # workers as those messages could have far-future etas.
         self.delay_prefetch = min(worker_threads * 1000, 65535)
