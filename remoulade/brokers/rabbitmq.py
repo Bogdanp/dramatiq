@@ -22,6 +22,7 @@ from itertools import chain
 from threading import local
 
 import pika
+from pika.exceptions import AMQPChannelError, AMQPConnectionError
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, xq_name
@@ -80,6 +81,7 @@ class RabbitmqBroker(Broker):
         self.connections = set()
         self.channels = set()
         self.queues = set()
+        self.declared_queues = set()
         self.state = local()
 
     @property
@@ -100,7 +102,7 @@ class RabbitmqBroker(Broker):
             connection = self.state.connection
             del self.state.connection
             self.connections.remove(connection)
-        except AttributeError:
+        except (AttributeError, KeyError):
             pass
 
     @property
@@ -162,7 +164,28 @@ class RabbitmqBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
+        try:
+            self._declare_rabbitmq_queues()
+        except (AMQPConnectionError, AMQPChannelError) as e:
+            # Delete the channel and the connection so that the next
+            # caller may initiate new ones of each.
+            del self.channel
+            del self.connection
+            raise ConnectionClosed(e) from None
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
+
+    def _declare_rabbitmq_queues(self):
+        """ Real Queue declaration to happen before enqueuing or consuming
+
+        Raises:
+          AMQPConnectionError or AMQPChannelError: If the underlying channel or connection has been closed.
+        """
+        for queue_name in self.queues:
+            if queue_name not in self.declared_queues:
+                self._declare_queue(queue_name)
+                self._declare_dq_queue(queue_name)
+                self._declare_xq_queue(queue_name)
+                self.declared_queues.add(queue_name)
 
     def declare_queue(self, queue_name):
         """Declare a queue.  Has no effect if a queue with the given
@@ -175,26 +198,14 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: If the underlying channel or connection
             has been closed.
         """
-        try:
-            if queue_name not in self.queues:
-                self.emit_before("declare_queue", queue_name)
-                self._declare_queue(queue_name)
-                self.queues.add(queue_name)
-                self.emit_after("declare_queue", queue_name)
+        if queue_name not in self.queues:
+            self.emit_before("declare_queue", queue_name)
+            self.queues.add(queue_name)
+            self.emit_after("declare_queue", queue_name)
 
-                delayed_name = dq_name(queue_name)
-                self._declare_dq_queue(queue_name)
-                self.delay_queues.add(delayed_name)
-                self.emit_after("declare_delay_queue", delayed_name)
-
-                self._declare_xq_queue(queue_name)
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
-            # Delete the channel and the connection so that the next
-            # caller may initiate new ones of each.
-            del self.channel
-            del self.connection
-            raise ConnectionClosed(e) from None
+            delayed_name = dq_name(queue_name)
+            self.delay_queues.add(delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name)
 
     def _declare_queue(self, queue_name):
         return self.channel.queue_declare(queue=queue_name, durable=True, arguments={
@@ -242,6 +253,7 @@ class RabbitmqBroker(Broker):
         attempts = 1
         while True:
             try:
+                self._declare_rabbitmq_queues()
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
                 self.emit_before("enqueue", message, delay)
                 self.channel.publish(
@@ -253,8 +265,7 @@ class RabbitmqBroker(Broker):
                 self.emit_after("enqueue", message, delay)
                 return message
 
-            except (pika.exceptions.AMQPConnectionError,
-                    pika.exceptions.AMQPChannelError) as e:
+            except (AMQPConnectionError, AMQPChannelError) as e:
                 # Delete the channel and the connection so that the
                 # next caller/attempt may initiate new ones of each.
                 del self.channel

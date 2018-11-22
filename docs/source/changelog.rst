@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Better handling of RabbitMQ queue declaration (consumer will keep trying on ConnectionError)
+
 `0.5.0`_ -- 2018-11-15
 ----------------------
 
