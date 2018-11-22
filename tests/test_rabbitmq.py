@@ -34,7 +34,7 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     assert len(database) == 100
 
 
-def test_rabbitmq_queues_created_lazily(rabbitmq_broker, rabbitmq_worker):
+def test_rabbitmq_queues_created_lazily(rabbitmq_broker):
     # Given that rabbitMQ has no open connection
     rabbitmq_broker.close()
 
@@ -47,7 +47,8 @@ def test_rabbitmq_queues_created_lazily(rabbitmq_broker, rabbitmq_worker):
     rabbitmq_broker.declare_actor(add)
 
     # queue_name should be in prepared_queues
-    assert add.queue_name in rabbitmq_broker.prepared_queues
+    assert add.queue_name in rabbitmq_broker.queues
+    assert add.queue_name not in rabbitmq_broker.declared_queues
 
     # nothing is sent so RabbitMQ before sending a message
     assert len(rabbitmq_broker.connections) == 0
