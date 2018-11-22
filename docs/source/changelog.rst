@@ -13,6 +13,11 @@ Fixed
 
 * Better handling of RabbitMQ queue declaration (consumer will keep trying on ConnectionError)
 
+Changed
+^^^^^^^
+
+* Prevent access to |Message| result if the linked actor do not have store_results=True
+
 `0.5.0`_ -- 2018-11-15
 ----------------------
 

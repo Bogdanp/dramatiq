@@ -23,6 +23,11 @@ class ResultError(RemouladeError):
     """
 
 
+class ResultNotStored(ResultError):
+    """ Raised when trying to access Message|Pipeline|Group result with one or more actor not have store_results=True
+    """
+
+
 class ResultTimeout(ResultError):
     """Raised when waiting for a result times out.
     """

@@ -33,16 +33,13 @@ class pipeline:
     def __init__(self, children, *, broker=None):
         self.broker = broker or get_broker()
         self.messages = messages = []
-        self._results = []
 
         for child in children:
             if isinstance(child, pipeline):
                 for message in child.messages:
                     messages.append(message.copy())
-                    self._results.append(message.result)
             else:
                 messages.append(child.copy())
-                self._results.append(child.result)
 
         for message, next_message in zip(messages, messages[1:]):
             message.options["pipe_target"] = next_message.asdict()
@@ -76,7 +73,7 @@ class pipeline:
     @property
     def result(self):
         """ PipelineResult created from this pipeline, used for result related methods"""
-        return PipelineResult(self._results)
+        return PipelineResult([message.result for message in self.messages])
 
 
 class group:

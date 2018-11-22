@@ -4,8 +4,8 @@ from threading import Condition
 import pytest
 
 import remoulade
-from remoulade import group, pipeline, PipelineResult, GroupResults
-from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing
+from remoulade import group, pipeline, GroupResults
+from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing, ResultNotStored
 
 
 def test_messages_can_be_piped(stub_broker):
@@ -27,7 +27,6 @@ def test_messages_can_be_piped(stub_broker):
     assert pipe.messages[0].options["pipe_target"] == pipe.messages[1].asdict()
     assert pipe.messages[1].options["pipe_target"] == pipe.messages[2].asdict()
     assert "pipe_target" not in pipe.messages[2].options
-    assert isinstance(pipe.result, PipelineResult)
 
 
 def test_pipelines_flatten_child_pipelines(stub_broker):
@@ -59,7 +58,7 @@ def test_pipe_ignore_message_options(stub_broker, stub_worker, backend, result_b
     stub_broker.add_middleware(Results(backend=backend))
 
     # And an actor that return something
-    @remoulade.actor
+    @remoulade.actor(store_results=True)
     def do_nothing():
         return 0
 
@@ -88,7 +87,7 @@ def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_bac
     stub_broker.add_middleware(Results(backend=backend))
 
     # And an actor that return something
-    @remoulade.actor
+    @remoulade.actor(store_results=True)
     def do_nothing():
         return 0
 
@@ -106,6 +105,35 @@ def test_pipe_ignore_actor_options(stub_broker, stub_worker, backend, result_bac
     pipe.run()
 
     assert pipe.result.get(block=True) == 1
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_pipeline_cannot_have_actor_without_store_results(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that return something
+    @remoulade.actor()
+    def do_nothing():
+        return 0
+
+    # Nothing should be sent to pipe ignored
+    @remoulade.actor(store_results=True, pipe_ignore=True)
+    def pipe_ignored(*args):
+        assert len(args) == 0
+        return 1
+
+    # And these actors are declared
+    stub_broker.declare_actor(do_nothing)
+    stub_broker.declare_actor(pipe_ignored)
+
+    pipe = do_nothing.message() | pipe_ignored.message()
+
+    with pytest.raises(ResultNotStored):
+        pipe.result
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])

@@ -19,9 +19,11 @@ import time
 import uuid
 from collections import namedtuple
 
+from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .result import Result
+from .results import ResultNotStored
 
 #: The global encoder instance.
 global_encoder = JSONEncoder()
@@ -109,6 +111,10 @@ class Message(namedtuple("Message", (
 
     @property
     def result(self):
+        broker = get_broker()
+        actor = broker.get_actor(actor_name=self.actor_name)
+        if not actor.options.get('store_results'):
+            raise ResultNotStored('There cannot be any result to an actor without store_results=True')
         return Result(message_id=self.message_id)
 
     def __str__(self):

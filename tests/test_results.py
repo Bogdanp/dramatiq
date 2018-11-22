@@ -5,7 +5,7 @@ import pytest
 import remoulade
 from remoulade import Result
 from remoulade.middleware import Retries
-from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored
+from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored, ResultError
 from remoulade.results.backend import FailureResult
 
 
@@ -40,6 +40,31 @@ def test_actors_can_store_results(stub_broker, stub_worker, backend, result_back
 
     # Then the result should be what the actor returned
     assert result == 42
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_cannot_get_result_of_message_without_store_results(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that does not store results
+    @remoulade.actor()
+    def do_work():
+        return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # I cannot access the result property of the message
+    with pytest.raises(ResultError) as e:
+        message.result
+    assert str(e.value) == 'There cannot be any result to an actor without store_results=True'
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -166,24 +191,6 @@ def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker
     # And wait for a result
     # Then I should get that result back
     assert message.result.get(block=True) == 42
-
-
-def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):
-    # Given an actor that doesn't store results
-    @remoulade.actor
-    def do_work():
-        return 42
-
-    # And this actor is declared
-    stub_broker.declare_actor(do_work)
-
-    # When I send that actor a message
-    message = do_work.send()
-
-    # And wait for a result
-    # Then I should get a RuntimeError back
-    with pytest.raises(RuntimeError):
-        message.result.get()
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
