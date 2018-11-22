@@ -32,7 +32,7 @@ class AgeLimit(Middleware):
 
     def __init__(self, *, max_age=None):
         self.logger = get_logger(__name__, type(self))
-        self.max_age = None
+        self.max_age = max_age
 
     @property
     def actor_options(self):
