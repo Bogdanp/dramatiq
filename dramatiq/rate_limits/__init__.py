@@ -20,8 +20,10 @@ from .bucket import BucketRateLimiter
 from .concurrent import ConcurrentRateLimiter
 from .rate_limiter import RateLimiter, RateLimitExceeded
 from .window import WindowRateLimiter
+from .barrier import BarrierRateLimiter
 
 __all__ = [
     "RateLimiterBackend", "RateLimiter", "RateLimitExceeded",
     "BucketRateLimiter", "ConcurrentRateLimiter", "WindowRateLimiter",
+    "BarrierRateLimiter",
 ]

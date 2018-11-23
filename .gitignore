@@ -3,6 +3,7 @@
 /.coverage
 /.pytest_cache
 /.tox
+/.vscode
 /benchmark*.svg
 /build
 /dist
