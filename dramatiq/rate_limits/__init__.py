@@ -16,12 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .backend import RateLimiterBackend
+from .barrier import Barrier
 from .bucket import BucketRateLimiter
 from .concurrent import ConcurrentRateLimiter
 from .rate_limiter import RateLimiter, RateLimitExceeded
 from .window import WindowRateLimiter
 
 __all__ = [
-    "RateLimiterBackend", "RateLimiter", "RateLimitExceeded",
+    "RateLimiterBackend", "RateLimiter", "RateLimitExceeded", "Barrier",
     "BucketRateLimiter", "ConcurrentRateLimiter", "WindowRateLimiter",
 ]

@@ -16,7 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-from threading import Lock
+from collections import defaultdict
+from threading import Condition, Lock
 
 from ..backend import RateLimiterBackend
 
@@ -26,6 +27,7 @@ class StubBackend(RateLimiterBackend):
     """
 
     def __init__(self):
+        self.conditions = defaultdict(lambda: Condition(self.mutex))
         self.mutex = Lock()
         self.db = {}
 
@@ -68,6 +70,16 @@ class StubBackend(RateLimiterBackend):
                 return False
 
             return self._put(key, value, ttl)
+
+    def block(self, key, timeout):
+        cond = self.conditions[key]
+        with cond:
+            return cond.wait(timeout=timeout / 1000)
+
+    def notify(self, key, ttl):
+        cond = self.conditions[key]
+        with cond:
+            cond.notify_all()
 
     def _get(self, key, *, default=None):
         value, expiration = self.db.get(key, (None, None))

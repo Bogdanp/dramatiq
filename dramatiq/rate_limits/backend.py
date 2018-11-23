@@ -80,3 +80,30 @@ class RateLimiterBackend:
           bool: True if the key was successfully incremented.
         """
         raise NotImplementedError
+
+    def block(self, key, timeout):  # pragma: no cover
+        """Block until an event is published to the given key or the
+        timeout expires.  This is used to implement efficient blocking
+        against a synchronized resource.
+
+        Parameters:
+          key(str): The key to block on.
+          timeout(int): The timeout in milliseconds.
+
+        Returns:
+          bool: True if en event was published before the timeout.
+        """
+        raise NotImplementedError
+
+    def notify(self, key, ttl):  # pragma: no cover
+        """Notify block()ed parties that an event has occurred.
+
+        Parameters:
+          key(str): The key to notify on.
+          ttl(int): The max amount of time in milliseconds that the
+            notification should exist for.
+
+        Returns:
+          None
+        """
+        raise NotImplementedError

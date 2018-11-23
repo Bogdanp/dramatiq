@@ -23,3 +23,4 @@ of those changes to CLEARTYPE SRL.
 | [@ryansm1](https://github.com/ryansm1) | Ryan Smith |
 | [@aericson](https://github.com/aericson) | André Ericson |
 | [@maerteijn](https://github.com/maerteijn) | Martijn Jacobs |
+| [@ryanhiebert](https://github.com/ryanhiebert) | Ryan Hiebert |
