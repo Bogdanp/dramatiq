@@ -245,26 +245,32 @@ def setup_worker_logging(args, worker_id, logging_pipe):
 
 def watch_logs(log_file, pipes):
     while True:
-        events = multiprocessing.connection.wait(pipes, timeout=1)
-        for event in events:
-            try:
-                while event.poll(1):
-                    # StreamHandler writes newlines into the pipe separately
-                    # from the actual log entry; to avoid back-to-back newlines
-                    # in the events pipe (causing multiple entries on a single
-                    # line), discard newline-only data from the pipe
-                    try:
-                        data = event.recv()
-                    except EOFError:
-                        break
+        try:
+            events = multiprocessing.connection.wait(pipes, timeout=1)
+            for event in events:
+                try:
+                    while event.poll(1):
+                        # StreamHandler writes newlines into the pipe separately
+                        # from the actual log entry; to avoid back-to-back newlines
+                        # in the events pipe (causing multiple entries on a single
+                        # line), discard newline-only data from the pipe
+                        try:
+                            data = event.recv()
+                        except EOFError:
+                            break
 
-                    if data == "\n":
-                        break
+                        if data == "\n":
+                            break
 
-                    log_file.write(data + "\n")
-                    log_file.flush()
-            except BrokenPipeError:
-                pass
+                        log_file.write(data + "\n")
+                        log_file.flush()
+                except BrokenPipeError:
+                    pass
+        # If one of the worker processes is killed, its handle will be
+        # closed so waiting for it is going to fail with this OSError.
+        # When that happens, we just take it out of the waitlist.
+        except OSError as e:
+            pipes = [p for p in pipes if not p.closed]
 
 
 def worker_process(args, worker_id, logging_pipe):
