@@ -118,7 +118,7 @@ def folder_path(value):
     return os.path.abspath(value)
 
 
-def parse_arguments():
+def make_argument_parser():
     parser = argparse.ArgumentParser(
         prog="dramatiq",
         description="Run dramatiq workers.",
@@ -177,7 +177,7 @@ def parse_arguments():
 
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0, help="turn on verbose log output")
-    return parser.parse_args()
+    return parser
 
 
 def setup_pidfile(filename):
@@ -322,8 +322,8 @@ def worker_process(args, worker_id, logging_pipe):
     logging_pipe.close()
 
 
-def main():  # noqa
-    args = parse_arguments()
+def main(args=None):  # noqa
+    args = args or make_argument_parser().parse_args()
     for path in args.path:
         sys.path.insert(0, path)
 
