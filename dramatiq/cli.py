@@ -269,7 +269,7 @@ def watch_logs(log_file, pipes):
         # If one of the worker processes is killed, its handle will be
         # closed so waiting for it is going to fail with this OSError.
         # When that happens, we just take it out of the waitlist.
-        except OSError as e:
+        except OSError:
             pipes = [p for p in pipes if not p.closed]
 
 
