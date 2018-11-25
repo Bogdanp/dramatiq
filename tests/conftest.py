@@ -15,6 +15,7 @@ from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
+from dramatiq.barrier import backends as bar_backends
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=logfmt)
@@ -157,6 +158,27 @@ def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_bac
         "memcached": memcached_rate_limiter_backend,
         "redis": redis_rate_limiter_backend,
         "stub": stub_rate_limiter_backend,
+    }
+
+
+@pytest.fixture
+def redis_barrier_backend():
+    backend = bar_backends.RedisBackend()
+    check_redis(backend.client)
+    backend.client.flushall()
+    return backend
+
+
+@pytest.fixture
+def stub_barrier_backend():
+    return bar_backends.StubBackend()
+
+
+@pytest.fixture
+def barrier_backends(redis_barrier_backend, stub_barrier_backend):
+    return {
+        "redis": redis_barrier_backend,
+        "stub": stub_barrier_backend,
     }
 
 
