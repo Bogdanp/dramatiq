@@ -156,6 +156,12 @@ Limiters
 .. autoclass:: dramatiq.rate_limits.ConcurrentRateLimiter
 .. autoclass:: dramatiq.rate_limits.WindowRateLimiter
 
+Barriers
+^^^^^^^^
+
+.. autoclass:: dramatiq.rate_limits.Barrier
+   :members:
+
 
 Workers
 -------
