@@ -11,7 +11,7 @@ def test_barrier(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 
     # Given that I have a barrier of two parties
-    barrier = Barrier(backend, "sequential-barrier", ttl=30_000)
+    barrier = Barrier(backend, "sequential-barrier", ttl=30000)
     assert barrier.create(parties=2)
 
     # When I try to recreate it
@@ -30,7 +30,7 @@ def test_barriers_can_block(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 
     # Given that I have a barrier of two parties
-    barrier = Barrier(backend, "sequential-barrier", ttl=30_000)
+    barrier = Barrier(backend, "sequential-barrier", ttl=30000)
     assert barrier.create(parties=2)
 
     # And I have a worker function that waits on the barrier and writes its timestamp
@@ -55,7 +55,7 @@ def test_barriers_can_timeout(backend, rate_limiter_backends):
     backend = rate_limiter_backends[backend]
 
     # Given that I have a barrier of two parties
-    barrier = Barrier(backend, "sequential-barrier", ttl=30_000)
+    barrier = Barrier(backend, "sequential-barrier", ttl=30000)
     assert barrier.create(parties=2)
 
     # When I wait on the barrier with a timeout
