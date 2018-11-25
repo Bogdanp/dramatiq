@@ -66,6 +66,11 @@ class Barrier:
           Barrier blocking is currently only supported by the stub and
           Redis backends.
 
+        Warning:
+          Re-using keys between blocking calls may lead to undefined
+          behaviour.  Make sure your barrier keys are always unique
+          (use a UUID).
+
         Parameters:
           block(bool): Whether or not to block while waiting for the
             other parties.
