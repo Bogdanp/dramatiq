@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 Changed
 ^^^^^^^
 
+* ``cli.main`` now takes an optional argument namespace so that users
+  may define their own entrypoints. (`#140`_, `@maerteijn`_)
 * Actor "message received" and "completed in x ms" log messages are
   now logged with the ``DEBUG`` level instead of ``INFO`` level.  This
   improves throughput and makes logging much less verbose.
@@ -36,6 +38,8 @@ Fixed
 .. _#111: https://github.com/Bogdanp/dramatiq/issues/111
 .. _#113: https://github.com/Bogdanp/dramatiq/issues/113
 .. _#119: https://github.com/Bogdanp/dramatiq/issues/119
+.. _#140: https://github.com/Bogdanp/dramatiq/issues/140
+.. _@maerteijn: https://github.com/maerteijn
 .. _@ryansm1: https://github.com/ryansm1
 .. _@xdmiodz: https://github.com/xdmiodz
 
