@@ -103,7 +103,7 @@ class RedisBackend(RateLimiterBackend):
                     continue
 
     def block(self, key, timeout):
-        assert timeout >= 1000, "block timeouts must be >= 1000"
+        assert timeout is None or timeout >= 1000, "block timeouts must be >= 1000"
         event = self.client.brpoplpush(key, key, (timeout or 0) // 1000)
         return event == b"x"
 

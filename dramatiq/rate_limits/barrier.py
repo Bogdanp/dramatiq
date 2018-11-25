@@ -62,6 +62,10 @@ class Barrier:
     def wait(self, *, block=True, timeout=None):
         """Signal that a party has reached the barrier.
 
+        Warning:
+          Barrier blocking is currently only supported by the stub and
+          Redis backends.
+
         Parameters:
           block(bool): Whether or not to block while waiting for the
             other parties.
