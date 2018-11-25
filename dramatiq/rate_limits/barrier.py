@@ -77,10 +77,10 @@ class Barrier:
         """
         cleared = not self.backend.decr(self.key, 1, 1, self.ttl)
         if cleared:
-            self.backend.notify(self.key_events, self.ttl)
+            self.backend.wait_notify(self.key_events, self.ttl)
             return True
 
         if block:
-            return self.backend.block(self.key_events, timeout)
+            return self.backend.wait(self.key_events, timeout)
 
         return False

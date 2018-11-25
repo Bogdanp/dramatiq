@@ -71,12 +71,12 @@ class StubBackend(RateLimiterBackend):
 
             return self._put(key, value, ttl)
 
-    def block(self, key, timeout):
+    def wait(self, key, timeout):
         cond = self.conditions[key]
         with cond:
             return cond.wait(timeout=timeout / 1000)
 
-    def notify(self, key, ttl):
+    def wait_notify(self, key, ttl):
         cond = self.conditions[key]
         with cond:
             cond.notify_all()

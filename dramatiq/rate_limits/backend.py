@@ -81,13 +81,13 @@ class RateLimiterBackend:
         """
         raise NotImplementedError
 
-    def block(self, key, timeout):  # pragma: no cover
-        """Block until an event is published to the given key or the
+    def wait(self, key, timeout):  # pragma: no cover
+        """Wait until an event is published to the given key or the
         timeout expires.  This is used to implement efficient blocking
         against a synchronized resource.
 
         Parameters:
-          key(str): The key to block on.
+          key(str): The key to wait on.
           timeout(int): The timeout in milliseconds.
 
         Returns:
@@ -95,8 +95,8 @@ class RateLimiterBackend:
         """
         raise NotImplementedError
 
-    def notify(self, key, ttl):  # pragma: no cover
-        """Notify block()ed parties that an event has occurred.
+    def wait_notify(self, key, ttl):  # pragma: no cover
+        """Notify parties wait()ing on a key that an event has occurred.
 
         Parameters:
           key(str): The key to notify on.

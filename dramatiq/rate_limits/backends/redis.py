@@ -102,12 +102,12 @@ class RedisBackend(RateLimiterBackend):
                 except redis.WatchError:
                     continue
 
-    def block(self, key, timeout):
-        assert timeout is None or timeout >= 1000, "block timeouts must be >= 1000"
+    def wait(self, key, timeout):
+        assert timeout is None or timeout >= 1000, "wait timeouts must be >= 1000"
         event = self.client.brpoplpush(key, key, (timeout or 0) // 1000)
         return event == b"x"
 
-    def notify(self, key, ttl):
+    def wait_notify(self, key, ttl):
         with self.client.pipeline() as pipe:
             pipe.rpush(key, b"x")
             pipe.pexpire(key, ttl)
