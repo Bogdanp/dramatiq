@@ -18,6 +18,9 @@
 # Don't depend on *anything* in this module.  The contents of this
 # module can and *will* change without notice.
 
+import sys
+from contextlib import contextmanager
+
 
 class StreamablePipe:
     """Wrap a multiprocessing.connection.PipeConnection so it can be
@@ -43,3 +46,18 @@ class StreamablePipe:
 
     def write(self, s):
         self.pipe.send(s)
+
+
+def file_or_stderr(filename, *, mode="a", encoding="utf-8"):
+    """Returns a context object wrapping either the given file or
+    stderr (if filename is None).  This makes dealing with log files
+    more convenient.
+    """
+    if filename is not None:
+        return open(filename, mode, encoding=encoding)
+
+    @contextmanager
+    def stderr_wrapper():
+        yield sys.stderr
+
+    return stderr_wrapper()

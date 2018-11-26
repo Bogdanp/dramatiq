@@ -31,7 +31,7 @@ import time
 from threading import Thread
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
-from dramatiq.compat import StreamablePipe
+from dramatiq.compat import StreamablePipe, file_or_stderr
 
 try:
     from .watcher import setup_file_watcher
@@ -154,7 +154,7 @@ def make_argument_parser():
         help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", default=sys.stderr, type=argparse.FileType(mode="a", encoding="utf-8"),
+        "--log-file", type=str,
         help="write all logs to a file (default: sys.stderr)",
     )
 
@@ -243,34 +243,40 @@ def setup_worker_logging(args, worker_id, logging_pipe):
     return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
 
 
-def watch_logs(log_file, pipes):
-    while True:
-        try:
-            events = multiprocessing.connection.wait(pipes, timeout=1)
-            for event in events:
-                try:
-                    while event.poll(1):
-                        # StreamHandler writes newlines into the pipe separately
-                        # from the actual log entry; to avoid back-to-back newlines
-                        # in the events pipe (causing multiple entries on a single
-                        # line), discard newline-only data from the pipe
-                        try:
-                            data = event.recv()
-                        except EOFError:
-                            break
+def watch_logs(log_filename, pipes):
+    with file_or_stderr(log_filename, mode="a", encoding="utf-8") as log_file:
+        while pipes:
+            try:
+                events = multiprocessing.connection.wait(pipes, timeout=1)
+                for event in events:
+                    try:
+                        while event.poll(1):
+                            # StreamHandler writes newlines into the pipe separately
+                            # from the actual log entry; to avoid back-to-back newlines
+                            # in the events pipe (causing multiple entries on a single
+                            # line), discard newline-only data from the pipe
+                            try:
+                                data = event.recv()
+                            except EOFError:
+                                event.close()
+                                raise
 
-                        if data == "\n":
-                            break
+                            if data == "\n":
+                                break
 
-                        log_file.write(data + "\n")
-                        log_file.flush()
-                except BrokenPipeError:
-                    pass
-        # If one of the worker processes is killed, its handle will be
-        # closed so waiting for it is going to fail with this OSError.
-        # When that happens, we just take it out of the waitlist.
-        except OSError:
-            pipes = [p for p in pipes if not p.closed]
+                            log_file.write(data + "\n")
+                            log_file.flush()
+                    except BrokenPipeError:
+                        event.close()
+                        raise
+            # If one of the worker processes is killed, its handle will be
+            # closed so waiting for it is going to fail with this OSError.
+            # Additionally, event.recv() raises EOFError when its pipe
+            # is closed, and event.poll() raises BrokenPipeError when
+            # its pipe is closed.  When any of these events happen, we
+            # just take the closed pipes out of the waitlist.
+            except (BrokenPipeError, EOFError, OSError):
+                pipes = [p for p in pipes if not p.closed]
 
 
 def worker_process(args, worker_id, logging_pipe):
@@ -331,9 +337,10 @@ def main(args=None):  # noqa
         if args.pid_file:
             setup_pidfile(args.pid_file)
     except RuntimeError as e:
-        logger = setup_parent_logging(args, stream=args.log_file)
-        logger.critical(e)
-        return RET_PIDFILE
+        with file_or_stderr(args.log_file) as stream:
+            logger = setup_parent_logging(args, stream=stream)
+            logger.critical(e)
+            return RET_PIDFILE
 
     worker_pipes = []
     worker_processes = []
@@ -348,10 +355,8 @@ def main(args=None):  # noqa
         worker_pipes.append(read_pipe)
         worker_processes.append(proc)
 
-    parent_read_mp_pipe, parent_write_mp_pipe = multiprocessing.Pipe()
-    parent_read_pipe = StreamablePipe(parent_read_mp_pipe)
-    parent_write_pipe = StreamablePipe(parent_write_mp_pipe)
-    logger = setup_parent_logging(args, stream=parent_write_pipe)
+    parent_read_pipe, parent_write_pipe = multiprocessing.Pipe()
+    logger = setup_parent_logging(args, stream=StreamablePipe(parent_write_pipe))
     logger.info("Dramatiq %r is booting up." % __version__)
     if args.pid_file:
         atexit.register(remove_pidfile, args.pid_file, logger)
@@ -374,8 +379,8 @@ def main(args=None):  # noqa
 
     log_watcher = Thread(
         target=watch_logs,
-        args=(args.log_file, [parent_read_mp_pipe, *worker_pipes]),
-        daemon=True,
+        args=(args.log_file, [parent_read_pipe, *worker_pipes]),
+        daemon=False,
     )
     log_watcher.start()
 
@@ -435,6 +440,11 @@ def main(args=None):  # noqa
 
     for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes]:
         pipe.close()
+
+    # The log watcher can't be a daemon in case we log to a file.  So
+    # we have to wait for it to complete on exit.  Closing all the
+    # pipes above is what should trigger said exit.
+    log_watcher.join()
 
     if HAS_WATCHDOG and args.watch:
         file_watcher.stop()
