@@ -336,8 +336,8 @@ def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
     # And that actor has some old-style unacked messages
     expired_message_id = b"expired-old-school-ack"
     valid_message_id = b"valid-old-school-ack"
-    redis_broker.client.zadd("dramatiq:default.acks", 0, expired_message_id)
-    redis_broker.client.zadd("dramatiq:default.acks", current_millis(), valid_message_id)
+    redis_broker.client.zadd("dramatiq:default.acks", {expired_message_id: 0})
+    redis_broker.client.zadd("dramatiq:default.acks", {valid_message_id: current_millis()})
 
     # When maintenance runs for that actor's queue
     redis_broker.maintenance_chance = MAINTENANCE_SCALE
