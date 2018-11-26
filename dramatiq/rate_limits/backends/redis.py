@@ -24,12 +24,12 @@ class RedisBackend(RateLimiterBackend):
     """A rate limiter backend for Redis_.
 
     Parameters:
-      client(StrictRedis): An optional client.  If this is passed,
+      client(Redis): An optional client.  If this is passed,
         then all other parameters are ignored.
       url(str): An optional connection URL.  If both a URL and
         connection paramters are provided, the URL is used.
       **parameters(dict): Connection parameters are passed directly
-        to :class:`redis.StrictRedis`.
+        to :class:`redis.Redis`.
 
     .. _redis: https://redis.io
     """
@@ -38,7 +38,7 @@ class RedisBackend(RateLimiterBackend):
         if url is not None:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
 
     def add(self, key, value, ttl):
         return bool(self.client.set(key, value, px=ttl, nx=True))

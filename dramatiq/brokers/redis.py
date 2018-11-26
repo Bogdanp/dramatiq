@@ -60,7 +60,7 @@ class RedisBroker(Broker):
       >>> RedisBroker(url="redis://127.0.0.1:6379/0")
 
     See also:
-      StrictRedis_ for a list of all the available connection parameters.
+      Redis_ for a list of all the available connection parameters.
 
     Parameters:
       url(str): An optional connection URL.  If both a URL and
@@ -77,9 +77,9 @@ class RedisBroker(Broker):
       requeue_deadline(int): Deprecated.  Does nothing.
       requeue_interval(int): Deprecated.  Does nothing.
       **parameters(dict): Connection parameters are passed directly
-        to :class:`redis.StrictRedis`.
+        to :class:`redis.Redis`.
 
-    .. _StrictRedis: http://redis-py.readthedocs.io/en/latest/#redis.StrictRedis
+    .. _Redis: http://redis-py.readthedocs.io/en/latest/#redis.Redis
     """
 
     def __init__(
@@ -107,7 +107,7 @@ class RedisBroker(Broker):
         self.heartbeat_timeout = heartbeat_timeout
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
-        self.client = client = redis.StrictRedis(**parameters)
+        self.client = client = redis.Redis(**parameters)
         self.scripts = {name: client.register_script(script) for name, script in _scripts.items()}
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
