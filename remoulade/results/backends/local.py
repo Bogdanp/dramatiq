@@ -1,5 +1,4 @@
-from ..backend import ResultBackend
-from ..errors import ResultError
+from ..backend import Missing, ResultBackend
 
 
 class LocalBackend(ResultBackend):
@@ -11,13 +10,14 @@ class LocalBackend(ResultBackend):
 
     results = {}
 
-    def _get(self, message_key, _):
+    def _get(self, message_key, forget: bool = False):
         try:
-            # We do not care about the forget parameter here because it's always forgot
-            return self.results.pop(message_key)
+            if forget:
+                return self.results.pop(message_key)
+            else:
+                return self.results[message_key]
         except KeyError:
-            message = 'The result corresponding to the message %s was not saved (have you set store_results = True)'
-            raise ResultError(message % message_key)
+            return Missing
 
     def _store(self, message_key, result, _):
         self.results[message_key] = result
