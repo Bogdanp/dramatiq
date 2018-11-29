@@ -18,6 +18,7 @@ Changed
 ^^^^^^^
 * Remove support for group of groups, a |group| take as input a |pipeline| or a message
 * |get_result_backend| now raise NoResultBackend if there is no |ResultBackend|
+* Merged PipelineResult and GroupResult into |CollectionResult|
 
 `0.6.0`_ -- 2018-11-23
 ----------------------
@@ -42,8 +43,8 @@ Added
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
-* Added property result to |Message| (type: |Result|), and |pipeline| (type: |PipelineResult|) and results to |group|
- (type: |GroupResults|). These new Class get the all result linked logic (get instead of get_result)
+* Added property result to |Message| (type: |Result|), and |pipeline| (type: PipelineResult) and results to |group|
+ (type: GroupResults). These new Class get the all result linked logic (get instead of get_result)
 * Rename MessageResult to |Result|
 * Removed get_results from |Message|, |group| and |pipeline| (and all results related methods
 like completed_count, ...). Use the new result property for |Message| and |pipeline|, and results for |group|.

@@ -4,7 +4,7 @@ from threading import Condition
 import pytest
 
 import remoulade
-from remoulade import group, pipeline, GroupResults
+from remoulade import group, pipeline, CollectionResults
 from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing, ResultNotStored
 
 
@@ -140,7 +140,7 @@ def test_pipeline_cannot_have_actor_without_store_results(stub_broker, stub_work
     pipe = do_nothing.message() | pipe_ignored.message()
 
     with pytest.raises(ResultNotStored):
-        pipe.result
+        pipe.results
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -167,7 +167,7 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, re
     assert pipe.result.get(block=True) == 10
 
     # And I should be able to retrieve individual results
-    assert list(pipe.result.get_all()) == [3, 6, 10]
+    assert list(pipe.results.get()) == [3, 6, 10]
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -194,7 +194,7 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
     # And get the results with a lower timeout than the tasks can complete in
     # Then a ResultTimeout error should be raised
     with pytest.raises(ResultTimeout):
-        for _ in pipe.result.get_all(block=True, timeout=1000):
+        for _ in pipe.results.get(block=True, timeout=1000):
             pass
 
 
@@ -228,10 +228,10 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, re
         with condition:
             condition.wait(2)
             time.sleep(0.1)  # give the worker time to set the result
-            assert pipe.result.completed_count == count
+            assert pipe.results.completed_count == count
 
     # Finally, completed should be true
-    assert pipe.result.completed
+    assert pipe.results.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -255,7 +255,7 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
 
     # When I check if the pipeline has completed
     # Then it should return False
-    assert not pipe.result.completed
+    assert not pipe.results.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -299,42 +299,6 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
-@pytest.mark.parametrize("block", [True, False])
-def test_pipelines_forget(stub_broker, backend, result_backends, stub_worker, block):
-    # Given a result backend
-    backend = result_backends[backend]
-
-    # And a broker with the results middleware
-    stub_broker.add_middleware(Results(backend=backend))
-
-    # Given an actor that stores results
-    @remoulade.actor(store_results=True, pipe_ignore=True)
-    def do_work():
-        return 42
-
-    # And this actor is declared
-    stub_broker.declare_actor(do_work)
-
-    # And I've run a pipeline
-    pipe = do_work.message() | do_work.message() | do_work.message()
-    pipe.run()
-
-    # If i wait for the pipeline to be completed
-    if not block:
-        stub_broker.join(do_work.queue_name)
-        stub_worker.join()
-
-    # If i forget the results
-    result = pipe.result.get(block=block, forget=True)
-    assert result == 42
-
-    # All messages have been forgotten
-    for message in pipe.children:
-        with pytest.raises(ResultMissing):
-            message.result.get()
-
-
-@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]
@@ -364,7 +328,7 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
 
     # And the group should be completed
     assert g.results.completed
-    assert isinstance(g.results, GroupResults)
+    assert isinstance(g.results, CollectionResults)
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])

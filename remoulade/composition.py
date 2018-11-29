@@ -18,7 +18,7 @@ from collections import namedtuple
 
 from .broker import get_broker
 from .common import generate_unique_id
-from .composition_result import GroupResults, PipelineResult
+from .composition_result import CollectionResults
 
 
 class GroupInfo(namedtuple("GroupInfo", ("group_id", "count", "results"))):
@@ -27,10 +27,10 @@ class GroupInfo(namedtuple("GroupInfo", ("group_id", "count", "results"))):
     Parameters:
       group_id(str): The id of the group
       count(int): The number of child in the group
-      results(GroupResults)
+      results(CollectionResults)
     """
 
-    def __new__(cls, *, group_id: str, count: int, results: GroupResults):
+    def __new__(cls, *, group_id: str, count: int, results: CollectionResults):
         return super().__new__(cls, group_id, count, results)
 
     def asdict(self):
@@ -42,7 +42,7 @@ class GroupInfo(namedtuple("GroupInfo", ("group_id", "count", "results"))):
 
     @staticmethod
     def from_dict(group_id, count, results):
-        return GroupInfo(group_id=group_id, count=count, results=GroupResults.from_dict(results))
+        return GroupInfo(group_id=group_id, count=count, results=CollectionResults.from_dict(results))
 
 
 class pipeline:
@@ -144,17 +144,18 @@ class pipeline:
         return self
 
     @property
-    def result(self) -> PipelineResult:
-        """ PipelineResult created from this pipeline, used for result related methods"""
+    def results(self) -> CollectionResults:
+        """ CollectionResults created from this pipeline, used for result related methods"""
         results = []
         for element in self.children:
             results += [element.results if isinstance(element, group) else element.result]
-        return PipelineResult(results)
+        return CollectionResults(results)
 
-    # TODO: think here
-    # @property
-    # def result(self):
-    #     return self.children[-1]
+    @property
+    def result(self):
+        """ Result of the last message/group of the pipeline"""
+        last_child = self.children[-1]
+        return last_child.results if isinstance(last_child, group) else last_child.result
 
 
 class group:
@@ -204,6 +205,6 @@ class group:
         return self
 
     @property
-    def results(self) -> GroupResults:
-        """ GroupResults created from this group, used for result related methods"""
-        return GroupResults(children=[child.result for child in self.children])
+    def results(self) -> CollectionResults:
+        """ CollectionResults created from this group, used for result related methods"""
+        return CollectionResults(children=[child.result for child in self.children])

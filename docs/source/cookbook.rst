@@ -135,9 +135,9 @@ you can call |pipeline_result_get|::
   pipe.result.get(block=True, timeout=5_000)
 
 To get the intermediate results of each step in the pipeline, you can
-call |pipeline_result_get_all|::
+call |pipeline_results_get|::
 
-  for res in pipe.result.get_all(block=True):
+  for res in pipe.results.get(block=True):
     ...
 
 

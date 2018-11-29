@@ -44,8 +44,7 @@
 .. |before_worker_thread_shutdown| replace:: :meth:`before_worker_thread_shutdown<remoulade.Middleware.before_worker_thread_shutdown>`
 .. |remoulade| replace:: :mod:`remoulade`
 .. |group| replace:: :func:`group<remoulade.group>`
-.. |pipeline_result_get_all| replace:: :meth:`get_all<remoulade.PipelineResult.get_all>`
-.. |pipeline_result_get| replace:: :meth:`get<remoulade.PipelineResult.get>`
+.. |pipeline_result_get| replace:: :meth:`get<remoulade.CollectionResults.get>`
 .. |pipeline| replace:: :func:`pipeline<remoulade.pipeline>`
 .. |rate_limits| replace:: :mod:`remoulade.rate_limits`
 .. |send_with_options| replace:: :meth:`send_with_options<remoulade.Actor.send_with_options>`
@@ -56,9 +55,11 @@
 .. |Middleware| replace:: :class:`Middleware<remoulade.Middleware>`
 .. |FailureResult| replace:: :class:`FailureResult<remoulade.results.backend.FailureResult>`
 .. |Result| replace:: :class:`Result<remoulade.Result>`
-.. |PipelineResult|  replace:: :class:`PipelineResult<remoulade.composition_result>`
 .. |GroupResults|  replace:: :class:`GroupResults<remoulade.composition_result>`
 .. |get_result_backend|  replace:: :meth:`get_result_backend<remoulade.Broker.get_result_backend>`
+.. |CollectionResults|  replace:: :class:`CollectionResults<remoulade.collection_results>`
+.. |pipeline_results_get| replace:: :meth:`get<remoulade.CollectionResults.get>`
+
 
 
 

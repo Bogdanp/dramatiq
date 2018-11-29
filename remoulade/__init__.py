@@ -18,7 +18,7 @@
 from .actor import Actor, actor
 from .broker import Broker, Consumer, MessageProxy, change_broker, get_broker, set_broker
 from .composition import group, pipeline
-from .composition_result import GroupResults, PipelineResult
+from .composition_result import CollectionResults
 from .encoder import Encoder, JSONEncoder, PickleEncoder
 from .errors import (
     ActorNotFound, BrokerError, ConnectionClosed, ConnectionError, ConnectionFailed, QueueJoinTimeout, QueueNotFound,
@@ -39,7 +39,7 @@ __all__ = [
     "Broker", "Consumer", "MessageProxy", "get_broker", "set_broker", "change_broker",
 
     # Composition
-    "group", "pipeline", "GroupResults", "PipelineResult",
+    "group", "pipeline", "CollectionResults",
 
     # Encoding
     "Encoder", "JSONEncoder", "PickleEncoder",
