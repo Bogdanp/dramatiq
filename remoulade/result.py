@@ -29,6 +29,9 @@ class Result(namedtuple("Result", ("message_id",))):
     def __new__(cls, *, message_id=None):
         return super().__new__(cls, message_id=message_id)
 
+    def asdict(self):
+        return self._asdict()
+
     def get(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the result associated with a message_id from a result backend.
 

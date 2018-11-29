@@ -58,6 +58,7 @@
 .. |Result| replace:: :class:`Result<remoulade.Result>`
 .. |PipelineResult|  replace:: :class:`PipelineResult<remoulade.composition_result>`
 .. |GroupResults|  replace:: :class:`GroupResults<remoulade.composition_result>`
+.. |get_result_backend|  replace:: :meth:`get_result_backend<remoulade.Broker.get_result_backend>`
 
 
 

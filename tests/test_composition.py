@@ -23,10 +23,17 @@ def test_messages_can_be_piped(stub_broker):
     # Then I should get back a pipeline object
     assert isinstance(pipe, pipeline)
 
+    def filter_options(message):
+        return {key: value for (key, value) in message.items() if key != 'options'}
+
+    # If I build a pipeline
+    first_target = pipe._build()
     # And each message in the pipeline should reference the next message in line
-    assert pipe.messages[0].options["pipe_target"] == pipe.messages[1].asdict()
-    assert pipe.messages[1].options["pipe_target"] == pipe.messages[2].asdict()
-    assert "pipe_target" not in pipe.messages[2].options
+    assert filter_options(first_target.options["pipe_target"]) == filter_options(pipe.children[1].asdict())
+    second_target = first_target.options["pipe_target"]
+    assert filter_options(second_target["options"]["pipe_target"]) == filter_options(pipe.children[2].asdict())
+    third_target = second_target["options"]["pipe_target"]
+    assert "pipe_target" not in third_target["options"]
 
 
 def test_pipelines_flatten_child_pipelines(stub_broker):
@@ -43,10 +50,10 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
 
     # Then the inner pipeline should be flattened into the outer pipeline
     assert len(pipe) == 4
-    assert pipe.messages[0].args == (1, 2)
-    assert pipe.messages[1].args == (3,)
-    assert pipe.messages[2].args == (4,)
-    assert pipe.messages[3].args == (5,)
+    assert pipe.children[0].args == (1, 2)
+    assert pipe.children[1].args == (3,)
+    assert pipe.children[2].args == (4,)
+    assert pipe.children[3].args == (5,)
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -282,12 +289,12 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
 
     # I get an error
     with pytest.raises(ErrorStored) as e:
-        pipe.messages[0].result.get(block=True)
+        pipe.children[0].result.get(block=True)
     assert str(e.value) == 'ValueError()'
 
     for i in [1, 2]:
         with pytest.raises(ErrorStored) as e:
-            pipe.messages[i].result.get(block=True)
+            pipe.children[i].result.get(block=True)
         assert str(e.value).startswith('ParentFailed')
 
 
@@ -322,7 +329,7 @@ def test_pipelines_forget(stub_broker, backend, result_backends, stub_worker, bl
     assert result == 42
 
     # All messages have been forgotten
-    for message in pipe.messages:
+    for message in pipe.children:
         with pytest.raises(ResultMissing):
             message.result.get()
 
@@ -358,38 +365,6 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     # And the group should be completed
     assert g.results.completed
     assert isinstance(g.results, GroupResults)
-
-
-@pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_backends):
-    # Given that I have a result backend
-    backend = result_backends[backend]
-    stub_broker.add_middleware(Results(backend=backend))
-
-    # And I have an actor that sleeps for 100ms
-    @remoulade.actor(store_results=True)
-    def wait():
-        time.sleep(0.1)
-
-    # And this actor is declared
-    stub_broker.declare_actor(wait)
-
-    # When I group multiple groups inside one group and run it
-    t = time.monotonic()
-    g = group(group(wait.message() for _ in range(2)) for _ in range(3))
-    g.run()
-
-    # And wait on the group to complete
-    results = list(g.results.get(block=True))
-
-    # Then the total elapsed time should be less than 500ms
-    assert time.monotonic() - t <= 0.5
-
-    # And I should get back 3 results each with 2 results inside it
-    assert results == [[None, None]] * 3
-
-    # And the group should be completed
-    assert g.results.completed
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -518,3 +493,88 @@ def test_group_wait_forget(stub_broker, backend, result_backends, stub_worker):
     for message in messages:
         with pytest.raises(ResultMissing):
             message.result.get()
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_pipelines_with_groups(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work(a):
+        return a
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_sum(results):
+        return sum(results)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+    stub_broker.declare_actor(do_sum)
+
+    # When I pipe some messages intended for that actor together and run the pipeline
+    pipe = group([do_work.message(12), do_work.message(15)]) | do_sum.message()
+    pipe.run()
+
+    result = pipe.result.get(block=True)
+
+    assert 12 + 15 == result
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def add(a, b):
+        return a + b
+
+    stub_broker.declare_actor(add)
+
+    pipe = do_work.message(13) | group([add.message(12), add.message(15)])
+    pipe.run()
+
+    result = pipe.result.get(block=True)
+
+    assert [13 + 12, 13 + 15] == list(result)
+
+
+# TODO find a way to make a very complex pipeline
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_complex_pipelines(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 1
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def add(a):
+        return 1 + a
+
+    # Given an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_sum(results):
+        return sum(results)
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+    stub_broker.declare_actor(do_sum)
+    stub_broker.declare_actor(add)
+
+    pipe = do_work.message_with_options(pipe_ignore=True) | add.message() | add.message()  # return 3 [1, 2, 3] ?
+    g = group([pipe, add.message(), add.message(), do_work.message_with_options(pipe_ignore=True)])  # return [3,2,2,1]
+    final_pipe = do_work.message() | g | do_sum.message() | add.message()  # return 9
+    final_pipe.run()
+
+    result = final_pipe.result.get(block=True)
+
+    assert 9 == result
+

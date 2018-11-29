@@ -66,3 +66,8 @@ class ConnectionClosed(ConnectionError):
 class RateLimitExceeded(RemouladeError):
     """Raised when a rate limit has been exceeded.
     """
+
+
+class NoResultBackend(BrokerError):
+    """Raised when trying to access a the result backend on a broker without it
+    """

@@ -18,6 +18,7 @@ import time
 from collections import deque
 
 from .results import ResultMissing
+from .result import Result
 
 
 class PipelineResult:
@@ -33,6 +34,10 @@ class PipelineResult:
     def __len__(self):
         """Returns the length of the pipeline."""
         return len(self.results)
+
+    def asdict(self):
+        # TODO: ok ?
+        return self.results[-1].asdict()
 
     @property
     def completed(self):
@@ -136,7 +141,7 @@ class GroupResults:
     """Result of a group, having result related methods
 
     Parameters:
-      children(List[AsyncResult|GroupResults|PipelineResult]): A sequence of results of
+      children(List[Result|GroupResults|PipelineResult]): A sequence of results of
         messages, groups or pipelines.
     """
 
@@ -145,6 +150,24 @@ class GroupResults:
 
     def __len__(self):
         return len(self.children)
+
+    def asdict(self):
+        result = []
+        for child in self.children:
+            result.append(child.asdict())
+        return result
+
+    @classmethod
+    def from_dict(cls, group_results):
+        children = []
+        for result in group_results:
+            if isinstance(result, list):
+                child = cls.from_dict(result)
+            else:
+                child = Result(**result)
+            children.append(child)
+        return GroupResults(children)
+
 
     @property
     def completed(self):

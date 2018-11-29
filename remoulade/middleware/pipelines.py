@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 from .middleware import Middleware
+from ..errors import NoResultBackend
 
 
 class Pipelines(Middleware):
@@ -37,20 +37,71 @@ class Pipelines(Middleware):
         }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
+        from ..composition import GroupInfo
+
+        if exception is not None:
+            return
+
+        pipe_target = message.options.get("pipe_target")
+        group_info = message.options.get("group_info")
+        if group_info:
+            group_info = GroupInfo.from_dict(**group_info)
+
+        if pipe_target is not None:
+
+            if group_info and not self._group_completed(group_info, broker):
+                return
+
+            self._send_next_message(pipe_target, broker, result, group_info)
+
+    def _send_next_message(self, pipe_target, broker, result, group_info):
+        """ Send a message to the pipe target (if it's a list to all the pipe targets)
+
+        If it's a group, we need to get the result of each actor from the result backend because it's not present in
+        the message.
+
+        Parameters:
+            pipe_target(dict|List[dict]): the message or list of message to enqueue
+            broker(Broker): the broker
+            result(any): the result of the actor (to be send with the message if pipe_ignore=False)
+            group_info(GroupInfo|None): the info of the group if it's a group else None
+        """
         # Since Pipelines is a default middleware, this import has to
         # happen at runtime in order to avoid a cyclic dependency
         # from broker -> pipelines -> messages -> broker.
         from ..message import Message
 
-        if exception is not None:
+        if isinstance(pipe_target, list):
+            for message_data in pipe_target:
+                self._send_next_message(message_data, broker, result, group_info)
             return
 
-        message_data = message.options.get("pipe_target")
-        if message_data is not None:
-            next_message = Message(**message_data)
-            next_actor = broker.get_actor(next_message.actor_name)
-            pipe_ignore = next_message.options.get("pipe_ignore") or next_actor.options.get("pipe_ignore")
-            if not pipe_ignore:
-                next_message = next_message.copy(args=next_message.args + (result,))
+        next_message = Message(**pipe_target)
+        next_actor = broker.get_actor(next_message.actor_name)
+        pipe_ignore = next_message.options.get("pipe_ignore") or next_actor.options.get("pipe_ignore")
 
-            broker.enqueue(next_message)
+        if not pipe_ignore:
+            result = list(group_info.results.get()) if group_info else result
+            next_message = next_message.copy(args=next_message.args + (result,))
+
+        broker.enqueue(next_message)
+
+    @staticmethod
+    def _group_completed(group_info, broker):
+        """ Returns true if a group is completed, and increment the completion count of the group
+
+        Parameters:
+            group_info(GroupInfo): the info of the group to get the completion from
+            broker(Broker): the broker to use
+
+        Raises:
+            NoResultBackend: if there is no result backend set
+        """
+        try:
+            result_backend = broker.get_result_backend()
+        except NoResultBackend:
+            raise NoResultBackend('Pipeline with groups are ony supported with a result backend')
+
+        group_completion = result_backend.increment_group_completion(group_info.group_id)
+
+        return group_completion >= group_info.count

@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-import uuid
 from collections import namedtuple
 
 from .broker import get_broker
 from .composition import pipeline
+from .common import generate_unique_id
 from .encoder import Encoder, JSONEncoder
 from .result import Result
 from .results import ResultNotStored
@@ -48,12 +48,6 @@ def set_encoder(encoder: Encoder):
     """
     global global_encoder
     global_encoder = encoder
-
-
-def generate_unique_id() -> str:
-    """Generate a globally-unique message id.
-    """
-    return str(uuid.uuid4())
 
 
 class Message(namedtuple("Message", (

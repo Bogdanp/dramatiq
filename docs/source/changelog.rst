@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Support for |pipeline| with groups (result backend necessary for this)
+* Added group_id to |group|
+
+Changed
+^^^^^^^
+* Remove support for group of groups, a |group| take as input a |pipeline| or a message
+* |get_result_backend| now raise NoResultBackend if there is no |ResultBackend|
+
 `0.6.0`_ -- 2018-11-23
 ----------------------
 

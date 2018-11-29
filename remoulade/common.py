@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import uuid
 from queue import Empty
 from random import uniform
 from time import time
@@ -130,3 +131,9 @@ def xq_name(queue_name):
     if queue_name.endswith(".DQ"):
         queue_name = queue_name[:-3]
     return queue_name + ".XQ"
+
+
+def generate_unique_id() -> str:
+    """Generate a globally-unique message id.
+    """
+    return str(uuid.uuid4())

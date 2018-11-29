@@ -14,10 +14,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from .errors import ActorNotFound
+from .errors import ActorNotFound, NoResultBackend
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
-from .results import Results
+from .results import Results, ResultBackend
 
 #: The global broker instance.
 global_broker = None
@@ -108,12 +108,12 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
-    def get_result_backend(self):
+    def get_result_backend(self) -> ResultBackend:
         for middleware in self.middleware:
             if isinstance(middleware, Results):
                 return middleware.backend
         else:
-            raise RuntimeError("The default broker doesn't have a results backend.")
+            raise NoResultBackend("The default broker doesn't have a results backend.")
 
     def add_middleware(self, middleware, *, before=None, after=None):
         """Add a middleware object to this broker.  The middleware is

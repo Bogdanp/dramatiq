@@ -21,3 +21,9 @@ class LocalBackend(ResultBackend):
 
     def _store(self, message_key, result, _):
         self.results[message_key] = result
+
+    def increment_group_completion(self, group_id: str) -> int:
+        group_completion_key = self.build_group_completion_key(group_id)
+        completion = self.results.get(group_completion_key, 0) + 1
+        self.results[group_completion_key] = completion
+        return completion

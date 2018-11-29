@@ -117,6 +117,11 @@ class ResultBackend:
             return FailureResult
         return result.result
 
+    def increment_group_completion(self, group_id: str) -> int:
+        raise NotImplementedError("%(classname)r does not implement increment_group_completion()" % {
+            "classname": type(self).__name__,
+        })
+
     def store_result(self, message_id: str, result: BackendResult, ttl: int) -> None:  # noqa: F821
         """Store a result in the backend.
 
@@ -139,6 +144,10 @@ class ResultBackend:
           str
         """
         return "{}:{}".format(self.namespace, message_id)
+
+    @staticmethod
+    def build_group_completion_key(group_id: str) -> str:  # noqa: F821
+        return "remoulade-group-completion:{}".format(group_id)
 
     def _get(self, message_key: str, forget: bool) -> MResult:  # pragma: no cover
         """Get a result from the backend.  Subclasses may implement

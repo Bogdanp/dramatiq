@@ -103,3 +103,7 @@ class RedisBackend(ResultBackend):
             pipe.lpush(message_key, self.encoder.encode(result))
             pipe.pexpire(message_key, ttl)
             pipe.execute()
+
+    def increment_group_completion(self, group_id: str) -> int:
+        group_completion_key = self.build_group_completion_key(group_id)
+        return self.client.incr(group_completion_key)
