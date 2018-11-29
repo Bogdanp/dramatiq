@@ -5,8 +5,9 @@ import pytest
 import remoulade
 from remoulade import Result
 from remoulade.middleware import Retries
-from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored, ResultError
+from remoulade.results import ResultMissing, Results, ResultTimeout, ErrorStored
 from remoulade.results.backend import FailureResult
+from remoulade.errors import ResultNotStored
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -62,7 +63,7 @@ def test_cannot_get_result_of_message_without_store_results(stub_broker, stub_wo
     message = do_work.send()
 
     # I cannot access the result property of the message
-    with pytest.raises(ResultError) as e:
+    with pytest.raises(ResultNotStored) as e:
         message.result
     assert str(e.value) == 'There cannot be any result to an actor without store_results=True'
 

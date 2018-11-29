@@ -17,8 +17,8 @@
 import time
 from collections import deque
 
-from .results import ResultMissing
 from .result import Result
+from .results import ResultMissing
 
 
 class CollectionResults:

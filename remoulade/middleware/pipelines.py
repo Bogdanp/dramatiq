@@ -14,8 +14,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from ..errors import NoResultBackend, ResultNotStored
+from ..logging import get_logger
 from .middleware import Middleware
-from ..errors import NoResultBackend
 
 
 class Pipelines(Middleware):
@@ -28,6 +29,9 @@ class Pipelines(Middleware):
       pipe_target(dict): A message representing the actor the current
         result should be fed into.
     """
+
+    def __init__(self):
+        self.logger = get_logger(__name__, type(self))
 
     @property
     def actor_options(self):
@@ -49,10 +53,14 @@ class Pipelines(Middleware):
 
         if pipe_target is not None:
 
-            if group_info and not self._group_completed(group_info, broker):
-                return
+            try:
+                if group_info and not self._group_completed(group_info, broker):
+                    return
 
-            self._send_next_message(pipe_target, broker, result, group_info)
+                self._send_next_message(pipe_target, broker, result, group_info)
+            except (NoResultBackend, ResultNotStored) as e:
+                self.logger.error(str(e))
+                message.fail()
 
     def _send_next_message(self, pipe_target, broker, result, group_info):
         """ Send a message to the pipe target (if it's a list to all the pipe targets)
@@ -81,7 +89,8 @@ class Pipelines(Middleware):
         pipe_ignore = next_message.options.get("pipe_ignore") or next_actor.options.get("pipe_ignore")
 
         if not pipe_ignore:
-            result = list(group_info.results.get()) if group_info else result
+            if group_info:
+                result = self._get_group_result(group_info)
             next_message = next_message.copy(args=next_message.args + (result,))
 
         broker.enqueue(next_message)
@@ -105,3 +114,10 @@ class Pipelines(Middleware):
         group_completion = result_backend.increment_group_completion(group_info.group_id)
 
         return group_completion >= group_info.count
+
+    @staticmethod
+    def _get_group_result(group_info):
+        if group_info.results is None:
+            raise ResultNotStored('An actor in the group do not have store_result=True')
+
+        return list(group_info.results.get(forget=True))

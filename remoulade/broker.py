@@ -17,7 +17,7 @@
 from .errors import ActorNotFound, NoResultBackend
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
-from .results import Results, ResultBackend
+from .results import ResultBackend, Results
 
 #: The global broker instance.
 global_broker = None
@@ -109,6 +109,14 @@ class Broker:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
     def get_result_backend(self) -> ResultBackend:
+        """ Get the ResultBackend associated with the broker
+
+        Raises:
+            NoResultBackend: if there is no ResultBackend
+
+        Returns:
+            ResultBackend: the result backend
+        """
         for middleware in self.middleware:
             if isinstance(middleware, Results):
                 return middleware.backend

@@ -21,8 +21,8 @@ from .composition import group, pipeline
 from .composition_result import CollectionResults
 from .encoder import Encoder, JSONEncoder, PickleEncoder
 from .errors import (
-    ActorNotFound, BrokerError, ConnectionClosed, ConnectionError, ConnectionFailed, QueueJoinTimeout, QueueNotFound,
-    RateLimitExceeded, RemouladeError, NoResultBackend
+    ActorNotFound, BrokerError, ConnectionClosed, ConnectionError, ConnectionFailed, NoResultBackend, QueueJoinTimeout,
+    QueueNotFound, RateLimitExceeded, RemouladeError
 )
 from .generic import GenericActor
 from .logging import get_logger
@@ -49,7 +49,7 @@ __all__ = [
     "BrokerError",
     "ActorNotFound", "QueueNotFound", "QueueJoinTimeout",
     "ConnectionError", "ConnectionClosed", "ConnectionFailed",
-    "RateLimitExceeded", "NoResultBackend"
+    "RateLimitExceeded", "NoResultBackend",
 
     # Logging
     "get_logger",

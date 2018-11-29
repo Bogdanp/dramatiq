@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .backend import FailureResult, Missing, ResultBackend
-from .errors import ErrorStored, ResultError, ResultMissing, ResultNotStored, ResultTimeout
+from .errors import ErrorStored, ResultError, ResultMissing, ResultTimeout
 from .middleware import Results
 
 __all__ = ["ErrorStored", "Missing", "ResultBackend", "FailureResult", "ResultError", "ResultTimeout",
-           "ResultNotStored", "ResultMissing", "Results"]
+           "ResultMissing", "Results"]

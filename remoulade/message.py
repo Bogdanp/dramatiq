@@ -19,11 +19,11 @@ import time
 from collections import namedtuple
 
 from .broker import get_broker
-from .composition import pipeline
 from .common import generate_unique_id
+from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
+from .errors import ResultNotStored
 from .result import Result
-from .results import ResultNotStored
 
 #: The global encoder instance.
 global_encoder = JSONEncoder()

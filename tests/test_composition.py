@@ -5,7 +5,8 @@ import pytest
 
 import remoulade
 from remoulade import group, pipeline, CollectionResults
-from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing, ResultNotStored
+from remoulade.results import Results, ResultTimeout, ErrorStored, ResultMissing
+from remoulade.errors import ResultNotStored
 
 
 def test_messages_can_be_piped(stub_broker):
@@ -332,6 +333,24 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_inner_groups_forbidden(stub_broker, stub_worker, backend, result_backends):
+    # Given that I have a result backend
+    backend = result_backends[backend]
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And I have an actor
+    @remoulade.actor()
+    def do_work():
+        return 1
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
+    # groups of groups are forbidden
+    with pytest.raises(ValueError):
+        group(group(do_work.message() for _ in range(2)) for _ in range(3))
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends):
     # Given that I have a result backend
     backend = result_backends[backend]
@@ -504,7 +523,6 @@ def test_pipelines_with_groups(stub_broker, stub_worker, backend, result_backend
     assert [13 + 12, 13 + 15] == list(result)
 
 
-# TODO find a way to make a very complex pipeline
 @pytest.mark.parametrize("backend", ["redis", "stub"])
 def test_complex_pipelines(stub_broker, stub_worker, backend, result_backends):
     # Given a result backend
@@ -542,3 +560,43 @@ def test_complex_pipelines(stub_broker, stub_worker, backend, result_backends):
 
     assert 9 == result
 
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_pipeline_with_groups_and_pipe_ignore(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # Given an actor that do not stores results
+    @remoulade.actor()
+    def do_work():
+        return 1
+
+    @remoulade.actor(store_results=True)
+    def do_other_work():
+        return 2
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+    stub_broker.declare_actor(do_other_work)
+
+    # When I pipe a group with another actor
+    pipe = group([do_work.message(), do_work.message()]) | do_other_work.message_with_options(pipe_ignore=True)
+    pipe.run()
+
+    # I don't get any error as long the second actor has pipe_ignore=True
+    result = pipe.result.get(block=True)
+
+    assert 2 == result
+
+    # But if it don't, the pipeline cannot finish
+    pipe = group([do_work.message(), do_work.message()]) | do_other_work.message()
+    pipe.run()
+
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    with pytest.raises(ResultMissing):
+        pipe.result.get()

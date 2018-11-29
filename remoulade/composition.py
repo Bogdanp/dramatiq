@@ -19,6 +19,7 @@ from collections import namedtuple
 from .broker import get_broker
 from .common import generate_unique_id
 from .composition_result import CollectionResults
+from .errors import ResultNotStored
 
 
 class GroupInfo(namedtuple("GroupInfo", ("group_id", "count", "results"))):
@@ -37,12 +38,13 @@ class GroupInfo(namedtuple("GroupInfo", ("group_id", "count", "results"))):
         return {
             'group_id': self.group_id,
             'count': self.count,
-            'results': self.results.asdict()
+            'results': self.results.asdict() if self.results else None
         }
 
     @staticmethod
     def from_dict(group_id, count, results):
-        return GroupInfo(group_id=group_id, count=count, results=CollectionResults.from_dict(results))
+        results = CollectionResults.from_dict(results) if results else None
+        return GroupInfo(group_id=group_id, count=count, results=results)
 
 
 class pipeline:
@@ -84,8 +86,8 @@ class pipeline:
         Parameters:
             last_options(dict): options to be assigned to the last actor of the pipeline (ex: pipe_target)
 
-        :param last_options:
-        :return: the first message of the pipeline
+        Returns:
+            the first message of the pipeline
         """
         next_child = None
         for child in reversed(self.children):
@@ -170,11 +172,14 @@ class group:
     """
 
     def __init__(self, children, *, broker=None, group_id=None):
-        self.children = list(children)
+        self.children = []
+        for child in children:
+            if isinstance(child, group):
+                raise ValueError('Groups of groups are not supported')
+            self.children.append(child)
 
         self.broker = broker or get_broker()
         self.group_id = generate_unique_id() if group_id is None else group_id
-        self.info = GroupInfo(group_id=self.group_id, count=len(self.children), results=self.results)
 
     def __or__(self, other) -> pipeline:
         """Combine this group into a pipeline with "other".
@@ -188,6 +193,15 @@ class group:
 
     def __str__(self):  # pragma: no cover
         return "group([%s])" % ", ".join(str(c) for c in self.children)
+
+    @property
+    def info(self):
+        """ Info used for group completion """
+        try:
+            results = self.results
+        except ResultNotStored:
+            results = None
+        return GroupInfo(group_id=self.group_id, count=len(self.children), results=results)
 
     def run(self, *, delay=None):
         """Run the actors in this group.
