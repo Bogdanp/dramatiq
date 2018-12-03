@@ -338,5 +338,4 @@ def test_messages_can_get_results_and_forget(stub_broker, stub_worker, backend, 
     assert message.result.get(block=block, forget=True) == 42
 
     # If I ask again for the same result it should have been forgotten
-    with pytest.raises(ResultMissing):
-        message.result.get()
+    assert message.result.get() is None

@@ -17,7 +17,7 @@
 
 import time
 
-from ..backend import Missing, ResultBackend
+from ..backend import ForgottenResult, Missing, ResultBackend
 
 
 class StubBackend(ResultBackend):
@@ -33,7 +33,9 @@ class StubBackend(ResultBackend):
 
     def _get(self, message_key, forget: bool = False):
         if forget:
-            data, expiration = self.results.pop(message_key, (None, None))
+            data, expiration = self.results.get(message_key, (None, None))
+            if data is not None:
+                self.results[message_key] = self.encoder.encode(ForgottenResult.asdict()), expiration
         else:
             data, expiration = self.results.get(message_key, (None, None))
 

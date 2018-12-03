@@ -1,19 +1,25 @@
-from ..backend import Missing, ResultBackend
+from ..backend import ForgottenResult, Missing, ResultBackend
 
 
 class LocalBackend(ResultBackend):
     """An in-memory result backend. For use with LocalBroker only.
 
-    We need to be careful here: if an actor store its results and never retrieves it, we may store all its results
+    We need to be careful here: if an actor store its results and never forget it, we may store all its results
     and never delete it. Resulting in a memory leak.
     """
 
     results = {}
+    forgotten_results = set()
 
     def _get(self, message_key, forget: bool = False):
+        if message_key in self.forgotten_results:
+            return ForgottenResult.asdict()
+
         try:
             if forget:
-                return self.results.pop(message_key)
+                data = self.results.pop(message_key)
+                self.forgotten_results.add(message_key)
+                return data
             else:
                 return self.results[message_key]
         except KeyError:

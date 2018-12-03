@@ -66,3 +66,22 @@ def test_local_broker_with_groups(local_broker):
     g.run()
 
     assert list(g.results.get()) == [3, 7, 9]
+
+
+def test_local_broker_forget(local_broker):
+    # Given that I have an actor that stores its results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        return 1
+
+    # And this actor is declared
+    local_broker.declare_actor(do_work)
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # I if forget the result
+    assert message.result.get(forget=True) == 1
+
+    # the result is forgotten
+    assert message.result.get() is None

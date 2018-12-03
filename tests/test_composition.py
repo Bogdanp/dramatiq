@@ -443,9 +443,8 @@ def test_group_forget(stub_broker, backend, result_backends, stub_worker, block)
     assert list(results) == [42] * 5
 
     # All messages have been forgotten
-    for message in messages:
-        with pytest.raises(ResultMissing):
-            message.result.get()
+    results = g.results.get()
+    assert list(results) == [None] * 5
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])
@@ -473,9 +472,7 @@ def test_group_wait_forget(stub_broker, backend, result_backends, stub_worker):
     g.results.wait(forget=True)
 
     # All messages have been forgotten
-    for message in messages:
-        with pytest.raises(ResultMissing):
-            message.result.get()
+    assert list(g.results.get()) == [None] * 5
 
 
 @pytest.mark.parametrize("backend", ["redis", "stub"])

@@ -17,7 +17,7 @@
 
 import redis
 
-from ..backend import DEFAULT_TIMEOUT, BackendResult, ResultBackend, ResultMissing, ResultTimeout
+from ..backend import DEFAULT_TIMEOUT, BackendResult, ForgottenResult, ResultBackend, ResultMissing, ResultTimeout
 
 
 class RedisBackend(ResultBackend):
@@ -75,7 +75,8 @@ class RedisBackend(ResultBackend):
         timeout = int(timeout / 1000)
         if block and timeout > 0:
             if forget:
-                _, data = self.client.brpop(message_key)
+                _, data = self.client.brpop(message_key, timeout=timeout)
+                self.client.lpush(message_key, self.encoder.encode(ForgottenResult.asdict()))
             else:
                 data = self.client.brpoplpush(message_key, message_key, timeout)
 
@@ -84,7 +85,10 @@ class RedisBackend(ResultBackend):
 
         else:
             if forget:
-                data = self.client.rpop(message_key)
+                with self.client.pipeline() as pipe:
+                    pipe.rpop(message_key)
+                    pipe.lpush(message_key, self.encoder.encode(ForgottenResult.asdict()))
+                    data = pipe.execute()[0]
             else:
                 data = self.client.rpoplpush(message_key, message_key)
 
@@ -105,5 +109,12 @@ class RedisBackend(ResultBackend):
             pipe.execute()
 
     def increment_group_completion(self, group_id: str) -> int:
+        # there should be a ttl
+        ttl = 600  # 10 min ?
         group_completion_key = self.build_group_completion_key(group_id)
-        return self.client.incr(group_completion_key)
+        with self.client.pipeline() as pipe:
+            pipe.incr(group_completion_key)
+            pipe.expire(group_completion_key, ttl)
+            group_completion = pipe.execute()[0]
+
+        return group_completion

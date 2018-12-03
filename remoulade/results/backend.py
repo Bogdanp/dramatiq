@@ -17,6 +17,7 @@
 
 import time
 import typing
+from collections import namedtuple
 
 from ..common import compute_backoff
 from ..encoder import Encoder
@@ -34,8 +35,17 @@ Missing = type("Missing", (object,), {})()
 #: Canary value that is returned when a result is an error and the error is not raised
 FailureResult = type("FailureResult", (object,), {})()
 
+
 #: A type alias representing backend results.
-BackendResult = typing.NamedTuple("Result", [('result', typing.Any), ('error', typing.Any)])
+class BackendResult(namedtuple("BackendResult", ('result', 'error', 'forgot'))):
+    def __new__(cls, *, result, error, forgot=False):
+        return super().__new__(cls, result, error, forgot)
+
+    def asdict(self):
+        return self._asdict()
+
+
+ForgottenResult = BackendResult(result=None, error=None, forgot=True)
 
 #: A union representing a Result that may or may not be there.
 MResult = typing.Union[type(Missing), BackendResult]
