@@ -103,6 +103,10 @@ class Message(namedtuple("Message", (
         options.update(updated_options)
         return self._replace(**attributes, options=options)
 
+    def build(self, options):
+        """ Build message for pipeline """
+        return self.copy(options=options)
+
     @property
     def result(self):
         broker = get_broker()

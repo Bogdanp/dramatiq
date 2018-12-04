@@ -28,7 +28,7 @@ def test_messages_can_be_piped(stub_broker):
         return {key: value for (key, value) in message.items() if key != 'options'}
 
     # If I build a pipeline
-    first_target = pipe._build()
+    first_target = pipe.build()
     # And each message in the pipeline should reference the next message in line
     assert filter_options(first_target.options["pipe_target"]) == filter_options(pipe.children[1].asdict())
     second_target = first_target.options["pipe_target"]

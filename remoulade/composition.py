@@ -74,7 +74,7 @@ class pipeline:
             else:
                 self.children.append(child.copy())
 
-    def _build(self, *, last_options=None):
+    def build(self, *, last_options=None):
         """ Build the pipeline, return the first message to be enqueued or integrated in another pipeline
 
         Build the pipeline by starting at the end. We build a message with all it's options in one step and
@@ -99,18 +99,7 @@ class pipeline:
             else:
                 options = last_options or {}
 
-            if isinstance(child, group):
-                options = {'group_info': child.info.asdict(), **options}
-                messages = []
-                for group_child in child.children:
-                    if isinstance(group_child, pipeline):
-                        first = group_child._build(last_options=options)
-                        messages += [first]
-                    else:
-                        messages += [group_child.copy(options=options)]
-                next_child = messages
-            else:
-                next_child = child.copy(options=options)
+            next_child = child.build(options)
 
         return next_child
 
@@ -137,7 +126,7 @@ class pipeline:
         Returns:
           pipeline: Itself.
         """
-        first = self._build()
+        first = self.build()
         if isinstance(first, list):
             for message in first:
                 self.broker.enqueue(message, delay=delay)
@@ -193,6 +182,18 @@ class group:
 
     def __str__(self):  # pragma: no cover
         return "group([%s])" % ", ".join(str(c) for c in self.children)
+
+    def build(self, options):
+        """ Build group for pipeline """
+        options = {'group_info': self.info.asdict(), **options}
+        messages = []
+        for group_child in self.children:
+            if isinstance(group_child, pipeline):
+                first = group_child.build(last_options=options)
+                messages += [first]
+            else:
+                messages += [group_child.build(options)]
+        return messages
 
     @property
     def info(self):
