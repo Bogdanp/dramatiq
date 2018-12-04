@@ -20,6 +20,7 @@ Changed
 * |get_result_backend| now raise NoResultBackend if there is no |ResultBackend|
 * Merged PipelineResult and GroupResult into |CollectionResult|
 * |message_get_result| on forgotten results now returns None
+* Update redis-py to 3.0.1
 
 
 `0.6.0`_ -- 2018-11-23

@@ -28,12 +28,12 @@ class RedisBackend(ResultBackend):
       namespace(str): A string with which to prefix result keys.
       encoder(Encoder): The encoder to use when storing and retrieving
         result data.  Defaults to :class:`.JSONEncoder`.
-      client(StrictRedis): An optional client.  If this is passed,
+      client(Redis): An optional client.  If this is passed,
         then all other parameters are ignored.
       url(str): An optional connection URL.  If both a URL and
         connection paramters are provided, the URL is used.
       **parameters(dict): Connection parameters are passed directly
-        to :class:`redis.StrictRedis`.
+        to :class:`redis.Redis`.
 
     .. _redis: https://redis.io
     """
@@ -44,7 +44,7 @@ class RedisBackend(ResultBackend):
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
 
     def get_result(self, message, *, block=False, timeout=None, forget=False, raise_on_error=True):
         """Get a result from the backend.
