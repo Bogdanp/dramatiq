@@ -35,6 +35,15 @@ class LocalBroker(Broker):
             raise RuntimeError("LocalBroker can only be used with LocalBackend.")
         super().add_middleware(middleware, before=before, after=after)
 
+    def emit_before(self, signal, *args, **kwargs):
+        # A local broker should not catch any exception because we are not in a worker but in the main thread
+        for middleware in self.middleware:
+            getattr(middleware, "before_" + signal)(self, *args, **kwargs)
+
+    def emit_after(self, signal, *args, **kwargs):
+        for middleware in reversed(self.middleware):
+            getattr(middleware, "after_" + signal)(self, *args, **kwargs)
+
     def consume(self, queue_name, prefetch=1, timeout=100):
         raise ValueError('LocalBroker is not destined to use with a Worker')
 
