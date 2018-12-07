@@ -17,8 +17,8 @@
 import time
 from collections import deque
 
+from .broker import get_broker
 from .result import Result
-from .results import ResultMissing
 
 
 class CollectionResults:
@@ -32,7 +32,7 @@ class CollectionResults:
         self.children = list(children)
 
     def __len__(self):
-        return len(self.children)
+        return len(self._message_ids)
 
     def asdict(self):
         result = []
@@ -52,7 +52,7 @@ class CollectionResults:
         return CollectionResults(children)
 
     @property
-    def completed(self):
+    def completed(self) -> bool:
         """Returns True when all the jobs have been
         completed.  Actors that don't store results are not counted,
         meaning this may be inaccurate if all or some of your actors
@@ -65,7 +65,17 @@ class CollectionResults:
         return self.completed_count == len(self)
 
     @property
-    def completed_count(self):
+    def _message_ids(self):
+        message_ids = []
+        for child in self.children:
+            if isinstance(child, CollectionResults):
+                message_ids += child._message_ids
+            else:
+                message_ids += [child.message_id]
+        return message_ids
+
+    @property
+    def completed_count(self) -> int:
         """Returns the total number of jobs that have been completed.
         Actors that don't store results are not counted, meaning this
         may be inaccurate if all or some of your actors don't store
@@ -78,14 +88,10 @@ class CollectionResults:
         Returns:
           int: The total number of results.
         """
-        count = 0
-        for count, child in enumerate(self.children, start=1):
-            try:
-                child.get()
-            except ResultMissing:
-                return count - 1
-
-        return count
+        broker = get_broker()
+        backend = broker.get_result_backend()
+        # we could use message.completed here but we just want to make 1 call to get_status
+        return backend.get_status(self._message_ids)
 
     def get(self, *, block=False, timeout=None, raise_on_error=True, forget=False):
         """Get the results of each job in the collection.

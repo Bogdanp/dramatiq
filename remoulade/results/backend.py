@@ -155,6 +155,16 @@ class ResultBackend:
         """
         return "{}:{}".format(self.namespace, message_id)
 
+    def get_status(self, message_ids: typing.List[str]) -> int:
+        """ Given a list of messages ids return the number of messages with a result stored"""
+        count = 0
+        for message_id in message_ids:
+            message_key = self.build_message_key(message_id)
+            result = self._get(message_key, forget=False)
+            if result != Missing:
+                count += 1
+        return count
+
     @staticmethod
     def build_group_completion_key(group_id: str) -> str:  # noqa: F821
         return "remoulade-group-completion:{}".format(group_id)

@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Added Result |completed| without needing to get the full result, also true with |completed_count|.
+
 Fixed
 ^^^^^
 

@@ -339,3 +339,40 @@ def test_messages_can_get_results_and_forget(stub_broker, stub_worker, backend, 
 
     # If I ask again for the same result it should have been forgotten
     assert message.result.get() is None
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+@pytest.mark.parametrize("error", [True, False])
+def test_messages_can_get_completed(stub_broker, stub_worker, backend, result_backends, error):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        if error:
+            raise ValueError()
+        else:
+            return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    result = message.result
+    # we can get the completion
+    assert result.completed
+
+    result.get(forget=True, raise_on_error=False)
+
+    # even after a forget
+    assert result.completed

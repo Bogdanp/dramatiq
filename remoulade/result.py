@@ -60,3 +60,14 @@ class Result(namedtuple("Result", ("message_id",))):
 
         return backend.get_result(self.message_id, block=block, timeout=timeout, forget=forget,
                                   raise_on_error=raise_on_error)
+
+    def completed(self) -> bool:
+        """Returns True when the job has been completed (error or result).
+
+        Raises:
+          RuntimeError: If your broker doesn't have a result backend
+            set up.
+        """
+        broker = get_broker()
+        backend = broker.get_result_backend()
+        return backend.get_status([self.message_id]) == 1

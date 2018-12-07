@@ -59,6 +59,9 @@
 .. |get_result_backend|  replace:: :meth:`get_result_backend<remoulade.Broker.get_result_backend>`
 .. |CollectionResults|  replace:: :class:`CollectionResults<remoulade.collection_results>`
 .. |pipeline_results_get| replace:: :meth:`get<remoulade.CollectionResults.get>`
+.. |completed_count| replace:: :meth:`completed_count<remoulade.CollectionResults.completed_count>`
+.. |completed| replace:: :meth:`completed<remoulade.Result.completed>`
+
 
 
 

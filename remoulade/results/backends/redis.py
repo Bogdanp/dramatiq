@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from typing import List
 
 import redis
 
@@ -118,3 +119,6 @@ class RedisBackend(ResultBackend):
             group_completion = pipe.execute()[0]
 
         return group_completion
+
+    def get_status(self, message_ids: List[str]) -> int:
+        return self.client.exists(*[self.build_message_key(message_id) for message_id in message_ids])
