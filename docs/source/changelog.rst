@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Failure of children of pipeline when a message fail (in the case of pipeline of groups)
+
 `0.7.0`_ -- 2018-12-04
 ----------------------
 

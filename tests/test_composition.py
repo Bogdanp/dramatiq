@@ -282,7 +282,8 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
     stub_broker.declare_actor(do_work)
 
     # And I've run a pipeline
-    pipe = do_work_fail.message() | do_work.message() | do_work.message()
+    g = group([do_work.message(), do_work.message(), do_work.message()])
+    pipe = do_work_fail.message() | do_work.message() | g | do_work.message()
     pipe.run()
 
     stub_broker.join(do_work.queue_name)
@@ -293,9 +294,14 @@ def test_pipelines_store_results_error(stub_broker, backend, result_backends, st
         pipe.children[0].result.get(block=True)
     assert str(e.value) == 'ValueError()'
 
-    for i in [1, 2]:
+    for i in [1, 3]:
         with pytest.raises(ErrorStored) as e:
             pipe.children[i].result.get(block=True)
+        assert str(e.value).startswith('ParentFailed')
+
+    for child in g.children:
+        with pytest.raises(ErrorStored) as e:
+            child.result.get(block=True)
         assert str(e.value).startswith('ParentFailed')
 
 

@@ -85,14 +85,23 @@ class Results(Middleware):
             self.backend.store_result(message.message_id, BackendResult(result=None, error=repr(exception)), result_ttl)
 
             exception = ParentFailed("%s failed because of %s" % (message, repr(exception)))
-            self.store_error_children(message, exception, result_ttl)
+            result = BackendResult(result=None, error=repr(exception))
 
-    def store_error_children(self, message, exception, result_ttl):
-        """ Store an error for each actor following the failed one in the pipeline"""
+            for message_id in self._get_children_message_ids(message.options.get("pipe_target")):
+                self.backend.store_result(message_id, result, result_ttl)
+
+    def _get_children_message_ids(self, pipe_target):
+        """ Get the ids of all the following messages in the pipeline """
         from ..message import Message
 
-        message_data = message.options.get("pipe_target")
-        if message_data is not None:
-            next_message = Message(**message_data)
-            self.backend.store_result(next_message.message_id, BackendResult(result=None, error=repr(exception)), result_ttl)
-            self.store_error_children(next_message, exception, result_ttl)
+        message_ids = set()
+
+        if isinstance(pipe_target, list):
+            for message_data in pipe_target:
+                message_ids |= self._get_children_message_ids(message_data)
+        elif pipe_target:
+            message = Message(**pipe_target)
+            message_ids.add(message.message_id)
+            message_ids |= self._get_children_message_ids(message.options.get("pipe_target"))
+
+        return message_ids
