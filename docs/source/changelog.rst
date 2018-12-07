@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`0.8.0`_ -- 2018-12-07
+----------------------
+
 Added
 ^^^^^
 
