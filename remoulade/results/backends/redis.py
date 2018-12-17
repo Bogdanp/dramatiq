@@ -87,9 +87,9 @@ class RedisBackend(ResultBackend):
         else:
             if forget:
                 with self.client.pipeline() as pipe:
-                    pipe.rpop(message_key)
-                    pipe.lpush(message_key, self.encoder.encode(ForgottenResult.asdict()))
-                    data = pipe.execute()[0]
+                    pipe.rpushx(message_key, self.encoder.encode(ForgottenResult.asdict()))
+                    pipe.lpop(message_key)
+                    data = pipe.execute()[1]
             else:
                 data = self.client.rpoplpush(message_key, message_key)
 

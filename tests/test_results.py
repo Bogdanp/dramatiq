@@ -376,3 +376,32 @@ def test_messages_can_get_completed(stub_broker, stub_worker, backend, result_ba
 
     # even after a forget
     assert result.completed
+
+
+@pytest.mark.parametrize("backend", ["redis", "stub"])
+def test_result_get_forget_not_store_if_no_result(stub_broker, stub_worker, backend, result_backends):
+    # Given a result backend
+    backend = result_backends[backend]
+
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores results
+    @remoulade.actor(store_results=True)
+    def do_work():
+        time.sleep(1)
+        return 42
+
+    # And this actor is declared
+    stub_broker.declare_actor(do_work)
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    result = message.result
+    # If I get the result and forget it
+    with pytest.raises(ResultMissing):
+        result.get(forget=True)
+
+    # It should not store a forgotten result if there is no key
+    assert result.get(block=True) == 42
