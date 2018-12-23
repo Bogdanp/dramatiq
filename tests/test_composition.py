@@ -414,4 +414,4 @@ def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_lim
     assert len(finalize_times) == 1
 
     # And the callback should run after all the messages
-    assert sorted(do_nothing_times)[-1] < finalize_times[0]
+    assert sorted(do_nothing_times)[-1] <= finalize_times[0]
