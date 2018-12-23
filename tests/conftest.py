@@ -160,6 +160,11 @@ def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_bac
     }
 
 
+@pytest.fixture(params=["memcached", "redis", "stub"])
+def rate_limiter_backend(request, rate_limiter_backends):
+    return rate_limiter_backends[request.param]
+
+
 @pytest.fixture
 def memcached_result_backend():
     backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)

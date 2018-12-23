@@ -1,17 +1,12 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-import pytest
-
 from dramatiq.rate_limits import Barrier
 
 
-@pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_barrier(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_barrier(rate_limiter_backend):
     # Given that I have a barrier of two parties
-    barrier = Barrier(backend, "sequential-barrier", ttl=30000)
+    barrier = Barrier(rate_limiter_backend, "sequential-barrier", ttl=30000)
     assert barrier.create(parties=2)
 
     # When I try to recreate it
@@ -25,12 +20,9 @@ def test_barrier(backend, rate_limiter_backends):
     assert barrier.wait(block=False)
 
 
-@pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_barriers_can_block(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_barriers_can_block(rate_limiter_backend):
     # Given that I have a barrier of two parties
-    barrier = Barrier(backend, "sequential-barrier", ttl=30000)
+    barrier = Barrier(rate_limiter_backend, "sequential-barrier", ttl=30000)
     assert barrier.create(parties=2)
 
     # And I have a worker function that waits on the barrier and writes its timestamp
@@ -50,12 +42,9 @@ def test_barriers_can_block(backend, rate_limiter_backends):
     assert abs(times[0] - times[1]) <= 0.01
 
 
-@pytest.mark.parametrize("backend", ["redis", "stub"])
-def test_barriers_can_timeout(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_barriers_can_timeout(rate_limiter_backend):
     # Given that I have a barrier of two parties
-    barrier = Barrier(backend, "sequential-barrier", ttl=30000)
+    barrier = Barrier(rate_limiter_backend, "sequential-barrier", ttl=30000)
     assert barrier.create(parties=2)
 
     # When I wait on the barrier with a timeout

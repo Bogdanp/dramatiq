@@ -1,17 +1,12 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-import pytest
-
 from dramatiq.rate_limits import ConcurrentRateLimiter, RateLimitExceeded
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_concurrent_rate_limiter_releases_the_lock_after_each_call(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_concurrent_rate_limiter_releases_the_lock_after_each_call(rate_limiter_backend):
     # Given that I have a distributed mutex and a call database
-    mutex = ConcurrentRateLimiter(backend, "sequential-test", limit=1)
+    mutex = ConcurrentRateLimiter(rate_limiter_backend, "sequential-test", limit=1)
     calls = 0
 
     # And I acquire it multiple times sequentially
@@ -26,12 +21,9 @@ def test_concurrent_rate_limiter_releases_the_lock_after_each_call(backend, rate
     assert calls == 8
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_concurrent_rate_limiter_can_act_as_a_mutex(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_concurrent_rate_limiter_can_act_as_a_mutex(rate_limiter_backend):
     # Given that I have a distributed mutex and a call database
-    mutex = ConcurrentRateLimiter(backend, "concurrent-test", limit=1)
+    mutex = ConcurrentRateLimiter(rate_limiter_backend, "concurrent-test", limit=1)
     calls = []
 
     # And a function that adds calls to the database after acquiring the mutex
@@ -56,12 +48,9 @@ def test_concurrent_rate_limiter_can_act_as_a_mutex(backend, rate_limiter_backen
     assert sum(calls) == 1
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_concurrent_rate_limiter_limits_concurrency(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_concurrent_rate_limiter_limits_concurrency(rate_limiter_backend):
     # Given that I have a distributed rate limiter and a call database
-    mutex = ConcurrentRateLimiter(backend, "concurrent-test", limit=4)
+    mutex = ConcurrentRateLimiter(rate_limiter_backend, "concurrent-test", limit=4)
     calls = []
 
     # And a function that adds calls to the database after acquiring the rate limit

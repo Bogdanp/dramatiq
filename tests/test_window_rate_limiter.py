@@ -2,17 +2,12 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
-import pytest
-
 from dramatiq.rate_limits import WindowRateLimiter
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_window_rate_limiter_limits_per_window(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_window_rate_limiter_limits_per_window(rate_limiter_backend):
     # Given that I have a bucket rate limiter and a call database
-    limiter = WindowRateLimiter(backend, "window-test", limit=2, window=5)
+    limiter = WindowRateLimiter(rate_limiter_backend, "window-test", limit=2, window=5)
     calls = defaultdict(lambda: 0)
 
     # And a function that increments keys over the span of 20 seconds
