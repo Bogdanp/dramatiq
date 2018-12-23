@@ -20,7 +20,7 @@ import time
 import warnings
 from functools import partial
 from itertools import chain
-from threading import local
+from threading import Event, local
 
 import pika
 
@@ -433,6 +433,22 @@ class _RabbitmqConsumer(Consumer):
             raise ConnectionClosed(e) from None
 
     def close(self):
+        try:
+            # Closing the connection doesn't wait for all callbacks to
+            # finish processing so we enqueue a final callback and
+            # wait for it to finish before closing the connection.
+            # Assumes callbacks are called in order (they should be).
+            all_callbacks_handled = Event()
+            self.connection.add_callback_threadsafe(all_callbacks_handled.set)
+            while not all_callbacks_handled.is_set():
+                self.connection.sleep(0)
+        except Exception:
+            self.logger.exception(
+                "Failed to wait for all callbacks to complete.  This "
+                "can happen when the RabbitMQ server is suddenly "
+                "restarted."
+            )
+
         try:
             self.channel.close()
             self.connection.close()
