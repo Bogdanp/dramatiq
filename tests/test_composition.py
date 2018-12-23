@@ -43,13 +43,10 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
     assert pipe.messages[3].args == (5,)
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, result_backends):
+def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, result_backend):
     # Given a result backend
-    backend = result_backends[backend]
-
     # And a broker with the results middleware
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And an actor that adds two numbers together and stores the result
     @dramatiq.actor(store_results=True)
@@ -67,13 +64,10 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, backend, re
     assert list(pipe.get_results()) == [3, 6, 10]
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, result_backends):
+def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, result_backend):
     # Given a result backend
-    backend = result_backends[backend]
-
     # And a broker with the results middleware
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And an actor that waits some amount of time then doubles that amount
     @dramatiq.actor(store_results=True)
@@ -92,13 +86,10 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, backend, re
             pass
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, result_backends):
+def test_pipelines_expose_completion_stats(stub_broker, stub_worker, result_backend):
     # Given a result backend
-    backend = result_backends[backend]
-
     # And a broker with the results middleware
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And an actor that waits some amount of time
     condition = Condition()
@@ -125,12 +116,10 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, backend, re
     assert pipe.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
+def test_pipelines_can_be_incomplete(stub_broker, result_backend):
     # Given that I am not running a worker
     # And I have a result backend
-    backend = result_backends[backend]
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And I have an actor that does nothing
     @dramatiq.actor(store_results=True)
@@ -146,11 +135,9 @@ def test_pipelines_can_be_incomplete(stub_broker, backend, result_backends):
     assert not pipe.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, result_backends):
+def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, result_backend):
     # Given that I have a result backend
-    backend = result_backends[backend]
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And I have an actor that sleeps for 100ms
     @dramatiq.actor(store_results=True)
@@ -175,11 +162,9 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, backend, resu
     assert g.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_backends):
+def test_groups_execute_inner_groups(stub_broker, stub_worker, result_backend):
     # Given that I have a result backend
-    backend = result_backends[backend]
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And I have an actor that sleeps for 100ms
     @dramatiq.actor(store_results=True)
@@ -204,11 +189,9 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, backend, result_b
     assert g.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends):
+def test_groups_can_time_out(stub_broker, stub_worker, result_backend):
     # Given that I have a result backend
-    backend = result_backends[backend]
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And I have an actor that sleeps for 300ms
     @dramatiq.actor(store_results=True)
@@ -228,11 +211,9 @@ def test_groups_can_time_out(stub_broker, stub_worker, backend, result_backends)
     assert not g.completed
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_groups_expose_completion_stats(stub_broker, stub_worker, backend, result_backends):
+def test_groups_expose_completion_stats(stub_broker, stub_worker, result_backend):
     # Given that I have a result backend
-    backend = result_backends[backend]
-    stub_broker.add_middleware(Results(backend=backend))
+    stub_broker.add_middleware(Results(backend=result_backend))
 
     # And an actor that waits some amount of time
     condition = Condition()

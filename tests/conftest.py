@@ -189,3 +189,8 @@ def result_backends(memcached_result_backend, redis_result_backend, stub_result_
         "redis": redis_result_backend,
         "stub": stub_result_backend,
     }
+
+
+@pytest.fixture(params=["memcached", "redis", "stub"])
+def result_backend(request, result_backends):
+    return result_backends[request.param]
