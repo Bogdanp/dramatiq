@@ -18,6 +18,7 @@
 from .age_limit import AgeLimit
 from .callbacks import Callbacks
 from .current_message import CurrentMessage
+from .group_callbacks import GroupCallbacks
 from .middleware import Middleware, MiddlewareError, SkipMessage
 from .pipelines import Pipelines
 from .prometheus import Prometheus
@@ -34,7 +35,7 @@ __all__ = [
     "Interrupt", "raise_thread_exception",
 
     # Middlewares
-    "AgeLimit", "Callbacks", "CurrentMessage", "Pipelines", "Retries",
+    "AgeLimit", "Callbacks", "CurrentMessage", "GroupCallbacks", "Pipelines", "Retries",
     "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
     "Prometheus",
 ]

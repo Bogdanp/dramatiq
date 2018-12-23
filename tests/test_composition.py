@@ -1,10 +1,11 @@
 import time
-from threading import Condition
+from threading import Condition, Event
 
 import pytest
 
 import dramatiq
 from dramatiq import group, middleware, pipeline
+from dramatiq.middleware import GroupCallbacks
 from dramatiq.results import Results, ResultTimeout
 
 
@@ -296,7 +297,6 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
     # Then the second message in the pipe should never have run
     assert not has_run
 
-
 def test_pipeline_respects_own_delay(stub_broker, stub_worker, result_backend):
     # Given a result backend
     # And a broker with the results middleware
@@ -380,3 +380,38 @@ def test_pipeline_respects_bigger_of_first_messages_and_pipelines_delay(stub_bro
     with pytest.raises(ResultTimeout):
         for _ in pipe.get_results(block=True, timeout=300):
             pass
+
+def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_limiter_backend):
+    # Given that I have a rate limiter backend
+    # And I've added the GroupCallbacks middleware to my broker
+    stub_broker.add_middleware(GroupCallbacks(rate_limiter_backend))
+
+    do_nothing_times = []
+    finalize_times = []
+    finalized = Event()
+
+    @dramatiq.actor
+    def do_nothing():
+        do_nothing_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def finalize(n):
+        finalized.set()
+        finalize_times.append(time.monotonic())
+
+    # When I group together some messages with a completion callback
+    g = group(do_nothing.message() for n in range(5))
+    g.add_completion_callback(finalize.message(42))
+    g.run()
+
+    # And wait for the callback to be callled
+    finalized.wait(timeout=30)
+
+    # Then all the messages in the group should run
+    assert len(do_nothing_times) == 5
+
+    # And the callback
+    assert len(finalize_times) == 1
+
+    # And the callback should run after all the messages
+    assert sorted(do_nothing_times)[-1] < finalize_times[0]
