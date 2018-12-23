@@ -96,7 +96,8 @@ class RateLimiterBackend:
         raise NotImplementedError
 
     def wait_notify(self, key, ttl):  # pragma: no cover
-        """Notify parties wait()ing on a key that an event has occurred.
+        """Notify parties wait()ing on a key that an event has
+        occurred.  The default implementation is a no-op.
 
         Parameters:
           key(str): The key to notify on.
@@ -106,4 +107,3 @@ class RateLimiterBackend:
         Returns:
           None
         """
-        raise NotImplementedError
