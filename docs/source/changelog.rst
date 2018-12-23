@@ -9,6 +9,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Workers wait for RMQ messages to be acked upon shutdown.  (`#148`_)
+* Log files now work under Windows.  (`#141`_, `@ryansm1`_)
+
+.. _#141: https://github.com/Bogdanp/dramatiq/pull/141
+.. _#148: https://github.com/Bogdanp/dramatiq/pull/148
+.. _@ryansm1: https://github.com/ryansm1
+
 
 `1.4.0`_ -- 2018-11-25
 ----------------------
