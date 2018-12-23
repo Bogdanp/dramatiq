@@ -1,5 +1,6 @@
 import os
 import time
+from threading import Event
 from unittest.mock import Mock
 
 import pytest
@@ -45,6 +46,7 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
 def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
     failure_time, success_time = None, None
+    succeeded = Event()
 
     # And an actor that fails the first time it's called
     @dramatiq.actor(min_backoff=1000, max_backoff=5000)
@@ -55,13 +57,13 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
             raise RuntimeError("First failure.")
         else:
             success_time = current_millis()
+            succeeded.set()
 
     # If I send it a message
     do_work.send()
 
-    # Then join on the queue
-    rabbitmq_broker.join(do_work.queue_name)
-    rabbitmq_worker.join()
+    # Then wait for the actor to succeed
+    succeeded.wait(timeout=30)
 
     # I expect backoff time to have passed between sucess and failure
     assert 500 <= success_time - failure_time <= 1500
