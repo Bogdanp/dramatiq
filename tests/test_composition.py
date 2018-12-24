@@ -396,6 +396,7 @@ def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_lim
 
     @dramatiq.actor
     def finalize(n):
+        assert n == 42
         finalize_times.append(time.monotonic())
         finalized.set()
 
@@ -452,6 +453,7 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
 
     @dramatiq.actor
     def finalize(n):
+        assert n == 42
         finalize_times.append(time.monotonic())
         finalized.set()
 
