@@ -396,8 +396,8 @@ def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_lim
 
     @dramatiq.actor
     def finalize(n):
-        finalized.set()
         finalize_times.append(time.monotonic())
+        finalized.set()
 
     # When I group together some messages with a completion callback
     g = group(do_nothing.message() for n in range(5))
@@ -409,6 +409,65 @@ def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_lim
 
     # Then all the messages in the group should run
     assert len(do_nothing_times) == 5
+
+    # And the callback
+    assert len(finalize_times) == 1
+
+    # And the callback should run after all the messages
+    assert sorted(do_nothing_times)[-1] <= finalize_times[0]
+
+
+def test_groups_with_completion_callbacks_fail_unless_group_callbacks_is_set_up(stub_broker, stub_worker):
+    # Given that I haven't set up GroupCallbacks
+    @dramatiq.actor
+    def do_nothing():
+        pass
+
+    @dramatiq.actor
+    def finalize(n):
+        pass
+
+    # When I group together some messages with a completion callback
+    g = group(do_nothing.message() for n in range(5))
+    g.add_completion_callback(finalize.message(42))
+
+    # And run the group
+    # Then a RuntimeError should be raised
+    with pytest.raises(RuntimeError):
+        g.run()
+
+
+def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_worker, rate_limiter_backend):
+    # Given that I have a rate limiter backend
+    # And I've added the GroupCallbacks middleware to my broker
+    stub_broker.add_middleware(GroupCallbacks(rate_limiter_backend))
+
+    do_nothing_times = []
+    finalize_times = []
+    finalized = Event()
+
+    @dramatiq.actor
+    def do_nothing(_):
+        do_nothing_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def finalize(n):
+        finalize_times.append(time.monotonic())
+        finalized.set()
+
+    # When I group together some messages with a completion callback
+    g = group([
+        do_nothing.message(1) | do_nothing.message(),
+        do_nothing.message(1)
+    ])
+    g.add_completion_callback(finalize.message(42))
+    g.run()
+
+    # And wait for the callback to be callled
+    finalized.wait(timeout=30)
+
+    # Then all the messages in the group should run
+    assert len(do_nothing_times) == 3
 
     # And the callback
     assert len(finalize_times) == 1
