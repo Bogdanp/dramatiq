@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Support for redis-py 3.x.  (`#142`_, `@maerteijn`_)
+
+.. _#142: https://github.com/Bogdanp/dramatiq/pull/142
+.. _@maerteijn: https://github.com/maerteijn
+
 Fixed
 ^^^^^
 
@@ -16,7 +24,7 @@ Fixed
 * Log files now work under Windows.  (`#141`_, `@ryansm1`_)
 
 .. _#141: https://github.com/Bogdanp/dramatiq/pull/141
-.. _#148: https://github.com/Bogdanp/dramatiq/pull/148
+.. _#148: https://github.com/Bogdanp/dramatiq/issues/148
 .. _@ryansm1: https://github.com/ryansm1
 
 
