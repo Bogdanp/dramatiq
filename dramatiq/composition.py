@@ -245,16 +245,33 @@ class group:
           delay(int): The minimum amount of time, in milliseconds,
             each message in the group should be delayed by.
         """
-        children = self.children[:]
         if self.completion_callbacks:
-            rate_limiter_backend = _lookup_rate_limiter_backend(self.broker)
+            from .middleware.group_callbacks import GROUP_CALLBACK_BARRIER_TTL, GroupCallbacks
+
+            rate_limiter_backend = None
+            for middleware in self.broker.middleware:
+                if isinstance(middleware, GroupCallbacks):
+                    rate_limiter_backend = middleware.rate_limiter_backend
+                    break
+            else:
+                raise RuntimeError(
+                    "GroupCallbacks middleware not found! Did you forget "
+                    "to set it up? It is required if you want to use "
+                    "group callbacks."
+                )
+
             completion_uuid = str(uuid4())
-            completion_barrier = Barrier(rate_limiter_backend, completion_uuid, ttl=86400000)
-            completion_barrier.create(len(children))
-            children = [child.copy(options={
-                "group_completion_uuid": completion_uuid,
-                "group_completion_callbacks": self.completion_callbacks,
-            }) for child in children]
+            completion_barrier = Barrier(rate_limiter_backend, completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
+            completion_barrier.create(len(self.children))
+
+            children = []
+            for child in self.children:
+                children.append(child.copy(options={
+                    "group_completion_uuid": completion_uuid,
+                    "group_completion_callbacks": self.completion_callbacks,
+                }))
+        else:
+            children = self.children
 
         for child in children:
             if isinstance(child, (group, pipeline)):
@@ -303,13 +320,3 @@ class group:
         """
         for _ in self.get_results(block=True, timeout=timeout):  # pragma: no cover
             pass
-
-
-def _lookup_rate_limiter_backend(broker):
-    from .middleware import GroupCallbacks
-
-    for middleware in broker.middleware:
-        if isinstance(middleware, GroupCallbacks):
-            return middleware.rate_limiter_backend
-
-    raise RuntimeError("GroupCallbacks middleware not found.")

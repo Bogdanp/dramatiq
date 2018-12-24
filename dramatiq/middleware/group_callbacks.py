@@ -15,8 +15,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from ..rate_limits import Barrier
 from .middleware import Middleware
+
+GROUP_CALLBACK_BARRIER_TTL = int(os.getenv("dramatiq_group_callback_barrier_ttl", "86400000"))
 
 
 class GroupCallbacks(Middleware):
@@ -30,7 +34,7 @@ class GroupCallbacks(Middleware):
             group_completion_uuid = message.options.get("group_completion_uuid")
             group_completion_callbacks = message.options.get("group_completion_callbacks")
             if group_completion_uuid and group_completion_callbacks:
-                barrier = Barrier(self.rate_limiter_backend, group_completion_uuid, ttl=86400000)
+                barrier = Barrier(self.rate_limiter_backend, group_completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
                 if barrier.wait(block=False):
                     for message in group_completion_callbacks:
                         broker.enqueue(Message(**message))
