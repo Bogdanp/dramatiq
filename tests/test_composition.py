@@ -259,7 +259,7 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
         has_ran = True
 
     # When I pipe some messages intended for that actor together and run the pipeline
-    pipe: pipeline = do_nothing.message_with_options(pipe_ignore=True) | should_never_run.message()
+    pipe = do_nothing.message_with_options(pipe_ignore=True) | should_never_run.message()
     pipe.run()
 
     stub_broker.join(queue_name, timeout=10 * 1000)
