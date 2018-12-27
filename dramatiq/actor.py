@@ -68,7 +68,7 @@ def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=
     """
     def decorator(fn):
         nonlocal actor_name, broker
-        actor_name = actor_name or fn.__name__
+        actor_name = actor_name or ".".join([fn.__module__, fn.__name__])
         if not _queue_name_re.fullmatch(queue_name):
             raise ValueError(
                 "Queue names must start with a letter or an underscore followed "
