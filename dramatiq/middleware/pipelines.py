@@ -42,7 +42,7 @@ class Pipelines(Middleware):
         # from broker -> pipelines -> messages -> broker.
         from ..message import Message
 
-        if exception is not None:
+        if exception is not None or message.failed:
             return
 
         actor = broker.get_actor(message.actor_name)
