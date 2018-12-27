@@ -4,7 +4,7 @@ from threading import Condition
 import pytest
 
 import dramatiq
-from dramatiq import group, pipeline
+from dramatiq import group, middleware, pipeline
 from dramatiq.results import Results, ResultTimeout
 
 
@@ -238,3 +238,33 @@ def test_groups_expose_completion_stats(stub_broker, stub_worker, result_backend
 
     # Finally, completed should be true
     assert g.completed
+
+
+def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_failed(stub_broker, stub_worker):
+    # Given that I have an actor that fails messages
+    class FailMessageMiddleware(middleware.Middleware):
+        def after_process_message(self, broker, message, *, result=None, exception=None):
+            message.fail()
+
+    stub_broker.add_middleware(FailMessageMiddleware())
+
+    has_run = False
+
+    @dramatiq.actor
+    def do_nothing():
+        pass
+
+    @dramatiq.actor
+    def should_never_run():
+        nonlocal has_run
+        has_run = True
+
+    # When I pipe some messages intended for that actor together and run the pipeline
+    pipe = do_nothing.message_with_options(pipe_ignore=True) | should_never_run.message()
+    pipe.run()
+
+    stub_broker.join(should_never_run.queue_name, timeout=10 * 1000)
+    stub_worker.join()
+
+    # Then the second message in the pipe should never have run
+    assert not has_run
