@@ -21,11 +21,14 @@ Fixed
 ^^^^^
 
 * Workers wait for RMQ messages to be acked upon shutdown.  (`#148`_)
+* Pipelines no longer continue when a message is failed.  (`#151`_, `@davidt99`_)
 * Log files now work under Windows.  (`#141`_, `@ryansm1`_)
 
 .. _#141: https://github.com/Bogdanp/dramatiq/pull/141
 .. _#148: https://github.com/Bogdanp/dramatiq/issues/148
+.. _#151: https://github.com/Bogdanp/dramatiq/issues/151
 .. _@ryansm1: https://github.com/ryansm1
+.. _@davidt99: https://github.com/davidt99
 
 
 `1.4.0`_ -- 2018-11-25
