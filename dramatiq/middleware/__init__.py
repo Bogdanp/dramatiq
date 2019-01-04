@@ -20,6 +20,7 @@ import platform
 from .age_limit import AgeLimit
 from .callbacks import Callbacks
 from .middleware import Middleware, MiddlewareError, SkipMessage
+from .composition import Composition
 from .pipelines import Pipelines
 from .retries import Retries
 from .shutdown import Shutdown, ShutdownNotifications
@@ -40,7 +41,7 @@ __all__ = [
     "Interrupt", "raise_thread_exception",
 
     # Middlewares
-    "AgeLimit", "Callbacks", "Pipelines", "Retries",
+    "AgeLimit", "Callbacks", "Composition", "Pipelines", "Retries",
     "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
 ]
 

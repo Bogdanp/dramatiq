@@ -19,8 +19,6 @@ import time
 import uuid
 from collections import namedtuple
 
-from .broker import get_broker
-from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .results import Results
 
@@ -79,9 +77,10 @@ class Message(namedtuple("Message", (
             message_timestamp=message_timestamp or int(time.time() * 1000),
         )
 
-    def __or__(self, other) -> pipeline:
+    def __or__(self, other):
         """Combine this message into a pipeline with "other".
         """
+        from .composition import pipeline
         return pipeline([self, other])
 
     def asdict(self):
@@ -135,6 +134,9 @@ class Message(namedtuple("Message", (
         Returns:
           object: The result.
         """
+        # Break the import cycle
+        from .broker import get_broker
+
         if not backend:
             broker = get_broker()
             for middleware in broker.middleware:

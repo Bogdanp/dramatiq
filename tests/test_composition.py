@@ -20,7 +20,11 @@ def test_messages_can_be_piped(stub_broker):
     # Then I should get back a pipeline object
     assert isinstance(pipe, pipeline)
 
-    # And each message in the pipeline should reference the next message in line
+    # And once the messages are queued
+    pipe.broker = stub_broker
+    pipe.run()
+
+    # Each message in the pipeline should reference the next message in line
     assert pipe.messages[0].options["pipe_target"] == pipe.messages[1].asdict()
     assert pipe.messages[1].options["pipe_target"] == pipe.messages[2].asdict()
     assert "pipe_target" not in pipe.messages[2].options

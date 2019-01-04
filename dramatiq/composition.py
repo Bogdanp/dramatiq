@@ -16,7 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+import uuid
+from functools import singledispatch
 
+from .middleware.composition import Composition, GroupStart
+from .message import Message
 from .broker import get_broker
 from .results import ResultMissing
 
@@ -26,7 +30,7 @@ class pipeline:
     next one in line.
 
     Parameters:
-      children(Iterator[Message|pipeline]): A sequence of messages or
+      children(Iterator[Message|pipeline|group]): A sequence of messages or
         pipelines.  Child pipelines are flattened into the resulting
         pipeline.
       broker(Broker): The broker to run the pipeline on.  Defaults to
@@ -39,12 +43,9 @@ class pipeline:
 
         for child in children:
             if isinstance(child, pipeline):
-                messages.extend(message.copy() for message in child.messages)
+                messages.extend(child.messages)
             else:
-                messages.append(child.copy())
-
-        for message, next_message in zip(messages, messages[1:]):
-            message.options["pipe_target"] = next_message.asdict()
+                messages.append(child)
 
     def __len__(self):
         """Returns the length of the pipeline.
@@ -108,7 +109,12 @@ class pipeline:
         Returns:
           pipeline: Itself.
         """
-        self.broker.enqueue(self.messages[0], delay=delay)
+        if all(isinstance(message, Message) for message in self.messages):
+            for message, next_message in zip(self.messages, self.messages[1:]):
+                message.options["pipe_target"] = next_message.asdict()
+            self.broker.enqueue(self.messages[0], delay=delay)
+        else:
+            enqueue(self, self.broker, delay)
         return self
 
     def get_result(self, *, block=False, timeout=None):
@@ -168,6 +174,7 @@ class group:
     """
 
     def __init__(self, children, *, broker=None):
+        self.id = uuid.uuid4()
         self.children = list(children)
         self.broker = broker or get_broker()
 
@@ -176,8 +183,8 @@ class group:
         """
         return len(self.children)
 
-    def __str__(self):  # pragma: no cover
-        return "group([%s])" % ", ".join(str(c) for c in self.children)
+    def __repr__(self):  # pragma: no cover
+        return "group({0!r})".format(self.children)
 
     @property
     def completed(self):
@@ -224,12 +231,7 @@ class group:
           delay(int): The minimum amount of time, in milliseconds,
             each message in the group should be delayed by.
         """
-        for child in self.children:
-            if isinstance(child, (group, pipeline)):
-                child.run(delay=delay)
-            else:
-                self.broker.enqueue(child, delay=delay)
-
+        enqueue(self, self.broker, delay)
         return self
 
     def get_results(self, *, block=False, timeout=None):
@@ -271,3 +273,66 @@ class group:
         """
         for _ in self.get_results(block=True, timeout=timeout):  # pragma: no cover
             pass
+
+
+@singledispatch
+def finalize(obj, *, group_ids=None, targets=None, starts=None):
+    """Get the Messages and GroupStarts for the composition.
+
+    Parameters:
+      obj(Message|pipeline|group): The composition object to finalize.
+      group_ids(List[str]): The ids of the groups this composition
+        object is a part of.
+      targets(List[Message]): The finalized messages to start when
+        all the groups of this composition complete.
+      starts(List[GroupStart]): Basic information about the groups
+        that need to start when all the groups of this composition
+        complete.
+
+    Returns:
+      A list of target messages to start, and a list of groups
+      to start, in order to start this composition.
+    """
+    raise NotImplementedError(
+        'Unsupported composition type: {}.'.format(type(obj)))
+
+
+@finalize.register(Message)
+def _(obj, *, group_ids=None, targets=None, starts=None):
+    options = {}
+    if targets:
+        options['workflow_targets'] = [t.asdict() for t in targets]
+    if starts:
+        options['workflow_starts'] = [s.asdict() for s in starts]
+    if group_ids:
+        options['workflow_group_ids'] = group_ids
+    return [obj.copy(options=options)], []
+
+
+@finalize.register(pipeline)
+def _(obj, *, group_ids=None, targets=None, starts=None):
+    targets, starts = finalize(
+        obj.children[-1], group_ids=group_ids, targets=targets, starts=starts)
+    for child in reversed(obj.children[:-1]):
+        targets, starts = finalize(child, targets=targets, starts=starts)
+    return targets, starts
+
+
+@finalize.register(group)
+def _(obj, *, group_ids=None, targets=None, starts=None):
+    group_ids = (group_ids or []) + [obj.id]
+    targets, starts = [], [GroupStart(id=obj.id, count=len(obj.children))]
+    for child in obj.children:
+        subtargets, substarts = finalize(
+            child, targets=targets, starts=starts, group_ids=group_ids)
+        targets.extend(subtargets)
+        starts.extend(substarts)
+    return targets, starts
+
+
+def enqueue(obj, broker, delay=None):
+    targets, starts = finalize(obj)
+    middleware = next(
+        filter(lambda m: isinstance(m, Composition), broker.middleware), None)
+    assert middleware, "Could not find Composition middleware."
+    middleware.process(broker=broker, targets=targets, starts=starts)
