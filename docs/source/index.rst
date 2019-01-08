@@ -5,7 +5,7 @@ Dramatiq: simple task processing
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_, `Professional Support`_)
 
-.. _Discuss: https://discuss.dramatiq.io
+.. _Discuss: https://reddit.com/r/dramatiq
 .. _Source Code: https://github.com/Bogdanp/dramatiq
 .. _Professional Support: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
 
@@ -102,7 +102,7 @@ Project Info
    Source Code <https://github.com/Bogdanp/dramatiq>
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
-   Discussion Board <https://discuss.dramatiq.io>
+   Discussion Board <https://reddit.com/r/dramatiq>
    Professional Support <https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs>
    license
 
