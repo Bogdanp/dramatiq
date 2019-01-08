@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.4.2`_ -- 2019-01-08
+----------------------
+
+Fixed
+^^^^^
+
+* License classifier in PyPI package.  There were no source code
+  changes for this release.
+
 
 `1.4.1`_ -- 2018-12-30
 ----------------------
@@ -601,7 +610,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.4.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.4.2...HEAD
+.. _1.4.2: https://github.com/Bogdanp/dramatiq/compare/v1.4.1...v1.4.2
 .. _1.4.1: https://github.com/Bogdanp/dramatiq/compare/v1.4.0...v1.4.1
 .. _1.4.0: https://github.com/Bogdanp/dramatiq/compare/v1.3.0...v1.4.0
 .. _1.3.0: https://github.com/Bogdanp/dramatiq/compare/v1.2.0...v1.3.0
