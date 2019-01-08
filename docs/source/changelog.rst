@@ -18,6 +18,7 @@ Fixed
 * Changed license classifier to the correct license.  This is why you
   shouldn't publish changed before you've had coffee, folks!
 
+
 `1.4.2`_ -- 2019-01-08
 ----------------------
 
