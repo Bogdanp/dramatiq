@@ -297,9 +297,11 @@ def worker_process(args, worker_id, logging_pipe):
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
+        time.sleep(2)
         return sys.exit(RET_IMPORT)
     except ConnectionError:
         logger.exception("Broker connection failed.")
+        logging_pipe.flush()
         return sys.exit(RET_CONNECT)
 
     def termhandler(signum, frame):

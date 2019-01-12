@@ -18,6 +18,7 @@
 import os
 import time
 from collections import defaultdict
+from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
 
@@ -85,17 +86,17 @@ class Worker:
     def pause(self):
         """Pauses all the worker threads.
         """
-        for worker in self.workers:
-            worker.pause()
+        for child in chain(self.consumers.values(), self.workers):
+            child.pause()
 
-        for worker in self.workers:
-            worker.paused_event.wait()
+        for child in chain(self.consumers.values(), self.workers):
+            child.paused_event.wait()
 
     def resume(self):
         """Resumes all the worker threads.
         """
-        for worker in self.workers:
-            worker.resume()
+        for child in chain(self.consumers.values(), self.workers):
+            child.resume()
 
     def stop(self, timeout=600000):
         """Gracefully stop the Worker and all of its consumers and
@@ -215,6 +216,8 @@ class _ConsumerThread(Thread):
 
         self.logger = get_logger(__name__, "ConsumerThread(%s)" % queue_name)
         self.running = False
+        self.paused = False
+        self.paused_event = Event()
         self.consumer = None
         self.broker = broker
         self.prefetch = prefetch
@@ -227,6 +230,12 @@ class _ConsumerThread(Thread):
         self.logger.debug("Running consumer thread...")
         self.running = True
         while self.running:
+            if self.paused:
+                self.logger.debug("Consumer is paused. Sleeping for %.02fms...", self.worker_timeout)
+                self.paused_event.set()
+                time.sleep(self.worker_timeout / 1000)
+                continue
+
             try:
                 self.consumer = self.broker.consume(
                     queue_name=self.queue_name,
@@ -237,6 +246,9 @@ class _ConsumerThread(Thread):
                 for message in self.consumer:
                     if message is not None:
                         self.handle_message(message)
+
+                    elif self.paused:
+                        break
 
                     self.handle_delayed_messages()
                     if not self.running:
@@ -326,6 +338,18 @@ class _ConsumerThread(Thread):
         respective queues asap.
         """
         self.consumer.requeue(messages)
+
+    def pause(self):
+        """Pause this consumer.
+        """
+        self.paused = True
+        self.paused_event.clear()
+
+    def resume(self):
+        """Resume this consumer.
+        """
+        self.paused = False
+        self.paused_event.clear()
 
     def stop(self):
         """Initiate the ConsumerThread shutdown sequence.

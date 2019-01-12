@@ -63,14 +63,19 @@ class RabbitmqBroker(Broker):
         connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
+      max_priority(int): Configure the queues with x-max-priority to
+        support priority queue in RabbitMQ itself
       **parameters(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
 
-    .. _ConnectionParameters: https://pika.readthedocs.io/en/0.10.0/modules/parameters.html
+    .. _ConnectionParameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
     """
 
-    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, **parameters):
+    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, **parameters):
         super().__init__(middleware=middleware)
+
+        if max_priority is not None and not (0 < max_priority <= 255):
+            raise ValueError("max_priority must be a value between 0 and 255")
 
         if url:
             self.parameters = pika.URLParameters(url)
@@ -78,6 +83,7 @@ class RabbitmqBroker(Broker):
             self.parameters = pika.ConnectionParameters(**parameters)
 
         self.confirm_delivery = confirm_delivery
+        self.max_priority = max_priority
         self.connections = set()
         self.channels = set()
         self.queues = set()
@@ -195,17 +201,23 @@ class RabbitmqBroker(Broker):
             del self.connection
             raise ConnectionClosed(e) from None
 
-    def _declare_queue(self, queue_name):
-        return self.channel.queue_declare(queue=queue_name, durable=True, arguments={
+    def _build_queue_arguments(self, queue_name):
+        arguments = {
             "x-dead-letter-exchange": "",
             "x-dead-letter-routing-key": xq_name(queue_name),
-        })
+        }
+        if self.max_priority:
+            arguments["x-max-priority"] = self.max_priority
+
+        return arguments
+
+    def _declare_queue(self, queue_name):
+        arguments = self._build_queue_arguments(queue_name)
+        return self.channel.queue_declare(queue=queue_name, durable=True, arguments=arguments)
 
     def _declare_dq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments={
-            "x-dead-letter-exchange": "",
-            "x-dead-letter-routing-key": xq_name(queue_name),
-        })
+        arguments = self._build_queue_arguments(queue_name)
+        return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments=arguments)
 
     def _declare_xq_queue(self, queue_name):
         return self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments={
@@ -227,7 +239,11 @@ class RabbitmqBroker(Broker):
             has been closed.
         """
         queue_name = message.queue_name
-        properties = pika.BasicProperties(delivery_mode=2)
+        properties = pika.BasicProperties(
+            delivery_mode=2,
+            priority=message.options.get("broker_priority"),
+        )
+
         if delay is not None:
             queue_name = dq_name(queue_name)
             message_eta = current_millis() + delay
