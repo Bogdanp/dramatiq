@@ -68,17 +68,22 @@ class Worker:
         self.work_queue = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
+        self.running = False
 
     def start(self):
         """Initialize the worker boot sequence and start up all the
         worker threads.
         """
         self.broker.emit_before("worker_boot", self)
-
+        self.running = True
         worker_middleware = _WorkerMiddleware(self)
         self.broker.add_middleware(worker_middleware)
         for _ in range(self.worker_threads):
             self._add_worker()
+
+        for consumer in self.consumers.values():
+            if not consumer.running:
+                consumer.start()
 
         self.broker.emit_after("worker_boot", self)
 
@@ -112,6 +117,7 @@ class Worker:
         # during this process so that heartbeats keep being sent to
         # the broker while workers finish their current tasks.
         self.logger.debug("Stopping workers...")
+        self.running = False
         for thread in self.workers:
             thread.stop()
 
@@ -165,7 +171,7 @@ class Worker:
                     continue
                 return
 
-    def _add_consumer(self, queue_name, *, delay=False):
+    def _add_consumer(self, queue_name, should_start, *, delay=False):
         if queue_name in self.consumers:
             self.logger.debug("A consumer for queue %r is already running.", queue_name)
             return
@@ -182,7 +188,8 @@ class Worker:
             work_queue=self.work_queue,
             worker_timeout=self.worker_timeout,
         )
-        consumer.start()
+        if should_start:
+            consumer.start()
 
     def _add_worker(self):
         worker = _WorkerThread(
@@ -202,11 +209,11 @@ class _WorkerMiddleware(Middleware):
 
     def after_declare_queue(self, broker, queue_name):
         self.logger.debug("Adding consumer for queue %r.", queue_name)
-        self.worker._add_consumer(queue_name)
+        self.worker._add_consumer(queue_name, self.worker.running)
 
     def after_declare_delay_queue(self, broker, queue_name):
         self.logger.debug("Adding consumer for delay queue %r.", queue_name)
-        self.worker._add_consumer(queue_name, delay=True)
+        self.worker._add_consumer(queue_name, self.worker.running, delay=True)
 
 
 class _ConsumerThread(Thread):
