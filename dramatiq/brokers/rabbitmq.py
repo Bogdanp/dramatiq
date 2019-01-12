@@ -63,13 +63,14 @@ class RabbitmqBroker(Broker):
         connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
+      max_priority(int): Configure the queues with x-max-priority to support priority queue in RabbitMQ itself
       **parameters(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
 
-    .. _ConnectionParameters: https://pika.readthedocs.io/en/0.10.0/modules/parameters.html
+    .. _ConnectionParameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
     """
 
-    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, **parameters):
+    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, **parameters):
         super().__init__(middleware=middleware)
 
         if url:
@@ -82,6 +83,9 @@ class RabbitmqBroker(Broker):
         self.channels = set()
         self.queues = set()
         self.state = local()
+        if max_priority is not None and (max_priority < 0 or max_priority > 255):
+            raise ValueError("Max priority should be between 0 and 255")
+        self.max_priority = max_priority
 
     @property
     def connection(self):
@@ -196,16 +200,22 @@ class RabbitmqBroker(Broker):
             raise ConnectionClosed(e) from None
 
     def _declare_queue(self, queue_name):
-        return self.channel.queue_declare(queue=queue_name, durable=True, arguments={
+        arguments = {
             "x-dead-letter-exchange": "",
             "x-dead-letter-routing-key": xq_name(queue_name),
-        })
+        }
+        if self.max_priority:
+            arguments["x-max-priority"] = self.max_priority
+        return self.channel.queue_declare(queue=queue_name, durable=True, arguments=arguments)
 
     def _declare_dq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments={
+        arguments = {
             "x-dead-letter-exchange": "",
             "x-dead-letter-routing-key": xq_name(queue_name),
-        })
+        }
+        if self.max_priority:
+            arguments["x-max-priority"] = self.max_priority
+        return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments=arguments)
 
     def _declare_xq_queue(self, queue_name):
         return self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments={
@@ -237,6 +247,11 @@ class RabbitmqBroker(Broker):
                     "eta": message_eta,
                 },
             )
+
+        priority = message.options.get("broker_priority")
+        if priority is not None:
+            properties.priority = priority
+            message.options["broker_priority"] = priority
 
         attempts = 1
         while True:

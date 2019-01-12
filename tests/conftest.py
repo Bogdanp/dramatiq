@@ -69,6 +69,17 @@ def rabbitmq_broker():
 
 
 @pytest.fixture()
+def prioritized_rabbitmq_broker():
+    broker = RabbitmqBroker(host="127.0.0.1", max_priority=10)
+    check_rabbitmq(broker)
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    broker.flush_all()
+    broker.close()
+
+
+@pytest.fixture()
 def redis_broker():
     broker = RedisBroker()
     check_redis(broker.client)
@@ -91,6 +102,15 @@ def stub_worker(stub_broker):
 @pytest.fixture()
 def rabbitmq_worker(rabbitmq_broker):
     worker = Worker(rabbitmq_broker, worker_threads=32)
+    worker.start()
+    yield worker
+    worker.stop()
+
+
+@pytest.fixture()
+def prioritized_rabbitmq_worker(prioritized_rabbitmq_broker):
+    worker = Worker(prioritized_rabbitmq_broker, worker_threads=1)
+    worker.queue_prefetch = 1
     worker.start()
     yield worker
     worker.stop()

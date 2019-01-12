@@ -295,3 +295,28 @@ def test_rabbitmq_broker_can_flush_queues(rabbitmq_broker):
     # And then join on the actors's queue
     # Then it should join immediately
     assert rabbitmq_broker.join(do_work.queue_name, min_successes=1, timeout=200) is None
+
+
+def test_rabbitmq_broker_enqueue_messages_with_priority(prioritized_rabbitmq_broker, prioritized_rabbitmq_worker):
+    max_priority = 10
+    message_processing_order = []
+    prioritized_rabbitmq_worker.stop()
+    queue_name = "prioritized"
+
+    # Given that I have an actor that store priorities
+    @dramatiq.actor(queue_name=queue_name)
+    def do_work(message_priority):
+        nonlocal message_processing_order
+        message_processing_order.append(message_priority)
+
+    # When I send that actor messages with increasing priorities
+    for priority in range(max_priority):
+        do_work.send_with_options(args=(priority,), broker_priority=priority)
+
+    # And then tell the broker to wait for all messages
+    prioritized_rabbitmq_worker.start()
+    prioritized_rabbitmq_broker.join(queue_name, timeout=5000)
+    prioritized_rabbitmq_worker.join()
+
+    # I expect the stored priorities to be saved in decreasing order
+    assert message_processing_order == list(reversed(range(max_priority)))
