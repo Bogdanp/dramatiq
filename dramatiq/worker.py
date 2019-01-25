@@ -18,7 +18,6 @@
 import os
 import time
 from collections import defaultdict
-from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
 
@@ -108,12 +107,22 @@ class Worker:
         """
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
-        self.logger.debug("Stopping consumers and workers...")
-        for thread in chain(self.workers, self.consumers.values()):
+
+        # Stop workers before consumers.  The consumers are kept alive
+        # during this process so that heartbeats keep being sent to
+        # the broker while workers finish their current tasks.
+        self.logger.debug("Stopping workers...")
+        for thread in self.workers:
             thread.stop()
 
-        join_all(chain(self.workers, self.consumers.values()), timeout)
-        self.logger.debug("Consumers and workers stopped.")
+        join_all(self.workers, timeout)
+        self.logger.debug("Workers stopped.")
+        self.logger.debug("Stopping consumers...")
+        for thread in self.consumers.values():
+            thread.stop()
+
+        join_all(self.consumers.values(), timeout)
+        self.logger.debug("Consumers stopped.")
 
         self.logger.debug("Requeueing in-memory messages...")
         messages_by_queue = defaultdict(list)
