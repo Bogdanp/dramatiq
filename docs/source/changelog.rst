@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* Pika 0.13 is now required.
+
 Fixed
 ^^^^^
 
