@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Consumers are now stopped after workers finish running their tasks.  (`#160`_, `@brownan`_)
+
+.. _#160: https://github.com/Bogdanp/dramatiq/pull/160
+.. _@brownan: https://github.com/brownan
+
+
 `1.4.3`_ -- 2019-01-08
 ----------------------
 
