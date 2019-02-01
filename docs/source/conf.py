@@ -132,6 +132,7 @@ html_sidebars = {
         'searchbox.html',
         'versions.html',
         'codefund.html',
+        'analytics.html',
     ]
 }
 
