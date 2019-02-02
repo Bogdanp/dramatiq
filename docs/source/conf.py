@@ -17,7 +17,6 @@ import os
 import sys
 
 import alabaster  # noqa
-
 import dramatiq  # noqa
 
 sys.path.insert(0, os.path.abspath('../..'))
@@ -59,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Dramatiq'
-copyright = '2017, CLEARTYPE SRL'
+copyright = '2017, 2018, 2019 CLEARTYPE SRL'
 author = 'CLEARTYPE SRL'
 
 # The version info for the project you're documenting, acts as replacement for
