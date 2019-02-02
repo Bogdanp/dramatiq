@@ -16,7 +16,7 @@ all:
 
 .PHONY: deploy
 deploy: all
-	gcloud app deploy --project dramatiq-docs app.yaml
+	rsync -r --delete build/html/* dramatiq@dramatiq.io:~/www
 
 
 .PHONY: help
