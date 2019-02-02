@@ -23,7 +23,7 @@ a focus on simplicity, reliability and performance.
 
 .. raw:: html
 
-   <iframe width="660" height="371" src="https://www.youtube-nocookie.com/embed/RdMQZpITX4k?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+   <iframe width="660" height="371" sandbox="allow-same-origin allow-scripts" src="https://peertube.social/videos/embed/754b811e-16a1-459c-9ed8-a08e535ad7f1" frameborder="0" allowfullscreen></iframe>
 
 Here's what it looks like:
 
