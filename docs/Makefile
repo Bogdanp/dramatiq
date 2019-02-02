@@ -11,7 +11,7 @@ BUILDDIR      = build
 
 .PHONY: all
 all:
-	sphinx-versioning build -a -b -W 'v[1-9]+.[0-9]+.[0-9]+' "./docs/$(SOURCEDIR)" "$(BUILDDIR)/html/"
+	@$(MAKE) html
 
 
 .PHONY: deploy
