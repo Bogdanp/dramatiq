@@ -21,6 +21,20 @@ def test_actors_can_be_defined(stub_broker):
     assert isinstance(add, dramatiq.Actor)
 
 
+def test_actors_can_be_declared_with_actor_class(stub_broker):
+    # Given that I have a non-standard Actor class
+    class ActorChild(dramatiq.Actor):
+        pass
+
+    # When I define an actor with that class
+    @dramatiq.actor(actor_class=ActorChild)
+    def add(x, y):
+        return x + y
+
+    # Then that actor should be an instance of ActorChild
+    assert isinstance(add, ActorChild)
+
+
 def test_actors_can_be_assigned_predefined_options(stub_broker):
     # Given that I have a stub broker with the retries middleware
     # If I define an actor with a max_retries number

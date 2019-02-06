@@ -26,3 +26,4 @@ of those changes to CLEARTYPE SRL.
 | [@ryanhiebert](https://github.com/ryanhiebert) | Ryan Hiebert           |
 | [@davidt99](https://github.com/davidt99)       | davidt99               |
 | [@brownan](https://github.com/brownan)         | Andrew Brown           |
+| [@gilbsgilbs](https://github.com/gilbsgilbs)   | gilbsgilbs             |
