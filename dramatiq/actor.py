@@ -26,74 +26,6 @@ from .message import Message
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 
 
-def actor(fn=None, *, actor_name=None, queue_name="default", priority=0, broker=None, **options):
-    """Declare an actor.
-
-    Examples:
-
-      >>> import dramatiq
-
-      >>> @dramatiq.actor
-      ... def add(x, y):
-      ...   print(x + y)
-      ...
-      >>> add
-      Actor(<function add at 0x106c6d488>, queue_name='default', actor_name='add')
-
-      >>> add(1, 2)
-      3
-
-      >>> add.send(1, 2)
-      Message(
-        queue_name='default',
-        actor_name='add',
-        args=(1, 2), kwargs={}, options={},
-        message_id='e0d27b45-7900-41da-bb97-553b8a081206',
-        message_timestamp=1497862448685)
-
-    Parameters:
-      fn(callable): The function to wrap.
-      actor_name(str): The name of the actor.
-      queue_name(str): The name of the queue to use.
-      priority(int): The actor's global priority.  If two tasks have
-        been pulled on a worker concurrently and one has a higher
-        priority than the other then it will be processed first.
-        Lower numbers represent higher priorities.
-      broker(Broker): The broker to use with this actor.
-      **options(dict): Arbitrary options that vary with the set of
-        middleware that you use.  See ``get_broker().actor_options``.
-
-    Returns:
-      Actor: The decorated function.
-    """
-    def decorator(fn):
-        nonlocal actor_name, broker
-        actor_name = actor_name or fn.__name__
-        if not _queue_name_re.fullmatch(queue_name):
-            raise ValueError(
-                "Queue names must start with a letter or an underscore followed "
-                "by any number of letters, digits, dashes or underscores."
-            )
-
-        broker = broker or get_broker()
-        invalid_options = set(options) - broker.actor_options
-        if invalid_options:
-            invalid_options_list = ", ".join(invalid_options)
-            raise ValueError((
-                "The following actor options are undefined: %s. "
-                "Did you forget to add a middleware to your Broker?"
-            ) % invalid_options_list)
-
-        return Actor(
-            fn, actor_name=actor_name, queue_name=queue_name,
-            priority=priority, broker=broker, options=options,
-        )
-
-    if fn is None:
-        return decorator
-    return decorator(fn)
-
-
 class Actor:
     """Thin wrapper around callables that stores metadata about how
     they should be executed asynchronously.  Actors are callable.
@@ -220,3 +152,74 @@ class Actor:
 
     def __str__(self):
         return "Actor(%(actor_name)s)" % vars(self)
+
+
+def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", priority=0, broker=None, **options):
+    """Declare an actor.
+
+    Examples:
+
+      >>> import dramatiq
+
+      >>> @dramatiq.actor
+      ... def add(x, y):
+      ...   print(x + y)
+      ...
+      >>> add
+      Actor(<function add at 0x106c6d488>, queue_name='default', actor_name='add')
+
+      >>> add(1, 2)
+      3
+
+      >>> add.send(1, 2)
+      Message(
+        queue_name='default',
+        actor_name='add',
+        args=(1, 2), kwargs={}, options={},
+        message_id='e0d27b45-7900-41da-bb97-553b8a081206',
+        message_timestamp=1497862448685)
+
+    Parameters:
+      fn(callable): The function to wrap.
+      actor_class(type): Type created by the decorator.  Defaults to
+        :class:`Actor` but can be any callable as long as it returns an
+        actor and takes the same arguments as the :class:`Actor` class.
+      actor_name(str): The name of the actor.
+      queue_name(str): The name of the queue to use.
+      priority(int): The actor's global priority.  If two tasks have
+        been pulled on a worker concurrently and one has a higher
+        priority than the other then it will be processed first.
+        Lower numbers represent higher priorities.
+      broker(Broker): The broker to use with this actor.
+      **options(dict): Arbitrary options that vary with the set of
+        middleware that you use.  See ``get_broker().actor_options``.
+
+    Returns:
+      Actor: The decorated function.
+    """
+    def decorator(fn):
+        nonlocal actor_name, broker
+        actor_name = actor_name or fn.__name__
+        if not _queue_name_re.fullmatch(queue_name):
+            raise ValueError(
+                "Queue names must start with a letter or an underscore followed "
+                "by any number of letters, digits, dashes or underscores."
+            )
+
+        broker = broker or get_broker()
+        invalid_options = set(options) - broker.actor_options
+        if invalid_options:
+            invalid_options_list = ", ".join(invalid_options)
+            raise ValueError((
+                "The following actor options are undefined: %s. "
+                "Did you forget to add a middleware to your Broker?"
+            ) % invalid_options_list)
+
+        return actor_class(
+            fn, actor_name=actor_name, queue_name=queue_name,
+            priority=priority, broker=broker, options=options,
+        )
+
+    if fn is None:
+        return decorator
+    return decorator(fn)
