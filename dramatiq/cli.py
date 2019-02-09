@@ -250,7 +250,7 @@ def watch_logs(log_filename, pipes):
                 events = multiprocessing.connection.wait(pipes, timeout=1)
                 for event in events:
                     try:
-                        while event.poll(1):
+                        while event.poll():
                             # StreamHandler writes newlines into the pipe separately
                             # from the actual log entry; to avoid back-to-back newlines
                             # in the events pipe (causing multiple entries on a single
@@ -264,7 +264,7 @@ def watch_logs(log_filename, pipes):
                             if data == "\n":
                                 break
 
-                            log_file.write(data + "\n")
+                            log_file.write(data.rstrip("\n") + "\n")
                             log_file.flush()
                     except BrokenPipeError:
                         event.close()
@@ -297,11 +297,9 @@ def worker_process(args, worker_id, logging_pipe):
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
-        time.sleep(2)
         return sys.exit(RET_IMPORT)
     except ConnectionError:
         logger.exception("Broker connection failed.")
-        logging_pipe.flush()
         return sys.exit(RET_CONNECT)
 
     def termhandler(signum, frame):
