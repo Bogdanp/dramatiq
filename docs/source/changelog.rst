@@ -26,6 +26,7 @@ Fixed
 ^^^^^
 
 * Consumers are now stopped after workers finish running their tasks.  (`#160`_, `@brownan`_)
+* Worker logging on Python 3.7 is no longer delayed.
 
 .. _#160: https://github.com/Bogdanp/dramatiq/pull/160
 .. _@brownan: https://github.com/brownan
