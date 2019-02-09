@@ -9,6 +9,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* The RabbitMQ broker now supports native message priorities.  (`#157`_, `@davidt99`_)
+
+.. _#157: https://github.com/Bogdanp/dramatiq/pull/157
+.. _@davidt99: https://github.com/davidt99
+
 Changed
 ^^^^^^^
 
