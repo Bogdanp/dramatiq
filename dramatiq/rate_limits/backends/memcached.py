@@ -49,42 +49,12 @@ class MemcachedBackend(RateLimiterBackend):
             return client.add(key, value, time=int(ttl / 1000))
 
     def incr(self, key, amount, maximum, ttl):
-        ttl = int(ttl / 1000)
         with self.pool.reserve(block=True) as client:
-            while True:
-                value, cid = client.gets(key)
-                if cid is None:
-                    return False
-
-                value += amount
-                if value > maximum:
-                    return False
-
-                try:
-                    swapped = client.cas(key, value, cid, ttl)
-                    if swapped:
-                        return True
-                except NotFound:  # pragma: no cover
-                    continue
+            return client.incr(key, amount) <= maximum
 
     def decr(self, key, amount, minimum, ttl):
-        ttl = int(ttl / 1000)
         with self.pool.reserve(block=True) as client:
-            while True:
-                value, cid = client.gets(key)
-                if cid is None:
-                    return False
-
-                value -= amount
-                if value < minimum:
-                    return False
-
-                try:
-                    swapped = client.cas(key, value, cid, ttl)
-                    if swapped:
-                        return True
-                except NotFound:  # pragma: no cover
-                    continue
+            return client.decr(key, amount) >= minimum
 
     def incr_and_sum(self, key, keys, amount, maximum, ttl):
         ttl = int(ttl / 1000)

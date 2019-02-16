@@ -5,14 +5,14 @@
 [![Build Status](https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master)](https://travis-ci.org/Bogdanp/dramatiq)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
-[![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://discuss.dramatiq.io)
+[![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://reddit.com/r/dramatiq)
 
 *A fast and reliable distributed task processing library for Python 3.*
 
 <hr/>
 
 **Changelog**: https://dramatiq.io/changelog.html <br/>
-**Community**: https://discuss.dramatiq.io <br/>
+**Community**: https://reddit.com/r/dramatiq <br/>
 **Documentation**: https://dramatiq.io <br/>
 **Professional Support**: [https://tidelift.com](https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=readme)
 

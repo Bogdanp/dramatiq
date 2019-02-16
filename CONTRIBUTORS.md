@@ -24,3 +24,5 @@ of those changes to CLEARTYPE SRL.
 | [@aericson](https://github.com/aericson)       | André Ericson          |
 | [@maerteijn](https://github.com/maerteijn)     | Martijn Jacobs         |
 | [@ryanhiebert](https://github.com/ryanhiebert) | Ryan Hiebert           |
+| [@davidt99](https://github.com/davidt99)       | davidt99               |
+| [@brownan](https://github.com/brownan)         | Andrew Brown           |

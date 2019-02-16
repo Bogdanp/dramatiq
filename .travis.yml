@@ -1,20 +1,18 @@
 language: python
 sudo: required
+dist: xenial
 python:
   - "3.5"
   - "3.6"
-  - "3.6-dev"
-  - "3.7-dev"
-  - "nightly"
+  - "3.7"
 matrix:
   include:
-    - { python: "3.6", env: TOXENV=lint }
-    - { python: "3.6", env: TOXENV=docs }
-  allow_failures:
-    - python: "3.6-dev"
-    - python: "3.7-dev"
-    - python: "nightly"
-    - env: TOXENV=docs
+    - { python: "3.7", env: TOXENV=lint }
+    - { python: "3.7", env: TOXENV=docs }
+addons:
+  apt:
+    packages:
+      - rabbitmq-server
 services:
   - memcached
   - rabbitmq

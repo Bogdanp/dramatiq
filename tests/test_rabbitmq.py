@@ -1,11 +1,12 @@
 import os
 import time
+from threading import Event
 from unittest.mock import Mock
 
 import pytest
 
 import dramatiq
-from dramatiq import Message, QueueJoinTimeout
+from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
@@ -45,6 +46,7 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
 def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
     failure_time, success_time = None, None
+    succeeded = Event()
 
     # And an actor that fails the first time it's called
     @dramatiq.actor(min_backoff=1000, max_backoff=5000)
@@ -55,13 +57,13 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
             raise RuntimeError("First failure.")
         else:
             success_time = current_millis()
+            succeeded.set()
 
     # If I send it a message
     do_work.send()
 
-    # Then join on the queue
-    rabbitmq_broker.join(do_work.queue_name)
-    rabbitmq_worker.join()
+    # Then wait for the actor to succeed
+    succeeded.wait(timeout=30)
 
     # I expect backoff time to have passed between sucess and failure
     assert 500 <= success_time - failure_time <= 1500
@@ -293,3 +295,34 @@ def test_rabbitmq_broker_can_flush_queues(rabbitmq_broker):
     # And then join on the actors's queue
     # Then it should join immediately
     assert rabbitmq_broker.join(do_work.queue_name, min_successes=1, timeout=200) is None
+
+
+def test_rabbitmq_broker_can_enqueue_messages_with_priority(rabbitmq_broker):
+    max_priority = 10
+    message_processing_order = []
+    queue_name = "prioritized"
+
+    # Given that I have an actor that store priorities
+    @dramatiq.actor(queue_name=queue_name)
+    def do_work(message_priority):
+        message_processing_order.append(message_priority)
+
+    worker = Worker(rabbitmq_broker, worker_threads=1)
+    worker.queue_prefetch = 1
+    worker.start()
+    worker.pause()
+
+    try:
+        # When I send that actor messages with increasing priorities
+        for priority in range(max_priority):
+            do_work.send_with_options(args=(priority,), broker_priority=priority)
+
+        # And then tell the broker to wait for all messages
+        worker.resume()
+        rabbitmq_broker.join(queue_name, timeout=5000)
+        worker.join()
+
+        # I expect the stored priorities to be saved in decreasing order
+        assert message_processing_order == list(reversed(range(max_priority)))
+    finally:
+        worker.stop()

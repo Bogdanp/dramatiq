@@ -1,16 +1,11 @@
 import time
 
-import pytest
-
 from dramatiq.rate_limits import BucketRateLimiter
 
 
-@pytest.mark.parametrize("backend", ["memcached", "redis", "stub"])
-def test_bucket_rate_limiter_limits_per_bucket(backend, rate_limiter_backends):
-    backend = rate_limiter_backends[backend]
-
+def test_bucket_rate_limiter_limits_per_bucket(rate_limiter_backend):
     # Given that I have a bucket rate limiter and a call database
-    limiter = BucketRateLimiter(backend, "sequential-test", limit=2)
+    limiter = BucketRateLimiter(rate_limiter_backend, "sequential-test", limit=2)
     calls = 0
 
     for _ in range(2):

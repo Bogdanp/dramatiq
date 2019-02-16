@@ -9,6 +9,73 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* The RabbitMQ broker now supports native message priorities.  (`#157`_, `@davidt99`_)
+
+.. _#157: https://github.com/Bogdanp/dramatiq/pull/157
+.. _@davidt99: https://github.com/davidt99
+
+Changed
+^^^^^^^
+
+* Pika 0.13 is now required.
+
+Fixed
+^^^^^
+
+* Consumers are now stopped after workers finish running their tasks.  (`#160`_, `@brownan`_)
+* Worker logging on Python 3.7 is no longer delayed.
+
+.. _#160: https://github.com/Bogdanp/dramatiq/pull/160
+.. _@brownan: https://github.com/brownan
+
+
+`1.4.3`_ -- 2019-01-08
+----------------------
+
+Fixed
+^^^^^
+
+* Changed license classifier to the correct license.  This is why you
+  shouldn't publish changed before you've had coffee, folks!
+
+
+`1.4.2`_ -- 2019-01-08
+----------------------
+
+Fixed
+^^^^^
+
+* License classifier in PyPI package.  There were no source code
+  changes for this release.
+
+
+`1.4.1`_ -- 2018-12-30
+----------------------
+
+Added
+^^^^^
+
+* Support for redis-py 3.x.  (`#142`_, `@maerteijn`_)
+
+.. _#142: https://github.com/Bogdanp/dramatiq/pull/142
+.. _@maerteijn: https://github.com/maerteijn
+
+Fixed
+^^^^^
+
+* Workers wait for RMQ messages to be acked upon shutdown.  (`#148`_)
+* Pipelines no longer continue when a message is failed.  (`#151`_, `@davidt99`_)
+* Log files now work under Windows.  (`#141`_, `@ryansm1`_)
+
+.. _#141: https://github.com/Bogdanp/dramatiq/pull/141
+.. _#148: https://github.com/Bogdanp/dramatiq/issues/148
+.. _#151: https://github.com/Bogdanp/dramatiq/issues/151
+.. _@ryansm1: https://github.com/ryansm1
+.. _@davidt99: https://github.com/davidt99
+
 
 `1.4.0`_ -- 2018-11-25
 ----------------------
@@ -576,7 +643,10 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.4.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.4.3...HEAD
+.. _1.4.3: https://github.com/Bogdanp/dramatiq/compare/v1.4.2...v1.4.3
+.. _1.4.2: https://github.com/Bogdanp/dramatiq/compare/v1.4.1...v1.4.2
+.. _1.4.1: https://github.com/Bogdanp/dramatiq/compare/v1.4.0...v1.4.1
 .. _1.4.0: https://github.com/Bogdanp/dramatiq/compare/v1.3.0...v1.4.0
 .. _1.3.0: https://github.com/Bogdanp/dramatiq/compare/v1.2.0...v1.3.0
 .. _1.2.0: https://github.com/Bogdanp/dramatiq/compare/v1.1.0...v1.2.0

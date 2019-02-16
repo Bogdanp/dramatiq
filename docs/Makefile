@@ -11,12 +11,12 @@ BUILDDIR      = build
 
 .PHONY: all
 all:
-	sphinx-versioning build -a -b -W 'v[1-9]+.[0-9]+.[0-9]+' "./docs/$(SOURCEDIR)" "$(BUILDDIR)/html/"
+	@$(MAKE) html
 
 
 .PHONY: deploy
 deploy: all
-	gcloud app deploy --project dramatiq-docs app.yaml
+	rsync -avz --delete build/html/* dramatiq@ssh.dramatiq.io:~/www
 
 
 .PHONY: help

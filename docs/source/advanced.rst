@@ -74,7 +74,7 @@ that is currently processing the message.
 
 .. attention::
    Currently, interrupts are only supported on CPython and are subject
-   to the restrictions of the GIL.  This means the interupt exception
+   to the restrictions of the GIL.  This means the interrupt exception
    will only be raised the next time that thread acquires the GIL, and
    they are unable to cancel system calls.
 

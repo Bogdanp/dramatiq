@@ -32,11 +32,11 @@ extra_dependencies = {
     ],
 
     "rabbitmq": [
-        "pika>=0.12,<0.13",
+        "pika>=0.13,<0.14",
     ],
 
     "redis": [
-        "redis>=2.10,<3",
+        "redis>=2.0,<4.0",
     ],
 
     "watch": [
@@ -51,7 +51,6 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "alabaster",
     "sphinx<1.8",
     "sphinxcontrib-napoleon",
-    "sphinxcontrib-versioning",
 
     # Linting
     "flake8",
@@ -101,6 +100,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: System :: Distributed Computing",
-        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     ],
 )

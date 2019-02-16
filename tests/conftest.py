@@ -59,7 +59,7 @@ def stub_broker():
 
 @pytest.fixture()
 def rabbitmq_broker():
-    broker = RabbitmqBroker(host="127.0.0.1")
+    broker = RabbitmqBroker(host="127.0.0.1", max_priority=10)
     check_rabbitmq(broker)
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
@@ -160,6 +160,11 @@ def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_bac
     }
 
 
+@pytest.fixture(params=["memcached", "redis", "stub"])
+def rate_limiter_backend(request, rate_limiter_backends):
+    return rate_limiter_backends[request.param]
+
+
 @pytest.fixture
 def memcached_result_backend():
     backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
@@ -189,3 +194,8 @@ def result_backends(memcached_result_backend, redis_result_backend, stub_result_
         "redis": redis_result_backend,
         "stub": stub_result_backend,
     }
+
+
+@pytest.fixture(params=["memcached", "redis", "stub"])
+def result_backend(request, result_backends):
+    return result_backends[request.param]
