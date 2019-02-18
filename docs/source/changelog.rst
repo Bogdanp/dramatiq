@@ -13,9 +13,12 @@ Added
 ^^^^^
 
 * The RabbitMQ broker now supports native message priorities.  (`#157`_, `@davidt99`_)
+* Support for specifying the actor class to |actor|.  (`#169`_, `@gilbsgilbs`_)
 
 .. _#157: https://github.com/Bogdanp/dramatiq/pull/157
+.. _#169: https://github.com/Bogdanp/dramatiq/pull/169
 .. _@davidt99: https://github.com/davidt99
+.. _@gilbsgilbs: https://github.com/gilbsgilbs
 
 Changed
 ^^^^^^^
