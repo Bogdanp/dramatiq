@@ -71,6 +71,9 @@ of the main differences between Dramatiq, Celery and RQ:
 | In-memory broker support     | Yes      | No          | Yes          | No           |
 |                              |          |             |              |              |
 +------------------------------+----------+-------------+--------------+--------------+
+| Greenlet execution model     | Yes      | Yes         | Yes          | No           |
+|                              |          |             |              |              |
++------------------------------+----------+-------------+--------------+--------------+
 
 .. [#] Celery acks tasks as soon as they’re pulled by a worker by
        default.  This is easy to change, but a bad default.  Dramatiq
