@@ -306,7 +306,7 @@ def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker):
     stub_worker.join()
 
     # Then I expect it to be retried as specified in the message options
-    assert sum(attempts) == 4
+    assert sum(attempts) == 5
 
 
 def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_worker):
