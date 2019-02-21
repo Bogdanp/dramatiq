@@ -288,6 +288,27 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
         assert sum(runs) == 0
 
 
+def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker):
+    # Given that I have a database
+    attempts = []
+
+    # And an actor that fails every time and is retried with huge backoff
+    @dramatiq.actor(max_retries=99, min_backoff=5000, max_backoff=50000)
+    def do_work():
+        attempts.append(1)
+        raise RuntimeError("failure")
+
+    # When I send it a message with tight backoff and custom max retries
+    do_work.send_with_options(max_retries=4, min_backoff=50, max_backoff=500)
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then I expect it to be retried as specified in the message options
+    assert sum(attempts) == 4
+
+
 def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_worker):
     # Given that I have a database
     results = []
