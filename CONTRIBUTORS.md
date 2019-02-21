@@ -27,3 +27,4 @@ of those changes to CLEARTYPE SRL.
 | [@davidt99](https://github.com/davidt99)       | davidt99               |
 | [@brownan](https://github.com/brownan)         | Andrew Brown           |
 | [@gilbsgilbs](https://github.com/gilbsgilbs)   | gilbsgilbs             |
+| [@MihaiBalint](https://github.com/MihaiBalint) | Mihai Balint           |
