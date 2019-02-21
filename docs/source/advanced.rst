@@ -34,6 +34,17 @@ The |RedisBroker| takes a ``namespace`` parameter that you can use to
 logically split queues across multiple apps.
 
 
+Other brokers
+^^^^^^^^^^^^^
+
+Other brokers implementation are available through third-party package:
+
+- `Amazon SQS`_ with `dramatiq_sqs`_.
+
+.. _Amazon SQS: https://aws.amazon.com/sqs/
+.. _dramatiq_sqs: https://github.com/Bogdanp/dramatiq_sqs
+
+
 Messages
 --------
 
