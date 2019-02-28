@@ -37,7 +37,7 @@ logically split queues across multiple apps.
 Other brokers
 ^^^^^^^^^^^^^
 
-Other brokers implementation are available through third-party package:
+Other broker implementations are available through third-party packages:
 
 - `Amazon SQS`_ with `dramatiq_sqs`_.
 
