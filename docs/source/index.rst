@@ -3,15 +3,13 @@
 Dramatiq: simple task processing
 ================================
 
-Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_, `Support Dramatiq via Liberapay`_, `Support Dramatiq via Tidelift`_)
+Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_, `Support Dramatiq via Patreon`_, `Support Dramatiq via Tidelift`_)
 
 .. _Discuss: https://reddit.com/r/dramatiq
 .. _Source Code: https://github.com/Bogdanp/dramatiq
-.. _Support Dramatiq via Liberapay: https://liberapay.com/bogdan
+.. _Support Dramatiq via Patreon: https://patreon.com/popabogdanp
 .. _Support Dramatiq via Tidelift: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
 
-.. image:: http://img.shields.io/liberapay/patrons/bogdan.svg?logo=liberapay
-   :target: https://liberapay.com/bogdan
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
 .. image:: https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master
@@ -78,14 +76,13 @@ project.  There are three ways in which you can do this right now:
    route to supporting both Dramatiq and other open source projects
    that you depend on.
 2. If you're an individual or a company that doesn't want to go
-   through Tidelift then you can support the project via a recurring
-   donation on Liberapay_.
+   through Tidelift then you can support the project via Patreon_.
 3. If you're a company and neither option works for you and you would
    like to receive an invoice from me directly then email me at
    bogdan@defn.io and let's talk.
 
 .. _Tidelift: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
-.. _Liberapay: https://liberapay.com/bogdan
+.. _Patreon: https://patreon.com/popabogdanp
 
 
 User Guide
@@ -127,6 +124,6 @@ Project Info
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    Discussion Board <https://reddit.com/r/dramatiq>
-   Support via Liberapay <https://liberapay.com/bogdan>
+   Support via Patreon <https://patreon.com/popabogdanp>
    Support via Tidelift <https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs>
    license

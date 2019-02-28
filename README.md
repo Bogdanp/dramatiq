@@ -6,7 +6,6 @@
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
 [![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://reddit.com/r/dramatiq)
-[![Liberapay](http://img.shields.io/liberapay/patrons/bogdan.svg?logo=liberapay)](https://liberapay.com/bogdan)
 
 *A fast and reliable distributed task processing library for Python 3.*
 
@@ -15,7 +14,7 @@
 **Changelog**: https://dramatiq.io/changelog.html <br/>
 **Community**: https://reddit.com/r/dramatiq <br/>
 **Documentation**: https://dramatiq.io <br/>
-[**Support Dramatiq via Liberapay**](https://liberapay.com/bogdan) <br/>
+[**Support Dramatiq via Patreon**](https://patreon.com/popabogdanp) <br/>
 [**Support Dramatiq via Tidelift**](https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=readme)
 
 <hr/>
@@ -42,14 +41,13 @@ project.  There are three ways in which you can do this right now:
    route to supporting both Dramatiq and other open source projects
    that you depend on.
 2. If you're an individual or a company that doesn't want to go
-   through Tidelift then you can support the project via a recurring
-   donation on [Liberapay].
+   through Tidelift then you can support the project via [Patreon].
 3. If you're a company and neither option works for you and you would
    like to receive an invoice from me directly then email me at
    bogdan@defn.io and let's talk.
 
 [Tidelift]: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=readme
-[Liberapay]: https://liberapay.com/bogdan
+[Patreon]: https://patreon.com/popabogdanp
 
 
 ## Quickstart
