@@ -1,13 +1,14 @@
 import os
 import time
 from threading import Event
-from unittest.mock import Mock
+from unittest.mock import patch, Mock
 
+import pika.exceptions
 import pytest
 
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout, Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
+from dramatiq.brokers.rabbitmq import MAX_DECLARE_ATTEMPTS, RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
 
@@ -326,3 +327,53 @@ def test_rabbitmq_broker_can_enqueue_messages_with_priority(rabbitmq_broker):
         assert message_processing_order == list(reversed(range(max_priority)))
     finally:
         worker.stop()
+
+
+def test_rabbitmq_broker_retry_declaring_queues_when_connection_related_errors_occur(rabbitmq_broker):
+    queue_name = "queue_name"
+    declare_called = False
+    executed = False
+
+    original_declare = rabbitmq_broker._declare_queue
+
+    def flaky_declare_queue(*args, **kwargs):
+        nonlocal declare_called
+        if not declare_called:
+            declare_called = True
+            raise pika.exceptions.AMQPConnectionError
+        return original_declare(*args, **kwargs)
+
+    # Given that I have a flaky connection to a rabbitmq server
+    with patch.object(rabbitmq_broker, '_declare_queue', flaky_declare_queue):
+        # Given that I declare a queue
+        @dramatiq.actor(queue_name=queue_name)
+        def do_work():
+            nonlocal executed
+            executed = True
+
+        worker = Worker(rabbitmq_broker, worker_threads=1)
+        worker.start()
+        #  And send a message
+        do_work.send()
+        rabbitmq_broker.join(queue_name, timeout=5000)
+        worker.join()
+        worker.stop()
+
+        assert declare_called
+        # I expect the message to be executed regardless of the flakyness
+        assert executed
+
+
+def test_rabbitmq_broker_stop_retry_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
+    queue_name = "queue_name"
+
+    # Given that I have a rabbit instance that lost connection
+    with patch.object(rabbitmq_broker, '_declare_queue', side_effect=pika.exceptions.AMQPConnectionError) as mock:
+        # And I try to declare a queue, I expect to get ConnectionClosed error
+        with pytest.raises(dramatiq.errors.ConnectionClosed):
+            @dramatiq.actor(queue_name=queue_name)
+            def do_work():
+                pass
+
+        # And expect the declare queue to be called exactly the number of attempts
+        assert mock.call_count == MAX_DECLARE_ATTEMPTS

@@ -36,6 +36,7 @@ DEAD_MESSAGE_TTL = 86400000 * 7
 #: The max number of times to attempt an enqueue operation in case of
 #: a connection error.
 MAX_ENQUEUE_ATTEMPTS = 6
+MAX_DECLARE_ATTEMPTS = 2
 
 
 class RabbitmqBroker(Broker):
@@ -180,26 +181,37 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: If the underlying channel or connection
             has been closed.
         """
-        try:
-            if queue_name not in self.queues:
-                self.emit_before("declare_queue", queue_name)
-                self._declare_queue(queue_name)
-                self.queues.add(queue_name)
-                self.emit_after("declare_queue", queue_name)
+        attempts = 1
+        while True:
+            try:
+                if queue_name not in self.queues:
+                    self.emit_before("declare_queue", queue_name)
+                    self._declare_queue(queue_name)
+                    self.queues.add(queue_name)
+                    self.emit_after("declare_queue", queue_name)
 
-                delayed_name = dq_name(queue_name)
-                self._declare_dq_queue(queue_name)
-                self.delay_queues.add(delayed_name)
-                self.emit_after("declare_delay_queue", delayed_name)
+                    delayed_name = dq_name(queue_name)
+                    self._declare_dq_queue(queue_name)
+                    self.delay_queues.add(delayed_name)
+                    self.emit_after("declare_delay_queue", delayed_name)
 
-                self._declare_xq_queue(queue_name)
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
-            # Delete the channel and the connection so that the next
-            # caller may initiate new ones of each.
-            del self.channel
-            del self.connection
-            raise ConnectionClosed(e) from None
+                    self._declare_xq_queue(queue_name)
+                break
+            except (pika.exceptions.AMQPConnectionError,
+                    pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
+                # Delete the channel and the connection so that the next
+                # caller may initiate new ones of each.
+                del self.channel
+                del self.connection
+
+                attempts += 1
+                if attempts > MAX_DECLARE_ATTEMPTS:
+                    raise ConnectionClosed(e) from None
+
+                self.logger.debug(
+                    "Retrying declare due to closed connection. [%d/%d]",
+                    attempts, MAX_DECLARE_ATTEMPTS,
+                )
 
     def _build_queue_arguments(self, queue_name):
         arguments = {
