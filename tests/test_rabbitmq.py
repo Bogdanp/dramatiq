@@ -1,8 +1,9 @@
 import os
 import time
 from threading import Event
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
+import pika.exceptions
 import pytest
 
 import dramatiq
@@ -326,3 +327,51 @@ def test_rabbitmq_broker_can_enqueue_messages_with_priority(rabbitmq_broker):
         assert message_processing_order == list(reversed(range(max_priority)))
     finally:
         worker.stop()
+
+
+def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors_occur(rabbitmq_broker):
+    executed, declare_called = False, False
+    original_declare = rabbitmq_broker._declare_queue
+
+    def flaky_declare_queue(*args, **kwargs):
+        nonlocal declare_called
+        if not declare_called:
+            declare_called = True
+            raise pika.exceptions.AMQPConnectionError
+        return original_declare(*args, **kwargs)
+
+    # Given that I have a flaky connection to a rabbitmq server
+    with patch.object(rabbitmq_broker, "_declare_queue", flaky_declare_queue):
+        # When I declare an actor
+        @dramatiq.actor(queue_name="flaky_queue")
+        def do_work():
+            nonlocal executed
+            executed = True
+
+        # And I send that actor a message
+        do_work.send()
+
+        # And wait for the worker to process the message
+        worker = Worker(rabbitmq_broker, worker_threads=1)
+        worker.start()
+
+        try:
+            rabbitmq_broker.join(do_work.queue_name, timeout=5000)
+            worker.join()
+
+            # Then the queue should eventually be declared and the message executed
+            assert declare_called
+            assert executed
+        finally:
+            worker.stop()
+
+
+def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
+    # Given that I have a rabbit instance that lost its connection
+    with patch.object(rabbitmq_broker, "_declare_queue", side_effect=pika.exceptions.AMQPConnectionError):
+        # When I declare an actor
+        # Then a ConnectionClosed error should be raised
+        with pytest.raises(dramatiq.errors.ConnectionClosed):
+            @dramatiq.actor(queue_name="flaky_queue")
+            def do_work():
+                pass
