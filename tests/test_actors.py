@@ -332,6 +332,18 @@ def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_w
     assert results == [2, 1]
 
 
+def test_actor_will_check_delay_can_not_greater_then_max_age(stub_broker, stub_worker):
+    # If delay > max_age, this task will not run, and there is no warning or error
+    # it may be difficult to debug
+    @dramatiq.actor(max_age=1000)
+    def func():
+        pass
+
+    with pytest.raises(ValueError) as e:
+        func.send_with_options(delay=1500)
+    assert 'delay should not greater than max_age' in str(e)
+
+
 def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_worker):
     # Given that I have a broker without actors
     # If I send it a message

@@ -119,13 +119,17 @@ class Actor:
           args(tuple): Positional arguments that are passed to the actor.
           kwargs(dict): Keyword arguments that are passed to the actor.
           delay(int): The minimum amount of time, in milliseconds, the
-            message should be delayed by.
+            message should be delayed by. It should not greater than max_age.
           **options(dict): Arbitrary options that are passed to the
             broker and any registered middleware.
 
         Returns:
           Message: The enqueued message.
         """
+        max_age = self.options.get('max_age', 0)
+        if delay and max_age and delay > max_age:
+            raise ValueError('delay should not greater than max_age')
+
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
