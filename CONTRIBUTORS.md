@@ -28,3 +28,4 @@ of those changes to CLEARTYPE SRL.
 | [@brownan](https://github.com/brownan)         | Andrew Brown           |
 | [@gilbsgilbs](https://github.com/gilbsgilbs)   | gilbsgilbs             |
 | [@MihaiBalint](https://github.com/MihaiBalint) | Mihai Balint           |
+| [@xelhark](https://github.com/xelhark)         | Gabriele Platania      |

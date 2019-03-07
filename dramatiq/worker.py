@@ -32,6 +32,9 @@ from .middleware import Middleware, SkipMessage
 CONSUMER_RESTART_DELAY = int(os.getenv("dramatiq_restart_delay", 3000))
 CONSUMER_RESTART_DELAY_SECS = CONSUMER_RESTART_DELAY / 1000
 
+#: The number of messages to prefetch from the queue for each worker
+QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
+
 
 class Worker:
     """Workers consume messages off of all declared queues and
@@ -60,7 +63,7 @@ class Worker:
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
         # must be small so we don't starve other workers out.
-        self.queue_prefetch = min(worker_threads * 2, 65535)
+        self.queue_prefetch = QUEUE_PREFETCH or min(worker_threads * 2, 65535)
         # Load a large factor more delay messages than there are
         # workers as those messages could have far-future etas.
         self.delay_prefetch = min(worker_threads * 1000, 65535)
