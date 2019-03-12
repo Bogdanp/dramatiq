@@ -293,7 +293,14 @@ def worker_process(args, worker_id, logging_pipe):
         for module in args.modules:
             importlib.import_module(module)
 
-        worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
+        worker_class = Worker
+        if hasattr(module, 'WORKER_CLASS'):
+            worker_class = module.WORKER_CLASS
+            logger.info("Detected WORKER_CLASS %s" % worker_class)
+            if type(worker_class) is not type or not issubclass(worker_class, Worker):
+                raise RuntimeError("WORKER_CLASS must be a subclass of dramatiq.worker.Worker!")
+
+        worker = worker_class(broker, queues=args.queues, worker_threads=args.threads)
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
