@@ -42,18 +42,11 @@ class StreamablePipe:
     def close(self):
         self.pipe.close()
 
-    def read(self):
-        return self.pipe.recv_bytes()
+    def read(self):  # pragma: no cover
+        raise NotImplementedError("StreamablePipes cannot be read from!")
 
     def write(self, s):
-        if isinstance(s, bytes):
-            bs = s
-        elif isinstance(s, str):
-            bs = s.encode(self.encoding, errors="replace")
-        else:
-            raise TypeError("expected a string or bytes but got %s" % type(s))
-
-        self.pipe.send_bytes(bs)
+        self.pipe.send_bytes(s.encode(self.encoding, errors="replace"))
 
 
 def file_or_stderr(filename, *, mode="a", encoding="utf-8"):
