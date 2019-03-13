@@ -9,6 +9,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* `dramatiq_queue_prefetch` environment variable to control the number
+  of messages to prefetch per worker thread.  (`#183`_, `#184`_, `@xelhark`_)
+
+.. _#183: https://github.com/Bogdanp/dramatiq/issues/183
+.. _#184: https://github.com/Bogdanp/dramatiq/issues/184
+.. _@xelhark: https://github.com/xelhark
+
 
 `1.5.0`_ -- 2019-02-18
 ----------------------
