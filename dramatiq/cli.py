@@ -256,15 +256,16 @@ def watch_logs(log_filename, pipes):
                             # in the events pipe (causing multiple entries on a single
                             # line), discard newline-only data from the pipe
                             try:
-                                data = event.recv()
+                                data = event.recv_bytes()
                             except EOFError:
                                 event.close()
                                 raise
 
-                            if data == "\n":
+                            data = data.decode("utf-8", errors="replace").rstrip("\n")
+                            if not data:
                                 break
 
-                            log_file.write(data.rstrip("\n") + "\n")
+                            log_file.write(data + "\n")
                             log_file.flush()
                     except BrokenPipeError:
                         event.close()
