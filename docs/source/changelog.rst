@@ -14,9 +14,13 @@ Added
 
 * `dramatiq_queue_prefetch` environment variable to control the number
   of messages to prefetch per worker thread.  (`#183`_, `#184`_, `@xelhark`_)
+* The RabbitMQ broker now retries the queue declaration process if an
+  error occurs.  (`#179`_, `@davidt99`_)
 
+.. _#179: https://github.com/Bogdanp/dramatiq/issues/179
 .. _#183: https://github.com/Bogdanp/dramatiq/issues/183
 .. _#184: https://github.com/Bogdanp/dramatiq/issues/184
+.. _@davidt99: https://github.com/davidt99
 .. _@xelhark: https://github.com/xelhark
 
 
