@@ -2,7 +2,7 @@
 
 # dramatiq
 
-[![Build Status](https://travis-ci.org/Bogdanp/dramatiq.svg?branch=master)](https://travis-ci.org/Bogdanp/dramatiq)
+[![Build Status](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/Bogdanp/dramatiq)](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/results/Bogdanp/dramatiq)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
 [![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://reddit.com/r/dramatiq)
