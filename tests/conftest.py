@@ -4,11 +4,11 @@ import random
 import subprocess
 import sys
 
-import pylibmc
 import pytest
-import redis
 
 import dramatiq
+import pylibmc
+import redis
 from dramatiq import Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
@@ -22,7 +22,8 @@ logging.getLogger("pika").setLevel(logging.WARN)
 
 random.seed(1337)
 
-CI = os.getenv("TRAVIS") == "true" or \
+CI = os.getenv("GITHUB_ACTION") or \
+    os.getenv("TRAVIS") == "true" or \
     os.getenv("APPVEYOR") == "true"
 
 
