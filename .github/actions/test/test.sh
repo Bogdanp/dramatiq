@@ -27,4 +27,7 @@ service rabbitmq-server start &
 service redis-server start &
 wait
 
+cp -r "$GITHUB_WORKSPACE" "/tmp/test$ENV"
+pushd "/tmp/test$ENV"
+
 tox -e "$ENV"

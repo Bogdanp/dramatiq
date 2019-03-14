@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
-pushd "$GITHUB_WORKSPACE"
+cp -r "$GITHUB_WORKSPACE" /tmp/lint
+pushd /tmp/lint
+
 pip install tox
 tox -e lint
