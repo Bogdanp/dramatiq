@@ -12,8 +12,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
-.. image:: https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/results/cedrickring/golang-action
-   :target: https://github.com/Bogdanp/dramatiq/actions
+.. image:: https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/results/Bogdanp/dramatiq
+   :target: https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/results/Bogdanp/dramatiq
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
 .. image:: https://tidelift.com/badges/github/Bogdanp/dramatiq
