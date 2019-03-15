@@ -83,6 +83,14 @@ class Middleware:
         """Called after a message has been enqueued.
         """
 
+    def before_handle_message(self, broker, message):
+        """Called before a message is handled.
+        """
+
+    def after_handle_message(self, broker, message):
+        """Called after a message has been handled.
+        """
+
     def before_delay_message(self, broker, message):
         """Called before a message has been delayed in worker memory.
         """

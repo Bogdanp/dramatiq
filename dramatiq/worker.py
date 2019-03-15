@@ -298,6 +298,9 @@ class _ConsumerThread(Thread):
         work queue.
         """
         try:
+            self.logger.debug("Handle message %r.", message.message_id)
+            self.broker.emit_before("handle_message", message)
+
             if "eta" in message.options:
                 self.logger.debug("Pushing message %r onto delay queue.", message.message_id)
                 self.broker.emit_before("delay_message", message)
@@ -307,6 +310,8 @@ class _ConsumerThread(Thread):
                 actor = self.broker.get_actor(message.actor_name)
                 self.logger.debug("Pushing message %r onto work queue.", message.message_id)
                 self.work_queue.put((actor.priority, message))
+
+            self.broker.emit_after("handle_message", message)
         except ActorNotFound:
             self.logger.error(
                 "Received message for undefined actor %r. Moving it to the DLQ.",
