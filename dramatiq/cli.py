@@ -20,6 +20,7 @@
 
 import argparse
 import atexit
+import functools
 import importlib
 import logging
 import multiprocessing
@@ -71,6 +72,9 @@ examples:
   # Run with a broker named "redis_broker" defined in "some_module".
   $ dramatiq some_module:redis_broker
 
+  # Run with a broker named "broker" defined as attribute of "app" in "some_module".
+  $ dramatiq some_module:app.broker
+
   # Auto-reload dramatiq when files in the current directory change.
   $ dramatiq --watch . some_module
 
@@ -102,10 +106,12 @@ def import_broker(value):
 
     module = importlib.import_module(modname)
     if varname is not None:
-        if not hasattr(module, varname):
+        varnames = varname.split('.')
+        try:
+            broker = functools.reduce(getattr, varnames, module)
+        except AttributeError:
             raise ImportError("Module %r does not define a %r variable." % (modname, varname))
 
-        broker = getattr(module, varname)
         if not isinstance(broker, Broker):
             raise ImportError("Variable %r from module %r is not a Broker." % (varname, modname))
         return module, broker
