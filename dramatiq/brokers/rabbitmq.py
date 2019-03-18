@@ -252,8 +252,20 @@ class RabbitmqBroker(Broker):
         """
         queue_name = message.queue_name
         properties = pika.BasicProperties(
-            delivery_mode=2,
+            delivery_mode=message.options.get("broker_delivery_mode", 2),
             priority=message.options.get("broker_priority"),
+            content_type=message.options.get("broker_content_type"),
+            content_encoding=message.options.get("broker_content_encoding"),
+            headers=message.options.get("broker_headers"),
+            correlation_id=message.options.get("broker_correlation_id"),
+            reply_to=message.options.get("broker_reply_to"),
+            expiration=message.options.get("broker_expiration"),
+            message_id=message.options.get("broker_message_id"),
+            timestamp=message.options.get("broker_timestamp"),
+            type=message.options.get("broker_type"),
+            user_id=message.options.get("broker_user_id"),
+            app_id=message.options.get("broker_app_id"),
+            cluster_id=message.options.get("broker_cluster_id")
         )
 
         if delay is not None:
