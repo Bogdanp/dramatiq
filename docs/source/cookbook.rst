@@ -238,10 +238,10 @@ build with Django and Dramatiq.
 Flask
 ^^^^^
 
-The `flask_dramatiq_example`_ repo is an example app built with Flask_
-and Dramatiq.
+The `Flask-Dramatiq`_ extension provides extended integration of Dramatiq in
+your Flask_ web app, including configuration and application factory pattern.
 
-.. _flask_dramatiq_example: https://github.com/Bogdanp/flask_dramatiq_example
+.. _Flask-Dramatiq: https://flask-dramatiq.readthedocs.io
 .. _flask: http://flask.pocoo.org
 
 
