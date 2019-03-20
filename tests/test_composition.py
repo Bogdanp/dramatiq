@@ -43,6 +43,33 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
     assert pipe.messages[3].args == (5,)
 
 
+def test_pipe_ignore_applies_to_receiving_message(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    @dramatiq.actor(store_results=True)
+    def return_args(*args):
+        return args
+
+    # When I compose pipe of three messages with pipe_ignore option on second message
+    pipe = (
+        return_args.message(1) |
+        return_args.message_with_options(pipe_ignore=True, args=(2, )) |
+        return_args.message(3)
+    )
+
+    # And then run and wait for it to complete
+    pipe.run()
+    stub_broker.join(return_args.queue_name)
+    results = list(pipe.get_results())
+
+    # The then result of the first message should NOT be passed as
+    # argument to the second message and the result of the second
+    # message should be passed as argument to the third message.
+    assert results == [[1], [2], [3, [2]]]
+
+
 def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, result_backend):
     # Given a result backend
     # And a broker with the results middleware
