@@ -240,10 +240,12 @@ Flask
 
 The `Flask-Dramatiq`_ extension integrates Dramatiq with Flask_.  It
 includes support for configuration and the application factory
-pattern.
+pattern. `Flask-Melodramatiq`_ is very similar in scope, but tries to
+stay as close as possible to the "native" Dramatiq API.
 
 .. _Flask-Dramatiq: https://flask-dramatiq.readthedocs.io
 .. _flask: http://flask.pocoo.org
+.. _Flask-Melodramatiq: https://flask-melodramatiq.readthedocs.io
 
 
 Operations
