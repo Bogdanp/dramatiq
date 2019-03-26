@@ -29,3 +29,4 @@ of those changes to CLEARTYPE SRL.
 | [@gilbsgilbs](https://github.com/gilbsgilbs)   | gilbsgilbs             |
 | [@MihaiBalint](https://github.com/MihaiBalint) | Mihai Balint           |
 | [@xelhark](https://github.com/xelhark)         | Gabriele Platania      |
+| [@metheoryt](https://github.com/metheoryt)     | Maxim Romanyuk         |
