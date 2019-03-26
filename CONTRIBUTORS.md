@@ -30,3 +30,4 @@ of those changes to CLEARTYPE SRL.
 | [@MihaiBalint](https://github.com/MihaiBalint) | Mihai Balint           |
 | [@xelhark](https://github.com/xelhark)         | Gabriele Platania      |
 | [@bersace](https://github.com/bersace)         | Étienne Bersac         |
+| [@metheoryt](https://github.com/metheoryt)     | Maxim Romanyuk         |
