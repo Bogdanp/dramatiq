@@ -4,7 +4,13 @@ import signal
 
 import watchdog.events
 import watchdog.observers.polling
-import watchdog_gevent
+
+try:
+    import watchdog_gevent
+
+    EVENTED_OBSERVER = watchdog_gevent.Observer
+except ImportError:
+    EVENTED_OBSERVER = watchdog.observers.Observer
 
 
 def setup_file_watcher(path, use_polling=False):
@@ -15,7 +21,7 @@ def setup_file_watcher(path, use_polling=False):
     if use_polling:
         observer_class = watchdog.observers.polling.PollingObserver
     else:
-        observer_class = watchdog_gevent.Observer
+        observer_class = EVENTED_OBSERVER
 
     file_event_handler = _SourceChangesHandler(patterns=["*.py"])
     file_watcher = observer_class()
