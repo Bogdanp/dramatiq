@@ -27,6 +27,15 @@ Added
 .. _@davidt99: https://github.com/davidt99
 .. _@xelhark: https://github.com/xelhark
 
+Fixed
+^^^^^
+
+* ``pipe_ignore`` has been fixed to apply to the next message in line
+  within a pipeline.  (`#194`_, `@metheoryt`_)
+
+.. _#194: https://github.com/Bogdanp/dramatiq/pull/194
+.. _@metheoryt: https://github.com/metheoryt
+
 
 `1.5.0`_ -- 2019-02-18
 ----------------------
