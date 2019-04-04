@@ -319,6 +319,14 @@ class MessageProxy:
     def __init__(self, message):
         self.failed = False
         self._message = message
+        self._exception = None
+
+    def stuff_exception(self, exception):
+        """Stuff an exception into this message.  Currently, this is
+        used by the stub broker to known why a particular message has
+        failed.
+        """
+        self._exception = exception
 
     def fail(self):
         """Mark this message for rejection.

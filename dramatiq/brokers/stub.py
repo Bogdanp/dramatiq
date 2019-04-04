@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import time
+from collections import defaultdict
 from itertools import chain
 from queue import Empty, Queue
 
@@ -26,16 +27,18 @@ from ..message import Message
 
 class StubBroker(Broker):
     """A broker that can be used within unit tests.
-
-    Attributes:
-      dead_letters(list[Message]): Contains the dead-lettered messages
-        for all defined queues.
     """
 
     def __init__(self, middleware=None):
         super().__init__(middleware)
 
-        self.dead_letters = []
+        self.dead_letters_by_queue = defaultdict(list)
+
+    @property
+    def dead_letters(self):
+        """The dead-lettered messages for all defined queues.
+        """
+        return [message for messages in self.dead_letters_by_queue.values() for message in messages]
 
     def consume(self, queue_name, prefetch=1, timeout=100):
         """Create a new consumer for a queue.
@@ -52,7 +55,11 @@ class StubBroker(Broker):
           Consumer: A consumer that retrieves messages from Redis.
         """
         try:
-            return _StubConsumer(self.queues[queue_name], self.dead_letters, timeout)
+            return _StubConsumer(
+                self.queues[queue_name],
+                self.dead_letters_by_queue[queue_name],
+                timeout,
+            )
         except KeyError:
             raise QueueNotFound(queue_name)
 
@@ -119,7 +126,8 @@ class StubBroker(Broker):
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
 
-    def join(self, queue_name, *, timeout=None):
+    # TODO: Make fail_fast default to True.
+    def join(self, queue_name, *, fail_fast=False, timeout=None):
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests
         to wait for all the messages in a queue to be processed.
@@ -130,26 +138,39 @@ class StubBroker(Broker):
 
         Parameters:
           queue_name(str): The queue to wait on.
+          fail_fast(bool): When this is True and any message gets
+            dead-lettered during the join, then an exception will be
+            raised.  This will be True by default starting with
+            version 2.0.
           timeout(Optional[int]): The max amount of time, in
             milliseconds, to wait on this queue.
         """
         try:
-            deadline = timeout and time.monotonic() + timeout / 1000
-            while True:
-                for name in [queue_name, dq_name(queue_name)]:
-                    timeout = deadline and deadline - time.monotonic()
-                    join_queue(self.queues[name], timeout=timeout)
-
-                # We cycle through $queue then $queue.DQ then $queue
-                # again in case the messages that were on the DQ got
-                # moved back on $queue.
-                for name in [queue_name, dq_name(queue_name)]:
-                    if self.queues[name].unfinished_tasks:
-                        break
-                else:
-                    return
+            queues = [
+                self.queues[queue_name],
+                self.queues[dq_name(queue_name)],
+            ]
         except KeyError:
             raise QueueNotFound(queue_name)
+
+        deadline = timeout and time.monotonic() + timeout / 1000
+        while True:
+            for queue in queues:
+                timeout = deadline and deadline - time.monotonic()
+                join_queue(queue, timeout=timeout)
+
+            # We cycle through $queue then $queue.DQ then $queue
+            # again in case the messages that were on the DQ got
+            # moved back on $queue.
+            for queue in queues:
+                if queue.unfinished_tasks:
+                    break
+            else:
+                if fail_fast:
+                    for message in self.dead_letters_by_queue[queue_name]:
+                        raise message._exception from None
+
+                return
 
 
 class _StubConsumer(Consumer):

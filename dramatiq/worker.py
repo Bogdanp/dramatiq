@@ -439,6 +439,11 @@ class _WorkerThread(Thread):
             self.broker.emit_after("skip_message", message)
 
         except BaseException as e:
+            # Stuff the exception into the message [proxy] so that it
+            # may be used by the stub broker to provide a nicer
+            # testing experience.
+            message.stuff_exception(e)
+
             if isinstance(e, RateLimitExceeded):
                 self.logger.warning("Rate limit exceeded in message %s: %s.", message, e)
             else:

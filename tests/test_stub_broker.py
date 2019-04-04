@@ -64,3 +64,21 @@ def test_stub_broker_can_join_with_timeout(stub_broker, stub_worker):
     # Then I expect a QueueJoinTimeout to be raised
     with pytest.raises(QueueJoinTimeout):
         stub_broker.join(do_work.queue_name, timeout=500)
+
+
+def test_stub_broker_join_reraises_actor_exceptions_in_the_joining_current_thread(stub_broker, stub_worker):
+    # Given that I have an actor that always fails with a custom exception
+    class CustomError(Exception):
+        pass
+
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise CustomError("well, shit")
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on its queue
+    # Then that exception should be raised in my thread
+    with pytest.raises(CustomError):
+        stub_broker.join(do_work.queue_name, fail_fast=True)
