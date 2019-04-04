@@ -27,6 +27,13 @@ Added
 .. _@davidt99: https://github.com/davidt99
 .. _@xelhark: https://github.com/xelhark
 
+Changed
+^^^^^^^
+
+* Pinned pika version `>1.0,<2.0`.  (`#202`_)
+
+.. _#202: https://github.com/Bogdanp/dramatiq/pull/202
+
 Fixed
 ^^^^^
 
