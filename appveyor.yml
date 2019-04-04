@@ -16,7 +16,7 @@ init:
   - set APPVEYOR=true
 
 before_build:
-  - choco install rabbitmq --ignoredependencies -y
+  - choco install rabbitmq --version 3.7.3 --ignoredependencies -y
   - choco install redis-64
   - redis-server --service-install
   - redis-server --service-start
