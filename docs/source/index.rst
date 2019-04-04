@@ -100,9 +100,9 @@ how to use Dramatiq.
    motivation
    guide
    best_practices
+   troubleshooting
    advanced
    cookbook
-   troubleshooting
 
 
 API Reference
