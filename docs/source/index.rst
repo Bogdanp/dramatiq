@@ -100,6 +100,7 @@ how to use Dramatiq.
    best_practices
    advanced
    cookbook
+   troubleshooting
 
 
 API Reference
