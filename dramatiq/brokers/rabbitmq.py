@@ -271,7 +271,7 @@ class RabbitmqBroker(Broker):
             try:
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
                 self.emit_before("enqueue", message, delay)
-                self.channel.publish(
+                self.channel.basic_publish(
                     exchange="",
                     routing_key=queue_name,
                     body=message.encode(),
