@@ -25,10 +25,11 @@ particular URL:
 
    import requests
 
+
    def count_words(url):
-     response = requests.get(url)
-     count = len(response.text.split(" "))
-     print(f"There are {count} words at {url!r}.")
+       response = requests.get(url)
+       count = len(response.text.split(" "))
+       print(f"There are {count} words at {url!r}.")
 
 There's not a ton going on here.  We just grab the response content at
 that URL and print out how many space-separated chunks there are in
@@ -44,16 +45,17 @@ using Dramatiq, all we have to do is decorate it with |actor|:
 
 .. code-block:: python
    :caption: count_words.py
-   :emphasize-lines: 1, 4
+   :emphasize-lines: 1, 5
 
    import dramatiq
    import requests
 
+
    @dramatiq.actor
    def count_words(url):
-     response = requests.get(url)
-     count = len(response.text.split(" "))
-     print(f"There are {count} words at {url!r}.")
+       response = requests.get(url)
+       count = len(response.text.split(" "))
+       print(f"There are {count} words at {url!r}.")
 
 Like before, if we call the function in the interactive interpreter,
 it will run synchronously and we'll get the same result out::
@@ -119,9 +121,9 @@ If you open your Python interpreter back up and send the actor some
 more URLs to process::
 
   >>> urls = [
-  ...   "https://news.ycombinator.com",
-  ...   "https://xkcd.com",
-  ...   "https://rabbitmq.com",
+  ...     "https://news.ycombinator.com",
+  ...     "https://xkcd.com",
+  ...     "https://rabbitmq.com",
   ... ]
   >>> [count_words.send(url) for url in urls]
   [Message(queue_name='default', actor_name='count_words', args=('https://news.ycombinator.com',), kwargs={}, options={}, message_id='a99a5b2d-d2da-407b-be55-f2925266e216', message_timestamp=1498557998218),
@@ -171,12 +173,12 @@ Change ``count_words`` to catch the missing schema error::
 
    @dramatiq.actor
    def count_words(url):
-     try:
-       response = requests.get(url)
-       count = len(response.text.split(" "))
-       print(f"There are {count} words at {url!r}.")
-     except requests.exceptions.MissingSchema:
-       print(f"Message dropped due to invalid url: {url!r}")
+       try:
+           response = requests.get(url)
+           count = len(response.text.split(" "))
+           print(f"There are {count} words at {url!r}.")
+       except requests.exceptions.MissingSchema:
+           print(f"Message dropped due to invalid url: {url!r}")
 
 Then send ``SIGHUP`` to the main worker process to make the workers
 pick up the source code changes::
@@ -227,11 +229,12 @@ If you want to retry certain exceptions and not others, you can pass a
 predicate function via the ``retry_when`` parameter::
 
   def should_retry(retries_so_far, exception):
-    return retries_so_far < 3 and isinstance(exception, HttpTimeout)
+      return retries_so_far < 3 and isinstance(exception, HttpTimeout)
+
 
   @dramatiq.actor(retry_when=should_retry)
   def count_words(url):
-    ...
+      ...
 
 The following retry options are configurable on a per-actor basis:
 
@@ -254,7 +257,7 @@ messages (given in milliseconds) on a per-actor basis::
 
   @dramatiq.actor(max_age=3600000)
   def count_words(url):
-    ...
+      ...
 
 Dead Letters
 ^^^^^^^^^^^^
@@ -280,7 +283,7 @@ specifying the ``time_limit`` (in milliseconds) of each one::
 
   @dramatiq.actor(time_limit=60000)
   def count_words(url):
-    ...
+      ...
 
 .. note::
    While this will keep our actor from running forever, remember that
@@ -303,14 +306,15 @@ wrap its source code in a try block and catch |TimeLimitExceeded|::
 
   from dramatiq.middleware import TimeLimitExceeded
 
+
   @dramatiq.actor(time_limit=1000)
   def long_running():
-    try:
-      setup_missiles()
-      time.sleep(2)
-      launch_missiles()    # <- this will not run
-    except TimeLimitExceeded:
-      teardown_missiles()  # <- this will run
+      try:
+          setup_missiles()
+          time.sleep(2)
+          launch_missiles()    # <- this will not run
+      except TimeLimitExceeded:
+          teardown_missiles()  # <- this will run
 
 
 Scheduling Messages
@@ -346,11 +350,12 @@ You can set an Actor's priority via the ``priority`` keyword argument::
 
   @dramatiq.actor(priority=0)  # 0 is the default
   def generate_report(user_id):
-    ...
+      ...
+
 
   @dramatiq.actor(priority=10)
   def sync_order_to_warehouse(order_id):
-    ...
+      ...
 
 That way if both ``generate_report`` and ``sync_order_to_warehouse``
 are scheduled to run at the same time but there's only capacity to run
@@ -389,6 +394,7 @@ execution::
 
   from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
+
   rabbitmq_broker = RabbitmqBroker(host="rabbitmq")
   dramatiq.set_broker(rabbitmq_broker)
 
@@ -402,6 +408,7 @@ execution::
   import dramatiq
 
   from dramatiq.brokers.redis import RedisBroker
+
 
   redis_broker = RedisBroker(host="redis", port=6537)
   dramatiq.set_broker(redis_broker)
@@ -423,11 +430,12 @@ run your tests.  My recommendation is to use it in conjunction with
    from dramatiq.brokers.rabbitmq import RabbitmqBroker
    from dramatiq.brokers.stub import StubBroker
 
+
    if os.getenv("UNIT_TESTS") == "1":
-     broker = StubBroker()
-     broker.emit_after("process_boot")
+       broker = StubBroker()
+       broker.emit_after("process_boot")
    else:
-     broker = RabbitmqBroker()
+       broker = RabbitmqBroker()
 
 .. code-block:: python
    :caption: conftest.py
@@ -438,24 +446,26 @@ run your tests.  My recommendation is to use it in conjunction with
    from dramatiq import Worker
    from yourapp import broker
 
+
    @pytest.fixture()
    def stub_broker():
-     broker.flush_all()
-     return broker
+       broker.flush_all()
+       return broker
+
 
    @pytest.fixture()
    def stub_worker():
-     worker = Worker(broker, worker_timeout=100)
-     worker.start()
-     yield worker
-     worker.stop()
+       worker = Worker(broker, worker_timeout=100)
+       worker.start()
+       yield worker
+       worker.stop()
 
 Then you can inject and use those fixtures in your tests::
 
   def test_count_words(stub_broker, stub_worker):
-    count_words.send("http://example.com")
-    stub_broker.join(count_words.queue_name)
-    stub_worker.join()
+      count_words.send("http://example.com")
+      stub_broker.join(count_words.queue_name)
+      stub_worker.join()
 
 Because all actors are callable, you can of course also unit test them
 synchronously by calling them as you would normal functions.

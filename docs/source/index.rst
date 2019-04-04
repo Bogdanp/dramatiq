@@ -33,11 +33,13 @@ Here's what it looks like:
   import dramatiq
   import requests
 
+
   @dramatiq.actor
   def count_words(url):
-     response = requests.get(url)
-     count = len(response.text.split(" "))
-     print(f"There are {count} words at {url!r}.")
+       response = requests.get(url)
+       count = len(response.text.split(" "))
+       print(f"There are {count} words at {url!r}.")
+
 
   # Synchronously count the words on example.com in the current process
   count_words("http://example.com")

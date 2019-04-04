@@ -31,11 +31,11 @@ class RateLimiter:
       >>> limiter = ConcurrentRateLimiter(backend, "distributed-mutex", limit=1)
 
       >>> with limiter.acquire(raise_on_failure=False) as acquired:
-      ...   if not acquired:
-      ...     print("Mutex not acquired.")
-      ...     return
+      ...     if not acquired:
+      ...         print("Mutex not acquired.")
+      ...         return
       ...
-      ...   print("Mutex acquired.")
+      ...     print("Mutex acquired.")
 
     Parameters:
       backend(RateLimiterBackend): The rate limiting backend to use.

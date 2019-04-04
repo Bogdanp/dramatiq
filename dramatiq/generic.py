@@ -57,24 +57,24 @@ class GenericActor(metaclass=generic_actor):
     Example:
 
       >>> class BaseTask(GenericActor):
-      ...   class Meta:
-      ...     abstract = True
-      ...     queue_name = "tasks"
-      ...     max_retries = 20
+      ...     class Meta:
+      ...         abstract = True
+      ...         queue_name = "tasks"
+      ...         max_retries = 20
       ...
-      ...   def get_task_name(self):
-      ...     raise NotImplementedError
+      ...     def get_task_name(self):
+      ...         raise NotImplementedError
       ...
-      ...   def perform(self):
-      ...     print(f"Hello from {self.get_task_name()}!")
+      ...     def perform(self):
+      ...         print(f"Hello from {self.get_task_name()}!")
 
       >>> class FooTask(BaseTask):
-      ...   def get_task_name(self):
-      ...     return "Foo"
+      ...     def get_task_name(self):
+      ...         return "Foo"
 
       >>> class BarTask(BaseTask):
-      ...   def get_task_name(self):
-      ...     return "Bar"
+      ...     def get_task_name(self):
+      ...         return "Bar"
 
       >>> FooTask.send()
       >>> BarTask.send()

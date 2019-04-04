@@ -22,26 +22,29 @@ time an actor fails, even if the message is going to be retried.
 
    import dramatiq
 
+
    @dramatiq.actor
    def identity(x):
-     return x
+       return x
+
 
    @dramatiq.actor
    def print_result(message_data, result):
-     print(f"The result of message {message_data['message_id']} was {result}.")
+       print(f"The result of message {message_data['message_id']} was {result}.")
 
    @dramatiq.actor
    def print_error(message_data, exception_data):
-     print(f"Message {message_data['message_id']} failed:")
-     print(f"  * type: {exception_data['type']}")
-     print(f"  * message: {exception_data['message']!r}")
+       print(f"Message {message_data['message_id']} failed:")
+       print(f"  * type: {exception_data['type']}")
+       print(f"  * message: {exception_data['message']!r}")
+
 
    if __name__ == "__main__":
-     identity.send_with_options(
-       args=(42,)
-       on_failure=print_error,
-       on_success=print_result,
-     )
+       identity.send_with_options(
+           args=(42,)
+           on_failure=print_error,
+           on_success=print_result,
+       )
 
 
 Composition
@@ -65,9 +68,9 @@ intensive actor called ``frobnicate``, you can group multiple
 messages together as follows::
 
   g = group([
-    frobnicate.message(1, 2),
-    frobnicate.message(2, 3),
-    frobnicate.message(3, 4),
+      frobnicate.message(1, 2),
+      frobnicate.message(2, 3),
+      frobnicate.message(3, 4),
   ]).run()
 
 This will enqueue 3 separate messages and, assuming there are enough
@@ -79,7 +82,7 @@ the whole group to finish::
 Or you can iterate over the results::
 
   for res in g.get_results(block=True, timeout=5_000):
-    ...
+      ...
 
 Results are returned in the same order that the messages were added to
 the group.
@@ -95,19 +98,20 @@ and one that counts the number of "words" in a piece of text:
 
    @dramatiq.actor
    def get_uri_contents(uri):
-     return requests.get(uri).text
+       return requests.get(uri).text
+
 
    @dramatiq.actor
    def count_words(uri, text):
-     count = len(text.split(" "))
-     print(f"There are {count} words at {uri}.")
+       count = len(text.split(" "))
+       print(f"There are {count} words at {uri}.")
 
 You can chain them together like so::
 
   uri = "http://example.com"
   pipe = pipeline([
-    get_uri_contents.message(uri),
-    count_words.message(uri),
+      get_uri_contents.message(uri),
+      count_words.message(uri),
   ]).run()
 
 Or you can use pipe notation to achieve the same thing::
@@ -121,9 +125,9 @@ line, set the ``pipe_ignore`` option to ``True`` when you create the
 "receiving" message::
 
   (
-    bust_caches.message() |
-    prepare_codes.message_with_options(pipe_ignore=True) |
-    launch_missiles.message()
+      bust_caches.message() |
+      prepare_codes.message_with_options(pipe_ignore=True) |
+      launch_missiles.message()
   )
 
 Here, the result of ``bust_caches()`` will not be passed to
@@ -138,7 +142,7 @@ To get the intermediate results of each step in the pipeline, you can
 call |pipeline_get_results|::
 
   for res in pipe.get_results(block=True):
-    ...
+      ...
 
 
 Error Reporting
@@ -159,10 +163,11 @@ Save the following middleware to a module inside your project:
    import dramatiq
    import rollbar
 
+
    class RollbarMiddleware(dramatiq.Middleware):
-     def after_process_message(self, broker, message, *, result=None, exception=None):
-       if exception is not None:
-         rollbar.report_exc_info()
+       def after_process_message(self, broker, message, *, result=None, exception=None):
+           if exception is not None:
+               rollbar.report_exc_info()
 
 Finally, instantiate and add it to your broker:
 
@@ -188,13 +193,14 @@ Save the following middleware to a module inside your project:
 
    import dramatiq
 
-   class SentryMiddleware(dramatiq.Middleware):
-     def __init__(self, raven_client):
-       self.raven_client = raven_client
 
-     def after_process_message(self, broker, message, *, result=None, exception=None):
-       if exception is not None:
-         self.raven_client.captureException()
+   class SentryMiddleware(dramatiq.Middleware):
+       def __init__(self, raven_client):
+           self.raven_client = raven_client
+
+       def after_process_message(self, broker, message, *, result=None, exception=None):
+           if exception is not None:
+               self.raven_client.captureException()
 
 Finally, instantiate and add it to your broker:
 
@@ -270,7 +276,7 @@ follow a convention where all your tasks modules are named
 
    echo "Discovered tasks modules:"
    for module in $all_modules; do
-       echo "  * ${module}"
+     echo "  * ${module}"
    done
    echo
 
@@ -311,11 +317,12 @@ actors::
 
    @dramatiq.actor
    def very_slow():
-     ...
+       ...
+
 
    @dramatiq.actor(queue_name="ui-blocking")
    def very_important():
-     ...
+       ...
 
 You may want to run one group of workers that only processes messages
 on the ``default`` queue and another that only processes messages off
@@ -354,11 +361,12 @@ You can use Dramatiq's |RateLimiters| to constrain actor concurrency.
    backend = RedisBackend()
    DISTRIBUTED_MUTEX = ConcurrentRateLimiter(backend, "distributed-mutex", limit=1)
 
+
    @dramatiq.actor
    def one_at_a_time():
-     with DISTRIBUTED_MUTEX.acquire():
-       time.sleep(1)
-       print("Done.")
+       with DISTRIBUTED_MUTEX.acquire():
+           time.sleep(1)
+           print("Done.")
 
 Whenever two ``one_at_a_time`` actors run at the same time, one of
 them will be retried with exponential backoff.  This works by raising
@@ -369,10 +377,10 @@ If you want rate limiters not to raise an exception when they can't be
 acquired, you should pass ``raise_on_failure=False`` to ``acquire``::
 
   with DISTRIBUTED_MUTEX.acquire(raise_on_failure=False) as acquired:
-    if not acquired:
-      print("Lock could not be acquired.")
-    else:
-      print("Lock was acquired.")
+      if not acquired:
+          print("Lock could not be acquired.")
+      else:
+          print("Lock was acquired.")
 
 
 Results
@@ -398,13 +406,15 @@ add the |Results| middleware to your broker.
    broker.add_middleware(Results(backend=result_backend))
    dramatiq.set_broker(broker)
 
+
    @dramatiq.actor(store_results=True)
    def add(x, y):
-     return x + y
+       return x + y
+
 
    if __name__ == "__main__":
-     message = add.send(1, 2)
-     print(message.get_result(block=True))
+       message = add.send(1, 2)
+       print(message.get_result(block=True))
 
 Getting a result raises |ResultMissing| when a result hasn't been
 stored yet or if it has already expired (results expire after 10
@@ -429,19 +439,21 @@ APScheduler_ is the recommended scheduler to use with Dramatiq:
    from apscheduler.triggers.cron import CronTrigger
    from datetime import datetime
 
+
    @dramatiq.actor
    def print_current_date():
-     print(datetime.now())
+       print(datetime.now())
+
 
    if __name__ == "__main__":
-     scheduler = BlockingScheduler()
-     scheduler.add_job(
-       print_current_date.send,
-       CronTrigger.from_crontab("* * * * *"),
-     )
-     try:
-       scheduler.start()
-     except KeyboardInterrupt:
-       scheduler.shutdown()
+       scheduler = BlockingScheduler()
+       scheduler.add_job(
+           print_current_date.send,
+           CronTrigger.from_crontab("* * * * *"),
+       )
+       try:
+           scheduler.start()
+       except KeyboardInterrupt:
+           scheduler.shutdown()
 
 .. _APScheduler: https://apscheduler.readthedocs.io

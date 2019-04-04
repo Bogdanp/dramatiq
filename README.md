@@ -60,6 +60,7 @@ import dramatiq
 import requests
 import sys
 
+
 @dramatiq.actor
 def count_words(url):
     response = requests.get(url)

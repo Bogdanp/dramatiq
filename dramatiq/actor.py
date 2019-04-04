@@ -163,7 +163,7 @@ def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", 
 
       >>> @dramatiq.actor
       ... def add(x, y):
-      ...   print(x + y)
+      ...     print(x + y)
       ...
       >>> add
       Actor(<function add at 0x106c6d488>, queue_name='default', actor_name='add')

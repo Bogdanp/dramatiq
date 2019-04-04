@@ -35,7 +35,7 @@ class Results(Middleware):
 
       >>> @dramatiq.actor(store_results=True)
       ... def add(x, y):
-      ...   return x + y
+      ...     return x + y
 
       >>> message = add.send(1, 2)
       >>> message.get_result(backend=backend)
