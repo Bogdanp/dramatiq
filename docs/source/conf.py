@@ -195,4 +195,5 @@ texinfo_documents = [
 intersphinx_mapping = {
     'https://docs.python.org/3/': None,
     'https://pika.readthedocs.io/en/1.0.0/': None,
+    'https://redis-py.readthedocs.io/en/latest/': None,
 }
