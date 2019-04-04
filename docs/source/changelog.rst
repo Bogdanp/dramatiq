@@ -18,11 +18,15 @@ Added
   error occurs.  (`#179`_, `@davidt99`_)
 * Support for accessing nested broker instances from the CLI.
   (`#191`_, `@bersace`_)
+* Support for eagerly raising actor exceptions in the joining thread
+  with the |StubBroker|.  (`#195`_, `#203`_)
 
 .. _#179: https://github.com/Bogdanp/dramatiq/issues/179
 .. _#183: https://github.com/Bogdanp/dramatiq/issues/183
 .. _#184: https://github.com/Bogdanp/dramatiq/issues/184
 .. _#191: https://github.com/Bogdanp/dramatiq/pull/191
+.. _#195: https://github.com/Bogdanp/dramatiq/issues/195
+.. _#203: https://github.com/Bogdanp/dramatiq/pull/203
 .. _@bersace: https://github.com/bersace
 .. _@davidt99: https://github.com/davidt99
 .. _@xelhark: https://github.com/xelhark

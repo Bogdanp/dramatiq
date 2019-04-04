@@ -470,5 +470,25 @@ Then you can inject and use those fixtures in your tests::
 Because all actors are callable, you can of course also unit test them
 synchronously by calling them as you would normal functions.
 
+Dealing with Exceptions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, any exceptions raised by an actor are raised in the
+worker, which runs in a separate thread from the one your tests run
+in.  This means that any exceptions your actor throws will not be
+visible to your test code!
+
+You can make the stub broker re-raise exceptions from failed actors in your
+main thread by passing ``fail_fast=True`` to its ``join`` method::
+
+  def test_count_words(stub_broker, stub_worker):
+      count_words.send("http://example.com")
+      stub_broker.join(count_words.queue_name, fail_fast=True)
+      stub_worker.join()
+
+This way, whatever exception caused the actor to fail will be raised
+eagerly within your test.  Note that the exception will only be raised
+once the actor exceeds its available retries.
+
 
 .. _pytest fixtures: https://docs.pytest.org/en/latest/fixture.html
