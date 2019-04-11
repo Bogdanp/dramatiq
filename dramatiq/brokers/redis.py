@@ -282,6 +282,8 @@ class _RedisConsumer(Consumer):
             # if the message has been delayed so we want to ack on the
             # current queue.
             self.broker.do_ack(self.queue_name, message.options["redis_message_id"])
+        except redis.ConnectionError as e:
+            raise ConnectionClosed(e) from None
         finally:
             self.message_refc -= 1
 
@@ -289,6 +291,8 @@ class _RedisConsumer(Consumer):
         try:
             # Same deal as above.
             self.broker.do_nack(self.queue_name, message.options["redis_message_id"])
+        except redis.ConnectionError as e:
+            raise ConnectionClosed(e) from None
         finally:
             self.message_refc -= 1
 

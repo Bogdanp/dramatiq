@@ -41,10 +41,13 @@ Changed
 Fixed
 ^^^^^
 
+* An issue where workers would fail and never recover after the
+  connection to Redis was severed.  (`#207`_)
 * ``pipe_ignore`` has been fixed to apply to the next message in line
   within a pipeline.  (`#194`_, `@metheoryt`_)
 
 .. _#194: https://github.com/Bogdanp/dramatiq/pull/194
+.. _#207: https://github.com/Bogdanp/dramatiq/issues/207
 .. _@metheoryt: https://github.com/metheoryt
 
 

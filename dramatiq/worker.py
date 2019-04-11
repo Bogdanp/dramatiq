@@ -323,17 +323,46 @@ class _ConsumerThread(Thread):
         individual messages, signaling that each message is ready to
         be acked or rejected.
         """
-        if message.failed:
-            self.logger.debug("Rejecting message %r.", message.message_id)
-            self.broker.emit_before("nack", message)
-            self.consumer.nack(message)
-            self.broker.emit_after("nack", message)
+        while True:
+            try:
+                if message.failed:
+                    self.logger.debug("Rejecting message %r.", message.message_id)
+                    self.broker.emit_before("nack", message)
+                    self.consumer.nack(message)
+                    self.broker.emit_after("nack", message)
 
-        else:
-            self.logger.debug("Acknowledging message %r.", message.message_id)
-            self.broker.emit_before("ack", message)
-            self.consumer.ack(message)
-            self.broker.emit_after("ack", message)
+                else:
+                    self.logger.debug("Acknowledging message %r.", message.message_id)
+                    self.broker.emit_before("ack", message)
+                    self.consumer.ack(message)
+                    self.broker.emit_after("ack", message)
+
+                return
+
+            # This applies to the Redis broker.  The alternative to
+            # constantly retrying would be to give up here and let the
+            # message be re-processed after the worker is eventually
+            # stopped or restarted, but we'd be doing the same work
+            # twice in that case and the behaviour would surprise
+            # users who don't deploy frequently.
+            except ConnectionError as e:
+                self.logger.warning(
+                    "Failed to post_process_message(%s) due to error: %s.\n"
+                    "The operation will be retried in 5 seconds until the connection recovers.",
+                    message, e,
+                )
+
+                time.sleep(5)
+                continue
+
+            except Exception:
+                self.logger.exception(
+                    "Unhandled error during post_process_message(%s). "
+                    "This is a bug in Dramatiq. Please report it!",
+                    message,
+                )
+
+                return
 
     def requeue_messages(self, messages):
         """Called on worker shutdown and whenever there is a
