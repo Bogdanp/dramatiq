@@ -566,7 +566,8 @@ def test_currrent_message_middleware_exposes_the_current_message(stub_broker, st
 
     @dramatiq.actor
     def accessor(x):
-        received_messages.append(CurrentMessage.get_current_message())
+        message_proxy = CurrentMessage.get_current_message()
+        received_messages.append(message_proxy._message)
 
     # When I send it a couple messages
     sent_messages.append(accessor.send(1))
@@ -576,7 +577,7 @@ def test_currrent_message_middleware_exposes_the_current_message(stub_broker, st
     stub_broker.join(accessor.queue_name)
 
     # Then the sent messages and the received messages should be the same
-    assert sent_messages == received_messages
+    assert sorted(sent_messages) == sorted(received_messages)
 
     # When I try to access the current message from a non-worker thread
     # Then I should get back None
