@@ -4,6 +4,7 @@
 .. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Broker| replace:: :class:`Broker<dramatiq.Broker>`
 .. |Callbacks| replace:: :class:`Callbacks<dramatiq.middleware.Callbacks>`
+.. |CurrentMessage| replace:: :class:`CurrentMessage<dramatiq.middleware.CurrentMessage>`
 .. |DramatiqError| replace:: :class:`DramatiqError<dramatiq.DramatiqError>`
 .. |Encoders| replace:: :class:`Encoders<dramatiq.Encoder>`
 .. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`

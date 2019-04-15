@@ -6,7 +6,7 @@ import pytest
 import dramatiq
 from dramatiq import Message, Middleware
 from dramatiq.errors import RateLimitExceeded
-from dramatiq.middleware import SkipMessage
+from dramatiq.middleware import CurrentMessage, SkipMessage
 
 from .common import skip_on_pypy, worker
 
@@ -554,3 +554,30 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
         # Then warning mock should be called with a special message
         warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
         assert "Rate limit exceeded in message %s: %s." in warning_messages
+
+
+def test_currrent_message_middleware_exposes_the_current_message(stub_broker, stub_worker):
+    # Given that I have a CurrentMessage middleware
+    stub_broker.add_middleware(CurrentMessage())
+
+    # And an actor that accesses the current message
+    sent_messages = []
+    received_messages = []
+
+    @dramatiq.actor
+    def accessor(x):
+        received_messages.append(CurrentMessage.get_current_message())
+
+    # When I send it a couple messages
+    sent_messages.append(accessor.send(1))
+    sent_messages.append(accessor.send(2))
+
+    # And wait for it to finish its work
+    stub_broker.join(accessor.queue_name)
+
+    # Then the sent messages and the received messages should be the same
+    assert sent_messages == received_messages
+
+    # When I try to access the current message from a non-worker thread
+    # Then I should get back None
+    assert CurrentMessage.get_current_message() is None
