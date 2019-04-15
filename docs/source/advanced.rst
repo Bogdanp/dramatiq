@@ -113,6 +113,27 @@ the message, raise an exception to indicate failure.
            raise
 
 
+Accessing Messages from Within Actors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Actors can access their own messages via the |CurrentMessage|
+middleware.  This middleware is not enabled by default, but you can
+add it to your broker when you instantiate it or by calling
+|add_middleware|::
+
+  from dramatiq.middleware import CurrentMessage
+
+
+  broker.add_middleware(CurrentMessage())
+
+With this middleware in place, every actor can access its own message
+by calling |get_current_message| on the |CurrentMessage| class::
+
+  @dramatiq.actor
+  def example():
+      print(CurrentMessage.get_current_message())
+
+
 Enqueueing Messages from Other Languages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

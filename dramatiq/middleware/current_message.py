@@ -30,7 +30,7 @@ class CurrentMessage(Middleware):
 
       >>> @dramatiq.actor
       ... def example(x):
-      ...   print(CurrentMessage.get_current_message())
+      ...     print(CurrentMessage.get_current_message())
       ...
       >>> example.send(1)
 
@@ -40,6 +40,10 @@ class CurrentMessage(Middleware):
 
     @classmethod
     def get_current_message(cls):
+        """Get the message that triggered the current actor.  Messages
+        are thread local so this returns ``None`` when called outside
+        of actor code.
+        """
         return getattr(cls.STATE, "message", None)
 
     def before_process_message(self, broker, message):

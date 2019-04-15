@@ -48,6 +48,7 @@
 .. |before_consumer_thread_shutdown| replace:: :meth:`before_consumer_thread_shutdown<dramatiq.Middleware.before_consumer_thread_shutdown>`
 .. |before_worker_thread_shutdown| replace:: :meth:`before_worker_thread_shutdown<dramatiq.Middleware.before_worker_thread_shutdown>`
 .. |dramatiq| replace:: :mod:`dramatiq`
+.. |get_current_message| replace:: :meth:`get_current_message<dramatiq.middleware.CurrentMessage.get_current_message>`
 .. |group| replace:: :func:`group<dramatiq.group>`
 .. |pipeline_get_results| replace:: :meth:`get_results<dramatiq.pipeline.get_results>`
 .. |pipeline_get_result| replace:: :meth:`get_result<dramatiq.pipeline.get_result>`
