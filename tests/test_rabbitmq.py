@@ -23,6 +23,38 @@ def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     assert isinstance(broker, RabbitmqBroker)
 
 
+def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations():
+    # Given that I have a RabbitmqBroker
+    # When I try to give it both a connection URL and a list of connection parameters
+    # Then a RuntimeError should be raised
+    with pytest.raises(RuntimeError):
+        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1")])
+
+    # When I try to give it both a connection URL and pika connection parameters
+    # Then a RuntimeError should be raised
+    with pytest.raises(RuntimeError):
+        RabbitmqBroker(host="127.0.0.1", url="amqp://127.0.0.1:5672")
+
+    # When I try to give it both a list of parameters and individual flags
+    # Then a RuntimeError should be raised
+    with pytest.raises(RuntimeError):
+        RabbitmqBroker(host="127.0.0.1", parameters=[dict(host="127.0.0.1")])
+
+
+def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
+    # Given a list of pika connection parameters including an invalid one
+    parameters = [
+        dict(host="127.0.0.1", port=55672), # this will fail
+        dict(host="127.0.0.1"),
+    ]
+
+    # When I pass those parameters to RabbitmqBroker
+    broker = RabbitmqBroker(parameters=parameters)
+
+    # Then I should still get a connection to the host that is up
+    assert broker.connection
+
+
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
     database = {}

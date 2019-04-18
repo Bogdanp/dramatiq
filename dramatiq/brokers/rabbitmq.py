@@ -66,22 +66,32 @@ class RabbitmqBroker(Broker):
         to this broker.
       max_priority(int): Configure the queues with x-max-priority to
         support priority queue in RabbitMQ itself
-      **parameters(dict): The (pika) connection parameters to use to
+      parameters(list[dict]): A sequence of (pika) connection parameters
+        to determine which Rabbit server(s) to connect to.
+      **kwargs(dict): The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
 
     .. _ConnectionParameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
     """
 
-    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, **parameters):
+    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs):
         super().__init__(middleware=middleware)
 
         if max_priority is not None and not (0 < max_priority <= 255):
             raise ValueError("max_priority must be a value between 0 and 255")
 
-        if url:
+        if url is not None:
+            if parameters is not None or kwargs:
+                raise RuntimeError("the 'url' argument cannot be used in conjunction with pika parameters")
+
             self.parameters = pika.URLParameters(url)
+        elif parameters is not None:
+            if kwargs:
+                raise RuntimeError("the 'parameters' argument cannot be used in conjunction with other pika parameters")
+
+            self.parameters = [pika.ConnectionParameters(**p) for p in parameters]
         else:
-            self.parameters = pika.ConnectionParameters(**parameters)
+            self.parameters = pika.ConnectionParameters(**kwargs)
 
         self.confirm_delivery = confirm_delivery
         self.max_priority = max_priority
