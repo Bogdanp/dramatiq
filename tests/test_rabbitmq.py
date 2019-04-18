@@ -23,6 +23,20 @@ def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     assert isinstance(broker, RabbitmqBroker)
 
 
+def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
+    # Given a list of pika connection parameters including an invalid one
+    parameters = [
+        dict(host='127.0.0.1', port=55672), # this will fail
+        dict(host='127.0.0.1'),
+    ]
+
+    # When i pass that to RabbitmqBroker
+    broker = RabbitmqBroker(parameters=parameters)
+
+    # Then I should still get a connection to the host that is up
+    assert broker.connection
+
+
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
     database = {}
