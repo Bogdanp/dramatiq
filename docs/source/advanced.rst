@@ -33,6 +33,27 @@ Redis
 The |RedisBroker| takes a ``namespace`` parameter that you can use to
 logically split queues across multiple apps.
 
+Highly Available Queues
+^^^^^^^^^^^^^^^^^^^^^^^
+
+RabbitMQ
+~~~~~~~~
+
+When running RabbitMQ with a `high availability cluster`_, one can pass
+a sequence of pika `connection parameters`_ to |RabbitmqBroker| when
+instancing it. This will make dramatiq failover if the currently connected
+node fails.
+
+.. code-block:: python
+   from dramatiq.brokers.rabbitmq import RabbitmqBroker
+
+   rabbitmq_broker = RabbitmqBroker(parameters=[
+       dict(host='node1.foo.net'),
+       dict(host='node2.foo.net'),
+   ])
+
+.. _high availability cluster: https://www.rabbitmq.com/ha.html
+.. _connection parameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
 
 Other brokers
 ^^^^^^^^^^^^^

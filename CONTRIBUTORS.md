@@ -32,3 +32,4 @@ of those changes to CLEARTYPE SRL.
 | [@bersace](https://github.com/bersace)               | Étienne Bersac         |
 | [@metheoryt](https://github.com/metheoryt)           | Maxim Romanyuk         |
 | [@douglasmiranda](https://github.com/douglasmiranda) | Douglas Miranda        |
+| [@srecnig](https://github.com/srecnig)               | Martin Sereinig        |
