@@ -44,7 +44,7 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
 def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
     # Given a list of pika connection parameters including an invalid one
     parameters = [
-        dict(host="127.0.0.1", port=55672), # this will fail
+        dict(host="127.0.0.1", port=55672),  # this will fail
         dict(host="127.0.0.1"),
     ]
 
