@@ -151,10 +151,9 @@ Error Reporting
 Reporting errors with Rollbar
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Rollbar_ provides an easy-to-use Python client.  Add it to your
-project with pipenv_::
+Rollbar_ provides an easy-to-use Python client::
 
-   $ pipenv install rollbar
+   $ pip install rollbar
 
 Save the following middleware to a module inside your project:
 
@@ -177,43 +176,14 @@ Finally, instantiate and add it to your broker:
    broker.add_middleware(path.to.RollbarMiddleware())
 
 
-.. _pipenv: https://docs.pipenv.org
 .. _Rollbar: https://github.com/rollbar/pyrollbar#quick-start
 
 Reporting errors with Sentry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Install Sentry's raven_ client with pipenv_::
+Use `sentry-dramatiq`_.
 
-   $ pipenv install raven
-
-Save the following middleware to a module inside your project:
-
-.. code-block:: python
-
-   import dramatiq
-
-
-   class SentryMiddleware(dramatiq.Middleware):
-       def __init__(self, raven_client):
-           self.raven_client = raven_client
-
-       def after_process_message(self, broker, message, *, result=None, exception=None):
-           if exception is not None:
-               self.raven_client.captureException()
-
-Finally, instantiate and add it to your broker:
-
-.. code-block:: python
-
-   from raven import Client
-
-   raven_client = Client(YOUR_DSN)
-   broker.add_middleware(path.to.SentryMiddleware(raven_client))
-
-
-.. _pipenv: https://docs.pipenv.org
-.. _raven: https://github.com/getsentry/raven-python
+.. _sentry-dramatiq: https://pypi.org/project/sentry-dramatiq/
 
 
 Frameworks
@@ -280,7 +250,7 @@ follow a convention where all your tasks modules are named
    done
    echo
 
-   pipenv run dramatiq-gevent $all_modules --watch . --watch-use-polling
+   dramatiq-gevent $all_modules --watch . --watch-use-polling
 
 Retrying connection errors on startup
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

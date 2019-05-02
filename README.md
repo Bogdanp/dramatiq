@@ -23,11 +23,11 @@
 
 If you want to use it with [RabbitMQ]
 
-    pipenv install 'dramatiq[rabbitmq, watch]'
+    pip install 'dramatiq[rabbitmq, watch]'
 
 or if you want to use it with [Redis]
 
-    pipenv install 'dramatiq[redis, watch]'
+    pip install 'dramatiq[redis, watch]'
 
 
 ## Supporting the Project
