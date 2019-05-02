@@ -16,7 +16,7 @@ all:
 
 .PHONY: deploy
 deploy: all
-	rsync -avz --delete build/html/* dramatiq@ssh.dramatiq.io:~/www
+	rsync -avz --delete build/html/* dramatiq:~/www
 
 
 .PHONY: help
