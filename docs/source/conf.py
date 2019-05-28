@@ -109,9 +109,9 @@ html_theme_options = {
     'logo_name': False,
     'code_font_family': '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace',
     'code_font_size': '0.8em',
-    'show_related': True,
+    'show_related': False,
     'fixed_sidebar': False,
-    'github_banner': True,
+    'github_banner': False,
     'github_button': True,
     'github_type': 'star',
     'github_user': 'Bogdanp',
@@ -127,10 +127,8 @@ html_sidebars = {
     '**': [
         'sidebarlogo.html',
         'navigation.html',
-        'relations.html',
         'searchbox.html',
         'versions.html',
-        'codefund.html',
         'analytics.html',
     ]
 }
