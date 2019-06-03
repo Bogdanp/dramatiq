@@ -33,3 +33,4 @@ of those changes to CLEARTYPE SRL.
 | [@metheoryt](https://github.com/metheoryt)           | Maxim Romanyuk         |
 | [@douglasmiranda](https://github.com/douglasmiranda) | Douglas Miranda        |
 | [@srecnig](https://github.com/srecnig)               | Martin Sereinig        |
+| [@wsantos](https://github.com/wsantos)               | Waldecir Santos        |
