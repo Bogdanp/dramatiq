@@ -41,7 +41,8 @@ RabbitMQ
 ~~~~~~~~
 
 When running RabbitMQ with a `high availability cluster`_, you can
-pass a sequence of pika `connection parameters`_ to |RabbitmqBroker|
+pass a sequence of pika `connection parameters`_ or an url with multiple
+`rabbitmq URI`_ url splitted by ';' or a list of `rabbitmq URI`_  to |RabbitmqBroker|
 when instantiating it.  This will make dramatiq failover if the
 currently connected node fails.
 
@@ -49,14 +50,25 @@ currently connected node fails.
 
    from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-
+   #  HA With parameters
    rabbitmq_broker = RabbitmqBroker(parameters=[
        dict(host='node1.foo.net'),
        dict(host='node2.foo.net'),
    ])
 
+   # HA With single string containing multiple Rabbitmq URI splited by ';'
+   rabbitmq_broker = RabbitmqBroker(
+     url='amqp://node1.foo.net;ampq://node2.foo.net'
+   )
+
+   # HA With a list of Rabbitmq URI.
+   rabbitmq_broker = RabbitmqBroker(
+     url=['amqp://node1.foo.net', 'ampq://node2.foo.net']
+   )
+
 .. _high availability cluster: https://www.rabbitmq.com/ha.html
 .. _connection parameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
+.. _rabbitmq URI: https://www.rabbitmq.com/uri-spec.html
 
 
 Other brokers
