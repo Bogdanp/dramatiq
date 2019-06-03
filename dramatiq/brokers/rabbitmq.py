@@ -60,8 +60,8 @@ class RabbitmqBroker(Broker):
       confirm_delivery(bool): Wait for RabbitMQ to confirm that
         messages have been committed on every call to enqueue.
         Defaults to False.
-      url(str): An optional connection URL.  If both a URL and
-        connection parameters are provided, the URL is used.
+      url(str|list[str]): An optional connection URL.  If both a URL
+        and connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
       max_priority(int): Configure the queues with x-max-priority to
@@ -84,12 +84,21 @@ class RabbitmqBroker(Broker):
             if parameters is not None or kwargs:
                 raise RuntimeError("the 'url' argument cannot be used in conjunction with pika parameters")
 
-            self.parameters = pika.URLParameters(url)
+            if isinstance(url, str) and ";" in url:
+                self.parameters = [pika.URLParameters(u) for u in url.split(";")]
+
+            elif isinstance(url, list):
+                self.parameters = [pika.URLParameters(u) for u in url]
+
+            else:
+                self.parameters = pika.URLParameters(url)
+
         elif parameters is not None:
             if kwargs:
                 raise RuntimeError("the 'parameters' argument cannot be used in conjunction with other pika parameters")
 
             self.parameters = [pika.ConnectionParameters(**p) for p in parameters]
+
         else:
             self.parameters = pika.ConnectionParameters(**kwargs)
 

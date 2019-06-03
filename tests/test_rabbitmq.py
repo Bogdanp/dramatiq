@@ -23,6 +23,26 @@ def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     assert isinstance(broker, RabbitmqBroker)
 
 
+def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
+    # Given a string with a list of RabbitMQ connection URIs, including an invalid one
+    # When I pass those URIs to RabbitMQ broker as a ;-separated string
+    broker = RabbitmqBroker(
+        url="amqp://127.0.0.1:55672;amqp://127.0.0.1")
+
+    # The the broker should connect to the host that is up
+    assert broker.connection
+
+
+def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
+    # Given a string with a list of RabbitMQ connection URIs, including an invalid one
+    # When I pass those URIs to RabbitMQ broker as a list
+    broker = RabbitmqBroker(
+        url=["amqp://127.0.0.1:55672", "amqp://127.0.0.1"])
+
+    # The the broker should connect to the host that is up
+    assert broker.connection
+
+
 def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations():
     # Given that I have a RabbitmqBroker
     # When I try to give it both a connection URL and a list of connection parameters
