@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* |RabbitmqBroker| now supports multiple connection uris to be passed
+  in via its ``url`` parameter.  (`#216`_, `@wsantos`_)
+
+.. _#216: https://github.com/Bogdanp/dramatiq/pull/216
+.. _@wsantos: https://github.com/wsantos
+
 
 `1.6.0`_ -- 2019-05-02
 ----------------------
