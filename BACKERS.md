@@ -14,6 +14,5 @@ consider
 
 ## Backers via Patreon
 
-* Jared McQueen
 * Joong Kun Lee
 * Nick Sweeting
