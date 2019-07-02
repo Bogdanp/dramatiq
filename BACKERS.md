@@ -16,3 +16,4 @@ consider
 
 * Jared McQueen
 * Joong Kun Lee
+* Nick Sweeting
