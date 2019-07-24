@@ -15,7 +15,14 @@ Added
 * |RabbitmqBroker| now supports multiple connection uris to be passed
   in via its ``url`` parameter.  (`#216`_, `@wsantos`_)
 
+Changed
+^^^^^^^
+
+* Updated allowed version range for prometheus-client.  (`#219`_, `@robinro`_)
+
 .. _#216: https://github.com/Bogdanp/dramatiq/pull/216
+.. _#219: https://github.com/Bogdanp/dramatiq/pull/219
+.. _@robinro: https://github.com/robinro
 .. _@wsantos: https://github.com/wsantos
 
 
