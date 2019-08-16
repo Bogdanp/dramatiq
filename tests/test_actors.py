@@ -538,7 +538,7 @@ def test_can_call_repr_on_actors():
 
 def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_worker):
     # Given that I've mocked the logging class
-    with patch("logging.Logger.warning") as warning_mock:
+    with patch("logging.Logger.error") as error_mock:
         # And I have an actor that raises RateLimitExceeded
         @dramatiq.actor(max_retries=0)
         def raise_rate_limit_exceeded():
@@ -551,9 +551,9 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
         stub_broker.join(raise_rate_limit_exceeded.queue_name)
         stub_worker.join()
 
-        # Then warning mock should be called with a special message
-        warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
-        assert "Rate limit exceeded in message %s: %s." in warning_messages
+        # Then error mock should be called with a special message
+        error_messages = [args[0] for _, args, _ in error_mock.mock_calls]
+        assert "Rate limit exceeded in message %s: %s." in error_messages
 
 
 def test_currrent_message_middleware_exposes_the_current_message(stub_broker, stub_worker):
