@@ -34,3 +34,4 @@ of those changes to CLEARTYPE SRL.
 | [@douglasmiranda](https://github.com/douglasmiranda) | Douglas Miranda        |
 | [@srecnig](https://github.com/srecnig)               | Martin Sereinig        |
 | [@wsantos](https://github.com/wsantos)               | Waldecir Santos        |
+| [@jonathanlintott](http://github.com/jonathanlintott)| Jonathan Lintott       |
