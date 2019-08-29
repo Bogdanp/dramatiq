@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 
 import dramatiq
@@ -96,3 +98,22 @@ def test_generic_actors_can_have_class_attributes(stub_broker):
     # When I access one of it class attributes
     # Then I should get back that attribute's value
     assert DoSomething.STATUS_DONE == "done"
+
+
+def test_generic_actors_can_accept_custom_actor_registry(stub_broker):
+    # Given a generic actor with a custom actor registry
+    actor_instance = Mock()
+    actor_registry = Mock(return_value=actor_instance)
+
+    class CustomActor(dramatiq.GenericActor):
+        class Meta:
+            actor = actor_registry
+
+        def perform(self):
+            pass
+
+    # Then CustomActor.__actor__ should be the actor instance
+    assert CustomActor.__actor__ is actor_instance
+
+    # And the actor registry should be called with CustomActor
+    actor_registry.assert_called_once_with(CustomActor)
