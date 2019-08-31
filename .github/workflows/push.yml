@@ -2,7 +2,7 @@ on: push
 name: Lint and Test
 jobs:
   test37:
-    name: test
+    name: test37
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -11,7 +11,7 @@ jobs:
       with:
         entrypoint: /github/workspace/.github/actions/test/test.sh
   test36:
-    name: test
+    name: test36
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -20,7 +20,7 @@ jobs:
       with:
         entrypoint: /github/workspace/.github/actions/test/test.sh
   test35:
-    name: test
+    name: test35
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
