@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Generic actors can now be passed custom actor registires.  (`#223`_, `@jonathanlintott`_)
+
+.. _#223: https://github.com/Bogdanp/dramatiq/pull/223
+.. _@jonathanlintott: https://github.com/jonathanlintott
+
+
 `1.6.1`_ -- 2019-07-24
 ----------------------
 
