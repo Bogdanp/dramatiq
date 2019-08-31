@@ -14,8 +14,17 @@ Added
 
 * Generic actors can now be passed custom actor registires.  (`#223`_, `@jonathanlintott`_)
 
+
+Changed
+^^^^^^^
+
+* Uncaught exceptions within workers are now logged as errors rather
+  than warnings.  (`#221`_, `@th0th`_)
+
+.. _#221: https://github.com/Bogdanp/dramatiq/pull/221
 .. _#223: https://github.com/Bogdanp/dramatiq/pull/223
 .. _@jonathanlintott: https://github.com/jonathanlintott
+.. _@th0th: https://github.com/th0th
 
 
 `1.6.1`_ -- 2019-07-24
