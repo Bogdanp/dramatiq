@@ -1,0 +1,39 @@
+on: push
+name: Lint and Test
+jobs:
+  test37:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Test 3.7
+      uses: ./.github/actions/test37
+      with:
+        entrypoint: /github/workspace/.github/actions/test/test.sh
+  test36:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Test 3.6
+      uses: ./.github/actions/test36
+      with:
+        entrypoint: /github/workspace/.github/actions/test/test.sh
+  test35:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Test 3.5
+      uses: ./.github/actions/test35
+      with:
+        entrypoint: /github/workspace/.github/actions/test/test.sh
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Lint
+      uses: docker://python:3.7-slim
+      with:
+        entrypoint: /github/workspace/.github/actions/lint/lint.sh
