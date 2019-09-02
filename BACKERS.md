@@ -16,3 +16,4 @@ consider
 
 * Joong Kun Lee
 * Nick Sweeting
+* Wolfgang Doll
