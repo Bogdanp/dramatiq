@@ -106,7 +106,7 @@ def import_broker(value):
 
     module = importlib.import_module(modname)
     if varname is not None:
-        varnames = varname.split('.')
+        varnames = varname.split(".")
         try:
             broker = functools.reduce(getattr, varnames, module)
         except AttributeError:
@@ -162,6 +162,10 @@ def make_argument_parser():
     parser.add_argument(
         "--log-file", type=str,
         help="write all logs to a file (default: sys.stderr)",
+    )
+    parser.add_argument(
+        "--use-spawn", action="store_true",
+        help="start processes by spawning (default: fork on unix, spawn on windows)"
     )
 
     if HAS_WATCHDOG:
@@ -339,6 +343,9 @@ def main(args=None):  # noqa
     args = args or make_argument_parser().parse_args()
     for path in args.path:
         sys.path.insert(0, path)
+
+    if args.use_spawn:
+        multiprocessing.set_start_method("spawn")
 
     try:
         if args.pid_file:
