@@ -163,6 +163,10 @@ def make_argument_parser():
         "--log-file", type=str,
         help="write all logs to a file (default: sys.stderr)",
     )
+    parser.add_argument(
+        "--spawn", action='store_true',
+        help="start processes by spawning (default: fork on unix, spawn on windows"
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -351,6 +355,8 @@ def main(args=None):  # noqa
 
     worker_pipes = []
     worker_processes = []
+    if args.spawn:
+        multiprocessing.set_start_method("spawn")
     for worker_id in range(args.processes):
         read_pipe, write_pipe = multiprocessing.Pipe()
         proc = multiprocessing.Process(
