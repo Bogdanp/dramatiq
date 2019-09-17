@@ -12,8 +12,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
-.. image:: https://img.shields.io/badge/build-passing-brightgreen.svg
-   :target: https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/results/Bogdanp/dramatiq
+.. image:: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fbogdanp%2Fdramatiq%2Fbadge&style=flat
+   :target: https://actions-badge.atrox.dev/bogdanp/dramatiq/goto
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
 .. image:: https://tidelift.com/badges/github/Bogdanp/dramatiq

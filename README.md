@@ -2,7 +2,7 @@
 
 # dramatiq
 
-[![Build Status](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/Bogdanp/dramatiq)](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/results/Bogdanp/dramatiq)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fbogdanp%2Fdramatiq%2Fbadge&style=flat)](https://actions-badge.atrox.dev/bogdanp/dramatiq/goto)
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
 [![Discourse](https://img.shields.io/badge/discuss-online-orange.svg)](https://reddit.com/r/dramatiq)
