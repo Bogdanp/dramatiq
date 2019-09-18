@@ -2,6 +2,7 @@ import os
 import platform
 from contextlib import contextmanager
 
+import pika
 import pytest
 
 from dramatiq import Worker
@@ -17,6 +18,9 @@ def worker(*args, **kwargs):
         worker.stop()
 
 
-skip_on_travis = pytest.mark.skipif(os.getenv("TRAVIS") == "1", reason="test skipped on Travis")
 skip_on_windows = pytest.mark.skipif(platform.system() == "Windows", reason="test skipped on Windows")
 skip_on_pypy = pytest.mark.skipif(platform.python_implementation() == "PyPy", reason="Time limits are not supported under PyPy.")
+
+RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME", "guest")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
+RABBITMQ_CREDENTIALS = pika.credentials.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD)

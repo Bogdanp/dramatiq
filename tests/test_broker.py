@@ -5,7 +5,7 @@ import dramatiq.broker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.middleware import Middleware
 
-from .common import skip_on_windows
+from .common import RABBITMQ_CREDENTIALS, skip_on_windows
 
 
 class EmptyMiddleware(Middleware):
@@ -77,7 +77,7 @@ def test_broker_middleware_cannot_be_addwed_both_before_and_after(stub_broker):
 def test_can_instantiate_brokers_without_middleware():
     # Given that I have an empty list of middleware
     # When I pass that to the RMQ Broker
-    broker = RabbitmqBroker(middleware=[])
+    broker = RabbitmqBroker(middleware=[], credentials=RABBITMQ_CREDENTIALS)
 
-    # Then I should get back a broker with not middleware
+    # Then I should get back a broker with no middleware
     assert not broker.middleware

@@ -6,8 +6,6 @@ import pytest
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 
-from ..common import skip_on_travis
-
 broker = RedisBroker()
 
 
@@ -41,7 +39,6 @@ def latency():
         time.sleep(duration)
 
 
-@skip_on_travis
 @pytest.mark.benchmark(group="redis-100k-throughput")
 def test_redis_process_100k_messages_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 100k messages into Redis
@@ -55,7 +52,6 @@ def test_redis_process_100k_messages_with_cli(benchmark, info_logging, start_cli
     benchmark.pedantic(broker.join, args=(throughput.queue_name,), setup=setup)
 
 
-@skip_on_travis
 @pytest.mark.benchmark(group="redis-10k-fib")
 def test_redis_process_10k_fib_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 1k messages into Redis
@@ -69,7 +65,6 @@ def test_redis_process_10k_fib_with_cli(benchmark, info_logging, start_cli):
     benchmark.pedantic(broker.join, args=(fib.queue_name,), setup=setup)
 
 
-@skip_on_travis
 @pytest.mark.benchmark(group="redis-1k-latency")
 def test_redis_process_1k_latency_with_cli(benchmark, info_logging, start_cli):
     # Given that I've loaded 1k messages into Redis

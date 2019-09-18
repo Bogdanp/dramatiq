@@ -11,10 +11,12 @@ from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
+from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME
+
 
 def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     # Given a URL connection string
-    url = "amqp://127.0.0.1:5672"
+    url = "amqp://%s:%s@127.0.0.1:5672" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
 
     # When I pass that to URLRabbitmqBroker
     broker = URLRabbitmqBroker(url)
@@ -27,7 +29,7 @@ def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a ;-separated string
     broker = RabbitmqBroker(
-        url="amqp://127.0.0.1:55672;amqp://127.0.0.1")
+        url="amqp://127.0.0.1:55672;amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD))
 
     # The the broker should connect to the host that is up
     assert broker.connection
@@ -37,7 +39,7 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a list
     broker = RabbitmqBroker(
-        url=["amqp://127.0.0.1:55672", "amqp://127.0.0.1"])
+        url=["amqp://127.0.0.1:55672", "amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)])
 
     # The the broker should connect to the host that is up
     assert broker.connection
@@ -48,7 +50,7 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
     # When I try to give it both a connection URL and a list of connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1")])
+        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
 
     # When I try to give it both a connection URL and pika connection parameters
     # Then a RuntimeError should be raised
@@ -65,7 +67,7 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
     # Given a list of pika connection parameters including an invalid one
     parameters = [
         dict(host="127.0.0.1", port=55672),  # this will fail
-        dict(host="127.0.0.1"),
+        dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS),
     ]
 
     # When I pass those parameters to RabbitmqBroker

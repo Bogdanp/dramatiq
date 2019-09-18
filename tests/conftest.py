@@ -16,6 +16,8 @@ from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
 
+from .common import RABBITMQ_CREDENTIALS
+
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=logfmt)
 logging.getLogger("pika").setLevel(logging.WARN)
@@ -23,7 +25,6 @@ logging.getLogger("pika").setLevel(logging.WARN)
 random.seed(1337)
 
 CI = os.getenv("GITHUB_ACTION") or \
-    os.getenv("TRAVIS") == "true" or \
     os.getenv("APPVEYOR") == "true"
 
 
@@ -60,7 +61,11 @@ def stub_broker():
 
 @pytest.fixture()
 def rabbitmq_broker():
-    broker = RabbitmqBroker(host="127.0.0.1", max_priority=10)
+    broker = RabbitmqBroker(
+        host="127.0.0.1",
+        max_priority=10,
+        credentials=RABBITMQ_CREDENTIALS,
+    )
     check_rabbitmq(broker)
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)

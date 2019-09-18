@@ -1,39 +1,51 @@
 on: push
 name: Lint and Test
 jobs:
-  test37:
-    name: test37
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - name: Test 3.7
-      uses: ./.github/actions/test37
-      with:
-        entrypoint: /github/workspace/.github/actions/test/test.sh
-  test36:
-    name: test36
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - name: Test 3.6
-      uses: ./.github/actions/test36
-      with:
-        entrypoint: /github/workspace/.github/actions/test/test.sh
-  test35:
-    name: test35
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - name: Test 3.5
-      uses: ./.github/actions/test35
-      with:
-        entrypoint: /github/workspace/.github/actions/test/test.sh
   lint:
+    runs-on: ubuntu-18.04
     name: lint
-    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Lint
-      uses: docker://python:3.7-slim
-      with:
-        entrypoint: /github/workspace/.github/actions/lint/lint.sh
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
+      - run: pip install tox
+      - run: tox -e lint
+
+  build:
+    strategy:
+      matrix:
+        os: ["ubuntu-18.04"]
+        python: ["3.5", "3.6", "3.7"]
+
+    runs-on: ${{ matrix.os }}
+    name: test on ${{ matrix.python }} (${{ matrix.os }})
+
+    services:
+      memcached:
+        image: memcached:latest
+        ports:
+          - 11211:11211
+      rabbitmq:
+        image: bitnami/rabbitmq:latest
+        env:
+          RABBITMQ_USERNAME: "dramatiq"
+          RABBITMQ_PASSWORD: "dramatiq"
+        ports:
+          - 5672:5672
+        options: '--hostname "rmq" --health-cmd "rabbitmqctl status" --health-interval 10s --health-timeout 10s --health-retries 3 --health-start-period 60s'
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e '.[dev]'
+      - run: py.test --benchmark-skip
+        env:
+          RABBITMQ_USERNAME: "dramatiq"
+          RABBITMQ_PASSWORD: "dramatiq"
