@@ -13,7 +13,7 @@ Added
 ^^^^^
 
 * Generic actors can now be passed custom actor registires.  (`#223`_, `@jonathanlintott`_)
-
+* ``--use-spawn`` command line argument.  (`#227`_, `#228`_, `@jrusso1020`_)
 
 Changed
 ^^^^^^^
@@ -23,7 +23,10 @@ Changed
 
 .. _#221: https://github.com/Bogdanp/dramatiq/pull/221
 .. _#223: https://github.com/Bogdanp/dramatiq/pull/223
+.. _#227: https://github.com/Bogdanp/dramatiq/pull/227
+.. _#228: https://github.com/Bogdanp/dramatiq/pull/228
 .. _@jonathanlintott: https://github.com/jonathanlintott
+.. _@jrusso1020: https://github.com/jrusso1020
 .. _@th0th: https://github.com/th0th
 
 
