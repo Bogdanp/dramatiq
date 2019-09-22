@@ -7,7 +7,7 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.common import current_millis
 
-from .common import skip_on_pypy, skip_on_windows
+from .common import skip_in_ci, skip_on_pypy, skip_on_windows
 
 broker = RedisBroker()
 loaded_at = current_millis()
@@ -19,6 +19,7 @@ def write_loaded_at(filename):
         f.write(str(loaded_at))
 
 
+@skip_in_ci
 @skip_on_windows
 @skip_on_pypy
 @pytest.mark.parametrize("extra_args", [

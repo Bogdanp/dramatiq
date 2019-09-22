@@ -18,6 +18,7 @@ def worker(*args, **kwargs):
         worker.stop()
 
 
+skip_in_ci = pytest.mark.skipif(os.getenv("GITHUB_ACTION"), reason="test skipped in CI")
 skip_on_windows = pytest.mark.skipif(platform.system() == "Windows", reason="test skipped on Windows")
 skip_on_pypy = pytest.mark.skipif(platform.python_implementation() == "PyPy", reason="Time limits are not supported under PyPy.")
 
