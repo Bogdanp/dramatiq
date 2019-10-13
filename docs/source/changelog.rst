@@ -9,6 +9,27 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Support for running forking and running arbitrary functions
+  (so-called "fork functions").  (`#127`_, `#230`_)
+* The ``--fork-function`` flag.
+
+Changed
+^^^^^^^
+
+* The |Prometheus| middleware no longer depends on file locking to
+  start its exposition server.  Instead, it uses the new fork
+  functions functionality to start the server in a separate, unique
+  process.  The middleware no longer takes any parameters.  While this
+  would normally be a breaking change, it appears those parameters
+  were previously ignored anyway.  (`#127`_, `#230`_)
+
+.. _#127: https://github.com/Bogdanp/dramatiq/issues/127
+.. _#230: https://github.com/Bogdanp/dramatiq/pull/230
+
+
 `1.7.0`_ -- 2019-09-22
 ----------------------
 
