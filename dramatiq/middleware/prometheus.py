@@ -1,6 +1,6 @@
 # This file is a part of Dramatiq.
 #
-# Copyright (C) 2017,2018 CLEARTYPE SRL <bogdan@cleartype.io>
+# Copyright (C) 2017,2018,2019 CLEARTYPE SRL <bogdan@cleartype.io>
 #
 # Dramatiq is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import fcntl
 import os
-from contextlib import contextmanager
+import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from threading import Thread
 
 from ..common import current_millis
 from ..logging import get_logger
@@ -30,35 +28,32 @@ LOCK_PATH = os.getenv("dramatiq_prom_lock", "/tmp/dramatiq-prometheus.lock")
 
 #: The path to store the prometheus database files.  This path is
 #: cleared before every run.
-DB_PATH = os.getenv("dramatiq_prom_db", "/tmp/dramatiq-prometheus")
+DB_PATH = os.getenv("dramatiq_prom_db", "%s/dramatiq-prometheus" % tempfile.gettempdir())
 
-#: The default HTTP host the exposition server should bind to.
-DEFAULT_HTTP_HOST = os.getenv("dramatiq_prom_host", "127.0.0.1")
+# Ensure the DB_PATH exists.
+os.makedirs(DB_PATH, exist_ok=True)
 
-#: The default HTTP port the exposition server should listen on.
-DEFAULT_HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
+#: The HTTP host the exposition server should bind to.
+HTTP_HOST = os.getenv("dramatiq_prom_host", "0.0.0.0")
+
+#: The HTTP port the exposition server should listen on.
+HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
 
 
 class Prometheus(Middleware):
     """A middleware that exports stats via Prometheus_.
 
-    Parameters:
-      http_host(str): The host to bind the Prometheus exposition
-        server on.  This parameter can also be configured via the
-        ``dramatiq_prom_host`` environment variable.
-      http_port(int): The port on which the server should listen.
-        This parameter can also be configured via the
-        ``dramatiq_prom_port`` environment variable.
-
     .. _Prometheus: https://prometheus.io
     """
 
-    def __init__(self, *, http_host=DEFAULT_HTTP_HOST, http_port=DEFAULT_HTTP_PORT):
+    def __init__(self):
         self.logger = get_logger(__name__, type(self))
-        self.http_host = http_host
-        self.http_port = http_port
         self.delayed_messages = set()
         self.message_start_times = {}
+
+    @property
+    def forks(self):
+        return [_run_exposition_server]
 
     def after_process_boot(self, broker):
         os.environ["prometheus_multiproc_dir"] = DB_PATH
@@ -115,22 +110,11 @@ class Prometheus(Middleware):
             registry=registry,
         )
 
-        self.logger.debug("Starting exposition server...")
-        self.server = _ExpositionServer(
-            http_host=self.http_host,
-            http_port=self.http_port,
-            lockfile=LOCK_PATH,
-        )
-        self.server.start()
-
     def after_worker_shutdown(self, broker, worker):
         from prometheus_client import multiprocess
 
         self.logger.debug("Marking process dead...")
         multiprocess.mark_process_dead(os.getpid(), DB_PATH)
-
-        self.logger.debug("Shutting down exposition server...")
-        self.server.stop()
 
     def after_nack(self, broker, message):
         labels = (message.queue_name, message.actor_name)
@@ -168,44 +152,10 @@ class Prometheus(Middleware):
     after_skip_message = after_process_message
 
 
-class _ExpositionServer(Thread):
-    """Exposition servers race against a POSIX lock in order to bind
-    an HTTP server that can expose Prometheus metrics in the
-    background.
-    """
-
-    def __init__(self, *, http_host, http_port, lockfile):
-        super().__init__(daemon=True)
-
-        self.logger = get_logger(__name__, type(self))
-        self.address = (http_host, http_port)
-        self.httpd = None
-        self.lockfile = lockfile
-
-    def run(self):
-        with flock(self.lockfile) as acquired:
-            if not acquired:
-                self.logger.debug("Failed to acquire lock file.")
-                return
-
-            self.logger.debug("Lock file acquired. Running exposition server.")
-            if not os.path.exists(DB_PATH):
-                os.makedirs(DB_PATH)
-
-            try:
-                self.httpd = HTTPServer(self.address, metrics_handler)
-                self.httpd.serve_forever()
-            except OSError:
-                self.logger.warning("Failed to bind exposition server.", exc_info=True)
-
-    def stop(self):
-        if self.httpd:
-            self.httpd.shutdown()
-            self.join()
-
-
-class metrics_handler(BaseHTTPRequestHandler):
+class _metrics_handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        os.environ["prometheus_multiproc_dir"] = DB_PATH
+
         # These imports must happen at runtime.  See above.
         import prometheus_client as prom
         import prometheus_client.multiprocess as prom_mp
@@ -223,20 +173,16 @@ class metrics_handler(BaseHTTPRequestHandler):
         logger.debug(fmt, *args)
 
 
-@contextmanager
-def flock(path):
-    """Attempt to acquire a POSIX file lock.
-    """
-    with open(path, "w+") as lf:
-        try:
-            fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            acquired = True
-            yield acquired
+def _run_exposition_server():
+    logger = get_logger(__name__, "_run_exposition_server")
+    logger.debug("Starting exposition server...")
 
-        except OSError:
-            acquired = False
-            yield acquired
+    try:
+        address = (HTTP_HOST, HTTP_PORT)
+        httpd = HTTPServer(address, _metrics_handler)
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        logger.debug("Stopping exposition server...")
+        httpd.shutdown()
 
-        finally:
-            if acquired:
-                fcntl.flock(lf, fcntl.LOCK_UN)
+    return 0

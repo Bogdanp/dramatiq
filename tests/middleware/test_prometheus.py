@@ -1,24 +1,19 @@
+import time
 import urllib.request as request
+from threading import Thread
 
-import pytest
-
-from dramatiq.brokers.stub import StubBroker
-
-prometheus = pytest.importorskip("dramatiq.middleware.prometheus")
+from dramatiq.middleware.prometheus import _run_exposition_server
 
 
 def test_prometheus_middleware_exposes_metrics():
-    try:
-        # Given a broker
-        broker = StubBroker()
+    # Given an instance of the exposition server
+    thread = Thread(target=_run_exposition_server, daemon=True)
+    thread.start()
 
-        # And an instance of the prometheus middleware
-        prom = prometheus.Prometheus()
-        prom.after_process_boot(broker)
+    # When I give it time to boot up
+    time.sleep(1)
 
-        # When I request metrics via HTTP
-        with request.urlopen("http://127.0.0.1:9191") as resp:
-            # Then the response should be successful
-            assert resp.getcode() == 200
-    finally:
-        prom.after_worker_shutdown(broker, None)
+    # And I request metrics via HTTP
+    with request.urlopen("http://127.0.0.1:9191") as resp:
+        # Then the response should be successful
+        assert resp.getcode() == 200

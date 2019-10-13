@@ -1,6 +1,6 @@
 # This file is a part of Dramatiq.
 #
-# Copyright (C) 2017,2018 CLEARTYPE SRL <bogdan@cleartype.io>
+# Copyright (C) 2017,2018,2019 CLEARTYPE SRL <bogdan@cleartype.io>
 #
 # Dramatiq is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -29,9 +29,11 @@ import random
 import signal
 import sys
 import time
+from itertools import chain
 from threading import Thread
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
+from dramatiq.canteen import Canteen, canteen_add, canteen_get
 from dramatiq.compat import StreamablePipe, file_or_stderr
 
 try:
@@ -99,7 +101,7 @@ examples:
 """
 
 
-def import_broker(value):
+def import_object(value):
     modname, varname = value, None
     if ":" in value:
         modname, varname = value.split(":", 1)
@@ -108,14 +110,20 @@ def import_broker(value):
     if varname is not None:
         varnames = varname.split(".")
         try:
-            broker = functools.reduce(getattr, varnames, module)
+            return module, functools.reduce(getattr, varnames, module)
         except AttributeError:
             raise ImportError("Module %r does not define a %r variable." % (modname, varname))
+    return module, None
 
-        if not isinstance(broker, Broker):
-            raise ImportError("Variable %r from module %r is not a Broker." % (varname, modname))
-        return module, broker
-    return module, get_broker()
+
+def import_broker(value):
+    module, broker = import_object(value)
+    if broker is None:
+        return module, get_broker()
+
+    if not isinstance(broker, Broker):
+        raise ImportError("%r is not a Broker." % value)
+    return module, broker
 
 
 def folder_path(value):
@@ -166,6 +174,10 @@ def make_argument_parser():
     parser.add_argument(
         "--use-spawn", action="store_true",
         help="start processes by spawning (default: fork on unix, spawn on windows)"
+    )
+    parser.add_argument(
+        "--fork-function", "-f", action="append", dest="forks", default=[],
+        help="fork a subprocess to run the given function"
     )
 
     if HAS_WATCHDOG:
@@ -241,16 +253,22 @@ def setup_parent_logging(args, *, stream=sys.stderr):
     return get_logger("dramatiq", "MainProcess")
 
 
-def setup_worker_logging(args, worker_id, logging_pipe):
-    # Redirect all output to the logging pipe so that all output goes
-    # to stderr and output is serialized so there isn't any mangling.
-    sys.stdout = logging_pipe
-    sys.stderr = logging_pipe
+def make_logging_setup(prefix):
+    def setup_logging(args, child_id, logging_pipe):
+        # Redirect all output to the logging pipe so that all output goes
+        # to stderr and output is serialized so there isn't any mangling.
+        sys.stdout = logging_pipe
+        sys.stderr = logging_pipe
 
-    level = VERBOSITY.get(args.verbose, logging.DEBUG)
-    logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
-    logging.getLogger("pika").setLevel(logging.CRITICAL)
-    return get_logger("dramatiq", "WorkerProcess(%s)" % worker_id)
+        level = VERBOSITY.get(args.verbose, logging.DEBUG)
+        logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
+        logging.getLogger("pika").setLevel(logging.CRITICAL)
+        return get_logger("dramatiq", "%s(%s)" % (prefix, child_id))
+    return setup_logging
+
+
+setup_worker_logging = make_logging_setup("WorkerProcess")
+setup_fork_logging = make_logging_setup("ForkProcess")
 
 
 def watch_logs(log_filename, pipes):
@@ -290,7 +308,7 @@ def watch_logs(log_filename, pipes):
                 pipes = [p for p in pipes if not p.closed]
 
 
-def worker_process(args, worker_id, logging_pipe):
+def worker_process(args, worker_id, logging_pipe, canteen):
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
@@ -298,12 +316,24 @@ def worker_process(args, worker_id, logging_pipe):
         random.seed()
 
         logger = setup_worker_logging(args, worker_id, logging_pipe)
+        logger.debug("Loading broker...")
         module, broker = import_broker(args.broker)
         broker.emit_after("process_boot")
 
+        logger.debug("Loading modules...")
         for module in args.modules:
             importlib.import_module(module)
 
+        if not canteen.initialized:
+            with canteen.get_lock():
+                if not canteen.initialized:
+                    logger.debug("Sending forks to main process...")
+                    for middleware in broker.middleware:
+                        for fork in middleware.forks:
+                            fork_path = "%s:%s" % (fork.__module__, fork.__name__)
+                            canteen_add(canteen, fork_path)
+
+        logger.debug("Starting worker threads...")
         worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
         worker.start()
     except ImportError:
@@ -339,6 +369,44 @@ def worker_process(args, worker_id, logging_pipe):
     logging_pipe.close()
 
 
+def fork_process(args, fork_id, fork_path, logging_pipe):
+    try:
+        # Re-seed the random number generator from urandom on
+        # supported platforms.  This should make it so that worker
+        # processes don't all follow the same sequence.
+        random.seed()
+
+        logger = setup_fork_logging(args, fork_id, logging_pipe)
+        logger.debug("Loading fork function...")
+
+        _, func = import_object(fork_path)
+    except ImportError:
+        logger.exception("Failed to import module.")
+        return sys.exit(RET_IMPORT)
+
+    stopped = False
+
+    def termhandler(signum, frame):
+        nonlocal stopped
+        if stopped:
+            logger.warning("Killing fork process...")
+            return sys.exit(RET_KILLED)
+        else:
+            logger.info("Stopping fork process...")
+            stopped = True
+            return sys.exit(RET_OK)
+
+    logger.info("Fork process %r is ready for action.", fork_path)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, termhandler)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, termhandler)
+    if hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, termhandler)
+
+    return sys.exit(func())
+
+
 def main(args=None):  # noqa
     args = args or make_argument_parser().parse_args()
     for path in args.path:
@@ -356,18 +424,32 @@ def main(args=None):  # noqa
             logger.critical(e)
             return RET_PIDFILE
 
+    canteen = multiprocessing.Value(Canteen)
     worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):
         read_pipe, write_pipe = multiprocessing.Pipe()
         proc = multiprocessing.Process(
             target=worker_process,
-            args=(args, worker_id, StreamablePipe(write_pipe)),
+            args=(args, worker_id, StreamablePipe(write_pipe), canteen),
             daemon=True,
         )
         proc.start()
         worker_pipes.append(read_pipe)
         worker_processes.append(proc)
+
+    fork_pipes = []
+    fork_processes = []
+    for fork_id, fork_path in enumerate(chain(args.forks, canteen_get(canteen))):
+        read_pipe, write_pipe = multiprocessing.Pipe()
+        proc = multiprocessing.Process(
+            target=fork_process,
+            args=(args, fork_id, fork_path, StreamablePipe(write_pipe)),
+            daemon=True,
+        )
+        proc.start()
+        fork_pipes.append(read_pipe)
+        fork_processes.append(proc)
 
     parent_read_pipe, parent_write_pipe = multiprocessing.Pipe()
     logger = setup_parent_logging(args, stream=StreamablePipe(parent_write_pipe))
@@ -393,16 +475,16 @@ def main(args=None):  # noqa
 
     log_watcher = Thread(
         target=watch_logs,
-        args=(args.log_file, [parent_read_pipe, *worker_pipes]),
+        args=(args.log_file, [parent_read_pipe, *worker_pipes, *fork_pipes]),
         daemon=False,
     )
     log_watcher.start()
 
-    def stop_worker_processes(signum):
+    def stop_subprocesses(signum):
         nonlocal running
         running = False
 
-        for proc in worker_processes:
+        for proc in chain(worker_processes, fork_processes):
             try:
                 os.kill(proc.pid, signum)
             except OSError:  # pragma: no cover
@@ -410,13 +492,13 @@ def main(args=None):  # noqa
                     logger.warning("Failed to send %r to PID %d.", signum.name, proc.pid)
 
     def sighandler(signum, frame):
-        nonlocal reload_process, worker_processes
+        nonlocal reload_process
         reload_process = signum == getattr(signal, "SIGHUP", None)
         if signum == signal.SIGINT:
             signum = signal.SIGTERM
 
-        logger.info("Sending signal %r to worker processes...", getattr(signum, "name", signum))
-        stop_worker_processes(signum)
+        logger.info("Sending signal %r to subprocesses...", getattr(signum, "name", signum))
+        stop_subprocesses(signum)
 
     # Now that the watcher threads have been started, it should be
     # safe to unblock the signals that were previously blocked.
@@ -434,9 +516,8 @@ def main(args=None):  # noqa
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, sighandler)
 
-    # Wait for all worker processes to terminate.  If any of the
-    # processes terminates unexpectedly, then shut down the rest as
-    # well.
+    # Wait for all workers to terminate.  If any of the processes
+    # terminates unexpectedly, then shut down the rest as well.
     while any(p.exitcode is None for p in worker_processes):
         for proc in worker_processes:
             proc.join(timeout=1)
@@ -445,14 +526,14 @@ def main(args=None):  # noqa
 
             if running:  # pragma: no cover
                 logger.critical("Worker with PID %r exited unexpectedly (code %r). Shutting down...", proc.pid, proc.exitcode)
-                stop_worker_processes(signal.SIGTERM)
+                stop_subprocesses(signal.SIGTERM)
                 retcode = proc.exitcode
                 break
 
             else:
                 retcode = max(retcode, proc.exitcode)
 
-    for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes]:
+    for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes, *fork_pipes]:
         pipe.close()
 
     # The log watcher can't be a daemon in case we log to a file.  So
