@@ -1,7 +1,7 @@
 Project License
 ===============
 
-Copyright (C) 2017,2018 CLEARTYPE SRL <bogdan@cleartype.io>
+Copyright (C) 2017,2018,2019 CLEARTYPE SRL <bogdan@cleartype.io>
 
 Dramatiq is free software; you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published by
