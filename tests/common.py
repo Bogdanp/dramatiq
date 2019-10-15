@@ -19,8 +19,8 @@ def worker(*args, **kwargs):
 
 
 skip_in_ci = pytest.mark.skipif(
-    os.getenv("GITHUB_ACTION") is not None or
-    os.getenv("APPVEYOR") is not None,
+    os.getenv("APPVEYOR") is not None or
+    os.getenv("GITHUB_ACTION") is not None,
     reason="test skipped in CI"
 )
 
