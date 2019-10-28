@@ -3,12 +3,10 @@
 Dramatiq: simple task processing
 ================================
 
-Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_, `Support Dramatiq via Patreon`_, `Support Dramatiq via Tidelift`_)
+Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
 
 .. _Discuss: https://reddit.com/r/dramatiq
 .. _Source Code: https://github.com/Bogdanp/dramatiq
-.. _Support Dramatiq via Patreon: https://patreon.com/popabogdanp
-.. _Support Dramatiq via Tidelift: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
@@ -16,8 +14,6 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
    :target: https://actions-badge.atrox.dev/bogdanp/dramatiq/goto
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
-.. image:: https://tidelift.com/badges/github/Bogdanp/dramatiq
-   :target: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
 
 **Dramatiq** is a distributed task processing library for Python with
 a focus on simplicity, reliability and performance.
@@ -66,26 +62,6 @@ Or if you want to use it with Redis_::
 Read the :doc:`motivation` behind it or the :doc:`guide` if you're
 ready to get started.
 
-Support the Project
--------------------
-
-If you use and love Dramatiq and want to make sure it gets the love
-and attention it deserves then you should consider supporting the
-project.  There are three ways in which you can do this right now:
-
-1. If you're a company that uses Dramatiq in production then you can
-   get a Tidelift_ subscription.  Doing so will give you an easy
-   route to supporting both Dramatiq and other open source projects
-   that you depend on.
-2. If you're an individual or a company that doesn't want to go
-   through Tidelift then you can support the project via Patreon_.
-3. If you're a company and neither option works for you and you would
-   like to receive an invoice from me directly then email me at
-   bogdan@defn.io and let's talk.
-
-.. _Tidelift: https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs
-.. _Patreon: https://patreon.com/popabogdanp
-
 
 User Guide
 ----------
@@ -127,6 +103,4 @@ Project Info
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    Discussion Board <https://reddit.com/r/dramatiq>
-   Support via Patreon <https://patreon.com/popabogdanp>
-   Support via Tidelift <https://tidelift.com/subscription/pkg/pypi-dramatiq?utm_source=pypi-dramatiq&utm_medium=referral&utm_campaign=docs>
    license
