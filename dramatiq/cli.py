@@ -538,11 +538,8 @@ def main(args=None):  # noqa
     while any(p.exitcode in (None, RET_RESTART) for p in worker_processes):
         for proc in list(worker_processes):
             proc.join(timeout=1)
-            logger.debug("Waiting worker with PID %r.", proc.pid)
             if proc.exitcode is None:
-                logger.debug("Waiting with PID %r is running.", proc.pid)
                 continue
-            logger.debug("Worker PID %r finished (code %r).", proc.pid, proc.exitcode)
 
             if proc.exitcode == RET_RESTART and running:
                 logger.debug("Worker with PID %r asking for restart (code %r).", proc.pid, proc.exitcode)
@@ -565,10 +562,6 @@ def main(args=None):  # noqa
 
             else:
                 retcode = max(retcode, proc.exitcode)
-
-    print('Loop exit')
-    for proc in list(worker_processes):
-        print('Worker with PID %r exited with code %r' % (proc.pid, proc.exitcode))
 
     for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes, *fork_pipes]:
         pipe.close()
