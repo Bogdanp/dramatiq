@@ -26,6 +26,11 @@ class SkipMessage(MiddlewareError):
     ``before_process_message`` hook in order to skip a message.
     """
 
+class RestartWorker(MiddlewareError):
+    """An exception that may be raised by Middleware inside the
+    ``after_process_message`` hook in order to restart worker process.
+    """
+
 
 class Middleware:
     """Base class for broker middleware.  The default implementations

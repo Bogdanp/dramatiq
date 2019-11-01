@@ -22,6 +22,7 @@ from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
 
+from dramatiq.middleware.middleware import RestartWorker
 from .common import current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError, RateLimitExceeded
 from .logging import get_logger
@@ -76,6 +77,10 @@ class Worker:
         self.work_queue = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
+
+    @property
+    def restart_requested(self):
+        return any(thread.restart_requested for thread in self.workers)
 
     def start(self):
         """Initialize the worker boot sequence and start up all the
@@ -433,6 +438,7 @@ class _WorkerThread(Thread):
         self.consumers = consumers
         self.work_queue = work_queue
         self.timeout = worker_timeout / 1000
+        self.restart_requested = False
 
     def run(self):
         self.logger.debug("Running worker thread...")
@@ -449,6 +455,11 @@ class _WorkerThread(Thread):
                 self.process_message(message)
             except Empty:
                 continue
+            except RestartWorker:
+                self.logger.debug("Worker thread restart request.")
+                self.running = False
+                self.restart_requested = True
+                break
 
         self.broker.emit_before("worker_thread_shutdown", self)
         self.logger.debug("Worker thread stopped.")
@@ -470,6 +481,10 @@ class _WorkerThread(Thread):
                 res = actor(*message.args, **message.kwargs)
 
             self.broker.emit_after("process_message", message, result=res)
+
+        except RestartWorker:
+            self.logger.warning("Worker restart request was received (%s).", message)
+            raise
 
         except SkipMessage:
             self.logger.warning("Message %s was skipped.", message)

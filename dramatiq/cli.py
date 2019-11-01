@@ -49,6 +49,7 @@ RET_KILLED = 1  # The process was killed.
 RET_IMPORT = 2  # Module import(s) failed or invalid command line argument.
 RET_CONNECT = 3  # Broker connection failed during worker startup.
 RET_PIDFILE = 4  # PID file points to an existing process or cannot be written to.
+RET_RESTART = 253
 
 #: The size of the logging buffer.
 BUFSIZE = 65536
@@ -264,6 +265,7 @@ def make_logging_setup(prefix):
         logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
         logging.getLogger("pika").setLevel(logging.CRITICAL)
         return get_logger("dramatiq", "%s(%s)" % (prefix, child_id))
+
     return setup_logging
 
 
@@ -361,12 +363,17 @@ def worker_process(args, worker_id, logging_pipe, canteen):
         signal.signal(signal.SIGBREAK, termhandler)
 
     running = True
-    while running:
+    while running and not worker.restart_requested:
         time.sleep(1)
 
+    if worker.restart_requested:
+        logger.info("Requesting worker restart.")
     worker.stop()
     broker.close()
+
     logging_pipe.close()
+    if worker.restart_requested:
+        os._exit(RET_RESTART)
 
 
 def fork_process(args, fork_id, fork_path, logging_pipe):
@@ -426,17 +433,26 @@ def main(args=None):  # noqa
 
     canteen = multiprocessing.Value(Canteen)
     worker_pipes = []
+    worker_write_pipes = []
     worker_processes = []
-    for worker_id in range(args.processes):
-        read_pipe, write_pipe = multiprocessing.Pipe()
+    pid_to_worker_id = {}
+
+    def create_worker_proc(worker_id, write_pipe):
         proc = multiprocessing.Process(
             target=worker_process,
             args=(args, worker_id, StreamablePipe(write_pipe), canteen),
             daemon=True,
         )
+        return proc
+
+    for worker_id in range(args.processes):
+        read_pipe, write_pipe = multiprocessing.Pipe()
+        proc = create_worker_proc(worker_id, write_pipe)
         proc.start()
         worker_pipes.append(read_pipe)
+        worker_write_pipes.append(write_pipe)
         worker_processes.append(proc)
+        pid_to_worker_id[proc.pid] = worker_id
 
     fork_pipes = []
     fork_processes = []
@@ -518,10 +534,23 @@ def main(args=None):  # noqa
 
     # Wait for all workers to terminate.  If any of the processes
     # terminates unexpectedly, then shut down the rest as well.
-    while any(p.exitcode is None for p in worker_processes):
-        for proc in worker_processes:
+    while any(p.exitcode in (None, RET_RESTART) for p in worker_processes):
+        for proc in list(worker_processes):
             proc.join(timeout=1)
             if proc.exitcode is None:
+                continue
+
+            if proc.exitcode == RET_RESTART and running:
+                logger.debug("Worker with PID %r asking for restart (code %r).", proc.pid, proc.exitcode)
+                prev_worker_pid = proc.pid
+                worker_id = pid_to_worker_id[proc.pid]
+                write_pipe = worker_write_pipes[worker_id]
+
+                proc = create_worker_proc(worker_id, write_pipe)
+                proc.start()
+                worker_processes[worker_id] = proc
+                pid_to_worker_id[proc.pid] = worker_id
+                logger.debug("Spawned new worker with PID %r (replacing PID %r).", proc.pid, prev_worker_pid)
                 continue
 
             if running:  # pragma: no cover

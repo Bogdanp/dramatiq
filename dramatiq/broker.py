@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from dramatiq.middleware.middleware import RestartWorker
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
@@ -93,11 +93,16 @@ class Broker:
                 self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
 
     def emit_after(self, signal, *args, **kwargs):
+        restart_requested_by_middleware = False
         for middleware in reversed(self.middleware):
             try:
                 getattr(middleware, "after_" + signal)(self, *args, **kwargs)
+            except RestartWorker as e:
+                restart_requested_by_middleware = e
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
+        if restart_requested_by_middleware:
+            raise restart_requested_by_middleware
 
     def add_middleware(self, middleware, *, before=None, after=None):
         """Add a middleware object to this broker.  The middleware is
