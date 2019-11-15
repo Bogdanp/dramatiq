@@ -10,8 +10,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
    :target: license.html
-.. image:: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fbogdanp%2Fdramatiq%2Fbadge&style=flat
-   :target: https://actions-badge.atrox.dev/bogdanp/dramatiq/goto
+.. image:: https://github.com/Bogdanp/dramatiq/workflows/CI/badge.svg
+   :target: https://github.com/Bogdanp/dramatiq/actions?query=workflow%3A%22CI%22
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
 

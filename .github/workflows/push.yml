@@ -1,5 +1,5 @@
 on: push
-name: Lint and Test
+name: CI
 jobs:
   lint:
     runs-on: ubuntu-18.04
