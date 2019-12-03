@@ -50,9 +50,9 @@ class Pipelines(Middleware):
         if message_data is not None:
             next_message = Message(**message_data)
             pipe_ignore = next_message.options.get("pipe_ignore") or actor.options.get("pipe_ignore")
-            pass_as_kwargs = next_message.options.get("pass_as_kwargs") or actor.options.get("pass_as_kwargs")
+            receive_in_kwargs = next_message.options.get("receive_in_kwargs") or actor.options.get("receive_in_kwargs")
             if not pipe_ignore:
-                if pass_as_kwargs:
+                if receive_in_kwargs:
                     next_message.kwargs[message.actor_name] = result
                     next_message = next_message.copy(kwargs=next_message.kwargs)
                 else:
