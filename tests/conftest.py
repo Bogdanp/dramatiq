@@ -15,6 +15,7 @@ from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
+from dramatiq.abortable import backends as evt_backends
 
 from .common import RABBITMQ_CREDENTIALS
 
@@ -205,3 +206,29 @@ def result_backends(memcached_result_backend, redis_result_backend, stub_result_
 @pytest.fixture(params=["memcached", "redis", "stub"])
 def result_backend(request, result_backends):
     return result_backends[request.param]
+
+
+@pytest.fixture
+def redis_event_backend():
+    backend = evt_backends.RedisBackend()
+    check_redis(backend.client)
+    backend.client.flushall()
+    return backend
+
+
+@pytest.fixture
+def stub_event_backend():
+    return evt_backends.StubBackend()
+
+
+@pytest.fixture
+def event_backends(redis_event_backend, stub_event_backend):
+    return {
+        "redis": redis_event_backend,
+        "stub": stub_event_backend,
+    }
+
+
+@pytest.fixture(params=["redis", "stub"])
+def event_backend(request, event_backends):
+    return event_backends[request.param]

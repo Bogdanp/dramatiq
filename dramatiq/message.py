@@ -19,6 +19,7 @@ import time
 import uuid
 from collections import namedtuple
 
+from .abortable import Abortable
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
@@ -145,6 +146,17 @@ class Message(namedtuple("Message", (
                 raise RuntimeError("The default broker doesn't have a results backend.")
 
         return backend.get_result(self, block=block, timeout=timeout)
+
+    def abort(self, *, backend=None):
+        if not backend:
+            broker = get_broker()
+            for middleware in broker.middleware:
+                if isinstance(middleware, Abortable):
+                    break
+            else:
+                raise RuntimeError("The default broker doesn't have an abortable backend.")
+
+        middleware.abort(self)
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)
