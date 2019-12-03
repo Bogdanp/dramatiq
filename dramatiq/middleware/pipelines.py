@@ -50,7 +50,11 @@ class Pipelines(Middleware):
         if message_data is not None:
             next_message = Message(**message_data)
             pipe_ignore = next_message.options.get("pipe_ignore") or actor.options.get("pipe_ignore")
+            pass_as_kwargs = next_message.options.get("pass_as_kwargs") or actor.options.get("pass_as_kwargs")
             if not pipe_ignore:
-                next_message = next_message.copy(args=next_message.args + (result,))
-
+                if pass_as_kwargs:
+                    next_message.kwargs[message.actor_name] = result
+                    next_message = next_message.copy(kwargs=next_message.kwargs)
+                else:
+                    next_message = next_message.copy(args=next_message.args + (result,))
             broker.enqueue(next_message)
