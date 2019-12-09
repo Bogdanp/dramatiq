@@ -35,3 +35,4 @@ of those changes to CLEARTYPE SRL.
 | [@srecnig](https://github.com/srecnig)               | Martin Sereinig        |
 | [@wsantos](https://github.com/wsantos)               | Waldecir Santos        |
 | [@jonathanlintott](http://github.com/jonathanlintott)| Jonathan Lintott       |
+| [@evstratbg](https://github.com/evstratbg)         | Ben Demaree            |
