@@ -19,7 +19,7 @@ import os
 import time
 from collections import defaultdict
 from itertools import chain
-from queue import Empty, PriorityQueue
+from queue import Empty, PriorityQueue, Full
 from threading import Event, Thread
 
 from .common import current_millis, iter_queue, join_all, q_name
@@ -38,6 +38,15 @@ POST_PROCESS_MESSAGE_RETRY_DELAY_SECS = 5
 
 #: The number of messages to prefetch from the queue for each worker
 QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
+
+#: The maximum number of messages to store in the work queue; handle_message
+#: will block if the queue is full.  No limit by default.
+WORK_QUEUE_MAX_SIZE = int(os.getenv("dramatiq_work_queue_max_size", 0))
+
+#: The number of milliseconds to wait before requeuing a message if there's
+#: no slot available on the work queue,
+WORK_QUEUE_PUT_TIMEOUT = int(os.getenv("dramatiq_work_queue_put_timeout", 30000))
+WORK_QUEUE_PUT_TIMEOUT_SECS = WORK_QUEUE_PUT_TIMEOUT / 1000
 
 
 class Worker:
@@ -73,7 +82,7 @@ class Worker:
         self.delay_prefetch = min(worker_threads * 1000, 65535)
 
         self.workers = []
-        self.work_queue = PriorityQueue()
+        self.work_queue = PriorityQueue(maxsize=WORK_QUEUE_MAX_SIZE)
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
 
@@ -313,7 +322,9 @@ class _ConsumerThread(Thread):
             else:
                 actor = self.broker.get_actor(message.actor_name)
                 self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-                self.work_queue.put((actor.priority, message))
+                self.work_queue.put(
+                    (actor.priority, message), timeout=WORK_QUEUE_PUT_TIMEOUT_SECS
+                )
         except ActorNotFound:
             self.logger.error(
                 "Received message for undefined actor %r. Moving it to the DLQ.",
@@ -321,6 +332,11 @@ class _ConsumerThread(Thread):
             )
             message.fail()
             self.post_process_message(message)
+        except Full:
+            self.logger.debug(
+                "Work queue put timed out, requeuing message", message.message_id
+            )
+            self.requeue_messages((message,))
 
     def post_process_message(self, message):
         """Called by worker threads whenever they're done processing
