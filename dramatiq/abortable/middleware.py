@@ -75,8 +75,8 @@ class Abortable(Middleware):
 
     after_skip_message = after_process_message
 
-    def abort(self, message):
-        self.backend.notify(self.id_to_key(message.message_id), ttl=self.abort_ttl)
+    def abort(self, message_id):
+        self.backend.notify(self.id_to_key(message_id), ttl=self.abort_ttl)
 
     def _handle(self):
         message_ids = self.abortables.keys()

@@ -156,7 +156,7 @@ class Message(namedtuple("Message", (
             else:
                 raise RuntimeError("The default broker doesn't have an abortable backend.")
 
-        middleware.abort(self)
+        middleware.abort(self.message_id)
 
     def __str__(self):
         params = ", ".join(repr(arg) for arg in self.args)
