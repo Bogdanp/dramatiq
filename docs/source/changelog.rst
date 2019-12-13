@@ -16,6 +16,15 @@ Added
   (so-called "fork functions").  (`#127`_, `#230`_)
 * The ``--fork-function`` flag.
 
+Fixed
+^^^^^
+
+* An issue where the `max_age` parameter to |AgeLimit| was being
+  ignored.  (`#240`_, `@evstratbg`_)
+
+.. _#240: https://github.com/Bogdanp/dramatiq/pull/240
+.. _@evstratbg: https://github.com/evstratbg
+
 Changed
 ^^^^^^^
 
