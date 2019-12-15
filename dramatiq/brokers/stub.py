@@ -125,6 +125,7 @@ class StubBroker(Broker):
         """
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
+        self.dead_letters_by_queue.clear()
 
     # TODO: Make fail_fast default to True.
     def join(self, queue_name, *, fail_fast=False, timeout=None):
