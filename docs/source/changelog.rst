@@ -21,8 +21,12 @@ Fixed
 
 * An issue where the `max_age` parameter to |AgeLimit| was being
   ignored.  (`#240`_, `@evstratbg`_)
+* The |StubBroker| now flushes its dead letter queue when its
+  ``flush_all`` method is called.  (`#247`_, `@CapedHero`_)
 
 .. _#240: https://github.com/Bogdanp/dramatiq/pull/240
+.. _#247: https://github.com/Bogdanp/dramatiq/pull/247
+.. _@CapedHero: https://github.com/CapedHero
 .. _@evstratbg: https://github.com/evstratbg
 
 Changed

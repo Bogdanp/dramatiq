@@ -40,15 +40,22 @@ def test_stub_broker_can_be_flushed(stub_broker):
     # When I send that actor a message
     do_work.send()
 
-    # Then its queue should contain a message
-    assert stub_broker.queues[do_work.queue_name].qsize() == 1
+    # And when there is already a message on that actor's dead-letter queue
+    stub_broker.dead_letters_by_queue[do_work.queue_name].append("dead letter")
 
-    # When I flush all the queues in the broker
+    # Then its queue should contain the right number of messages
+    assert stub_broker.queues[do_work.queue_name].qsize() == 1
+    assert len(stub_broker.dead_letters) == 1
+
+    # When I flush all of the queues
     stub_broker.flush_all()
 
-    # Then the queue should be empty and it should contain no in-progress tasks
+    # Then the queue should be empty
     assert stub_broker.queues[do_work.queue_name].qsize() == 0
+    # and it should contain no in-progress tasks
     assert stub_broker.queues[do_work.queue_name].unfinished_tasks == 0
+    # and the dead-letter queue should be empty
+    assert len(stub_broker.dead_letters) == 0
 
 
 def test_stub_broker_can_join_with_timeout(stub_broker, stub_worker):
