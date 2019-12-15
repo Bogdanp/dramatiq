@@ -36,3 +36,4 @@ of those changes to CLEARTYPE SRL.
 | [@wsantos](https://github.com/wsantos)                | Waldecir Santos        |
 | [@jonathanlintott](http://github.com/jonathanlintott) | Jonathan Lintott       |
 | [@evstratbg](https://github.com/evstratbg)            | Bogdan Evstratenko     |
+| [@CapedHero](https://github.com/CapedHero)            | Maciej Wrześniewski    |
