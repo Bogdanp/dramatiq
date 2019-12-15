@@ -54,7 +54,7 @@ of the main differences between Dramatiq, Celery and RQ:
 |                              |          |             |              |              |
 +------------------------------+----------+-------------+--------------+--------------+
 | Cronlike scheduling          | No       | Yes         | Yes          | No           |
-|                              |          |             |              |              |
+|                              | [#cron]_ |             |              |              |
 +------------------------------+----------+-------------+--------------+--------------+
 | Chaining / Pipelining        | Yes      | Yes         | Yes          | No           |
 |                              |          |             |              |              |
@@ -100,7 +100,13 @@ of the main differences between Dramatiq, Celery and RQ:
            queues.  Dramatiq lets you prioritize down to the
            individual |Actor| level.
 
+.. [#cron] For cronlike scheduling Dramatiq is supposed to be used in
+           conjunction with third-party python schedulers like
+           APScheduler_ or Periodiq_.
+
 
 .. _Celery: http://celeryproject.org
 .. _huey: https://huey.readthedocs.io/
 .. _RQ: http://python-rq.org/
+.. _APScheduler: https://apscheduler.readthedocs.io/
+.. _Periodiq: https://gitlab.com/bersace/periodiq
