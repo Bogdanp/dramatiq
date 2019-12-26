@@ -427,3 +427,32 @@ APScheduler_ is the recommended scheduler to use with Dramatiq:
            scheduler.shutdown()
 
 .. _APScheduler: https://apscheduler.readthedocs.io
+
+Abort
+-----
+
+Aborting Messages
+^^^^^^^^^^^^^^^^^
+
+You can use the external package `dramatiq-abort`_ to add aborting capabilities.
+To enable aborting, you need to instantiate and add the
+``dramatiq_abort.Abortable`` middleware to your broker.
+
+.. code-block:: python
+
+  import dramatiq
+  import dramatiq_abort
+  import dramatiq_abort.backends
+
+  abortable = dramatiq_abort.Abortable(
+    backend=dramatiq_abort.backends.RedisBackend()
+  )
+  dramatiq.get_broker().add_middleware(abortable)
+
+  @dramatiq.actor
+  def my_long_running_task(): ...
+
+  message = my_long_running_task.send()
+  dramatiq_abort.abort(message.message_id)
+
+.. _`dramatiq-abort`: https://flared.github.io/dramatiq-abort/
