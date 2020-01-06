@@ -11,6 +11,9 @@ from dramatiq.common import current_millis, dq_name, xq_name
 from .common import worker
 
 
+LUA_MAX_UNPACK_SIZE = 7999
+
+
 def test_redis_actors_can_be_sent_messages(redis_broker, redis_worker):
     # Given that I have a database
     database = {}
@@ -134,14 +137,17 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     queue_name = "some-queue"
     redis_broker.declare_queue(queue_name)
 
-    # If I enqueue two messages
-    message_ids = [b"message-1", b"message-2"]
+    num_messages = LUA_MAX_UNPACK_SIZE * 2
+    # The lua max stack size is 8000, so try to work with double that
+    message_ids = [f"message-{i}".encode() for i in range(num_messages)]
+
+    # If I enqueue many messages
     for message_id in message_ids:
         redis_broker.do_enqueue(queue_name, message_id, b"message-data")
 
     # And then fetch them
-    redis_broker.do_fetch(queue_name, 1)
-    redis_broker.do_fetch(queue_name, 1)
+    for _ in message_ids:
+        redis_broker.do_fetch(queue_name, 1)
 
     # Then both must be in the acks set
     ack_group = "dramatiq:__acks__.%s.%s" % (redis_broker.broker_id, queue_name)
@@ -154,12 +160,12 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     redis_broker.maintenance_chance = MAINTENANCE_SCALE
     redis_broker.do_qsize(queue_name)
 
-    # Then both messages should be requeued
+    # Then all messages should be requeued
     ack_group = "dramatiq:__acks__.%s.%s" % (redis_broker.broker_id, queue_name)
     unacked = redis_broker.client.smembers(ack_group)
     assert not unacked
 
-    queued = redis_broker.client.lrange("dramatiq:%s" % queue_name, 0, 5)
+    queued = redis_broker.client.lrange("dramatiq:%s" % queue_name, 0, num_messages)
     assert set(message_ids) == set(queued)
 
 
@@ -188,8 +194,9 @@ def test_redis_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker)
     def do_work():
         raise RuntimeError("failed")
 
-    # When I send it a message
-    do_work.send()
+    # When I send it many messages
+    for i in range(LUA_MAX_UNPACK_SIZE * 2):
+        do_work.send()
 
     # And then join on its queue
     redis_broker.join(do_work.queue_name)
@@ -200,7 +207,7 @@ def test_redis_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker)
     redis_broker.maintenance_chance = MAINTENANCE_SCALE
     redis_broker.do_qsize(do_work.queue_name)
 
-    # Then the message should be removed from the DLQ.
+    # Then all the messages should be removed from the DLQ.
     dead_queue_name = "dramatiq:%s" % xq_name(do_work.queue_name)
     dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
     assert not dead_ids
@@ -335,14 +342,19 @@ def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
         pass
 
     # And that actor has some old-style unacked messages
-    expired_message_id = b"expired-old-school-ack"
-    valid_message_id = b"valid-old-school-ack"
-    if redis.__version__.startswith("2."):
-        redis_broker.client.zadd("dramatiq:default.acks", 0, expired_message_id)
-        redis_broker.client.zadd("dramatiq:default.acks", current_millis(), valid_message_id)
-    else:
-        redis_broker.client.zadd("dramatiq:default.acks", {expired_message_id: 0})
-        redis_broker.client.zadd("dramatiq:default.acks", {valid_message_id: current_millis()})
+    expired_message_ids = set()
+    valid_message_ids = set()
+    for i in range(LUA_MAX_UNPACK_SIZE * 2):
+        expired_message_id = b"expired-old-school-ack-%r" % i
+        valid_message_id = b"valid-old-school-ack-%r" % i
+        expired_message_ids.add(expired_message_id)
+        valid_message_ids.add(valid_message_id)
+        if redis.__version__.startswith("2."):
+            redis_broker.client.zadd("dramatiq:default.acks", 0, expired_message_id)
+            redis_broker.client.zadd("dramatiq:default.acks", current_millis(), valid_message_id)
+        else:
+            redis_broker.client.zadd("dramatiq:default.acks", {expired_message_id: 0})
+            redis_broker.client.zadd("dramatiq:default.acks", {valid_message_id: current_millis()})
 
     # When maintenance runs for that actor's queue
     redis_broker.maintenance_chance = MAINTENANCE_SCALE
@@ -350,8 +362,8 @@ def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
 
     # Then maintenance should move the expired message to the new style acks set
     unacked = redis_broker.client.smembers("dramatiq:__acks__.%s.default" % redis_broker.broker_id)
-    assert set(unacked) == {expired_message_id}
+    assert set(unacked) == expired_message_ids
 
     # And the valid message should stay in that set
     compat_unacked = redis_broker.client.zrangebyscore("dramatiq:default.acks", 0, "+inf")
-    assert set(compat_unacked) == {valid_message_id}
+    assert set(compat_unacked) == valid_message_ids
