@@ -39,3 +39,4 @@ of those changes to CLEARTYPE SRL.
 | [@CapedHero](https://github.com/CapedHero)            | Maciej Wrześniewski    |
 | [@synweap15](https://github.com/synweap15)            | Paweł Werda            |
 | [@asavoy](https://github.com/asavoy)                  | Alvin Savoy            |
+| [@benekastah](https://github.com/benekastah)          | Paul Harper            |

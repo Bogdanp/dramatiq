@@ -75,6 +75,42 @@ for i=8,#ARGV do
     ARGS[i - 7] = ARGV[i]
 end
 
+
+-- In my testing I found the max size that we can unpack to be 7999 (which
+-- is LUAI_MAXCSTACK - 1). Lua can be built with a different LUAI_MAXCSTACK
+-- value, but redis doesn't appear to support doing that at the moment.
+-- https://github.com/antirez/redis/blob/fc0c9c8097a5b2bc8728bec9cfee26817a702f09/deps/lua/src/luaconf.h#L438
+local MAX_UNPACK_SIZE = 7999
+
+-- Iterates over a table in chunks, yielding a new chunk on each
+-- iteration. Used to do work in batches so we don't overflow lua's stack.
+--
+-- Example:
+--
+--   for chunk in iter_chunks(some_table) do
+--       do_something(unpack(chunk))
+--   end
+local function iter_chunks(tbl, chunksize)
+    if chunksize == nil then
+        chunksize = MAX_UNPACK_SIZE
+    end
+    local len = #tbl
+    local i = 1
+    return function()
+        if i <= len then
+            local chunk = {}
+            local last_idx = math.min(i + chunksize - 1, len)
+            local j
+            for j = i, last_idx do
+                table.insert(chunk, tbl[j])
+            end
+            i = last_idx + 1
+            return chunk
+        end
+    end
+end
+
+
 -- Every call to dispatch has some % chance to trigger maintenance on
 -- a queue.  Maintenance moves any unacked messages belonging to dead
 -- workers back to their queues and deletes any expired messages from
@@ -87,7 +123,9 @@ if do_maintenance == "1" then
         local dead_worker_queue_acks = dead_worker_acks .. "." .. queue_name
         local message_ids = redis.call("smembers", dead_worker_queue_acks)
         if next(message_ids) then
-            redis.call("rpush", queue_full_name, unpack(message_ids))
+            for message_ids_batch in iter_chunks(message_ids) do
+                redis.call("rpush", queue_full_name, unpack(message_ids_batch))
+            end
             redis.call("del", dead_worker_queue_acks)
         end
 
@@ -101,8 +139,10 @@ if do_maintenance == "1" then
 
     local dead_message_ids = redis.call("zrangebyscore", xqueue_full_name, 0, timestamp - dead_message_ttl)
     if next(dead_message_ids) then
-        redis.call("zrem", xqueue_full_name, unpack(dead_message_ids))
-        redis.call("hdel", xqueue_messages, unpack(dead_message_ids))
+        for dead_message_ids_batch in iter_chunks(dead_message_ids) do
+            redis.call("zrem", xqueue_full_name, unpack(dead_message_ids_batch))
+            redis.call("hdel", xqueue_messages, unpack(dead_message_ids_batch))
+        end
     end
 
     -- The following code is required for backwards-compatibility with
@@ -111,8 +151,10 @@ if do_maintenance == "1" then
     local compat_queue_acks = queue_full_name .. ".acks"
     local compat_message_ids = redis.call("zrangebyscore", compat_queue_acks, 0, timestamp - 86400000 * 7.5)
     if next(compat_message_ids) then
-        redis.call("sadd", queue_acks, unpack(compat_message_ids))
-        redis.call("zrem", compat_queue_acks, unpack(compat_message_ids))
+        for compat_message_ids_batch in iter_chunks(compat_message_ids) do
+            redis.call("sadd", queue_acks, unpack(compat_message_ids_batch))
+            redis.call("zrem", compat_queue_acks, unpack(compat_message_ids_batch))
+        end
     end
 end
 
@@ -128,7 +170,8 @@ if command == "enqueue" then
 
 -- Returns up to $prefetch number of messages from $queue_full_name.
 elseif command == "fetch" then
-    local prefetch = ARGS[1]
+    -- Ensure prefetch isn't so large that we get errors fetching
+    local prefetch = math.min(ARGS[1], MAX_UNPACK_SIZE)
 
     local message_ids = {}
     for i=1,prefetch do
