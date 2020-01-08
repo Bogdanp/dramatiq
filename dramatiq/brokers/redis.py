@@ -273,8 +273,12 @@ class _RedisConsumer(Consumer):
         self.timeout = timeout
 
         self.message_cache = []
-        self.message_refc = 0
+        self.queued_message_ids = set()
         self.misses = 0
+
+    @property
+    def message_refc(self):
+        return len(self.queued_message_ids) + len(self.message_cache)
 
     def ack(self, message):
         try:
@@ -285,7 +289,7 @@ class _RedisConsumer(Consumer):
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
         finally:
-            self.message_refc -= 1
+            self.queued_message_ids.remove(message.message_id)
 
     def nack(self, message):
         try:
@@ -294,7 +298,7 @@ class _RedisConsumer(Consumer):
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
         finally:
-            self.message_refc -= 1
+            self.queued_message_ids.remove(message.message_id)
 
     def requeue(self, messages):
         message_ids = [message.options["redis_message_id"] for message in messages]
@@ -316,12 +320,14 @@ class _RedisConsumer(Consumer):
                     self.misses = 0
 
                     message = Message.decode(data)
+                    self.queued_message_ids.add(message.message_id)
                     return MessageProxy(message)
                 except IndexError:
                     # If there are fewer messages currently being
                     # processed than we're allowed to prefetch,
                     # prefetch up to that number of messages.
                     messages = []
+                    num_messages = len(self.queued_message_ids)
                     if self.message_refc < self.prefetch:
                         self.message_cache = messages = self.broker.do_fetch(
                             self.queue_name,
@@ -334,10 +340,6 @@ class _RedisConsumer(Consumer):
                         self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
                         time.sleep(backoff_ms / 1000)
                         return None
-
-                    # Since we received some number of messages, we
-                    # have to keep track of them.
-                    self.message_refc += len(messages)
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
 
