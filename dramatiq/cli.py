@@ -544,7 +544,12 @@ def main(args=None):  # noqa
                 retcode = max(retcode, proc.exitcode)
 
     for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes, *fork_pipes]:
-        pipe.close()
+        try:
+            pipe.close()
+        # If the worker process was killed, the handle may already be
+        # closed.
+        except (EOFError, OSError):
+            pass
 
     # The log watcher can't be a daemon in case we log to a file.  So
     # we have to wait for it to complete on exit.  Closing all the
