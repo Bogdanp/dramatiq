@@ -1,12 +1,14 @@
 import time
+from unittest import mock
 
 import pytest
-import redis
 
 import dramatiq
+import redis
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
+from dramatiq.errors import ConnectionError
 
 from .common import worker
 
@@ -366,3 +368,85 @@ def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
     # And the valid message should stay in that set
     compat_unacked = redis_broker.client.zrangebyscore("dramatiq:default.acks", 0, "+inf")
     assert set(compat_unacked) == valid_message_ids
+
+
+def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_worker):
+    # Given that I have an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # If I send that actor an async message
+    message = do_work.send()
+    consumer = redis_worker.consumers[do_work.queue_name].consumer
+
+    do_ack = redis_broker.do_ack
+
+    with mock.patch.object(consumer.broker, "do_ack") as ack_mock:
+        def side_effect(queue, msg_id):
+            if ack_mock.call_count == 1:
+                # On the first try, I expect there to be an outstanding message
+                assert consumer.outstanding_message_count == 1
+            else:
+                # On each subsequent try, there should be 0 messages
+                assert consumer.outstanding_message_count == 0
+
+            result = do_ack(queue, msg_id)
+
+            if ack_mock.call_count < 2:
+                # Trigger a retry by raising a ConnectionError
+                raise ConnectionError(message)
+
+            return result
+
+        ack_mock.side_effect = side_effect
+
+        # And I give the workers time to process the messages
+        redis_broker.join(do_work.queue_name)
+        redis_worker.join()
+
+        # I expect `do_ack` to have been called at least 2 times
+        assert ack_mock.call_count >= 2
+        # And I expect there to be no outstanding messages
+        assert consumer.outstanding_message_count == 0
+
+
+def test_redis_consumer_nack_can_retry_on_connection_error(redis_broker, redis_worker):
+    # Given that I have an actor
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise RuntimeError
+
+    # If I send that actor an async message
+    message = do_work.send()
+    consumer = redis_worker.consumers[do_work.queue_name].consumer
+
+    do_nack = redis_broker.do_nack
+
+    with mock.patch.object(consumer.broker, "do_nack") as nack_mock:
+        def side_effect(queue, msg_id):
+            if nack_mock.call_count == 1:
+                # On the first try, I expect there to be an outstanding message
+                assert consumer.outstanding_message_count == 1
+            else:
+                # On each subsequent try, there should be 0 messages
+                assert consumer.outstanding_message_count == 0
+
+            result = do_nack(queue, msg_id)
+
+            if nack_mock.call_count < 2:
+                # Trigger a retry by raising a ConnectionError
+                raise ConnectionError(message)
+
+            return result
+
+        nack_mock.side_effect = side_effect
+
+        # And I give the workers time to process the messages
+        redis_broker.join(do_work.queue_name)
+        redis_worker.join()
+
+        # I expect `do_nack` to have been called at least 2 times
+        assert nack_mock.call_count >= 2
+        # And I expect there to be no outstanding messages
+        assert consumer.outstanding_message_count == 0
