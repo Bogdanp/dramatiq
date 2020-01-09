@@ -1,15 +1,14 @@
 import time
 
 import pytest
-import redis
 
 import dramatiq
+import redis
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
 
 from .common import worker
-
 
 LUA_MAX_UNPACK_SIZE = 7999
 
