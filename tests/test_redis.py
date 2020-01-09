@@ -1,10 +1,10 @@
-from unittest import mock
 import time
+from unittest import mock
 
 import pytest
-import redis
 
 import dramatiq
+import redis
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
