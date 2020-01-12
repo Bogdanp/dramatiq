@@ -172,6 +172,11 @@ def make_argument_parser():
         help="write all logs to a file (default: sys.stderr)",
     )
     parser.add_argument(
+        "--skip-logging",
+        action="store_true",
+        help="do not call logging.basicConfig()"
+    )
+    parser.add_argument(
         "--use-spawn", action="store_true",
         help="start processes by spawning (default: fork on unix, spawn on windows)"
     )
@@ -249,7 +254,10 @@ def remove_pidfile(filename, logger):
 
 def setup_parent_logging(args, *, stream=sys.stderr):
     level = VERBOSITY.get(args.verbose, logging.DEBUG)
-    logging.basicConfig(level=level, format=LOGFORMAT, stream=stream)
+
+    if not args.skip_logging:
+        logging.basicConfig(level=level, format=LOGFORMAT, stream=stream)
+
     return get_logger("dramatiq", "MainProcess")
 
 
@@ -261,9 +269,14 @@ def make_logging_setup(prefix):
         sys.stderr = logging_pipe
 
         level = VERBOSITY.get(args.verbose, logging.DEBUG)
-        logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
+
+        if not args.skip_logging:
+            logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
+
         logging.getLogger("pika").setLevel(logging.CRITICAL)
+
         return get_logger("dramatiq", "%s(%s)" % (prefix, child_id))
+
     return setup_logging
 
 
