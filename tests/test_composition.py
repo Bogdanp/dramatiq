@@ -295,3 +295,88 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
 
     # Then the second message in the pipe should never have run
     assert not has_run
+
+
+def test_pipeline_respects_own_delay(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that adds two numbers together
+    @dramatiq.actor(store_results=True)
+    def add(x, y):
+        return x + y
+
+    # When I pipe some messages intended for that actor together and run the pipeline with a delay
+    pipe = add.message(1, 2) | add.message(3)
+    pipe.run(delay=10_000)
+
+    # And get the results with a lower timeout than the the pipeline is delayed by
+    # Then a ResultTimeout error should be raised
+    with pytest.raises(ResultTimeout):
+        for _ in pipe.get_results(block=True, timeout=100):
+            pass
+
+
+def test_pipeline_respects_delay_of_first_message(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that adds two numbers together
+    @dramatiq.actor(store_results=True)
+    def add(x, y):
+        return x + y
+
+    # When I pipe some messages intended for that actor together, where first message is delayed and run the pipeline
+    pipe = add.message_with_options(args=(1, 2), delay=10_000) | add.message(3)
+    pipe.run()
+
+    # And get the results with a lower timeout than the first message's delay
+    # Then a ResultTimeout error should be raised
+    with pytest.raises(ResultTimeout):
+        for _ in pipe.get_results(block=True, timeout=100):
+            pass
+
+
+def test_pipeline_respects_delay_of_second_message(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that adds two numbers together
+    @dramatiq.actor(store_results=True)
+    def add(x, y):
+        return x + y
+
+    # When I pipe some messages intended for that actor together, where second message is delayed and run the pipeline
+    pipe = add.message(1, 2) | add.message_with_options(args=(3,), delay=10_000)
+    pipe.run()
+
+    # And get the results with a lower timeout than the second message's delay
+    # Then a ResultTimeout error should be raised
+    with pytest.raises(ResultTimeout):
+        for _ in pipe.get_results(block=True, timeout=100):
+            pass
+
+
+def test_pipeline_respects_bigger_of_first_messages_and_pipelines_delay(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that adds two numbers together
+    @dramatiq.actor(store_results=True)
+    def add(x, y):
+        return x + y
+
+    # When I pipe some messages intended for that actor together, first of which is delayed
+    # And the pipeline is delayed with a bigger value than the first message, and run the pipeline
+    pipe = add.message_with_options(args=(1, 2), delay=100) | add.message(3)
+    pipe.run(delay=10_000)
+
+    # And get the results with a higher timeout than first message's delay, but lower than pipeline's delay
+    # Then a ResultTimeout error should be raised
+    with pytest.raises(ResultTimeout):
+        for _ in pipe.get_results(block=True, timeout=300):
+            pass
