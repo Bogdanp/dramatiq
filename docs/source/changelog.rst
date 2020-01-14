@@ -15,19 +15,26 @@ Added
 * Support for running forking and running arbitrary functions
   (so-called "fork functions").  (`#127`_, `#230`_)
 * The ``--fork-function`` flag.
+* The ``--skip-logging`` flag.  (`#263`_, `@whalesalad`_)
+
+.. _#263: https://github.com/Bogdanp/dramatiq/pull/263
+.. _@whalesalad: https://github.com/whalesalad
 
 Fixed
 ^^^^^
 
-* An issue where the `max_age` parameter to |AgeLimit| was being
+* An issue where the ``max_age`` parameter to |AgeLimit| was being
   ignored.  (`#240`_, `@evstratbg`_)
+* An issue with delaying pipelines.  (`#264`_, `@synweap15`_)
 * The |StubBroker| now flushes its dead letter queue when its
   ``flush_all`` method is called.  (`#247`_, `@CapedHero`_)
 
 .. _#240: https://github.com/Bogdanp/dramatiq/pull/240
 .. _#247: https://github.com/Bogdanp/dramatiq/pull/247
+.. _#264: https://github.com/Bogdanp/dramatiq/pull/264
 .. _@CapedHero: https://github.com/CapedHero
 .. _@evstratbg: https://github.com/evstratbg
+.. _@synweap15: https://github.com/synweap15
 
 Changed
 ^^^^^^^
