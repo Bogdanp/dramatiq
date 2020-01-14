@@ -53,4 +53,4 @@ class Pipelines(Middleware):
             if not pipe_ignore:
                 next_message = next_message.copy(args=next_message.args + (result,))
 
-            broker.enqueue(next_message)
+            broker.enqueue(next_message, delay=next_message.options.get("delay"))

@@ -37,3 +37,4 @@ of those changes to CLEARTYPE SRL.
 | [@jonathanlintott](http://github.com/jonathanlintott) | Jonathan Lintott       |
 | [@evstratbg](https://github.com/evstratbg)            | Bogdan Evstratenko     |
 | [@CapedHero](https://github.com/CapedHero)            | Maciej Wrześniewski    |
+| [@synweap15](https://github.com/synweap15)            | Paweł Werda            |

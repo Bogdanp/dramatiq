@@ -103,11 +103,14 @@ class pipeline:
 
         Parameters:
           delay(int): The minimum amount of time, in milliseconds, the
-            pipeline should be delayed by.
+            pipeline should be delayed by. If both pipeline's delay and
+            first message's delay are provided, the bigger value will be
+            used.
 
         Returns:
           pipeline: Itself.
         """
+        delay = max(delay or 0, self.messages[0].options.get("delay") or 0) or None
         self.broker.enqueue(self.messages[0], delay=delay)
         return self
 
