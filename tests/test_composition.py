@@ -297,6 +297,7 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
     # Then the second message in the pipe should never have run
     assert not has_run
 
+
 def test_pipeline_respects_own_delay(stub_broker, stub_worker, result_backend):
     # Given a result backend
     # And a broker with the results middleware
@@ -380,6 +381,7 @@ def test_pipeline_respects_bigger_of_first_messages_and_pipelines_delay(stub_bro
     with pytest.raises(ResultTimeout):
         for _ in pipe.get_results(block=True, timeout=300):
             pass
+
 
 def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_limiter_backend):
     # Given that I have a rate limiter backend
