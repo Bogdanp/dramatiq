@@ -309,7 +309,7 @@ def test_pipeline_respects_own_delay(stub_broker, stub_worker, result_backend):
 
     # When I pipe some messages intended for that actor together and run the pipeline with a delay
     pipe = add.message(1, 2) | add.message(3)
-    pipe.run(delay=10_000)
+    pipe.run(delay=10000)
 
     # And get the results with a lower timeout than the the pipeline is delayed by
     # Then a ResultTimeout error should be raised
@@ -329,7 +329,7 @@ def test_pipeline_respects_delay_of_first_message(stub_broker, stub_worker, resu
         return x + y
 
     # When I pipe some messages intended for that actor together, where first message is delayed and run the pipeline
-    pipe = add.message_with_options(args=(1, 2), delay=10_000) | add.message(3)
+    pipe = add.message_with_options(args=(1, 2), delay=10000) | add.message(3)
     pipe.run()
 
     # And get the results with a lower timeout than the first message's delay
@@ -350,7 +350,7 @@ def test_pipeline_respects_delay_of_second_message(stub_broker, stub_worker, res
         return x + y
 
     # When I pipe some messages intended for that actor together, where second message is delayed and run the pipeline
-    pipe = add.message(1, 2) | add.message_with_options(args=(3,), delay=10_000)
+    pipe = add.message(1, 2) | add.message_with_options(args=(3,), delay=10000)
     pipe.run()
 
     # And get the results with a lower timeout than the second message's delay
@@ -373,7 +373,7 @@ def test_pipeline_respects_bigger_of_first_messages_and_pipelines_delay(stub_bro
     # When I pipe some messages intended for that actor together, first of which is delayed
     # And the pipeline is delayed with a bigger value than the first message, and run the pipeline
     pipe = add.message_with_options(args=(1, 2), delay=100) | add.message(3)
-    pipe.run(delay=10_000)
+    pipe.run(delay=10000)
 
     # And get the results with a higher timeout than first message's delay, but lower than pipeline's delay
     # Then a ResultTimeout error should be raised
