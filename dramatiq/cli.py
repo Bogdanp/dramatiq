@@ -317,7 +317,7 @@ def watch_logs(log_filename, pipes):
             # is closed, and event.poll() raises BrokenPipeError when
             # its pipe is closed.  When any of these events happen, we
             # just take the closed pipes out of the waitlist.
-            except (BrokenPipeError, EOFError, OSError):
+            except (EOFError, OSError):
                 pipes = [p for p in pipes if not p.closed]
 
 
