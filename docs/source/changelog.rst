@@ -28,6 +28,8 @@ Fixed
 * An issue with delaying pipelines.  (`#264`_, `@synweap15`_)
 * An issue where the master process would sometimes hang when stopped.
   (`#260`_, `@asavoy`_)
+* An issue where the |RedisBroker| could sometimes prefetch more
+  messages than it was configured to.  (`#262`_, `@benekastah`_)
 * The |StubBroker| now flushes its dead letter queue when its
   ``flush_all`` method is called.  (`#247`_, `@CapedHero`_)
 * The |RedisBroker| now takes the max lua stack size into account.
@@ -38,6 +40,7 @@ Fixed
 .. _#247: https://github.com/Bogdanp/dramatiq/pull/247
 .. _#259: https://github.com/Bogdanp/dramatiq/pull/259
 .. _#260: https://github.com/Bogdanp/dramatiq/pull/260
+.. _#262: https://github.com/Bogdanp/dramatiq/pull/262
 .. _#264: https://github.com/Bogdanp/dramatiq/pull/264
 .. _@CapedHero: https://github.com/CapedHero
 .. _@asavoy: https://github.com/asavoy
