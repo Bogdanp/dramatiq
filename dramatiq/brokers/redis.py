@@ -20,6 +20,7 @@ import random
 import time
 import warnings
 from os import path
+from threading import Lock
 from uuid import uuid4
 
 import redis
@@ -235,6 +236,17 @@ class RedisBroker(Broker):
             random.randint(1, MAINTENANCE_SCALE) <= self.maintenance_chance
         )
 
+    _max_unpack_size_val = None
+    _max_unpack_size_mut = Lock()
+
+    def _max_unpack_size(self):
+        cls = type(self)
+        if cls._max_unpack_size_val is None:
+            with cls._max_unpack_size_mut:
+                if cls._max_unpack_size_val is None:
+                    cls._max_unpack_size_val = self.scripts["maxstack"]()
+        return cls._max_unpack_size_val
+
     def _dispatch(self, command):
         # Micro-optimization: by hoisting these up here we avoid
         # allocating the list on every call.
@@ -251,6 +263,7 @@ class RedisBroker(Broker):
                 self.heartbeat_timeout,
                 self.dead_message_ttl,
                 self._should_do_maintenance(command),
+                self._max_unpack_size(),
                 *args,
             ]
             return dispatch(args=args, keys=keys)

@@ -1,9 +1,9 @@
 import time
 
 import pytest
+import redis
 
 import dramatiq
-import redis
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
@@ -194,7 +194,7 @@ def test_redis_dead_lettered_messages_are_cleaned_up(redis_broker, redis_worker)
         raise RuntimeError("failed")
 
     # When I send it many messages
-    for i in range(LUA_MAX_UNPACK_SIZE * 2):
+    for _ in range(LUA_MAX_UNPACK_SIZE * 2):
         do_work.send()
 
     # And then join on its queue
