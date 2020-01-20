@@ -20,6 +20,8 @@ before_build:
   - choco install redis-64
   - redis-server --service-install
   - redis-server --service-start
+  - redis-cli config set appendonly no
+  - redis-cli config set save ""
 
 install:
   # Download and start a binary version of memcached.
