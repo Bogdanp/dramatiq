@@ -138,7 +138,7 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
 
     num_messages = LUA_MAX_UNPACK_SIZE * 2
     # The lua max stack size is 8000, so try to work with double that
-    message_ids = [f"message-{i}".encode() for i in range(num_messages)]
+    message_ids = [("message-%s" % i).encode() for i in range(num_messages)]
 
     # If I enqueue many messages
     for message_id in message_ids:
