@@ -76,6 +76,12 @@ class Middleware:
 
     def after_declare_queue(self, broker, queue_name):
         """Called after a queue has been declared.
+
+        This signals that the queue has been registered with the
+        broker, but it does not necessarily mean that it was created
+        on the server yet.  For example, the RabbitMQ broker declares
+        queues when actors are created, but it doesn't instantiate
+        them until messages are enqueued or consumed.
         """
 
     def after_declare_delay_queue(self, broker, queue_name):

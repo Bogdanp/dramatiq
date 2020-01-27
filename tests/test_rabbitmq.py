@@ -212,6 +212,46 @@ def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_worker)
     assert xq_count == 1
 
 
+def test_rabbitmq_broker_connections_are_lazy():
+    # When I create an RMQ broker
+    broker = RabbitmqBroker(
+        host="127.0.0.1",
+        max_priority=10,
+        credentials=RABBITMQ_CREDENTIALS,
+    )
+
+    def get_connection():
+        return getattr(broker.state, "connection", None)
+
+    # Then it shouldn't immediately connect to the server
+    assert get_connection() is None
+
+    # When I declare a queue
+    broker.declare_queue("some-queue")
+
+    # Then it shouldn't connect either
+    assert get_connection() is None
+
+    # When I create a consumer on that queue
+    broker.consume("some-queue", timeout=1)
+
+    # Then it should connect
+    assert get_connection() is not None
+
+
+def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
+    # Given that I have a rabbit instance that lost its connection
+    with patch.object(rabbitmq_broker, "_declare_queue", side_effect=pika.exceptions.AMQPConnectionError):
+        # When I declare and use an actor
+        # Then a ConnectionClosed error should be raised
+        with pytest.raises(dramatiq.errors.ConnectionClosed):
+            @dramatiq.actor(queue_name="flaky_queue")
+            def do_work():
+                pass
+
+            do_work.send()
+
+
 def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a broker without actors
     # If I send it a message
@@ -418,14 +458,3 @@ def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors
             assert executed
         finally:
             worker.stop()
-
-
-def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
-    # Given that I have a rabbit instance that lost its connection
-    with patch.object(rabbitmq_broker, "_declare_queue", side_effect=pika.exceptions.AMQPConnectionError):
-        # When I declare an actor
-        # Then a ConnectionClosed error should be raised
-        with pytest.raises(dramatiq.errors.ConnectionClosed):
-            @dramatiq.actor(queue_name="flaky_queue")
-            def do_work():
-                pass

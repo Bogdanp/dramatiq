@@ -107,6 +107,7 @@ class RabbitmqBroker(Broker):
         self.connections = set()
         self.channels = set()
         self.queues = set()
+        self.queues_pending = set()
         self.state = local()
 
     @property
@@ -187,34 +188,45 @@ class RabbitmqBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
+        self.declare_queue(queue_name, ensure=True)
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
-    def declare_queue(self, queue_name):
+    def declare_queue(self, queue_name, *, ensure=False):
         """Declare a queue.  Has no effect if a queue with the given
         name already exists.
 
         Parameters:
           queue_name(str): The name of the new queue.
+          ensure(bool): When True, the queue is created immediately on
+            the server.
 
         Raises:
-          ConnectionClosed: If the underlying channel or connection
-            has been closed.
+          ConnectionClosed: When ensure=True if the underlying channel
+            or connection fails.
         """
+        if queue_name not in self.queues:
+            self.emit_before("declare_queue", queue_name)
+            self.queues.add(queue_name)
+            self.queues_pending.add(queue_name)
+            self.emit_after("declare_queue", queue_name)
+
+            delayed_name = dq_name(queue_name)
+            self.delay_queues.add(delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name)
+
+        if ensure:
+            self._ensure_queue(queue_name)
+
+    def _ensure_queue(self, queue_name):
         attempts = 1
         while True:
             try:
-                if queue_name not in self.queues:
-                    self.emit_before("declare_queue", queue_name)
+                if queue_name in self.queues_pending:
                     self._declare_queue(queue_name)
-                    self.queues.add(queue_name)
-                    self.emit_after("declare_queue", queue_name)
-
-                    delayed_name = dq_name(queue_name)
                     self._declare_dq_queue(queue_name)
-                    self.delay_queues.add(delayed_name)
-                    self.emit_after("declare_delay_queue", delayed_name)
-
                     self._declare_xq_queue(queue_name)
+                    self.queues_pending.discard(queue_name)
+
                 break
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
@@ -270,6 +282,8 @@ class RabbitmqBroker(Broker):
             has been closed.
         """
         queue_name = message.queue_name
+        self.declare_queue(queue_name, ensure=True)
+
         properties = pika.BasicProperties(
             delivery_mode=2,
             priority=message.options.get("broker_priority"),
@@ -351,7 +365,8 @@ class RabbitmqBroker(Broker):
           queue_name(str): The queue to flush.
         """
         for name in (queue_name, dq_name(queue_name), xq_name(queue_name)):
-            self.channel.queue_purge(name)
+            if queue_name not in self.queues_pending:
+                self.channel.queue_purge(name)
 
     def flush_all(self):
         """Drop all messages from all declared queues.
