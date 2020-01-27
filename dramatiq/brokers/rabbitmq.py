@@ -106,8 +106,15 @@ class RabbitmqBroker(Broker):
         self.max_priority = max_priority
         self.connections = set()
         self.channels = set()
-        self.queues = set()
+        # Queues maps queue name to boolean, indicating if the
+        # queue and underlying delayed queues are declared.
+        self.queues = {}
         self.state = local()
+
+    @property
+    def is_connected(self):
+        """Returns whether a connection is made, does not check for liveness"""
+        return getattr(self.state, "connection", None) is not None
 
     @property
     def connection(self):
@@ -187,6 +194,7 @@ class RabbitmqBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
+        self._check_and_declare_queue(queue_name)
         return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):
@@ -195,6 +203,22 @@ class RabbitmqBroker(Broker):
 
         Parameters:
           queue_name(str): The name of the new queue.
+        """
+        if queue_name not in self.queues:
+            self.emit_before("declare_queue", queue_name)
+            self.queues[queue_name] = False
+            self.emit_after("declare_queue", queue_name)
+
+            delayed_name = dq_name(queue_name)
+            self.delay_queues.add(delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name)
+
+    def _check_and_declare_queue(self, queue_name):
+        """Checks if a queue has been registered at RabbitMQ, if not
+        the queue will be registered
+
+        Parameters:
+          queue_name(str): The name of the queue.
 
         Raises:
           ConnectionClosed: If the underlying channel or connection
@@ -203,18 +227,17 @@ class RabbitmqBroker(Broker):
         attempts = 1
         while True:
             try:
-                if queue_name not in self.queues:
-                    self.emit_before("declare_queue", queue_name)
+                # Make sure the queue is declared
+                self.declare_queue(queue_name)
+
+                # If the queue hasn't been declared yet, do so now
+                if not self.queues[queue_name]:
                     self._declare_queue(queue_name)
-                    self.queues.add(queue_name)
-                    self.emit_after("declare_queue", queue_name)
-
-                    delayed_name = dq_name(queue_name)
                     self._declare_dq_queue(queue_name)
-                    self.delay_queues.add(delayed_name)
-                    self.emit_after("declare_delay_queue", delayed_name)
-
                     self._declare_xq_queue(queue_name)
+
+                    # Mark as being declared
+                    self.queues[queue_name] = True
                 break
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
@@ -270,6 +293,8 @@ class RabbitmqBroker(Broker):
             has been closed.
         """
         queue_name = message.queue_name
+        self._check_and_declare_queue(queue_name)
+
         properties = pika.BasicProperties(
             delivery_mode=2,
             priority=message.options.get("broker_priority"),
@@ -322,7 +347,7 @@ class RabbitmqBroker(Broker):
           set[str]: The names of all the queues declared so far on
           this Broker.
         """
-        return self.queues.copy()
+        return set(self.queues.keys())
 
     def get_queue_message_counts(self, queue_name):
         """Get the number of messages in a queue.  This method is only
