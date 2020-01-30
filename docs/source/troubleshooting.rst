@@ -31,7 +31,7 @@ application after forking by default.
 To work around this problem in uwsgi_, you have to turn on `lazy apps
 mode`_.  This will ensure that all your app code is loaded after each
 worker process is forked.  The tradeoff you make by turning on this
-option is your application will use slighly more memory.
+option is your application will use slightly more memory.
 
 .. _uwsgi: https://uwsgi-docs.readthedocs.io/en/latest
 .. _lazy apps mode: https://uwsgi-docs.readthedocs.io/en/latest/Options.html#lazy-apps
