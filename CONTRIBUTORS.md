@@ -40,3 +40,4 @@ of those changes to CLEARTYPE SRL.
 | [@synweap15](https://github.com/synweap15)            | Paweł Werda            |
 | [@asavoy](https://github.com/asavoy)                  | Alvin Savoy            |
 | [@benekastah](https://github.com/benekastah)          | Paul Harper            |
+| [@timdrijvers](https://github.com/timdrijvers)        | Tim Drijvers           |
