@@ -51,6 +51,7 @@ Fixed
 Changed
 ^^^^^^^
 
+* The |RabbitmqBroker| now creates its queues lazily.  (`#163`_, `#270`_, `@timdrijvers`_)
 * The |Prometheus| middleware no longer depends on file locking to
   start its exposition server.  Instead, it uses the new fork
   functions functionality to start the server in a separate, unique
@@ -59,7 +60,10 @@ Changed
   were previously ignored anyway.  (`#127`_, `#230`_)
 
 .. _#127: https://github.com/Bogdanp/dramatiq/issues/127
+.. _#163: https://github.com/Bogdanp/dramatiq/issues/163
 .. _#230: https://github.com/Bogdanp/dramatiq/pull/230
+.. _#270: https://github.com/Bogdanp/dramatiq/pull/270
+.. _@timdrijvers: https://github.com/timdrijvers
 
 
 `1.7.0`_ -- 2019-09-22
