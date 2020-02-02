@@ -15,8 +15,8 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
-* Support for running forking and running arbitrary functions
-  (so-called "fork functions").  (`#127`_, `#230`_)
+* Support for forking and running arbitrary functions (so-called "fork
+  functions").  (`#127`_, `#230`_)
 * The ``--fork-function`` flag.
 * The ``--skip-logging`` flag.  (`#263`_, `@whalesalad`_)
 

@@ -1,5 +1,6 @@
 .. References
 
+.. |AgeLimit| replace:: :class:`Callbacks<dramatiq.middleware.AgeLimit>`
 .. |Barriers| replace:: :class:`Barrires<dramatiq.rate_limits.Barrier>`
 .. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Broker| replace:: :class:`Broker<dramatiq.Broker>`
