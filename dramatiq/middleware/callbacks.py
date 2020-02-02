@@ -37,17 +37,18 @@ class Callbacks(Middleware):
         }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
+        actor = broker.get_actor(message.actor_name)
         if exception is None:
-            actor_name = message.options.get("on_success")
-            if actor_name:
-                actor = broker.get_actor(actor_name)
-                actor.send(message.asdict(), result)
+            target_actor_name = message.options.get("on_success") or actor.options.get("on_success")
+            if target_actor_name:
+                target_actor = broker.get_actor(target_actor_name)
+                target_actor.send(message.asdict(), result)
 
         else:
-            actor_name = message.options.get("on_failure")
-            if actor_name:
-                actor = broker.get_actor(actor_name)
-                actor.send(message.asdict(), {
+            target_actor_name = message.options.get("on_failure") or actor.options.get("on_failure")
+            if target_actor_name:
+                target_actor = broker.get_actor(target_actor_name)
+                target_actor.send(message.asdict(), {
                     "type": type(exception).__name__,
                     "message": str(exception),
                 })
