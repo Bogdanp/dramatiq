@@ -9,6 +9,17 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.8.1`_ -- 2020-02-02
+----------------------
+
+Fixed
+^^^^^
+
+* An issue where an ``IndexError`` would be raised when multiple
+  middlewre containing fork functions were defined.  (`#271`_)
+
+.. _#271: https://github.com/Bogdanp/dramatiq/issues/271
+
 `1.8.0`_ -- 2020-02-02
 ----------------------
 
@@ -801,7 +812,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.8.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.8.1...HEAD
+.. _1.8.1: https://github.com/Bogdanp/dramatiq/compare/v1.8.0...v1.8.1
 .. _1.8.0: https://github.com/Bogdanp/dramatiq/compare/v1.7.0...v1.8.0
 .. _1.7.0: https://github.com/Bogdanp/dramatiq/compare/v1.6.1...v1.7.0
 .. _1.6.1: https://github.com/Bogdanp/dramatiq/compare/v1.6.0...v1.6.1

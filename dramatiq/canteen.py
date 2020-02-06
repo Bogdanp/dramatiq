@@ -19,6 +19,7 @@
 # module can and *will* change without notice.
 
 import time
+from contextlib import contextmanager
 from ctypes import Array, Structure, c_bool, c_byte, c_int
 
 
@@ -38,19 +39,36 @@ class Canteen(Structure):
 
 
 def canteen_add(canteen, path):
-    buff = Buffer.from_buffer(canteen.paths)
-    buff[canteen.last_position:len(path) + 1] = path.encode("utf-8") + b";"
-    canteen.last_position += len(path) + 1
-    canteen.initialized = True
+    lo = canteen.last_position
+    hi = canteen.last_position + len(path) + 1
+    if hi > len(canteen.paths):
+        raise RuntimeError("canteen is full")
+
+    canteen.paths[lo:hi] = path.encode("utf-8") + b";"
+    canteen.last_position = hi
 
 
 def canteen_get(canteen, timeout=1):
     if not wait(canteen, timeout):
         return []
 
-    buff = Buffer.from_buffer(canteen.paths)
-    data = bytes(buff[:canteen.last_position])
+    data = bytes(canteen.paths[:canteen.last_position])
     return data.decode("utf-8").split(";")[:-1]
+
+
+@contextmanager
+def canteen_try_init(cv):
+    if cv.initialized:
+        yield False
+        return
+
+    with cv.get_lock():
+        if cv.initialized:
+            yield False
+            return
+
+        yield True
+        cv.initialized = True
 
 
 def wait(canteen, timeout):

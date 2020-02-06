@@ -33,7 +33,7 @@ from itertools import chain
 from threading import Thread
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
-from dramatiq.canteen import Canteen, canteen_add, canteen_get
+from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
 from dramatiq.compat import StreamablePipe, file_or_stderr
 
 try:
@@ -334,14 +334,13 @@ def worker_process(args, worker_id, logging_pipe, canteen):
         for module in args.modules:
             importlib.import_module(module)
 
-        if not canteen.initialized:
-            with canteen.get_lock():
-                if not canteen.initialized:
-                    logger.debug("Sending forks to main process...")
-                    for middleware in broker.middleware:
-                        for fork in middleware.forks:
-                            fork_path = "%s:%s" % (fork.__module__, fork.__name__)
-                            canteen_add(canteen, fork_path)
+        with canteen_try_init(canteen) as acquired:
+            if acquired:
+                logger.debug("Sending forks to main process...")
+                for middleware in broker.middleware:
+                    for fork in middleware.forks:
+                        fork_path = "%s:%s" % (fork.__module__, fork.__name__)
+                        canteen_add(canteen, fork_path)
 
         logger.debug("Starting worker threads...")
         worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
