@@ -77,6 +77,7 @@ class RedisBroker(Broker):
         dead-lettered messages are kept in Redis for.
       requeue_deadline(int): Deprecated.  Does nothing.
       requeue_interval(int): Deprecated.  Does nothing.
+      client(redis.StrictRedis): A redis client to use.
       **parameters(dict): Connection parameters are passed directly
         to :class:`redis.Redis`.
 
@@ -91,6 +92,7 @@ class RedisBroker(Broker):
             dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
             requeue_deadline=None,
             requeue_interval=None,
+            client=None,
             **parameters
     ):
         super().__init__(middleware=middleware)
@@ -108,9 +110,12 @@ class RedisBroker(Broker):
         self.heartbeat_timeout = heartbeat_timeout
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
-        # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client = redis.StrictRedis(**parameters)
-        self.scripts = {name: client.register_script(script) for name, script in _scripts.items()}
+        if not client:
+            # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
+            self.client = redis.StrictRedis(**parameters)
+        else:
+            self.client = client
+        self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
         """Create a new consumer for a queue.

@@ -318,6 +318,15 @@ def test_redis_broker_can_connect_via_url():
     assert broker.client.ping()
 
 
+def test_redis_broker_can_connect_via_client():
+    # Given that I already have redis client in hand
+    # When I pass it to RedisBroker
+    broker = RedisBroker(client=redis.Redis())
+
+    # Then I should get back a valid connection
+    assert broker.client.ping()
+
+
 def test_redis_broker_warns_about_deprecated_parameters():
     # When I pass deprecated params to RedisBroker
     # Then it should warn me that those params do nothing
