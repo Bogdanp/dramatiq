@@ -2,9 +2,9 @@ import time
 from unittest import mock
 
 import pytest
+import redis
 
 import dramatiq
-import redis
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
@@ -316,6 +316,17 @@ def test_redis_broker_can_connect_via_url():
 
     # Then I should get back a valid connection
     assert broker.client.ping()
+
+
+def test_redis_broker_can_connect_via_client():
+    # Given that I already have redis client in hand
+    # When I pass it to RedisBroker
+    client = redis.Redis()
+    broker = RedisBroker(client=client)
+
+    # Then I should get back a valid connection
+    assert broker.client.ping()
+    assert broker.client is client
 
 
 def test_redis_broker_warns_about_deprecated_parameters():
