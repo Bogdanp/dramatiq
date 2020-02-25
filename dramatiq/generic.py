@@ -115,6 +115,6 @@ class GenericActor(metaclass=generic_actor):
         method.
         """
         raise NotImplementedError("%s does not implement perform()" % self.__name__)
-        
+
     def retry(self, delay=None):
         return self.broker.enqueue(self.message, delay=delay)
