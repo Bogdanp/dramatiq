@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import actor
+from .message import Message
 
 
 class generic_actor(type):
