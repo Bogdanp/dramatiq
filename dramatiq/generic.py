@@ -100,6 +100,12 @@ class GenericActor(metaclass=generic_actor):
         return type(self).__name__
 
     def __call__(self, *args, **kwargs):
+        self.message = Message(
+            queue_name=self.__actor__.queue_name,
+            actor_name=self.__actor__.actor_name,
+            args=args or (), kwargs=kwargs or {},
+            options=self.__actor__.options or {},
+        )
         return self.perform(*args, **kwargs)
 
     def perform(self):
@@ -108,3 +114,6 @@ class GenericActor(metaclass=generic_actor):
         method.
         """
         raise NotImplementedError("%s does not implement perform()" % self.__name__)
+        
+    def retry(self, delay=None):
+        return self.broker.enqueue(self.message, delay=delay)
