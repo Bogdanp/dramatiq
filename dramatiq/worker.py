@@ -23,7 +23,7 @@ from queue import Empty, PriorityQueue
 from threading import Event, Thread
 
 from .common import current_millis, iter_queue, join_all, q_name
-from .errors import ActorNotFound, ConnectionError, RateLimitExceeded
+from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
 
@@ -474,6 +474,10 @@ class _WorkerThread(Thread):
         except SkipMessage:
             self.logger.warning("Message %s was skipped.", message)
             self.broker.emit_after("skip_message", message)
+
+        except Retry as e:
+            self.logger.warning("Message %s is retrying with %s delay.", message, e.delay)
+            self.broker.enqueue(message=message, delay=e.delay)
 
         except BaseException as e:
             # Stuff the exception into the message [proxy] so that it

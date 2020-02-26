@@ -66,3 +66,12 @@ class ConnectionClosed(ConnectionError):
 class RateLimitExceeded(DramatiqError):
     """Raised when a rate limit has been exceeded.
     """
+
+
+class Retry(DramatiqError):
+    """Raised a message should be retries.
+    """
+
+    def __init__(self, message, delay=None):
+        super(DramatiqError).__init__(message)
+        self.delay = delay
