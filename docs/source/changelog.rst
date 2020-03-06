@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* A custom Redis connection can now be passed to the Redis broker via
+  the new ``client`` keyword argument.  (`#274`_, `@davidt99`_)
+
+.. _#274: https://github.com/Bogdanp/dramatiq/issues/274
+.. _@davidt99: https://github.com/davidt99
+
 `1.8.1`_ -- 2020-02-02
 ----------------------
 
