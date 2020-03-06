@@ -1,4 +1,5 @@
 import time
+from unittest.mock import patch
 
 import pytest
 
@@ -115,3 +116,66 @@ def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, st
     # Then I should get a RuntimeError back
     with pytest.raises(RuntimeError):
         message.get_result()
+
+
+def test_actor_no_warning_when_returns_none(stub_broker, stub_worker):
+    # Given that I've mocked the logging class
+    with patch("logging.Logger.warning") as warning_mock:
+        # And I have an actor that always returns None, and does not store results
+        @dramatiq.actor
+        def always_1():
+            pass
+
+        # When I send that actor a message
+        always_1.send()
+
+        # And wait for the message to get processed
+        stub_broker.join(always_1.queue_name)
+        stub_worker.join()
+
+        # Then error mock should not be called with a special warning message
+        warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
+        assert not any("Consider adding Results middleware" in x for x in warning_messages)
+
+
+def test_actor_warning_when_returns_result_and_no_results_middleware_present(stub_broker, stub_worker):
+    # Given that I've mocked the logging class
+    with patch("logging.Logger.warning") as warning_mock:
+        # And I have an actor that always returns 1, and does not store results
+        @dramatiq.actor
+        def always_1():
+            return 1
+
+        # When I send that actor a message
+        always_1.send()
+
+        # And wait for the message to get processed
+        stub_broker.join(always_1.queue_name)
+        stub_worker.join()
+
+        # Then error mock should be called with a special warning message
+        warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
+        assert any("Consider adding Results middleware" in x for x in warning_messages)
+
+
+def test_actor_no_warning_when_returns_result_and_results_middleware_present(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+    # And that I've mocked the logging class
+    with patch("logging.Logger.warning") as warning_mock:
+        # And I have an actor that always returns 1, and does store results
+        @dramatiq.actor(store_results=True)
+        def always_1():
+            return 1
+
+        # When I send that actor a message
+        always_1.send()
+
+        # And wait for the message to get processed
+        stub_broker.join(always_1.queue_name)
+        stub_worker.join()
+
+        # Then error mock should not be called with a special warning message
+        warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
+        assert not any("Consider adding Results middleware" in x for x in warning_messages)

@@ -142,7 +142,14 @@ class Actor:
         try:
             self.logger.debug("Received args=%r kwargs=%r.", args, kwargs)
             start = time.perf_counter()
-            return self.fn(*args, **kwargs)
+            result = self.fn(*args, **kwargs)
+            if result is not None and not self.options.get("store_results", False):
+                self.logger.warning(
+                    "Actor '%s' returns a value that is not None, and you haven't added "
+                    "Results middleware to the broker, which means the return value will be silently dropped. "
+                    "Consider adding Results middleware to your broker." % self.actor_name
+                )
+            return result
         finally:
             delta = time.perf_counter() - start
             self.logger.debug("Completed after %.02fms.", delta * 1000)
