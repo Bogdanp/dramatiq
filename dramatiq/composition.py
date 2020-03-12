@@ -20,7 +20,8 @@ from uuid import uuid4
 
 from .broker import get_broker
 from .rate_limits import Barrier
-from .results import ResultMissing
+from .results import ResultMissing as ResultMissingOld
+from .results_with_failures import ResultMissing as ResultMissingNew
 
 
 class pipeline:
@@ -75,7 +76,7 @@ class pipeline:
             self.messages[-1].get_result()
 
             return True
-        except ResultMissing:
+        except (ResultMissingOld, ResultMissingNew):
             return False
 
     @property
@@ -95,7 +96,7 @@ class pipeline:
         for count, message in enumerate(self.messages, start=1):
             try:
                 message.get_result()
-            except ResultMissing:
+            except (ResultMissingOld, ResultMissingNew):
                 return count - 1
 
         return count
@@ -233,7 +234,7 @@ class group:
                     child.get_results()
                 else:
                     child.get_result()
-            except ResultMissing:
+            except (ResultMissingOld, ResultMissingNew):
                 return count - 1
 
         return count

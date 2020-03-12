@@ -6,7 +6,6 @@ import pytest
 import dramatiq
 from dramatiq import group, middleware, pipeline
 from dramatiq.middleware import GroupCallbacks
-from dramatiq.results import Results, ResultTimeout
 
 
 def test_messages_can_be_piped(stub_broker):
@@ -45,6 +44,8 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
 
 
 def test_pipe_ignore_applies_to_receiving_message(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -72,6 +73,8 @@ def test_pipe_ignore_applies_to_receiving_message(stub_broker, stub_worker, resu
 
 
 def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -93,6 +96,8 @@ def test_pipeline_results_can_be_retrieved(stub_broker, stub_worker, result_back
 
 
 def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -115,6 +120,8 @@ def test_pipeline_results_respect_timeouts(stub_broker, stub_worker, result_back
 
 
 def test_pipelines_expose_completion_stats(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -145,6 +152,8 @@ def test_pipelines_expose_completion_stats(stub_broker, stub_worker, result_back
 
 
 def test_pipelines_can_be_incomplete(stub_broker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given that I am not running a worker
     # And I have a result backend
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -164,6 +173,8 @@ def test_pipelines_can_be_incomplete(stub_broker, result_backend):
 
 
 def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given that I have a result backend
     stub_broker.add_middleware(Results(backend=result_backend))
 
@@ -191,6 +202,8 @@ def test_groups_execute_jobs_in_parallel(stub_broker, stub_worker, result_backen
 
 
 def test_groups_execute_inner_groups(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given that I have a result backend
     stub_broker.add_middleware(Results(backend=result_backend))
 
@@ -218,6 +231,8 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, result_backend):
 
 
 def test_groups_can_time_out(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given that I have a result backend
     stub_broker.add_middleware(Results(backend=result_backend))
 
@@ -240,6 +255,8 @@ def test_groups_can_time_out(stub_broker, stub_worker, result_backend):
 
 
 def test_groups_expose_completion_stats(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given that I have a result backend
     stub_broker.add_middleware(Results(backend=result_backend))
 
@@ -299,6 +316,8 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
 
 
 def test_pipeline_respects_own_delay(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -320,6 +339,8 @@ def test_pipeline_respects_own_delay(stub_broker, stub_worker, result_backend):
 
 
 def test_pipeline_respects_delay_of_first_message(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -341,6 +362,8 @@ def test_pipeline_respects_delay_of_first_message(stub_broker, stub_worker, resu
 
 
 def test_pipeline_respects_delay_of_second_message(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -362,6 +385,8 @@ def test_pipeline_respects_delay_of_second_message(stub_broker, stub_worker, res
 
 
 def test_pipeline_respects_bigger_of_first_messages_and_pipelines_delay(stub_broker, stub_worker, result_backend):
+    result_backend, res_backends = result_backend
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))

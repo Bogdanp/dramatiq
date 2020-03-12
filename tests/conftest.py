@@ -14,7 +14,6 @@ from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
-from dramatiq.results import backends as res_backends
 
 from .common import RABBITMQ_CREDENTIALS
 
@@ -172,25 +171,45 @@ def rate_limiter_backend(request, rate_limiter_backends):
 
 
 @pytest.fixture
-def memcached_result_backend():
+def old_and_new_result_modules():
+    import dramatiq.results as old_results
+    import dramatiq.results_with_failures as new_results
+    import dramatiq.results.backends as old_backends
+    import dramatiq.results_with_failures.backends as new_backends
+    return {
+        "old": (old_results, old_backends),
+        "new": (new_results, new_backends)
+    }
+
+
+@pytest.fixture(params=["old", "new"])
+def result_modules(request, old_and_new_result_modules):
+    return old_and_new_result_modules[request.param]
+
+
+@pytest.fixture
+def memcached_result_backend(result_modules):
+    results, res_backends = result_modules
     backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
     with backend.pool.reserve() as client:
         check_memcached(client)
         client.flush_all()
-    return backend
+    return backend, results
 
 
 @pytest.fixture
-def redis_result_backend():
+def redis_result_backend(result_modules):
+    results, res_backends = result_modules
     backend = res_backends.RedisBackend()
     check_redis(backend.client)
     backend.client.flushall()
-    return backend
+    return backend, results
 
 
 @pytest.fixture
-def stub_result_backend():
-    return res_backends.StubBackend()
+def stub_result_backend(result_modules):
+    results, res_backends = result_modules
+    return res_backends.StubBackend(), results
 
 
 @pytest.fixture

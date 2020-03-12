@@ -22,7 +22,8 @@ from collections import namedtuple
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
-from .results import Results
+from .results import Results as ResultsOld
+from .results_with_failures import Results as ResultsNew
 
 #: The global encoder instance.
 global_encoder = JSONEncoder()
@@ -138,7 +139,7 @@ class Message(namedtuple("Message", (
         if not backend:
             broker = get_broker()
             for middleware in broker.middleware:
-                if isinstance(middleware, Results):
+                if isinstance(middleware, (ResultsOld, ResultsNew)):
                     backend = middleware.backend
                     break
             else:

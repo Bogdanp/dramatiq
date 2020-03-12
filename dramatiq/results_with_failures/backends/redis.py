@@ -84,8 +84,10 @@ class RedisBackend(ResultBackend):
             data = self.client.lindex(message_key, 0)
             if data is None:
                 raise ResultMissing(message)
-
-        return self.encoder.decode(data)
+        data = self.encoder.decode(data)
+        if not data['success']:
+            raise Exception('The task "{}" failed'.format(message))
+        return data['result']
 
     def _store(self, message_key, result, ttl):
         with self.client.pipeline() as pipe:
