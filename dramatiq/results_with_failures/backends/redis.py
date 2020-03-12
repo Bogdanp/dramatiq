@@ -17,7 +17,7 @@
 
 import redis
 
-from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
+from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout, ActorFailed
 
 
 class RedisBackend(ResultBackend):
@@ -86,7 +86,7 @@ class RedisBackend(ResultBackend):
                 raise ResultMissing(message)
         data = self.encoder.decode(data)
         if not data['success']:
-            raise Exception('The task "{}" failed'.format(message))
+            raise ActorFailed('The task "{}" failed'.format(message))
         return data['result']
 
     def _store(self, message_key, result, ttl):

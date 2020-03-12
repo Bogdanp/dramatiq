@@ -22,7 +22,7 @@ import typing
 
 from ..common import compute_backoff, q_name
 from ..encoder import Encoder
-from .errors import ResultMissing, ResultTimeout
+from .errors import ResultMissing, ResultTimeout, ActorFailed
 
 #: The default timeout for blocking get operations in milliseconds.
 DEFAULT_TIMEOUT = 10000
@@ -95,7 +95,7 @@ class ResultBackend:
 
             else:
                 if not result['success']:
-                    raise Exception('The task "{}" failed'.format(message))
+                    raise ActorFailed('The task "{}" failed'.format(message))
                 return result['result']
 
     def store_result(self, message, result: Result, ttl: int) -> None:

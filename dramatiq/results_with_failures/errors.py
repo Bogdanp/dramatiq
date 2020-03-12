@@ -31,3 +31,8 @@ class ResultTimeout(ResultError):
 class ResultMissing(ResultError):
     """Raised when a result can't be found.
     """
+
+
+class ActorFailed(DramatiqError):
+    """Raised when get_result is called on an actor that failed
+    """
