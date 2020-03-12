@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib
-import os
 import time
 import typing
 
@@ -94,9 +93,9 @@ class ResultBackend:
                 raise ResultMissing(message)
 
             else:
-                if not result['success']:
-                    raise ActorFailed('The task "{}" failed'.format(message))
-                return result['result']
+                if not result["success"]:
+                    raise ActorFailed("The task '{}' failed".format(message))
+                return result["result"]
 
     def store_result(self, message, result: Result, ttl: int) -> None:
         """Store a result in the backend.

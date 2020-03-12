@@ -8,7 +8,7 @@ import dramatiq
 
 def test_actors_can_store_results(stub_broker, stub_worker, result_backend):
     result_backend, res_backends = result_backend
-    Results, ResultMissing, ResultTimeout = res_backends.Results, res_backends.ResultMissing, res_backends.ResultTimeout
+    Results = res_backends.Results
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -30,7 +30,7 @@ def test_actors_can_store_results(stub_broker, stub_worker, result_backend):
 
 def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, result_backend):
     result_backend, res_backends = result_backend
-    Results, ResultMissing, ResultTimeout = res_backends.Results, res_backends.ResultMissing, res_backends.ResultTimeout
+    Results, ResultMissing = res_backends.Results, res_backends.ResultMissing
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -52,7 +52,7 @@ def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, 
 
 def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, result_backend):
     result_backend, res_backends = result_backend
-    Results, ResultMissing, ResultTimeout = res_backends.Results, res_backends.ResultMissing, res_backends.ResultTimeout
+    Results, ResultTimeout = res_backends.Results, res_backends.ResultTimeout
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -74,7 +74,7 @@ def test_retrieving_a_result_can_time_out(stub_broker, stub_worker, result_backe
 
 def test_messages_can_get_results_from_backend(stub_broker, stub_worker, result_backend):
     result_backend, res_backends = result_backend
-    Results, ResultMissing, ResultTimeout = res_backends.Results, res_backends.ResultMissing, res_backends.ResultTimeout
+    Results = res_backends.Results
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -94,7 +94,7 @@ def test_messages_can_get_results_from_backend(stub_broker, stub_worker, result_
 
 def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker, result_backend):
     result_backend, res_backends = result_backend
-    Results, ResultMissing, ResultTimeout = res_backends.Results, res_backends.ResultMissing, res_backends.ResultTimeout
+    Results = res_backends.Results
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -169,7 +169,7 @@ def test_actor_warning_when_returns_result_and_no_results_middleware_present(stu
 
 def test_actor_no_warning_when_returns_result_and_results_middleware_present(stub_broker, stub_worker, result_backend):
     result_backend, res_backends = result_backend
-    Results, ResultMissing, ResultTimeout = res_backends.Results, res_backends.ResultMissing, res_backends.ResultTimeout
+    Results = res_backends.Results
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -202,7 +202,7 @@ def test_messages_can_get_failure_from_backend(stub_broker, stub_worker, result_
     # And an actor that fails
     @dramatiq.actor(store_results=True, max_retries=0)
     def do_work():
-        raise Exception('I fail')
+        raise Exception("I fail")
 
     # When I send that actor a message
     message = do_work.send()
