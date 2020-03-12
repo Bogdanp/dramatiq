@@ -41,3 +41,4 @@ of those changes to CLEARTYPE SRL.
 | [@asavoy](https://github.com/asavoy)                  | Alvin Savoy            |
 | [@benekastah](https://github.com/benekastah)          | Paul Harper            |
 | [@timdrijvers](https://github.com/timdrijvers)        | Tim Drijvers           |
+| [@takhs91](https://github.com/takhs91)                | Takis Panagopoulos     |
