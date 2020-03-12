@@ -17,7 +17,7 @@
 
 import redis
 
-from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout, ActorFailed
+from ..backend import DEFAULT_TIMEOUT, ActorFailed, ResultBackend, ResultMissing, ResultTimeout
 
 
 class RedisBackend(ResultBackend):
