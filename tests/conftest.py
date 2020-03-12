@@ -213,6 +213,34 @@ def stub_result_backend(result_modules):
 
 
 @pytest.fixture
+def memcached_result_backend_new():
+    import dramatiq.results_with_failures as results
+    from dramatiq.results_with_failures.backends import MemcachedBackend
+    backend = MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    with backend.pool.reserve() as client:
+        check_memcached(client)
+        client.flush_all()
+    return backend, results
+
+
+@pytest.fixture
+def redis_result_backend_new():
+    import dramatiq.results_with_failures as results
+    from dramatiq.results_with_failures.backends import RedisBackend
+    backend = RedisBackend()
+    check_redis(backend.client)
+    backend.client.flushall()
+    return backend, results
+
+
+@pytest.fixture
+def stub_result_backend_new():
+    import dramatiq.results_with_failures as results
+    from dramatiq.results_with_failures.backends import StubBackend
+    return StubBackend(), results
+
+
+@pytest.fixture
 def result_backends(memcached_result_backend, redis_result_backend, stub_result_backend):
     return {
         "memcached": memcached_result_backend,
@@ -224,3 +252,17 @@ def result_backends(memcached_result_backend, redis_result_backend, stub_result_
 @pytest.fixture(params=["memcached", "redis", "stub"])
 def result_backend(request, result_backends):
     return result_backends[request.param]
+
+
+@pytest.fixture
+def result_backends_new(memcached_result_backend_new, redis_result_backend_new, stub_result_backend_new):
+    return {
+        "memcached-new": memcached_result_backend_new,
+        "redis-new": redis_result_backend_new,
+        "stub-new": stub_result_backend_new,
+    }
+
+
+@pytest.fixture(params=["memcached-new", "redis-new", "stub-new"])
+def result_backend_new(request, result_backends_new):
+    return result_backends_new[request.param]

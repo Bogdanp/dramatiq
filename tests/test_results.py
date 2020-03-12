@@ -190,3 +190,24 @@ def test_actor_no_warning_when_returns_result_and_results_middleware_present(stu
         # Then a warning should not be logged
         warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
         assert not any("Consider adding the Results middleware" in x for x in warning_messages)
+
+
+def test_messages_can_get_failure_from_backend(stub_broker, stub_worker, result_backend_new):
+    result_backend, res_backends = result_backend_new
+    Results, ActorFailed = res_backends.Results, res_backends.ActorFailed
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that fails
+    @dramatiq.actor(store_results=True, max_retries=0)
+    def do_work():
+        raise Exception('I fail')
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    # Then I should get an ActorFailed error
+    with pytest.raises(ActorFailed):
+        message.get_result(backend=result_backend, block=True)
