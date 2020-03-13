@@ -94,7 +94,13 @@ class ResultBackend:
 
             else:
                 if not result["success"]:
-                    raise ActorFailed("The task '{}' failed".format(message))
+                    raise ActorFailed(
+                        "The task '{}' failed with exception of type '{}' and exception message '{}'".format(
+                            message,
+                            result["exception"].get("type"),
+                            result["exception"].get("message")
+                        )
+                    )
                 return result["result"]
 
     def store_result(self, message, result: Result, ttl: int) -> None:

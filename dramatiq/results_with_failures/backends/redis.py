@@ -86,7 +86,13 @@ class RedisBackend(ResultBackend):
                 raise ResultMissing(message)
         data = self.encoder.decode(data)
         if not data["success"]:
-            raise ActorFailed("The task '{}' failed".format(message))
+            raise ActorFailed(
+                "The task '{}' failed with exception of type '{}' and exception message '{}'".format(
+                    message,
+                    data["exception"].get("type"),
+                    data["exception"].get("message")
+                )
+            )
         return data["result"]
 
     def _store(self, message_key, result, ttl):

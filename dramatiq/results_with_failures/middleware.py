@@ -70,7 +70,7 @@ class Results(Middleware):
         store_results = actor.options.get("store_results", self.store_results)
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
         if store_results and exception is None:
-            result = {"result": result, "success": True}
+            result = {"result": result, "success": True, "exception": None}
             self.backend.store_result(message, result, result_ttl)
 
     def after_nack(self, broker, message):
@@ -78,5 +78,12 @@ class Results(Middleware):
         store_results = actor.options.get("store_results", self.store_results)
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
         if store_results:
-            result = {"result": None, "success": False}
+            result = {
+                "result": None,
+                "success": False,
+                "exception": {
+                    "type": message._exception.__class__.__name__,
+                    "message": str(message._exception)
+                }
+            }
             self.backend.store_result(message, result, result_ttl)
