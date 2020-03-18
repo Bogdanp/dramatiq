@@ -181,6 +181,10 @@ def make_argument_parser():
         help="start processes by spawning (default: fork on unix, spawn on windows)"
     )
     parser.add_argument(
+        "--no-daemon-workers", action="store_true",
+        help="start worker processes with the daemon flag set to False"
+    )
+    parser.add_argument(
         "--fork-function", "-f", action="append", dest="forks", default=[],
         help="fork a subprocess to run the given function"
     )
@@ -424,6 +428,10 @@ def main(args=None):  # noqa
     if args.use_spawn:
         multiprocessing.set_start_method("spawn")
 
+    workers_daemon_flag = True
+    if args.no_daemon_workers:
+        workers_daemon_flag = False
+
     try:
         if args.pid_file:
             setup_pidfile(args.pid_file)
@@ -441,7 +449,7 @@ def main(args=None):  # noqa
         proc = multiprocessing.Process(
             target=worker_process,
             args=(args, worker_id, StreamablePipe(write_pipe), canteen),
-            daemon=True,
+            daemon=workers_daemon_flag,
         )
         proc.start()
         worker_pipes.append(read_pipe)
