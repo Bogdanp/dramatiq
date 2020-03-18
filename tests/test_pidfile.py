@@ -78,7 +78,7 @@ def test_cli_with_pidfile_can_be_reloaded(start_cli):
 
         # And send the proc a HUP signal
         proc.send_signal(signal.SIGHUP)
-        time.sleep(3)
+        time.sleep(5)
 
         # And then terminate the process
         proc.terminate()

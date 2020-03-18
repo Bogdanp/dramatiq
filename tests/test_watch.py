@@ -50,7 +50,7 @@ def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     (Path("tests") / "test_watch.py").touch()
 
     # And wait for the workers to reload
-    time.sleep(1)
+    time.sleep(5)
 
     # And write another timestamp
     write_loaded_at.send(filename)
