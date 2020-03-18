@@ -104,6 +104,8 @@ setup(
         "dramatiq.rate_limits.backends",
         "dramatiq.results",
         "dramatiq.results.backends",
+        "dramatiq.results_with_failures",
+        "dramatiq.results_with_failures.backends",
     ],
     include_package_data=True,
     install_requires=dependencies,
