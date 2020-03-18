@@ -18,6 +18,14 @@ Added
 .. _#274: https://github.com/Bogdanp/dramatiq/issues/274
 .. _@davidt99: https://github.com/davidt99
 
+Fixed
+^^^^^
+
+* A race condition during command line startup where the wrong exit
+  codes could be returned when subprocesses failed.  (`#286`_)
+
+.. _#286: https://github.com/Bogdanp/dramatiq/issues/286
+
 `1.8.1`_ -- 2020-02-02
 ----------------------
 
