@@ -526,8 +526,13 @@ def main(args=None):  # noqa
         signal.signal(signal.SIGBREAK, sighandler)
 
     # Wait for all workers to terminate.  If any of the processes
-    # terminates unexpectedly, then shut down the rest as well.
-    while any(p.exitcode is None for p in worker_processes):
+    # terminates unexpectedly, then shut down the rest as well.  The
+    # use of `waited' here avoids a race condition where the processes
+    # could potentially exit before we even get a chance to wait on
+    # them.
+    waited = False
+    while not waited or any(p.exitcode is None for p in worker_processes):
+        waited = True
         for proc in worker_processes:
             proc.join(timeout=1)
             if proc.exitcode is None:
