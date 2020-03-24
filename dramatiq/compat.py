@@ -36,6 +36,9 @@ class StreamablePipe:
         self.encoding = encoding
         self.pipe = pipe
 
+    def fileno(self):
+        return self.pipe.fileno()
+
     def flush(self):
         pass
 
