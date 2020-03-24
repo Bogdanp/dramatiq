@@ -184,6 +184,10 @@ def make_argument_parser():
         "--fork-function", "-f", action="append", dest="forks", default=[],
         help="fork a subprocess to run the given function"
     )
+    parser.add_argument(
+        "--worker-shutdown-timeout", type=int, default=600000,
+        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -379,7 +383,7 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
     while running:
         time.sleep(1)
 
-    worker.stop()
+    worker.stop(timeout=args.worker_shutdown_timeout)
     broker.close()
     logging_pipe.close()
 
