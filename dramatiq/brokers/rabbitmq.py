@@ -288,11 +288,6 @@ class RabbitmqBroker(Broker):
         queue_name = message.queue_name
         self.declare_queue(queue_name, ensure=True)
 
-        properties = pika.BasicProperties(
-            delivery_mode=2,
-            priority=message.options.get("broker_priority"),
-        )
-
         if delay is not None:
             queue_name = dq_name(queue_name)
             message_eta = current_millis() + delay
@@ -312,7 +307,10 @@ class RabbitmqBroker(Broker):
                     exchange="",
                     routing_key=queue_name,
                     body=message.encode(),
-                    properties=properties,
+                    properties=pika.BasicProperties(
+                        delivery_mode=2,
+                        priority=message.options.get("broker_priority"),
+                    ),
                 )
                 self.emit_after("enqueue", message, delay)
                 return message
