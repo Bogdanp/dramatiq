@@ -14,7 +14,9 @@ Added
 
 * A custom Redis connection can now be passed to the Redis broker via
   the new ``client`` keyword argument.  (`#274`_, `@davidt99`_)
+* Support for storing actor exceptions.  (`#156`_)
 
+.. _#156: https://github.com/Bogdanp/dramatiq/issues/156
 .. _#274: https://github.com/Bogdanp/dramatiq/issues/274
 .. _@davidt99: https://github.com/davidt99
 
