@@ -441,7 +441,7 @@ def main(args=None):  # noqa
         proc = multiprocessing.Process(
             target=worker_process,
             args=(args, worker_id, StreamablePipe(write_pipe), canteen),
-            daemon=True,
+            daemon=False,
         )
         proc.start()
         worker_pipes.append(read_pipe)
