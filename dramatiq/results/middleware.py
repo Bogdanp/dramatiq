@@ -41,6 +41,16 @@ class Results(Middleware):
       >>> message.get_result(backend=backend)
       3
 
+      >>> @dramatiq.actor(store_results=True)
+      ... def fail():
+      ...     raise Exception("failed")
+
+      >>> message = fail.send()
+      >>> message.get_result(backend=backend)
+      Traceback (most recent call last):
+        ...
+      ResultFailure: actor raised Exception: failed
+
     Parameters:
       backend(ResultBackend): The result backend to use when storing
         results.
@@ -50,6 +60,12 @@ class Results(Middleware):
       result_ttl(int): The maximum number of milliseconds results are
         allowed to exist in the backend.  Defaults to 10 minutes and
         can be set on a per-actor basis.
+
+    Warning:
+      If you have retries turned on for an actor that stores results,
+      then the failure result for a message will be updated every time
+      the actor fails!  If the actor is retried and it eventually
+      succeds, then its result will also be updated to reflect that.
     """
 
     def __init__(self, *, backend=None, store_results=False, result_ttl=None):
@@ -69,5 +85,8 @@ class Results(Middleware):
         actor = broker.get_actor(message.actor_name)
         store_results = actor.options.get("store_results", self.store_results)
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
-        if store_results and exception is None:
-            self.backend.store_result(message, result, result_ttl)
+        if store_results:
+            if exception is None:
+                self.backend.store_result(message, result, result_ttl)
+            else:
+                self.backend.store_exception(message, exception, result_ttl)

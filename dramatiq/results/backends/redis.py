@@ -18,6 +18,7 @@
 import redis
 
 from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
+from ..result import unwrap_result
 
 
 class RedisBackend(ResultBackend):
@@ -85,7 +86,7 @@ class RedisBackend(ResultBackend):
             if data is None:
                 raise ResultMissing(message)
 
-        return self.encoder.decode(data)
+        return unwrap_result(self.encoder.decode(data))
 
     def _store(self, message_key, result, ttl):
         with self.client.pipeline() as pipe:

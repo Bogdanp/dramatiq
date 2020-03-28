@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 import dramatiq
-from dramatiq.results import ResultMissing, Results, ResultTimeout
+from dramatiq.results import ResultFailure, ResultMissing, Results, ResultTimeout
 
 
 def test_actors_can_store_results(stub_broker, stub_worker, result_backend):
@@ -25,6 +25,49 @@ def test_actors_can_store_results(stub_broker, stub_worker, result_backend):
 
     # Then the result should be what the actor returned
     assert result == 42
+
+
+def test_actors_results_are_backwards_compatible(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that stores results
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # And I have a result created using an old version of dramatiq
+    message = do_work.message()
+    message_key = result_backend.build_message_key(message)
+    result_backend._store(message_key, 42, 3600000)
+
+    # When I grab that result
+    result = result_backend.get_result(message, block=True)
+
+    # Then it should be unwrapped correctly
+    assert result == 42
+
+
+def test_actors_can_store_exceptions(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that stores results
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        raise RuntimeError("failed")
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # And wait for a result
+    # Then the result should be an exception
+    with pytest.raises(ResultFailure) as e:
+        result_backend.get_result(message, block=True)
+
+    assert str(e.value) == "actor raised RuntimeError: failed"
 
 
 def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, result_backend):

@@ -22,6 +22,7 @@ import typing
 from ..common import compute_backoff, q_name
 from ..encoder import Encoder
 from .errors import ResultMissing, ResultTimeout
+from .result import unwrap_result, wrap_exception, wrap_result
 
 #: The default timeout for blocking get operations in milliseconds.
 DEFAULT_TIMEOUT = 10000
@@ -93,7 +94,7 @@ class ResultBackend:
                 raise ResultMissing(message)
 
             else:
-                return result
+                return unwrap_result(result)
 
     def store_result(self, message, result: Result, ttl: int) -> None:
         """Store a result in the backend.
@@ -105,7 +106,19 @@ class ResultBackend:
             stored in the backend for.
         """
         message_key = self.build_message_key(message)
-        return self._store(message_key, result, ttl)
+        return self._store(message_key, wrap_result(result), ttl)
+
+    def store_exception(self, message, exception: Exception, ttl: int) -> None:
+        """Store an exception in the backend.
+
+        Parameters:
+          message(Message)
+          exception(Exception)
+          ttl(int): The maximum amount of time the exception may be
+            stored in the backend for.
+        """
+        message_key = self.build_message_key(message)
+        return self._store(message_key, wrap_exception(exception), ttl)
 
     def build_message_key(self, message) -> str:
         """Given a message, return its globally-unique key.

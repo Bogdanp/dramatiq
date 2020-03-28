@@ -196,3 +196,5 @@ Errors
    :members:
 .. autoclass:: dramatiq.results.ResultTimeout
    :members:
+.. autoclass:: dramatiq.results.ResultFailure
+   :members:

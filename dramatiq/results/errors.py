@@ -31,3 +31,8 @@ class ResultTimeout(ResultError):
 class ResultMissing(ResultError):
     """Raised when a result can't be found.
     """
+
+
+class ResultFailure(ResultError):
+    """Raised when getting a result from an actor that failed.
+    """
