@@ -57,7 +57,7 @@ def test_redis_actors_retry_with_backoff_on_failure(redis_broker, redis_worker):
     redis_broker.join(do_work.queue_name)
     redis_worker.join()
 
-    # I expect backoff time to have passed between sucess and failure
+    # I expect backoff time to have passed between success and failure
     # + the worker idle timeout as padding in case the worker is long polling
     assert 500 <= success_time - failure_time <= 2500 + redis_worker.worker_timeout
 
