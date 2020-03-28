@@ -23,8 +23,12 @@ Fixed
 
 * A race condition during command line startup where the wrong exit
   codes could be returned when subprocesses failed.  (`#286`_)
+* ``fileno`` has been added to ``StreamablePipe``.  (`#291`_, `@takhs91`_)
 
 .. _#286: https://github.com/Bogdanp/dramatiq/issues/286
+.. _#291: https://github.com/Bogdanp/dramatiq/pull/291
+.. _@takhs91: https://github.com/takhs91
+
 
 `1.8.1`_ -- 2020-02-02
 ----------------------
