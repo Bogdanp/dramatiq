@@ -9,6 +9,9 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: "3.8"
+      - run: |
+          sudo apt-get update && \
+            sudo apt-get install -y --no-install-recommends libmemcached-dev
       - run: pip install tox
       - run: tox -e lint
 
@@ -45,6 +48,9 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
+      - run: |
+          sudo apt-get update && \
+            sudo apt-get install -y --no-install-recommends libmemcached-dev
       - run: pip install -e '.[dev]'
       - run: py.test --benchmark-skip
         env:
