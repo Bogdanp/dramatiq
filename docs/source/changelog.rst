@@ -20,6 +20,15 @@ Added
 .. _#274: https://github.com/Bogdanp/dramatiq/issues/274
 .. _@davidt99: https://github.com/davidt99
 
+Changed
+^^^^^^^
+
+* Worker processes are no longer daemons.  (`#289`_, `#294`_, `@takhs91`_)
+
+.. _#289: https://github.com/Bogdanp/dramatiq/pull/289
+.. _#294: https://github.com/Bogdanp/dramatiq/pull/294
+.. _@takhs91: https://github.com/takhs91
+
 Fixed
 ^^^^^
 
