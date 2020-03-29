@@ -437,7 +437,7 @@ def main(args=None):  # noqa
     worker_pipes = []
     worker_processes = []
     for worker_id in range(args.processes):
-        read_pipe, write_pipe = multiprocessing.Pipe()
+        read_pipe, write_pipe = multiprocessing.Pipe(duplex=False)
         proc = multiprocessing.Process(
             target=worker_process,
             args=(args, worker_id, StreamablePipe(write_pipe), canteen),
@@ -450,7 +450,7 @@ def main(args=None):  # noqa
     fork_pipes = []
     fork_processes = []
     for fork_id, fork_path in enumerate(chain(args.forks, canteen_get(canteen))):
-        read_pipe, write_pipe = multiprocessing.Pipe()
+        read_pipe, write_pipe = multiprocessing.Pipe(duplex=False)
         proc = multiprocessing.Process(
             target=fork_process,
             args=(args, fork_id, fork_path, StreamablePipe(write_pipe)),
@@ -460,7 +460,7 @@ def main(args=None):  # noqa
         fork_pipes.append(read_pipe)
         fork_processes.append(proc)
 
-    parent_read_pipe, parent_write_pipe = multiprocessing.Pipe()
+    parent_read_pipe, parent_write_pipe = multiprocessing.Pipe(duplex=False)
     logger = setup_parent_logging(args, stream=StreamablePipe(parent_write_pipe))
     logger.info("Dramatiq %r is booting up." % __version__)
     if args.pid_file:
