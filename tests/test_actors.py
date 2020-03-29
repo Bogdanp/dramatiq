@@ -5,7 +5,7 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, Middleware
-from dramatiq.errors import RateLimitExceeded
+from dramatiq.errors import RateLimitExceeded, Retry
 from dramatiq.middleware import CurrentMessage, SkipMessage
 
 from .common import skip_on_pypy, worker
@@ -214,6 +214,26 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
 
     # Then I expect at least one attempt to have occurred
     assert sum(attempts) >= 1
+
+
+def test_retry_exceptions_are_not_logged(stub_broker, stub_worker):
+    # Given that I have an actor that raises Retry
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise Retry()
+
+    # And that I've mocked the logging class
+    with patch("logging.Logger.error") as error_mock:
+        # When I send that actor a message
+        do_work.send()
+
+        # And join on the queue
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+        # Then no error should be logged
+        error_messages = [args[0] for _, args, _ in error_mock.mock_calls]
+        assert error_messages == []
 
 
 @skip_on_pypy

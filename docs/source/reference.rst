@@ -190,6 +190,8 @@ Errors
    :members:
 .. autoclass:: RateLimitExceeded
    :members:
+.. autoclass:: Retry
+   :members:
 .. autoclass:: dramatiq.results.ResultError
    :members:
 .. autoclass:: dramatiq.results.ResultMissing

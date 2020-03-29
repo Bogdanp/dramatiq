@@ -33,6 +33,10 @@ class Retries(Middleware):
     """Middleware that automatically retries failed tasks with
     exponential backoff.
 
+    If you need to intentionally retry an actor and you don't want the
+    exception to get logged, then consider raising the
+    :class:`Retry<dramatiq.Retry>` exception.
+
     Parameters:
       max_retries(int): The maximum number of times tasks can be retried.
       min_backoff(int): The minimum amount of backoff milliseconds to

@@ -66,3 +66,14 @@ class ConnectionClosed(ConnectionError):
 class RateLimitExceeded(DramatiqError):
     """Raised when a rate limit has been exceeded.
     """
+
+
+class Retry(DramatiqError):
+    """Actors may raise this error when they should be retried.  This
+    behaves just like any other exception from the perspective of the
+    :class:`Retries<dramatiq.middleware.Retries>` middleware, the only
+    difference is it doesn't get logged as an error.
+    """
+
+    def __init__(self, message=""):
+        super().__init__(message)

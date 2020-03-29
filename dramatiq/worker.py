@@ -23,7 +23,7 @@ from queue import Empty, PriorityQueue
 from threading import Event, Thread
 
 from .common import current_millis, iter_queue, join_all, q_name
-from .errors import ActorNotFound, ConnectionError, RateLimitExceeded
+from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
 
@@ -484,7 +484,7 @@ class _WorkerThread(Thread):
 
             if isinstance(e, RateLimitExceeded):
                 self.logger.error("Rate limit exceeded in message %s: %s.", message, e)
-            else:
+            elif not isinstance(e, Retry):
                 self.logger.error("Failed to process message %s with unhandled exception.", message, exc_info=True)
 
             self.broker.emit_after("process_message", message, exception=e)
