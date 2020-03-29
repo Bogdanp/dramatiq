@@ -124,6 +124,7 @@ def start_cli():
 
     def run(broker_module, *, extra_args=None, **kwargs):
         nonlocal proc
+        kwargs.setdefault("bufsize", 0)
         args = [sys.executable, "-m", "dramatiq", broker_module]
         proc = subprocess.Popen(args + (extra_args or []), **kwargs)
         return proc
