@@ -30,7 +30,7 @@ import signal
 import sys
 import time
 from itertools import chain
-from threading import Thread
+from threading import Event, Thread
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
 from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
@@ -281,9 +281,9 @@ setup_worker_logging = make_logging_setup("WorkerProcess")
 setup_fork_logging = make_logging_setup("ForkProcess")
 
 
-def watch_logs(log_filename, pipes):
+def watch_logs(log_filename, pipes, stop):
     with file_or_stderr(log_filename, mode="a", encoding="utf-8") as log_file:
-        while pipes:
+        while pipes and not stop.is_set():
             try:
                 events = multiprocessing.connection.wait(pipes, timeout=1)
                 for event in events:
@@ -301,7 +301,7 @@ def watch_logs(log_filename, pipes):
 
                             data = data.decode("utf-8", errors="replace").rstrip("\n")
                             if not data:
-                                break
+                                continue
 
                             log_file.write(data + "\n")
                             log_file.flush()
@@ -482,9 +482,10 @@ def main(args=None):  # noqa
     if HAS_WATCHDOG and args.watch:
         file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
 
+    log_watcher_stop_event = Event()
     log_watcher = Thread(
         target=watch_logs,
-        args=(args.log_file, [parent_read_pipe, *worker_pipes, *fork_pipes]),
+        args=(args.log_file, [parent_read_pipe, *worker_pipes, *fork_pipes], log_watcher_stop_event),
         daemon=False,
     )
     log_watcher.start()
@@ -547,17 +548,9 @@ def main(args=None):  # noqa
             else:
                 retcode = max(retcode, proc.exitcode)
 
-    for pipe in [parent_read_pipe, parent_write_pipe, *worker_pipes, *fork_pipes]:
-        try:
-            pipe.close()
-        # If the worker process was killed, the handle may already be
-        # closed.
-        except (EOFError, OSError):
-            pass
-
-    # The log watcher can't be a daemon in case we log to a file.  So
-    # we have to wait for it to complete on exit.  Closing all the
-    # pipes above is what should trigger said exit.
+    # The log watcher can't be a daemon in case we log to a file so we
+    # have to wait for it to complete on exit.
+    log_watcher_stop_event.set()
     log_watcher.join()
 
     if HAS_WATCHDOG and args.watch:
