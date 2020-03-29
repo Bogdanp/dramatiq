@@ -55,7 +55,7 @@ def test_actors_can_store_exceptions(stub_broker, stub_worker, result_backend):
     stub_broker.add_middleware(Results(backend=result_backend))
 
     # And an actor that stores results
-    @dramatiq.actor(store_results=True)
+    @dramatiq.actor(store_results=True, max_retries=0)
     def do_work():
         raise RuntimeError("failed")
 

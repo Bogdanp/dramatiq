@@ -63,9 +63,8 @@ class Results(Middleware):
 
     Warning:
       If you have retries turned on for an actor that stores results,
-      then the failure result for a message will be updated every time
-      the actor fails!  If the actor is retried and it eventually
-      succeds, then its result will also be updated to reflect that.
+      then the result of a message may be delayed until its retries
+      run out!
     """
 
     def __init__(self, *, backend=None, store_results=False, result_ttl=None):
@@ -81,12 +80,19 @@ class Results(Middleware):
             "result_ttl",
         }
 
-    def after_process_message(self, broker, message, *, result=None, exception=None):
+    def _lookup_options(self, broker, message):
         actor = broker.get_actor(message.actor_name)
         store_results = actor.options.get("store_results", self.store_results)
         result_ttl = actor.options.get("result_ttl", self.result_ttl)
-        if store_results:
-            if exception is None:
-                self.backend.store_result(message, result, result_ttl)
-            else:
-                self.backend.store_exception(message, exception, result_ttl)
+        return store_results, result_ttl
+
+    def after_process_message(self, broker, message, *, result=None, exception=None):
+        store_results, result_ttl = self._lookup_options(broker, message)
+        if store_results and exception is None:
+            self.backend.store_result(message, result, result_ttl)
+
+    def after_nack(self, broker, message):
+        store_results, result_ttl = self._lookup_options(broker, message)
+        if store_results and message.failed:
+            exception = message._exception or Exception("unknown")
+            self.backend.store_exception(message, exception, result_ttl)

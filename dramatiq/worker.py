@@ -478,7 +478,8 @@ class _WorkerThread(Thread):
         except BaseException as e:
             # Stuff the exception into the message [proxy] so that it
             # may be used by the stub broker to provide a nicer
-            # testing experience.
+            # testing experience.  Also used by the results middleware
+            # to pass exceptions into results.
             message.stuff_exception(e)
 
             if isinstance(e, RateLimitExceeded):

@@ -322,9 +322,7 @@ class MessageProxy:
         self._exception = None
 
     def stuff_exception(self, exception):
-        """Stuff an exception into this message.  Currently, this is
-        used by the stub broker to known why a particular message has
-        failed.
+        """Stuff an exception into this message.
         """
         self._exception = exception
 
