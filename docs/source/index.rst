@@ -20,7 +20,7 @@ focus on simplicity, reliability and performance.
 
 .. raw:: html
 
-   <video width="660" src="https://media.defn.io/dramatiq.mp4" controls></video>
+   <video width="660" src="https://media.defn.io/dramatiq-2.mp4" controls></video>
 
 Here's what it looks like:
 
