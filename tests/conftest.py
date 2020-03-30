@@ -75,6 +75,25 @@ def rabbitmq_broker():
 
 
 @pytest.fixture()
+def confirm_delivery_rabbitmq_broker():
+    broker = RabbitmqBroker(
+        host="127.0.0.1",
+        max_priority=10,
+        credentials=RABBITMQ_CREDENTIALS,
+        confirm_delivery=True,
+    )
+    check_rabbitmq(broker)
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    try:
+        broker.flush_all()
+    except Exception:
+        pass
+    broker.close()
+
+
+@pytest.fixture()
 def redis_broker():
     broker = RedisBroker()
     check_redis(broker.client)

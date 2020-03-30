@@ -7,7 +7,7 @@ import pika.exceptions
 import pytest
 
 import dramatiq
-from dramatiq import Message, QueueJoinTimeout, Worker
+from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
@@ -458,3 +458,72 @@ def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors
             assert executed
         finally:
             worker.stop()
+
+
+def test_rabbitmq_broker_with_confirm_delivery_retrys_unsuccessful_delivery(confirm_delivery_rabbitmq_broker,
+                                                                            rabbitmq_worker):
+    has_called = False
+    rabbitmq_worker.stop()
+    rabbitmq_worker.broker = confirm_delivery_rabbitmq_broker
+    rabbitmq_worker.start()
+
+    def flaky_basic_publish(*args, **kwargs):
+        nonlocal has_called
+        has_called = True
+        raise pika.exceptions.NackError([])
+
+    # Given that I have an actor
+    @dramatiq.actor(broker=confirm_delivery_rabbitmq_broker)
+    def do_work():
+        pass
+
+    # And given that I have a broker with flaky conformation
+    with patch.object(confirm_delivery_rabbitmq_broker.channel, "basic_publish", flaky_basic_publish):
+        # When I send that actor a message
+        do_work.send()
+
+        # I expect that enqueue would be called twice and the message executed
+        confirm_delivery_rabbitmq_broker.join(do_work.queue_name, timeout=5000)
+        assert has_called
+
+
+def test_rabbitmq_broker_retries_unconfirmed_mandatory_messages(confirm_delivery_rabbitmq_broker, rabbitmq_worker):
+    attempts = []
+
+    rabbitmq_worker.stop()
+    rabbitmq_worker.broker = confirm_delivery_rabbitmq_broker
+    rabbitmq_worker.start()
+
+    class DeleteQueueMiddleware(Middleware):
+        def before_enqueue(self, broker, message, delay):
+            attempts.append(1)
+            if len(attempts) == 1:
+                broker.channel.queue_delete(do_work.queue_name)
+                for _ in range(5):
+                    try:
+                        broker.channel.queue_declare(do_work.queue_name, passive=True)
+                        time.sleep(1000)
+                    except pika.exceptions.ChannelClosedByBroker as ex:
+                        if ex.reply_code == 404:
+                            break
+                        else:
+                            raise
+                else:
+                    pytest.fail("Failed to delete queue")
+            else:
+                broker.queues_pending.add(do_work.queue_name)
+                broker.declare_queue(do_work.queue_name, ensure=True)
+
+    confirm_delivery_rabbitmq_broker.add_middleware(DeleteQueueMiddleware())
+
+    # Given that I have an actor
+    @dramatiq.actor(broker=confirm_delivery_rabbitmq_broker)
+    def do_work():
+        pass
+
+    # When I send that actor a message I expect the message to fail
+    do_work.send_with_options(broker_mandatory=True)
+
+    # I expect that enqueue would be called twice and the message executed
+    confirm_delivery_rabbitmq_broker.join(do_work.queue_name, timeout=5000)
+    assert len(attempts) == 2

@@ -23,6 +23,7 @@ from itertools import chain
 from threading import Event, local
 
 import pika
+import pika.exceptions
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, xq_name
@@ -269,6 +270,9 @@ class RabbitmqBroker(Broker):
             "x-message-ttl": DEAD_MESSAGE_TTL,
         })
 
+    def _build_pika_properties(self, message):
+        return pika.BasicProperties(delivery_mode=2, priority=message.options.get("broker_priority"))
+
     def enqueue(self, message, *, delay=None):
         """Enqueue a message.
 
@@ -283,11 +287,6 @@ class RabbitmqBroker(Broker):
         """
         queue_name = message.queue_name
         self.declare_queue(queue_name, ensure=True)
-
-        properties = pika.BasicProperties(
-            delivery_mode=2,
-            priority=message.options.get("broker_priority"),
-        )
 
         if delay is not None:
             queue_name = dq_name(queue_name)
@@ -308,7 +307,8 @@ class RabbitmqBroker(Broker):
                     exchange="",
                     routing_key=queue_name,
                     body=message.encode(),
-                    properties=properties,
+                    mandatory=message.options.get("broker_mandatory", False),
+                    properties=self._build_pika_properties(message),
                 )
                 self.emit_after("enqueue", message, delay)
                 return message
