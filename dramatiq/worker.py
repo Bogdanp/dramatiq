@@ -483,7 +483,7 @@ class _WorkerThread(Thread):
             message.stuff_exception(e)
 
             if isinstance(e, RateLimitExceeded):
-                self.logger.error("Rate limit exceeded in message %s: %s.", message, e)
+                self.logger.debug("Rate limit exceeded in message %s: %s.", message, e)
             elif not isinstance(e, Retry):
                 self.logger.error("Failed to process message %s with unhandled exception.", message, exc_info=True)
 
