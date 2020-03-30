@@ -1,7 +1,7 @@
 .. include:: global.rst
 
-Dramatiq: simple task processing
-================================
+Dramatiq: background tasks
+==========================
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
 
@@ -15,8 +15,8 @@ Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Sourc
 .. image:: https://badge.fury.io/py/dramatiq.svg
    :target: https://badge.fury.io/py/dramatiq
 
-**Dramatiq** is a distributed task processing library for Python with
-a focus on simplicity, reliability and performance.
+**Dramatiq** is a background task processing library for Python with a
+focus on simplicity, reliability and performance.
 
 .. raw:: html
 
