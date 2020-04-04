@@ -19,7 +19,7 @@ jobs:
       - run: tox -e lint
 
   build-unix:
-    timeout-minutes: 10
+    timeout-minutes: 30
     strategy:
       matrix:
         os: ["ubuntu-18.04"]
