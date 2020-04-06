@@ -39,9 +39,22 @@ class Actor:
       priority(int): The actor's priority.
       options(dict): Arbitrary options that are passed to the broker
         and middleware.
+      throws(BaseException subclass or tuple of such):
+        One or more expected exceptions.
     """
 
-    def __init__(self, fn, *, broker, actor_name, queue_name, priority, options):
+    def __init__(self, fn, *, broker, actor_name, queue_name, priority, options, throws):
+        if throws:
+            # Validate throws can be used in an except statement
+            try:
+                try:
+                    raise Exception()
+                except throws:
+                    pass
+                except Exception:
+                    pass
+            except TypeError:
+                raise TypeError("'throws' must be a subclass of BaseException or a tuple of such.")
         self.logger = get_logger(fn.__module__, actor_name)
         self.fn = fn
         self.broker = broker
@@ -50,6 +63,7 @@ class Actor:
         self.priority = priority
         self.options = options
         self.broker.declare_actor(self)
+        self.throws = throws
 
     def message(self, *args, **kwargs):
         """Build a message.  This method is useful if you want to
@@ -162,7 +176,8 @@ class Actor:
         return "Actor(%(actor_name)s)" % vars(self)
 
 
-def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", priority=0, broker=None, **options):
+def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", priority=0, broker=None, throws=None,
+          **options):
     """Declare an actor.
 
     Examples:
@@ -199,6 +214,8 @@ def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", 
         priority than the other then it will be processed first.
         Lower numbers represent higher priorities.
       broker(Broker): The broker to use with this actor.
+      throws(BaseException subclass or tuple of such):
+        One or more expected exceptions.
       **options(dict): Arbitrary options that vary with the set of
         middleware that you use.  See ``get_broker().actor_options``.
 
@@ -226,6 +243,7 @@ def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", 
         return actor_class(
             fn, actor_name=actor_name, queue_name=queue_name,
             priority=priority, broker=broker, options=options,
+            throws=throws,
         )
 
     if fn is None:

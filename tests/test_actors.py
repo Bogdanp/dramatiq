@@ -626,3 +626,90 @@ def test_currrent_message_middleware_exposes_the_current_message(stub_broker, st
     # When I try to access the current message from a non-worker thread
     # Then I should get back None
     assert CurrentMessage.get_current_message() is None
+
+
+def test_actor_throws_can_be_assigned_with_class(stub_broker, stub_worker):
+    # Given I have defined an exception
+    class MyException(Exception):
+        pass
+
+    # And I define an actor with that exception passed to throws
+    @dramatiq.actor(throws=MyException)
+    def add(x, y):
+        return x + y
+
+    # I expect throws to be equal to MyException
+    assert add.throws == MyException
+
+
+def test_actor_throws_can_be_assigned_with_tuple(stub_broker, stub_worker):
+    # Given I have defined an exception
+    class MyException(Exception):
+        pass
+
+    # And I have defined a second exception
+    class MyException2(Exception):
+        pass
+
+    # And I define an actor with that exception passed to throws
+    @dramatiq.actor(throws=(MyException, MyException2))
+    def add(x, y):
+        return x + y
+
+    # I expect throws to be equal to (MyException, MyException2)
+    assert add.throws == (MyException, MyException2)
+
+
+def test_actor_throws_validates_throws(stub_broker, stub_worker):
+    # If I define an actor with invalid throws argument
+    # I expect tha to fail
+    with pytest.raises(TypeError):
+        @dramatiq.actor(throws=("bla",))
+        def add(x, y):
+            return x + y
+
+
+def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker):
+    # Given that I have a database
+    retries = []
+
+    # And an exception that will be expected to thrown
+    class MyException(Exception):
+        pass
+
+    # And an actor that raises MyException
+    @dramatiq.actor(throws=MyException)
+    def do_work():
+        if sum(retries) == 0:
+            raise MyException("Expected Failure")
+        else:
+            retries.append(1)
+
+    # And that I've mocked the logging classes
+    with patch("logging.Logger.error") as error_mock, \
+            patch("logging.Logger.warning") as warning_mock, patch("logging.Logger.info") as info_mock:
+        # When I send that actor a message
+        do_work.send()
+
+        # And join on the queue
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+        # Then no error should be logged
+        error_messages = [args[0] for _, args, _ in error_mock.mock_calls]
+        assert error_messages == []
+
+        # And no warnings should be logged
+        warnings = [args[0] for _, args, _ in warning_mock.mock_calls]
+        assert warnings == []
+
+        # And info mock should contain two messages
+        info_messages = [args[0] for _, args, _ in info_mock.mock_calls]
+        expected_messages = [
+            "Failed to process message %s with expected exception %s.",
+            "Aborting message %r."
+        ]
+        assert info_messages == expected_messages
+
+        # And no retries should be made
+        assert sum(retries) == 0
