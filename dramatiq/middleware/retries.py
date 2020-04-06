@@ -36,7 +36,15 @@ class Retries(Middleware):
 
     If you need to intentionally retry an actor and you don't want the
     exception to get logged, then consider raising the
-    :class:`Retry<dramatiq.Retry>` exception.
+    :class:`Retry<dramatiq.Retry>` exception from within your actor.
+
+    Actors that have their ``throws`` option set to an exception class
+    or a tuple of exception classes will not be retried if one of
+    those exceptions is raised within them.  For example::
+
+        >>> @actor(throws=(RuntimeError,))
+        ... def example():
+        ...     raise RuntimeError("never retried")
 
     Parameters:
       max_retries(int): The maximum number of times tasks can be retried.
@@ -64,6 +72,7 @@ class Retries(Middleware):
             "min_backoff",
             "max_backoff",
             "retry_when",
+            "throws",
         }
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
@@ -71,6 +80,12 @@ class Retries(Middleware):
             return
 
         actor = broker.get_actor(message.actor_name)
+        throws = message.options.get("throws") or actor.options.get("throws")
+        if throws and isinstance(exception, throws):
+            self.logger.info("Aborting message %r.", message.message_id)
+            message.fail()
+            return
+
         retries = message.options.setdefault("retries", 0)
         max_retries = message.options.get("max_retries") or actor.options.get("max_retries", self.max_retries)
         retry_when = actor.options.get("retry_when", self.retry_when)

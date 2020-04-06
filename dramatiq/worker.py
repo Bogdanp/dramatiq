@@ -482,8 +482,11 @@ class _WorkerThread(Thread):
             # to pass exceptions into results.
             message.stuff_exception(e)
 
+            throws = message.options.get("throws") or actor.options.get("throws")
             if isinstance(e, RateLimitExceeded):
                 self.logger.debug("Rate limit exceeded in message %s: %s.", message, e)
+            elif throws and isinstance(e, throws):
+                self.logger.info("Failed to process message %s with expected exception %s.", message, type(e).__name__)
             elif not isinstance(e, Retry):
                 self.logger.error("Failed to process message %s with unhandled exception.", message, exc_info=True)
 

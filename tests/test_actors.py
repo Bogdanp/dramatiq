@@ -1,3 +1,4 @@
+import itertools
 import time
 from unittest.mock import patch
 
@@ -626,3 +627,50 @@ def test_currrent_message_middleware_exposes_the_current_message(stub_broker, st
     # When I try to access the current message from a non-worker thread
     # Then I should get back None
     assert CurrentMessage.get_current_message() is None
+
+
+class CustomException1(Exception):
+    pass
+
+
+class CustomException2(Exception):
+    pass
+
+
+@pytest.mark.parametrize("exn,throws", [
+    [CustomException1, CustomException1],
+    [CustomException1, (CustomException1,)],
+    [CustomException2, (CustomException1, CustomException2)],
+])
+def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker, exn, throws):
+    # Given that I have a database
+    attempts = []
+
+    # And an actor that raises expected exceptions
+    @dramatiq.actor(throws=throws)
+    def do_work():
+        attempts.append(1)
+        if sum(attempts) == 1:
+            raise exn("Expected Failure")
+
+    # And that I've mocked the logging classes
+    with patch("logging.Logger.error") as error_mock, \
+         patch("logging.Logger.warning") as warning_mock, \
+         patch("logging.Logger.info") as info_mock:
+        # When I send that actor a message
+        do_work.send()
+
+        # And join on the queue
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+        # Then no errors and or warnings should be logged
+        assert [args[0] for _, args, _ in itertools.chain(error_mock.mock_calls, warning_mock.mock_calls)] == []
+
+        # And two info messages should be logged
+        info_messages = [args[0] for _, args, _ in info_mock.mock_calls]
+        assert "Failed to process message %s with expected exception %s." in info_messages
+        assert "Aborting message %r." in info_messages
+
+        # And the message should not be retried
+        assert sum(attempts) == 1
