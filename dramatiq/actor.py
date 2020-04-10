@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import inspect
 import re
 import time
 
@@ -44,16 +45,16 @@ class Actor:
     """
 
     def __init__(self, fn, *, broker, actor_name, queue_name, priority, options, throws):
-        if throws:
+        if throws is not None:
             # Validate throws can be used in an except statement
-            try:
-                try:
-                    raise Exception()
-                except throws:
-                    pass
-                except Exception:
-                    pass
-            except TypeError:
+            def is_exception(exc):
+                return inspect.isclass(exc) and issubclass(exc, BaseException)
+            if (
+                not (
+                    is_exception(throws) or
+                    (isinstance(throws, tuple) and all([is_exception(exc) for exc in throws]))
+                )
+            ):
                 raise TypeError("'throws' must be a subclass of BaseException or a tuple of such.")
         self.logger = get_logger(fn.__module__, actor_name)
         self.fn = fn
