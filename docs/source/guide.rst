@@ -104,7 +104,7 @@ want to see a list of the available command line flags.
 As soon as you run that command you'll see log output along these
 lines::
 
-  [2017-11-19 13:03:48,188] [PID 22370] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.13.1' is booting up.
+  [2017-11-19 13:03:48,188] [PID 13047] [MainThread] [dramatiq.MainProcess] [INFO] Dramatiq '0.13.1' is booting up.
   [2017-11-19 13:03:48,349] [PID 22377] [MainThread] [dramatiq.WorkerProcess(3)] [INFO] Worker process is ready for action.
   [2017-11-19 13:03:48,350] [PID 22375] [MainThread] [dramatiq.WorkerProcess(1)] [INFO] Worker process is ready for action.
   [2017-11-19 13:03:48,357] [PID 22376] [MainThread] [dramatiq.WorkerProcess(2)] [INFO] Worker process is ready for action.
