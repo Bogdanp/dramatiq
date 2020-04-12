@@ -27,3 +27,5 @@ from .message import get_encoder as get_encoder
 from .message import set_encoder as set_encoder
 from .middleware import Middleware as Middleware
 from .worker import Worker as Worker
+
+__version__: str = ...
