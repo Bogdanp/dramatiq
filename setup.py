@@ -73,7 +73,9 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "flake8",
     "flake8-bugbear",
     "flake8-quotes",
+    "flake8-pyi",
     "isort",
+    "mypy",
 
     # Misc
     "bumpversion",

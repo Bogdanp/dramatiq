@@ -25,7 +25,7 @@ from .encoder import Encoder, JSONEncoder
 from .results import Results
 
 #: The global encoder instance.
-global_encoder = JSONEncoder()
+global_encoder = JSONEncoder()  # type: Encoder
 
 
 def get_encoder() -> Encoder:

@@ -60,5 +60,5 @@ class PickleEncoder(Encoder):
       Use it at your own risk.
     """
 
-    encode = pickle.dumps
-    decode = pickle.loads
+    encode = pickle.dumps  # type: ignore
+    decode = pickle.loads  # type: ignore

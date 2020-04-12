@@ -39,8 +39,8 @@ class generic_actor(type):
         setattr(meta, "abstract", False)
         return clazz
 
-    def __getattr__(cls, name):
-        return getattr(cls.__actor__, name)
+    # def __getattr__(cls, name):
+    #     return getattr(cls.__actor__, name)
 
 
 class GenericActor(metaclass=generic_actor):

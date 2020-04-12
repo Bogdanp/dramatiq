@@ -24,20 +24,22 @@ from ..encoder import Encoder
 from .errors import ResultMissing, ResultTimeout
 from .result import unwrap_result, wrap_exception, wrap_result
 
+
+class Missing:
+    """Canary value that is returned when a result hasn't been set yet."""
+
+
 #: The default timeout for blocking get operations in milliseconds.
 DEFAULT_TIMEOUT = 10000
 
 #: The minimum amount of time in ms to wait between polls.
 BACKOFF_FACTOR = 100
 
-#: Canary value that is returned when a result hasn't been set yet.
-Missing = type("Missing", (object,), {})()
-
 #: A type alias representing backend results.
 Result = typing.Any
 
 #: A union representing a Result that may or may not be there.
-MResult = typing.Union[type(Missing), Result]
+MResult = typing.Union[typing.Type[Missing], Result]
 
 
 class ResultBackend:
