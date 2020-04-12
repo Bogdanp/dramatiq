@@ -73,7 +73,6 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "flake8",
     "flake8-bugbear",
     "flake8-quotes",
-    "flake8-pyi; python>=3.6",
     "isort",
     "mypy",
 
