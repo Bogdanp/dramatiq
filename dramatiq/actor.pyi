@@ -1,7 +1,7 @@
 from typing import Callable, Generic, TypeVar, overload
 
-from .message import Message
 from .broker import Broker
+from .message import Message
 
 _CallableType = TypeVar("_CallableType", bound=Callable)
 
