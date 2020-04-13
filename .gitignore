@@ -1,6 +1,6 @@
 /.benchmarks
 /.cache
-/.coverage
+/.coverage*
 /.pytest_cache
 /.tox
 /benchmark*.svg
@@ -9,3 +9,5 @@
 /*.egg-info
 /htmlcov
 __pycache__
+/venv
+.*.sw[pon]
