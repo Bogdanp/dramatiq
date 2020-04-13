@@ -39,6 +39,9 @@ class StreamablePipe:
     def fileno(self):
         return self.pipe.fileno()
 
+    def isatty(self):
+        return False
+
     def flush(self):
         pass
 
