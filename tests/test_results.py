@@ -68,6 +68,8 @@ def test_actors_can_store_exceptions(stub_broker, stub_worker, result_backend):
         result_backend.get_result(message, block=True)
 
     assert str(e.value) == "actor raised RuntimeError: failed"
+    assert e.value.orig_exc_type == "RuntimeError"
+    assert e.value.orig_exc_msg == "failed"
 
 
 def test_retrieving_a_result_can_raise_result_missing(stub_broker, stub_worker, result_backend):
