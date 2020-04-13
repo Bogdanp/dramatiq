@@ -1,0 +1,17 @@
+# A test docker-compose file to start rabbitmq, redis & memcached which are
+# required when running the tests.
+version: '2.4'
+services:
+  rabbitmq:
+    image: rabbitmq
+    ports:
+    - 127.0.0.1:5672:5672
+    - 127.0.0.1:15672:15672
+  redis:
+    image: redis
+    ports:
+    - 127.0.0.1:6379:6379
+  memcached:
+    image: memcached
+    ports:
+    - 127.0.0.1:11211:11211
