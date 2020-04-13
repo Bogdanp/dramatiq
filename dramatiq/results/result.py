@@ -34,10 +34,12 @@ def wrap_exception(e):
     return {
         "__t": _CANARY,
         "exn": "actor raised %s: %s" % (type(e).__name__, e),
+        "exn_type": type(e).__name__,
+        "exn_msg": str(e),
     }
 
 
 def unwrap_result(res):
     if isinstance(res, dict) and res.get("__t") == _CANARY:
-        raise ResultFailure(res["exn"])
+        raise ResultFailure(res["exn"], res["exn_type"], res["exn_msg"])
     return res
