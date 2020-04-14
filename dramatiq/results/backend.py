@@ -24,6 +24,9 @@ from ..encoder import Encoder
 from .errors import ResultMissing, ResultTimeout
 from .result import unwrap_result, wrap_exception, wrap_result
 
+if typing.TYPE_CHECKING:
+    from ..message import Message
+
 
 class Missing:
     """Canary value that is returned when a result hasn't been set yet."""
@@ -52,13 +55,13 @@ class ResultBackend:
         result data.  Defaults to :class:`.JSONEncoder`.
     """
 
-    def __init__(self, *, namespace: str = "dramatiq-results", encoder: Encoder = None):
+    def __init__(self, *, namespace: str = "dramatiq-results", encoder: Encoder = None) -> None:
         from ..message import get_encoder
 
         self.namespace = namespace
         self.encoder = encoder or get_encoder()
 
-    def get_result(self, message, *, block: bool = False, timeout: int = None) -> Result:
+    def get_result(self, message: "Message", *, block: bool = False, timeout: int = None) -> Result:
         """Get a result from the backend.
 
         Parameters:
@@ -98,7 +101,7 @@ class ResultBackend:
             else:
                 return unwrap_result(result)
 
-    def store_result(self, message, result: Result, ttl: int) -> None:
+    def store_result(self, message: "Message", result: Result, ttl: int) -> None:
         """Store a result in the backend.
 
         Parameters:
@@ -110,7 +113,7 @@ class ResultBackend:
         message_key = self.build_message_key(message)
         return self._store(message_key, wrap_result(result), ttl)
 
-    def store_exception(self, message, exception: Exception, ttl: int) -> None:
+    def store_exception(self, message: "Message", exception: Exception, ttl: int) -> None:
         """Store an exception in the backend.
 
         Parameters:
@@ -122,7 +125,7 @@ class ResultBackend:
         message_key = self.build_message_key(message)
         return self._store(message_key, wrap_exception(exception), ttl)
 
-    def build_message_key(self, message) -> str:
+    def build_message_key(self, message: "Message") -> str:
         """Given a message, return its globally-unique key.
 
         Parameters:

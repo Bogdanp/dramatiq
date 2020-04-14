@@ -18,11 +18,15 @@
 import time
 import uuid
 from collections import namedtuple
+from typing import TYPE_CHECKING
 
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .results import Results
+
+if TYPE_CHECKING:
+    from .results.backend import ResultBackend, Result
 
 #: The global encoder instance.
 global_encoder = JSONEncoder()  # type: Encoder
@@ -72,43 +76,43 @@ class Message(namedtuple("Message", (
         representing when the message was first enqueued.
     """
 
-    def __new__(cls, *, queue_name, actor_name, args, kwargs, options, message_id=None, message_timestamp=None):
+    def __new__(cls, *, queue_name: str, actor_name: str, args: tuple, kwargs: dict, options: dict, message_id: str = None, message_timestamp: int = None) -> "Message":  # noqa: B950
         return super().__new__(
             cls, queue_name, actor_name, tuple(args), kwargs, options,
             message_id=message_id or generate_unique_id(),
             message_timestamp=message_timestamp or int(time.time() * 1000),
         )
 
-    def __or__(self, other) -> pipeline:
+    def __or__(self, other: "Message") -> pipeline:
         """Combine this message into a pipeline with "other".
         """
         return pipeline([self, other])
 
-    def asdict(self):
+    def asdict(self) -> dict:
         """Convert this message to a dictionary.
         """
         return self._asdict()
 
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data: bytes) -> "Message":
         """Convert a bytestring to a message.
         """
         return cls(**global_encoder.decode(data))
 
-    def encode(self):
+    def encode(self) -> bytes:
         """Convert this message to a bytestring.
         """
         return global_encoder.encode(self._asdict())
 
-    def copy(self, **attributes):
+    def copy(self, **attributes) -> "Message":
         """Create a copy of this message.
         """
         updated_options = attributes.pop("options", {})
         options = self.options.copy()
         options.update(updated_options)
-        return self._replace(**attributes, options=options)
+        return self._replace(**attributes, options=options)  # type: ignore
 
-    def get_result(self, *, backend=None, block=False, timeout=None):
+    def get_result(self, *, backend: "ResultBackend" = None, block: bool = False, timeout: int = None) -> Result:
         """Get the result associated with this message from a result
         backend.
 
@@ -146,7 +150,7 @@ class Message(namedtuple("Message", (
 
         return backend.get_result(self, block=block, timeout=timeout)
 
-    def __str__(self):
+    def __str__(self) -> str:
         params = ", ".join(repr(arg) for arg in self.args)
         if self.kwargs:
             params += ", " if params else ""
