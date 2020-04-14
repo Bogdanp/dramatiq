@@ -16,11 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Union
 from uuid import uuid4
 
 from .broker import get_broker
 from .rate_limits import Barrier
 from .results import ResultMissing
+
+if TYPE_CHECKING:
+    from .broker import Broker
+    from .message import Message
+
+    Pipeable = Union[Message, "pipeline"]
+    Groupable = Union[Pipeable, "group"]
 
 
 class pipeline:
@@ -28,16 +36,16 @@ class pipeline:
     next one in line.
 
     Parameters:
-      children(Iterator[Message|pipeline]): A sequence of messages or
+      children(Iterable[Message|pipeline]): A sequence of messages or
         pipelines.  Child pipelines are flattened into the resulting
         pipeline.
       broker(Broker): The broker to run the pipeline on.  Defaults to
         the current global broker.
     """
 
-    def __init__(self, children, *, broker=None):
+    def __init__(self, children: Iterable["Pipeable"], *, broker: "Broker" = None) -> None:
         self.broker = broker or get_broker()
-        self.messages = messages = []
+        self.messages = messages = []  # type: List[Message]
 
         for child in children:
             if isinstance(child, pipeline):
@@ -48,21 +56,21 @@ class pipeline:
         for message, next_message in zip(messages, messages[1:]):
             message.options["pipe_target"] = next_message.asdict()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the length of the pipeline.
         """
         return len(self.messages)
 
-    def __or__(self, other):
+    def __or__(self, other) -> "pipeline":
         """Returns a new pipeline with "other" added to the end.
         """
         return type(self)(self.messages + [other])
 
-    def __str__(self):  # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return "pipeline([%s])" % ", ".join(str(m) for m in self.messages)
 
     @property
-    def completed(self):
+    def completed(self) -> bool:
         """Returns True when all the jobs in the pipeline have been
         completed.  This will always return False if the last actor in
         the pipeline doesn't store results.
@@ -79,7 +87,7 @@ class pipeline:
             return False
 
     @property
-    def completed_count(self):
+    def completed_count(self) -> int:
         """Returns the total number of jobs that have been completed.
         Actors that don't store results are not counted, meaning this
         may be inaccurate if all or some of your actors don't store
@@ -100,7 +108,7 @@ class pipeline:
 
         return count
 
-    def run(self, *, delay=None):
+    def run(self, *, delay: int = None) -> "pipeline":
         """Run this pipeline.
 
         Parameters:
@@ -116,7 +124,7 @@ class pipeline:
         self.broker.enqueue(self.messages[0], delay=delay)
         return self
 
-    def get_result(self, *, block=False, timeout=None):
+    def get_result(self, *, block: bool = False, timeout: int = None):
         """Get the result of this pipeline.
 
         Pipeline results are represented by the result of the last
@@ -136,7 +144,7 @@ class pipeline:
         """
         return self.messages[-1].get_result(block=block, timeout=timeout)
 
-    def get_results(self, *, block=False, timeout=None):
+    def get_results(self, *, block: bool = False, timeout: int = None) -> Iterator:
         """Get the results of each job in the pipeline.
 
         Parameters:
@@ -166,26 +174,26 @@ class group:
     """Run a group of actors in parallel.
 
     Parameters:
-      children(Iterator[Message|group|pipeline]): A sequence of
+      children(Iterable[Message|group|pipeline]): A sequence of
         messages, groups or pipelines.
       broker(Broker): The broker to run the group on.  Defaults to the
         current global broker.
     """
 
-    def __init__(self, children, *, broker=None):
+    def __init__(self, children: Iterable["Groupable"], *, broker: "Broker" = None) -> None:
         self.children = list(children)
         self.broker = broker or get_broker()
-        self.completion_callbacks = []
+        self.completion_callbacks = []  # type: List[Dict[str, Any]]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the size of the group.
         """
         return len(self.children)
 
-    def __str__(self):  # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return "group([%s])" % ", ".join(str(c) for c in self.children)
 
-    def add_completion_callback(self, message):
+    def add_completion_callback(self, message: "Message") -> None:
         """Adds a completion callback to run once every job in this
         group has completed.  Each group may have multiple completion
         callbacks.
@@ -201,7 +209,7 @@ class group:
         self.completion_callbacks.append(message.asdict())
 
     @property
-    def completed(self):
+    def completed(self) -> bool:
         """Returns True when all the jobs in the group have been
         completed.  Actors that don't store results are not counted,
         meaning this may be inaccurate if all or some of your actors
@@ -214,7 +222,7 @@ class group:
         return self.completed_count == len(self)
 
     @property
-    def completed_count(self):
+    def completed_count(self) -> int:
         """Returns the total number of jobs that have been completed.
         Actors that don't store results are not counted, meaning this
         may be inaccurate if all or some of your actors don't store
@@ -238,7 +246,7 @@ class group:
 
         return count
 
-    def run(self, *, delay=None):
+    def run(self, *, delay: int = None) -> "group":
         """Run the actors in this group.
 
         Parameters:
@@ -267,7 +275,7 @@ class group:
             completion_barrier = Barrier(rate_limiter_backend, completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
             completion_barrier.create(len(self.children))
 
-            children = []
+            children = []  # type: List[Groupable]
             for child in self.children:
                 if isinstance(child, group):
                     raise NotImplementedError
@@ -297,7 +305,7 @@ class group:
 
         return self
 
-    def get_results(self, *, block=False, timeout=None):
+    def get_results(self, *, block: bool = False, timeout: int = None) -> Iterator:
         """Get the results of each job in the group.
 
         Parameters:
@@ -326,7 +334,7 @@ class group:
             else:
                 yield child.get_result(block=block, timeout=timeout)
 
-    def wait(self, *, timeout=None):
+    def wait(self, *, timeout: int = None) -> None:
         """Block until all the jobs in the group have finished or
         until the timeout expires.
 
