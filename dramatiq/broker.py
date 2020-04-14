@@ -15,9 +15,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import TYPE_CHECKING, List, Type, Set, Dict
+
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .actor import Actor
+    from .message import Message
+    from .middleware import Middleware
 
 #: The global broker instance.
 global_broker = None
@@ -44,7 +51,7 @@ def get_broker() -> "Broker":
     return global_broker
 
 
-def set_broker(broker: "Broker"):
+def set_broker(broker: "Broker") -> None:
     """Configure the global broker instance.
 
     Parameters:
@@ -68,14 +75,14 @@ class Broker:
         overwrite when they are declared.
     """
 
-    def __init__(self, middleware=None):
+    def __init__(self, middleware: List['Middleware'] = None) -> None:
         self.logger = get_logger(__name__, type(self))
-        self.actors = {}
-        self.queues = {}
-        self.delay_queues = set()
+        self.actors = {}  # type: Dict[str, Actor]
+        self.queues = {}  # type: Dict[str, str]
+        self.delay_queues = set()  # type: Set[str]
 
-        self.actor_options = set()
-        self.middleware = []
+        self.actor_options = set()  # type: Set[str]
+        self.middleware = []  # type: List[Middleware]
 
         if middleware is None:
             middleware = [m() for m in default_middleware]
@@ -83,7 +90,7 @@ class Broker:
         for m in middleware:
             self.add_middleware(m)
 
-    def emit_before(self, signal, *args, **kwargs):
+    def emit_before(self, signal: str, *args, **kwargs) -> None:
         for middleware in self.middleware:
             try:
                 getattr(middleware, "before_" + signal)(self, *args, **kwargs)
@@ -92,14 +99,20 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
 
-    def emit_after(self, signal, *args, **kwargs):
+    def emit_after(self, signal: str, *args, **kwargs) -> None:
         for middleware in reversed(self.middleware):
             try:
                 getattr(middleware, "after_" + signal)(self, *args, **kwargs)
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
-    def add_middleware(self, middleware, *, before=None, after=None):
+    def add_middleware(
+        self, 
+        middleware: 'Middleware', 
+        *, 
+        before: Type['Middleware'] = None, 
+        after: Type['Middleware'] = None,
+    ):
         """Add a middleware object to this broker.  The middleware is
         appended to the end of the middleware list by default.
 
@@ -143,11 +156,13 @@ class Broker:
         for queue_name in self.get_declared_delay_queues():
             middleware.after_declare_delay_queue(self, queue_name)
 
-    def close(self):
+    def close(self) -> None:
         """Close this broker and perform any necessary cleanup actions.
         """
 
-    def consume(self, queue_name, prefetch=1, timeout=30000):  # pragma: no cover
+    def consume(
+        self, queue_name: str, prefetch: int = 1, timeout: int = 30000,
+    ):  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
 
         Raises:
@@ -163,7 +178,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def declare_actor(self, actor):  # pragma: no cover
+    def declare_actor(self, actor: 'Actor') -> None:  # pragma: no cover
         """Declare a new actor on this broker.  Declaring an Actor
         twice replaces the first actor with the second by name.
 
@@ -175,7 +190,7 @@ class Broker:
         self.actors[actor.actor_name] = actor
         self.emit_after("declare_actor", actor)
 
-    def declare_queue(self, queue_name):  # pragma: no cover
+    def declare_queue(self, queue_name: str) -> None:  # pragma: no cover
         """Declare a queue on this broker.  This method must be
         idempotent.
 
@@ -184,7 +199,9 @@ class Broker:
         """
         raise NotImplementedError
 
-    def enqueue(self, message, *, delay=None):  # pragma: no cover
+    def enqueue(
+        self, message: 'Message', *, delay: int = None,
+    ):  # pragma: no cover
         """Enqueue a message on this broker.
 
         Parameters:
@@ -196,7 +213,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def get_actor(self, actor_name):  # pragma: no cover
+    def get_actor(self, actor_name: str) -> 'Actor':  # pragma: no cover
         """Look up an actor by its name.
 
         Parameters:
@@ -213,7 +230,7 @@ class Broker:
         except KeyError:
             raise ActorNotFound(actor_name) from None
 
-    def get_declared_actors(self):  # pragma: no cover
+    def get_declared_actors(self) -> Set[str]:  # pragma: no cover
         """Get all declared actors.
 
         Returns:
@@ -222,7 +239,7 @@ class Broker:
         """
         return set(self.actors.keys())
 
-    def get_declared_queues(self):  # pragma: no cover
+    def get_declared_queues(self) -> Set[str]:  # pragma: no cover
         """Get all declared queues.
 
         Returns:
@@ -231,7 +248,7 @@ class Broker:
         """
         return set(self.queues.keys())
 
-    def get_declared_delay_queues(self):  # pragma: no cover
+    def get_declared_delay_queues(self) -> Set[str]:  # pragma: no cover
         """Get all declared delay queues.
 
         Returns:
@@ -240,7 +257,7 @@ class Broker:
         """
         return self.delay_queues.copy()
 
-    def flush(self, queue_name):  # pragma: no cover
+    def flush(self, queue_name: str) -> None:  # pragma: no cover
         """Drop all the messages from a queue.
 
         Parameters:
@@ -248,12 +265,14 @@ class Broker:
         """
         raise NotImplementedError()
 
-    def flush_all(self):  # pragma: no cover
+    def flush_all(self) -> None:  # pragma: no cover
         """Drop all messages from all declared queues.
         """
         raise NotImplementedError()
 
-    def join(self, queue_name, *, timeout=None):  # pragma: no cover
+    def join(
+        self, queue_name: str, *, timeout: int = None,
+    ) -> None:  # pragma: no cover
         """
         """
         raise NotImplementedError()
@@ -265,12 +284,12 @@ class Consumer:
     Consumers and their MessageProxies are *not* thread-safe.
     """
 
-    def __iter__(self):  # pragma: no cover
+    def __iter__(self) -> 'Consumer':  # pragma: no cover
         """Returns this instance as a Message iterator.
         """
         return self
 
-    def ack(self, message):  # pragma: no cover
+    def ack(self, message: 'MessageProxy'):  # pragma: no cover
         """Acknowledge that a message has been processed, removing it
         from the broker.
 
@@ -279,7 +298,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def nack(self, message):  # pragma: no cover
+    def nack(self, message: 'MessageProxy'):  # pragma: no cover
         """Move a message to the dead-letter queue.
 
         Parameters:
@@ -287,16 +306,16 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def requeue(self, messages):  # pragma: no cover
+    def requeue(self, messages: List['MessageProxy']):  # pragma: no cover
         """Move unacked messages back to their queues.  This is called
         by consumer threads when they fail or are shut down.  The
         default implementation does nothing.
 
         Parameters:
-          messages(list[MessageProxy]): The messages to requeue.
+          messages(List[MessageProxy]): The messages to requeue.
         """
 
-    def __next__(self):  # pragma: no cover
+    def __next__(self) -> 'MessageProxy':  # pragma: no cover
         """Retrieve the next message off of the queue.  This method
         blocks until a message becomes available.
 
@@ -307,7 +326,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def close(self):
+    def close(self) -> None:
         """Close this consumer and perform any necessary cleanup actions.
         """
 
@@ -316,34 +335,34 @@ class MessageProxy:
     """Base class for messages returned by :meth:`Broker.consume`.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: 'Message') -> None:
         self.failed = False
         self._message = message
-        self._exception = None
+        self._exception = None  # type: Exception
 
-    def stuff_exception(self, exception):
+    def stuff_exception(self, exception: Exception) -> None:
         """Stuff an exception into this message.
         """
         self._exception = exception
 
-    def fail(self):
+    def fail(self) -> None:
         """Mark this message for rejection.
         """
         self.failed = True
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         return getattr(self._message, name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self._message)
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         # This can get called if two messages have the same priority
         # in a queue.  If that's the case, we don't care which runs
         # first.
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, MessageProxy):
             return self._message == other._message
         return self._message == other

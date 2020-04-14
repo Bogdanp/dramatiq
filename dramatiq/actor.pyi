@@ -33,6 +33,13 @@ def actor(
 
 
 class Actor(Generic[_CallableType]):
+    fn: _CallableType
+    broker: Broker
+    actor_name: str
+    queue_name: str
+    priority: int
+    options: dict
+
     def __init__(
         self,
         fn: _CallableType,
