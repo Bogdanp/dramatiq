@@ -17,11 +17,15 @@
 from queue import Empty
 from random import uniform
 from time import time
+from typing import TYPE_CHECKING, Iterator, Tuple
 
 from .errors import QueueJoinTimeout
 
+if TYPE_CHECKING:
+    from .queues import Queue
 
-def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_exponent=32):
+
+def compute_backoff(attempts: int, *, factor: int = 5, jitter: bool = True, max_backoff: int = 2000, max_exponent: int = 32) -> Tuple[int, float]:  # noqa: B950
     """Compute an exponential backoff value based on some number of attempts.
 
     Parameters:
@@ -41,13 +45,13 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
     return attempts + 1, backoff
 
 
-def current_millis():
+def current_millis() -> int:
     """Returns the current UNIX time in milliseconds.
     """
     return int(time() * 1000)
 
 
-def iter_queue(queue):
+def iter_queue(queue: "Queue") -> Iterator:
     """Iterate over the messages on a queue until it's empty.  Does
     not block while waiting for messages.
 
@@ -64,7 +68,7 @@ def iter_queue(queue):
             break
 
 
-def join_queue(queue, timeout=None):
+def join_queue(queue: "Queue", timeout: float = None) -> None:
     """The join() method of standard queues in Python doesn't support
     timeouts.  This implements the same functionality as that method,
     with optional timeout support, by depending the internals of
@@ -83,7 +87,7 @@ def join_queue(queue, timeout=None):
                 raise QueueJoinTimeout("timed out after %.02f seconds" % timeout)
 
 
-def join_all(joinables, timeout):
+def join_all(joinables, timeout: int) -> None:
     """Wait on a list of objects that can be joined with a total
     timeout represented by ``timeout``.
 
@@ -98,7 +102,7 @@ def join_all(joinables, timeout):
         timeout = max(0, timeout - elapsed)
 
 
-def q_name(queue_name):
+def q_name(queue_name: str) -> str:
     """Returns the canonical queue name for a given queue.
     """
     if queue_name.endswith(".DQ") or queue_name.endswith(".XQ"):
@@ -106,7 +110,7 @@ def q_name(queue_name):
     return queue_name
 
 
-def dq_name(queue_name):
+def dq_name(queue_name: str) -> str:
     """Returns the delayed queue name for a given queue.  If the given
     queue name already belongs to a delayed queue, then it is returned
     unchanged.
@@ -119,7 +123,7 @@ def dq_name(queue_name):
     return queue_name + ".DQ"
 
 
-def xq_name(queue_name):
+def xq_name(queue_name: str) -> str:
     """Returns the dead letter queue name for a given queue.  If the
     given queue name belongs to a delayed queue, the dead letter queue
     name for the original queue is generated.

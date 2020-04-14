@@ -112,7 +112,7 @@ class Message(namedtuple("Message", (
         options.update(updated_options)
         return self._replace(**attributes, options=options)  # type: ignore
 
-    def get_result(self, *, backend: "ResultBackend" = None, block: bool = False, timeout: int = None) -> Result:
+    def get_result(self, *, backend: "ResultBackend" = None, block: bool = False, timeout: int = None) -> "Result":
         """Get the result associated with this message from a result
         backend.
 
