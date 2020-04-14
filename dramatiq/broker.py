@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import TYPE_CHECKING, Dict, List, Set, Type
+from typing import TYPE_CHECKING, Dict, List, Set, Type, TypeVar
 
 from .errors import ActorNotFound
 from .logging import get_logger
@@ -25,6 +25,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from .actor import Actor
     from .message import Message
     from .middleware import Middleware
+
+    MT = TypeVar("MT", bound=Middleware)
 
 #: The global broker instance.
 global_broker = None
@@ -106,13 +108,7 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
-    def add_middleware(
-        self,
-        middleware: "Middleware",
-        *,
-        before: Type["Middleware"] = None,
-        after: Type["Middleware"] = None,
-    ):
+    def add_middleware(self, middleware: "Middleware", *, before: Type[MT] = None, after: Type[MT] = None) -> None:
         """Add a middleware object to this broker.  The middleware is
         appended to the end of the middleware list by default.
 
@@ -199,9 +195,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def enqueue(
-        self, message: "Message", *, delay: int = None,
-    ):  # pragma: no cover
+    def enqueue(self, message: "Message", *, delay: int = None):  # pragma: no cover
         """Enqueue a message on this broker.
 
         Parameters:
@@ -270,9 +264,7 @@ class Broker:
         """
         raise NotImplementedError()
 
-    def join(
-        self, queue_name: str, *, timeout: int = None,
-    ) -> None:  # pragma: no cover
+    def join(self, queue_name: str, *, timeout: int = None) -> None:  # pragma: no cover
         """
         """
         raise NotImplementedError()
