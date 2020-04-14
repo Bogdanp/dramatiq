@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import TYPE_CHECKING, List, Type, Set, Dict
+from typing import TYPE_CHECKING, Dict, List, Set, Type
 
 from .errors import ActorNotFound
 from .logging import get_logger
@@ -75,7 +75,7 @@ class Broker:
         overwrite when they are declared.
     """
 
-    def __init__(self, middleware: List['Middleware'] = None) -> None:
+    def __init__(self, middleware: List["Middleware"] = None) -> None:
         self.logger = get_logger(__name__, type(self))
         self.actors = {}  # type: Dict[str, Actor]
         self.queues = {}  # type: Dict[str, str]
@@ -107,11 +107,11 @@ class Broker:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
     def add_middleware(
-        self, 
-        middleware: 'Middleware', 
-        *, 
-        before: Type['Middleware'] = None, 
-        after: Type['Middleware'] = None,
+        self,
+        middleware: "Middleware",
+        *,
+        before: Type["Middleware"] = None,
+        after: Type["Middleware"] = None,
     ):
         """Add a middleware object to this broker.  The middleware is
         appended to the end of the middleware list by default.
@@ -178,7 +178,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def declare_actor(self, actor: 'Actor') -> None:  # pragma: no cover
+    def declare_actor(self, actor: "Actor") -> None:  # pragma: no cover
         """Declare a new actor on this broker.  Declaring an Actor
         twice replaces the first actor with the second by name.
 
@@ -200,7 +200,7 @@ class Broker:
         raise NotImplementedError
 
     def enqueue(
-        self, message: 'Message', *, delay: int = None,
+        self, message: "Message", *, delay: int = None,
     ):  # pragma: no cover
         """Enqueue a message on this broker.
 
@@ -213,7 +213,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def get_actor(self, actor_name: str) -> 'Actor':  # pragma: no cover
+    def get_actor(self, actor_name: str) -> "Actor":  # pragma: no cover
         """Look up an actor by its name.
 
         Parameters:
@@ -284,12 +284,12 @@ class Consumer:
     Consumers and their MessageProxies are *not* thread-safe.
     """
 
-    def __iter__(self) -> 'Consumer':  # pragma: no cover
+    def __iter__(self) -> "Consumer":  # pragma: no cover
         """Returns this instance as a Message iterator.
         """
         return self
 
-    def ack(self, message: 'MessageProxy'):  # pragma: no cover
+    def ack(self, message: "MessageProxy"):  # pragma: no cover
         """Acknowledge that a message has been processed, removing it
         from the broker.
 
@@ -298,7 +298,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def nack(self, message: 'MessageProxy'):  # pragma: no cover
+    def nack(self, message: "MessageProxy"):  # pragma: no cover
         """Move a message to the dead-letter queue.
 
         Parameters:
@@ -306,7 +306,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def requeue(self, messages: List['MessageProxy']):  # pragma: no cover
+    def requeue(self, messages: List["MessageProxy"]):  # pragma: no cover
         """Move unacked messages back to their queues.  This is called
         by consumer threads when they fail or are shut down.  The
         default implementation does nothing.
@@ -315,7 +315,7 @@ class Consumer:
           messages(List[MessageProxy]): The messages to requeue.
         """
 
-    def __next__(self) -> 'MessageProxy':  # pragma: no cover
+    def __next__(self) -> "MessageProxy":  # pragma: no cover
         """Retrieve the next message off of the queue.  This method
         blocks until a message becomes available.
 
@@ -335,7 +335,7 @@ class MessageProxy:
     """Base class for messages returned by :meth:`Broker.consume`.
     """
 
-    def __init__(self, message: 'Message') -> None:
+    def __init__(self, message: "Message") -> None:
         self.failed = False
         self._message = message
         self._exception = None  # type: Exception
