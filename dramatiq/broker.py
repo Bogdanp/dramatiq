@@ -108,7 +108,7 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
 
-    def add_middleware(self, middleware: "Middleware", *, before: Type[MT] = None, after: Type[MT] = None) -> None:
+    def add_middleware(self, middleware: "Middleware", *, before: Type["MT"] = None, after: Type["MT"] = None) -> None:
         """Add a middleware object to this broker.  The middleware is
         appended to the end of the middleware list by default.
 
