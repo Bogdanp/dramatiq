@@ -84,12 +84,12 @@ class Retries(Middleware):
         message.options["traceback"] = traceback.format_exc(limit=30)
 
         if isinstance(exception, Retry) and exception.delay is not None:
-            backoff = exception.delay
+            delay = exception.delay
         else:
             min_backoff = message.options.get("min_backoff") or actor.options.get("min_backoff", self.min_backoff)
             max_backoff = message.options.get("max_backoff") or actor.options.get("max_backoff", self.max_backoff)
             max_backoff = min(max_backoff, DEFAULT_MAX_BACKOFF)
-            _, backoff = compute_backoff(retries, factor=min_backoff, max_backoff=max_backoff)
+            _, delay = compute_backoff(retries, factor=min_backoff, max_backoff=max_backoff)
 
-        self.logger.info("Retrying message %r in %d milliseconds.", message.message_id, backoff)
-        broker.enqueue(message, delay=backoff)
+        self.logger.info("Retrying message %r in %d milliseconds.", message.message_id, delay)
+        broker.enqueue(message, delay=delay)
