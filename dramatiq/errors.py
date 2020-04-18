@@ -73,7 +73,11 @@ class Retry(DramatiqError):
     behaves just like any other exception from the perspective of the
     :class:`Retries<dramatiq.middleware.Retries>` middleware, the only
     difference is it doesn't get logged as an error.
+
+    If the ``delay`` argument is provided, then the message will be
+    retried after at least that amount of time (in milliseconds).
     """
 
-    def __init__(self, message=""):
+    def __init__(self, message="", delay=None):
         super().__init__(message)
+        self.delay = delay

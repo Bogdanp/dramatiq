@@ -236,6 +236,30 @@ def test_retry_exceptions_are_not_logged(stub_broker, stub_worker):
         assert error_messages == []
 
 
+def test_retry_exceptions_can_specify_a_delay(stub_broker, stub_worker):
+    # Given that I have an actor that raises Retry
+    attempts = 0
+    timestamps = [time.monotonic()]
+
+    @dramatiq.actor(max_retries=1)
+    def do_work():
+        nonlocal attempts
+        attempts += 1
+        timestamps.append(time.monotonic())
+        if attempts == 1:
+            raise Retry(delay=100)
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then the actor should have been retried after 100ms
+    assert 0.1 <= timestamps[-1] - timestamps[-2] < 0.15
+
+
 @skip_on_pypy
 def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
