@@ -245,6 +245,7 @@ Option           Default       Description
 ``min_backoff``  15 seconds    The minimum number of milliseconds of backoff to apply between retries.  Must be greater than 100 milliseconds.
 ``max_backoff``  7 days        The maximum number of milliseconds of backoff to apply between retries.  Higher values are less reliable.
 ``retry_when``   ``None``      A callable that determines whether or not a message should be retried.  When this is set, ``max_retries`` is ignored.
+``throws``       ``None``      An exception or a tuple of exceptions that must not get retried if they are raised from within the actor.
 ===============  ============  =====================================================================================================================
 
 
