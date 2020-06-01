@@ -85,6 +85,8 @@ class Actor:
         """
         for name in ["on_failure", "on_success"]:
             callback = options.get(name)
+            if callback is None:
+                continue
             if isinstance(callback, Actor):
                 options[name] = callback.actor_name
 

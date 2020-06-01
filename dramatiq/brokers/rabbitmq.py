@@ -282,7 +282,8 @@ class RabbitmqBroker(Broker):
             has been closed.
         """
         queue_name = message.queue_name
-        self.declare_queue(queue_name, ensure=True)
+        if queue_name not in self.queues or queue_name in self.queues_pending:
+            self.declare_queue(queue_name, ensure=True)
 
         properties = pika.BasicProperties(
             delivery_mode=2,
