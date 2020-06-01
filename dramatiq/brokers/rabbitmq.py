@@ -111,6 +111,10 @@ class RabbitmqBroker(Broker):
         self.state = local()
 
     @property
+    def consumer_class(self):
+        return _RabbitmqConsumer
+
+    @property
     def connection(self):
         """The :class:`pika.BlockingConnection` for the current
         thread.  This property may change without notice.
@@ -189,7 +193,7 @@ class RabbitmqBroker(Broker):
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
         self.declare_queue(queue_name, ensure=True)
-        return _RabbitmqConsumer(self.parameters, queue_name, prefetch, timeout)
+        return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name, *, ensure=False):
         """Declare a queue.  Has no effect if a queue with the given

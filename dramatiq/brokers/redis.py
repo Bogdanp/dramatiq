@@ -114,6 +114,10 @@ class RedisBroker(Broker):
         self.client = client or redis.StrictRedis(**parameters)
         self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
 
+    @property
+    def consumer_class(self):
+        return _RedisConsumer
+
     def consume(self, queue_name, prefetch=1, timeout=5000):
         """Create a new consumer for a queue.
 
@@ -125,7 +129,7 @@ class RedisBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from Redis.
         """
-        return _RedisConsumer(self, queue_name, prefetch, timeout)
+        return self.consumer_class(self, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name):
         """Declare a queue.  Has no effect if a queue with the given
