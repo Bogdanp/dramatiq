@@ -117,7 +117,7 @@ class RedisBroker(Broker):
     @property
     def consumer_class(self):
         return _RedisConsumer
-    
+
     def consume(self, queue_name, prefetch=1, timeout=5000):
         """Create a new consumer for a queue.
 
