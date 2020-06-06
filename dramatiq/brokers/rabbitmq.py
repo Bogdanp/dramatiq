@@ -109,7 +109,10 @@ class RabbitmqBroker(Broker):
         self.queues = set()
         self.queues_pending = set()
         self.state = local()
-        self.consumer = _RabbitmqConsumer
+
+    @property
+    def consumer_class(self):
+        return _RabbitmqConsumer
 
     @property
     def connection(self):
@@ -190,7 +193,7 @@ class RabbitmqBroker(Broker):
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
         self.declare_queue(queue_name, ensure=True)
-        return self.consumer(self.parameters, queue_name, prefetch, timeout)
+        return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name, *, ensure=False):
         """Declare a queue.  Has no effect if a queue with the given
