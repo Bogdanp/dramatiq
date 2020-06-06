@@ -21,7 +21,6 @@ import time
 import warnings
 from os import path
 from threading import Lock
-from typing import Any
 from uuid import uuid4
 
 import redis
