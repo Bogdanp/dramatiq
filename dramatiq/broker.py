@@ -76,6 +76,7 @@ class Broker:
 
         self.actor_options = set()
         self.middleware = []
+        self.middleware_by_signal = {}
 
         if middleware is None:
             middleware = [m() for m in default_middleware]
@@ -83,21 +84,39 @@ class Broker:
         for m in middleware:
             self.add_middleware(m)
 
-    def emit_before(self, signal, *args, **kwargs):
+    def _build_optimized_middleware_list(self, signal: str):
+        self.middleware_by_signal[signal] = optimized_list = list()
         for middleware in self.middleware:
+            middleware_handler = getattr(middleware, signal, False)
+            if middleware_handler is False or hasattr(middleware_handler, 'empty'):
+                continue
+            optimized_list.append(middleware_handler)
+
+    def emit_before(self, signal: str, *args, **kwargs):
+        signal = "before_" + signal
+        if signal not in self.middleware_by_signal:
+            self._build_optimized_middleware_list(signal)
+
+        # execute optimized list
+        for middleware_handler in self.middleware_by_signal[signal]:
             try:
-                getattr(middleware, "before_" + signal)(self, *args, **kwargs)
+                middleware_handler(self, *args, **kwargs)
             except MiddlewareError:
                 raise
             except Exception:
-                self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
+                self.logger.critical("Unexpected failure in %s.", signal, exc_info=True)
 
-    def emit_after(self, signal, *args, **kwargs):
-        for middleware in reversed(self.middleware):
+    def emit_after(self, signal: str, *args, **kwargs):
+        signal = "after_" + signal
+        if signal not in self.middleware_by_signal:
+            self._build_optimized_middleware_list(signal)
+
+        # execute reversed optimized list
+        for middleware_handler in reversed(self.middleware_by_signal[signal]):
             try:
-                getattr(middleware, "after_" + signal)(self, *args, **kwargs)
+                middleware_handler(self, *args, **kwargs)
             except Exception:
-                self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
+                self.logger.critical("Unexpected failure in %s.", signal, exc_info=True)
 
     def add_middleware(self, middleware, *, before=None, after=None):
         """Add a middleware object to this broker.  The middleware is
@@ -133,6 +152,9 @@ class Broker:
             self.middleware.append(middleware)
 
         self.actor_options |= middleware.actor_options
+
+        # reset optimized calling lists
+        self.middleware_by_signal = {}
 
         for actor_name in self.get_declared_actors():
             middleware.after_declare_actor(self, actor_name)
