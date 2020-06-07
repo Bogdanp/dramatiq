@@ -88,7 +88,7 @@ class Broker:
         self.middleware_by_signal[signal] = optimized_list = list()
         for middleware in self.middleware:
             middleware_handler = getattr(middleware, signal, False)
-            if middleware_handler is False or hasattr(middleware_handler, 'empty'):
+            if middleware_handler is False or hasattr(middleware_handler, "empty"):
                 continue
             optimized_list.append(middleware_handler)
 
