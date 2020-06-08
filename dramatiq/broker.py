@@ -85,12 +85,11 @@ class Broker:
             self.add_middleware(m)
 
     def _build_optimized_middleware_list(self, signal: str):
-        self.middleware_by_signal[signal] = optimized_list = list()
-        for middleware in self.middleware:
-            middleware_handler = getattr(middleware, signal, False)
-            if middleware_handler is False or hasattr(middleware_handler, "empty"):
-                continue
-            optimized_list.append(middleware_handler)
+        self.middleware_by_signal[signal] = [
+            getattr(middleware, signal)
+            for middleware in self.middleware
+            if callable(getattr(middleware, signal, False)) and not hasattr(getattr(middleware, signal), "noop")
+        ]
 
     def emit_before(self, signal: str, *args, **kwargs):
         signal = "before_" + signal
