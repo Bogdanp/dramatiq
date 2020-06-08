@@ -14,6 +14,8 @@ Added
 
 * A custom Redis connection can now be passed to the Redis broker via
   the new ``client`` keyword argument.  (`#274`_, `@davidt99`_)
+* Message priority can now be changed in ``before_enqueue`` hooks.
+  (`#313`_, `@thomazthz`_)
 * Support for storing actor exceptions.  (`#156`_)
 * Support for silent :class:`Retries<dramatiq.Retry>`.  (`#295`_)
 * Support for expected exceptions via the ``throws`` actor option.
@@ -25,9 +27,11 @@ Added
 .. _#274: https://github.com/Bogdanp/dramatiq/issues/274
 .. _#295: https://github.com/Bogdanp/dramatiq/issues/295
 .. _#303: https://github.com/Bogdanp/dramatiq/issues/303
+.. _#313: https://github.com/Bogdanp/dramatiq/issues/313
 .. _#316: https://github.com/Bogdanp/dramatiq/issues/316
 .. _@AndreCimander: https://github.com/AndreCimander
 .. _@davidt99: https://github.com/davidt99
+.. _@thomazthz: https://github.com/thomazthz
 
 Changed
 ^^^^^^^
