@@ -47,12 +47,15 @@ Fixed
 
 * A race condition during command line startup where the wrong exit
   codes could be returned when subprocesses failed.  (`#286`_)
+* A race condition between worker processes and fork processes during
+  boot. (`#297`_)
 * A logging race condition on Linux.  (`#171`_, `#286`_)
 * ``fileno`` has been added to ``StreamablePipe``.  (`#291`_, `@takhs91`_)
 
 .. _#171: https://github.com/Bogdanp/dramatiq/issues/286
 .. _#286: https://github.com/Bogdanp/dramatiq/issues/286
 .. _#291: https://github.com/Bogdanp/dramatiq/pull/291
+.. _#297: https://github.com/Bogdanp/dramatiq/pull/297
 .. _@takhs91: https://github.com/takhs91
 
 

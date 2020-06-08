@@ -318,7 +318,7 @@ def watch_logs(log_filename, pipes, stop):
                 pipes = [p for p in pipes if not p.closed]
 
 
-def worker_process(args, worker_id, logging_pipe, canteen):
+def worker_process(args, worker_id, logging_pipe, canteen, event):
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
@@ -351,6 +351,11 @@ def worker_process(args, worker_id, logging_pipe, canteen):
     except ConnectionError:
         logger.exception("Broker connection failed.")
         return sys.exit(RET_CONNECT)
+    finally:
+        # Signal to the master process that this process has booted,
+        # regardless of whether it failed or not.  If it did fail, the
+        # worker process will realize that soon enough.
+        event.set()
 
     def termhandler(signum, frame):
         nonlocal running
@@ -436,16 +441,27 @@ def main(args=None):  # noqa
     canteen = multiprocessing.Value(Canteen)
     worker_pipes = []
     worker_processes = []
+    worker_process_events = []
     for worker_id in range(args.processes):
         read_pipe, write_pipe = multiprocessing.Pipe(duplex=False)
+        event = multiprocessing.Event()
         proc = multiprocessing.Process(
             target=worker_process,
-            args=(args, worker_id, StreamablePipe(write_pipe), canteen),
+            args=(args, worker_id, StreamablePipe(write_pipe), canteen, event),
             daemon=False,
         )
         proc.start()
         worker_pipes.append(read_pipe)
         worker_processes.append(proc)
+        worker_process_events.append(event)
+
+    # Wait for all worker processes to come online before starting the
+    # fork processes.  This is required to avoid race conditions like
+    # in #297.
+    for event in worker_process_events:
+        if proc.is_alive():
+            if not event.wait(timeout=30):
+                break
 
     fork_pipes = []
     fork_processes = []
