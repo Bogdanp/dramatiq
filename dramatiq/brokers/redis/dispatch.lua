@@ -213,7 +213,7 @@ elseif command == "nack" then
 
     -- then pop it off the messages hash and move it onto the DLQ
     local message = redis.call("hget", queue_messages, message_id)
-    if message ~= nil then
+    if message then
         redis.call("zadd", xqueue_full_name, timestamp, message_id)
         redis.call("hset", xqueue_messages, message_id, message)
         redis.call("hdel", queue_messages, message_id)
