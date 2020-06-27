@@ -336,7 +336,7 @@ def test_redis_broker_warns_about_deprecated_parameters():
         RedisBroker(requeue_deadline=1000)
 
     assert str(record[0].message) == \
-        "requeue_{deadline,interval} have been deprecated and no longer do anything"
+           "requeue_{deadline,interval} have been deprecated and no longer do anything"
 
 
 def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(redis_broker):
@@ -461,3 +461,30 @@ def test_redis_consumer_nack_can_retry_on_connection_error(redis_broker, redis_w
         assert nack_mock.call_count >= 2
         # And I expect there to be no outstanding messages
         assert consumer.outstanding_message_count == 0
+
+
+def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
+    """
+    Reproduces issue 320, exception when the message id is not found.
+
+    https://github.com/Bogdanp/dramatiq/issues/320
+
+    Before the change would raise:
+    redis.exceptions.ResponseError: Error running script (call to f_e9668bc413bd4a2d63c8108b124f5b7df0d01263):
+    @user_script:218: @user_script: 218: Lua redis() command arguments must be strings or integers
+    """
+    # Given that I have an actor
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise RuntimeError
+
+    consumer = redis_worker.consumers[do_work.queue_name].consumer
+
+    # If I send a bogus message to nack, I expect no exception to be raised.
+    message = Message(
+        queue_name=do_work.queue_name,
+        actor_name=do_work.actor_name,
+        args=(), kwargs={},
+        options={"redis_message_id": "XXXXXXXXX"}
+    )  # Bogus ID
+    consumer.nack(message)
