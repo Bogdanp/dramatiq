@@ -336,7 +336,7 @@ def test_redis_broker_warns_about_deprecated_parameters():
         RedisBroker(requeue_deadline=1000)
 
     assert str(record[0].message) == \
-           "requeue_{deadline,interval} have been deprecated and no longer do anything"
+        "requeue_{deadline,interval} have been deprecated and no longer do anything"
 
 
 def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(redis_broker):
