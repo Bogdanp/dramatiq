@@ -158,7 +158,7 @@ class _metrics_handler(BaseHTTPRequestHandler):
 
         # These imports must happen at runtime.  See above.
         import prometheus_client as prom
-        import prometheus_client.multiprocess as prom_mp
+        from prometheus_client import multiprocess as prom_mp
 
         registry = prom.CollectorRegistry()
         prom_mp.MultiProcessCollector(registry)
