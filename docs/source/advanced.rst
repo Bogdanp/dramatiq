@@ -207,12 +207,26 @@ publish a persistent message to that queue in RabbitMQ.
 Using Redis
 ~~~~~~~~~~~
 
+Add a field to the ``options`` dictionary of the message called
+``redis_message_id`` that is a different UUID4 value than
+``message_id``:
+
+.. code-block:: javascript
+
+   {
+     ...
+     "options": { "redis_message_id": "unique-id-2"},
+     ...
+   }
+
 Assuming you want to enqueue a message on a queue named ``default``,
 run::
 
-  > HSET default.msgs $YOUR_MESSAGE_ID $YOUR_MESSAGE_PAYLOAD
-  > RPUSH default $YOUR_MESSAGE_ID
+  > HSET default.msgs $YOUR_REDIS_MESSAGE_ID $YOUR_MESSAGE_PAYLOAD
+  > RPUSH default $YOUR_REDIS_MESSAGE_ID
 
+``$YOUR_REDIS_MESSAGE_ID`` is the ``redis_message_id`` in the ``options``
+field of the message payload.
 
 Workers
 -------
