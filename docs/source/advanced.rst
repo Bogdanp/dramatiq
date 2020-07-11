@@ -215,7 +215,7 @@ Add a field to the ``options`` dictionary of the message called
 
    {
      ...
-     "options": { "redis-message-id": "unique-id-2"},
+     "options": { "redis_message_id": "unique-id-2"},
      ...
    }
 
@@ -225,7 +225,7 @@ run::
   > HSET default.msgs $YOUR_REDIS_MESSAGE_ID $YOUR_MESSAGE_PAYLOAD
   > RPUSH default $YOUR_REDIS_MESSAGE_ID
 
-``$YOUR_REDIS_MESSAGE_ID`` is the ``redis-message_id`` in the ``options``
+``$YOUR_REDIS_MESSAGE_ID`` is the ``redis_message_id`` in the ``options``
 field of the message payload.
 
 Workers
