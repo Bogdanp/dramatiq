@@ -2,19 +2,19 @@ from .actor import Actor, _queue_name_re
 
 
 class Registry:
-    '''
+    """
     A Registry allows defining a collection of Actors not directly bound to a Broker.
 
     This allows your code to declar Actors before configuring a Broker.
-    '''
+    """
     def __init__(self):
         self.actors = {}
         self.broker = None
 
     def actor(self, fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", priority=0, **options):
-        '''
+        """
         Mimics `actor.actor` decorator, but skips the actor options check, and passes `self` as broker.
-        '''
+        """
 
         def decorator(fn):
             if not _queue_name_re.fullmatch(queue_name):
@@ -41,9 +41,9 @@ class Registry:
         return getattr(self.broker, name)
 
     def declare_actor(self, actor):
-        '''
+        """
         Intercept when Actor class tries to register itself.
-        '''
+        """
         if self.broker:
             self.broker.declare_actor(actor)
         else:
