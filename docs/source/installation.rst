@@ -35,7 +35,7 @@ Name           Description
 ``memcached``  Installs the required dependencies for the Memcached rate limiter backend.
 ``rabbitmq``   Installs the required dependencies for using Dramatiq with RabbitMQ.
 ``redis``      Installs the required dependencies for using Dramatiq with Redis.
-``watch``      Installs the required dependencies for the ``--watch`` flag.
+``watch``      Installs the required dependencies for the ``--watch`` flag. (Supported only on unix)
 =============  =======================================================================================
 
 If you want to install Dramatiq with all available features, run::

@@ -43,3 +43,4 @@ of those changes to CLEARTYPE SRL.
 | [@timdrijvers](https://github.com/timdrijvers)        | Tim Drijvers           |
 | [@takhs91](https://github.com/takhs91)                | Takis Panagopoulos     |
 | [@swidoff](https://github.com/swidoff)                | Seth Widoff            |
+| [@CaselIT](https://github.com/CaselIT)                | Federico Caselli       |
