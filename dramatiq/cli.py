@@ -498,7 +498,7 @@ def main(args=None):  # noqa
 
     if HAS_WATCHDOG and args.watch:
         if not hasattr(signal, "SIGHUP"):
-            raise RuntimeError("The watch option is currently not supported on this platform.")
+            raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
         file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
 
     log_watcher_stop_event = Event()

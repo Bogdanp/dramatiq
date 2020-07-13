@@ -9,6 +9,17 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* The CLI raises an error when the ``--watch`` flag is set on
+  unsupported platforms. (`#326`_, `#328`_, `@CaselIT`_)
+
+.. _#326: https://github.com/Bogdanp/dramatiq/pull/326
+.. _#328: https://github.com/Bogdanp/dramatiq/pull/328
+.. _@CaselIT: https://github.com/CaselIT
+
+
 `1.9.0`_ -- 2020-06-08
 ----------------------
 
