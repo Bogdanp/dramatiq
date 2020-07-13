@@ -190,7 +190,8 @@ def make_argument_parser():
             "--watch", type=folder_path, metavar="DIR",
             help=(
                 "watch a directory and reload the workers when any source files "
-                "change (this feature must only be used during development)"
+                "change (this feature must only be used during development). "
+                "This option is currently only supproted on unix systems."
             )
         )
         parser.add_argument(
@@ -496,6 +497,8 @@ def main(args=None):  # noqa
         )
 
     if HAS_WATCHDOG and args.watch:
+        if not hasattr(signal, "SIGHUP"):
+            raise RuntimeError("The watch option is currently not supported on this platform.")
         file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
 
     log_watcher_stop_event = Event()
