@@ -185,7 +185,7 @@ def make_argument_parser():
         help="fork a subprocess to run the given function"
     )
     parser.add_argument(
-        "--worker-shutdown-time-limit", type=int, default="600_000",
+        "--worker-shutdown-time-limit", type=int, default=600000,
         help="time limit for worker shutdown, in milliseconds (default: 10 minutes)"
     )
 
