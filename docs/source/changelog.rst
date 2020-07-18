@@ -9,6 +9,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* The ``--worker-shutdown-timeout`` flag.  (`#330`_, `@mic47`_)
+
+.. _#330: https://github.com/Bogdanp/dramatiq/pull/330
+.. _@mic47: https://github.com/mic47
+
+
 Changed
 ^^^^^^^
 
