@@ -14,9 +14,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from . import ResultError
 from ..logging import get_logger
 from ..middleware import Middleware
+from .errors import ResultError
 
 #: The maximum amount of milliseconds results are allowed to exist in
 #: the backend.
