@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from . import ResultError
 from ..logging import get_logger
 from ..middleware import Middleware
 
@@ -69,6 +69,13 @@ class Results(Middleware):
 
     def __init__(self, *, backend=None, store_results=False, result_ttl=None):
         self.logger = get_logger(__name__, type(self))
+
+        # forbid result middleware without a result backend
+        if backend is None:
+            raise ResultError("Creating a result middleware without a result backend is not allowed!"
+                              "If you are using django_dramatiq: don't add this middleware to the "
+                              "broker's middleware list, just define DRAMATIQ_RESULT_BACKEND. ")
+
         self.backend = backend
         self.store_results = store_results
         self.result_ttl = result_ttl or DEFAULT_RESULT_TTL
