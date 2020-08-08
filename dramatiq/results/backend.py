@@ -21,7 +21,7 @@ import typing
 
 from ..common import compute_backoff, q_name
 from ..encoder import Encoder
-from .errors import ResultMissing, ResultTimeout, ResultError
+from .errors import ResultMissing, ResultTimeout
 from .result import unwrap_result, wrap_exception, wrap_result
 
 #: The default timeout for blocking get operations in milliseconds.
