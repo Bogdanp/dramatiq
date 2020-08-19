@@ -44,3 +44,4 @@ of those changes to CLEARTYPE SRL.
 | [@takhs91](https://github.com/takhs91)                | Takis Panagopoulos     |
 | [@swidoff](https://github.com/swidoff)                | Seth Widoff            |
 | [@CaselIT](https://github.com/CaselIT)                | Federico Caselli       |
+| [@omegacoleman](https://github.com/omegacoleman)      | You Cai                |
