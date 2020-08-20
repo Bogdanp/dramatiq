@@ -569,7 +569,7 @@ def main(args=None):  # noqa
                 break
 
             else:
-                retcode = max(retcode, proc.exitcode)
+                retcode = retcode or proc.exitcode
 
     # The log watcher can't be a daemon in case we log to a file so we
     # have to wait for it to complete on exit.
@@ -585,4 +585,4 @@ def main(args=None):  # noqa
             return os.execvp(sys.executable, ["python", "-m", "dramatiq", *sys.argv[1:]])
         return os.execvp(sys.argv[0], sys.argv)
 
-    return retcode
+    return RET_KILLED if retcode < 0 else retcode
