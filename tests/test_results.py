@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 import dramatiq
+from dramatiq.message import Message
 from dramatiq.results import ResultFailure, ResultMissing, Results, ResultTimeout
 
 
@@ -146,6 +147,14 @@ def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker
     # And wait for a result
     # Then I should get that result back
     assert message.get_result(block=True) == 42
+
+
+def test_messages_without_actor_not_crashing_lookup_options(stub_broker, redis_result_backend):
+    message = Message(
+        queue_name="", actor_name="",
+        args=(), kwargs={}, options={},
+    )
+    assert Results(backend=redis_result_backend)._lookup_options(stub_broker, message) == (False, 0)
 
 
 def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):
