@@ -27,15 +27,19 @@ Changed
 Fixed
 ^^^^^
 
+* The CLI now return code ``1`` when one of the workers is killed by
+  an unhandled signal.  (`#334`_, `@omegacoleman`_)
 * The results middleware now gracefully handles actor-not-found errors
   during nack. (`#336`_, `#337`_, `@AndreCimander`_)
 
 .. _#326: https://github.com/Bogdanp/dramatiq/pull/326
 .. _#328: https://github.com/Bogdanp/dramatiq/pull/328
+.. _#334: https://github.com/Bogdanp/dramatiq/pull/334
 .. _#336: https://github.com/Bogdanp/dramatiq/pull/336
 .. _#337: https://github.com/Bogdanp/dramatiq/pull/337
 .. _@AndreCimander: https://github.com/AndreCimander
 .. _@CaselIT: https://github.com/CaselIT
+.. _@omegacoleman: https://github.com/omegacoleman
 
 
 `1.9.0`_ -- 2020-06-08
