@@ -24,8 +24,17 @@ Changed
 * The CLI raises an error when the ``--watch`` flag is set on
   unsupported platforms. (`#326`_, `#328`_, `@CaselIT`_)
 
+Fixed
+^^^^^
+
+* The results middleware now gracefully handles actor-not-found errors
+  during nack. (`#336`_, `#337`_, `@AndreCimander`_)
+
 .. _#326: https://github.com/Bogdanp/dramatiq/pull/326
 .. _#328: https://github.com/Bogdanp/dramatiq/pull/328
+.. _#336: https://github.com/Bogdanp/dramatiq/pull/336
+.. _#337: https://github.com/Bogdanp/dramatiq/pull/337
+.. _@AndreCimander: https://github.com/AndreCimander
 .. _@CaselIT: https://github.com/CaselIT
 
 
