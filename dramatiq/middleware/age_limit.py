@@ -25,7 +25,7 @@ class AgeLimit(Middleware):
     too long.
 
     Parameters:
-      max_age(int): The default message age limit in millseconds.
+      max_age(int): The default message age limit in milliseconds.
         Defaults to ``None``, meaning that messages can exist
         indefinitely.
     """

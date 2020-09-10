@@ -27,7 +27,7 @@ class RedisBackend(RateLimiterBackend):
       client(Redis): An optional client.  If this is passed,
         then all other parameters are ignored.
       url(str): An optional connection URL.  If both a URL and
-        connection paramters are provided, the URL is used.
+        connection parameters are provided, the URL is used.
       **parameters(dict): Connection parameters are passed directly
         to :class:`redis.Redis`.
 

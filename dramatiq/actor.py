@@ -70,7 +70,7 @@ class Actor:
         return self.message_with_options(args=args, kwargs=kwargs)
 
     def message_with_options(self, *, args=None, kwargs=None, **options):
-        """Build a message with an arbitray set of processing options.
+        """Build a message with an arbitrary set of processing options.
         This method is useful if you want to compose actors.  See the
         actor composition documentation for details.
 

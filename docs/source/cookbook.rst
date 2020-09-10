@@ -307,9 +307,9 @@ the appropriate queue on the command line:
    # Only consume the "ui-blocking" queue
    $ dramatiq an_app --queues ui-blocking
 
-Messages sent to ``very_slow`` will always be delievered to those
+Messages sent to ``very_slow`` will always be delivered to those
 workers that consume the ``default`` queue and messages sent to
-``very_important`` will always be delievered to the ones that consume
+``very_important`` will always be delivered to the ones that consume
 the ``ui-blocking`` queue.
 
 Rate Limiting
