@@ -115,7 +115,7 @@ class Middleware:
 
     def after_skip_message(self, broker, message):
         """Called instead of ``after_process_message`` after a message
-        has been skippped.
+        has been skipped.
         """
 
     def after_process_boot(self, broker):

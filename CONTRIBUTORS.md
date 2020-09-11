@@ -45,3 +45,4 @@ of those changes to CLEARTYPE SRL.
 | [@swidoff](https://github.com/swidoff)                | Seth Widoff            |
 | [@CaselIT](https://github.com/CaselIT)                | Federico Caselli       |
 | [@omegacoleman](https://github.com/omegacoleman)      | You Cai                |
+| [@denhai](https://github.com/denhai)                  | Hayden Bartlett        |
