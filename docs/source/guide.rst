@@ -411,7 +411,7 @@ execution::
   from dramatiq.brokers.redis import RedisBroker
 
 
-  redis_broker = RedisBroker(host="redis", port=6537)
+  redis_broker = RedisBroker(host="redis")
   dramatiq.set_broker(redis_broker)
 
 
