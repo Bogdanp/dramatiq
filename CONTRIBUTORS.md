@@ -46,3 +46,4 @@ of those changes to CLEARTYPE SRL.
 | [@CaselIT](https://github.com/CaselIT)                | Federico Caselli       |
 | [@omegacoleman](https://github.com/omegacoleman)      | You Cai                |
 | [@denhai](https://github.com/denhai)                  | Hayden Bartlett        |
+| [@rouge8](https://github.com/rouge8)                  | Andy Freeland          |

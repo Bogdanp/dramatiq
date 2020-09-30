@@ -51,6 +51,7 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
+      - run: sudo apt-get update -qq && sudo apt-get install -y libmemcached-dev
       - run: pip install -e '.[dev]'
       - run: py.test --benchmark-skip
         env:
