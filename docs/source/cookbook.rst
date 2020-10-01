@@ -126,7 +126,7 @@ line, set the ``pipe_ignore`` option to ``True`` when you create the
 
   (
       bust_caches.message() |
-      prepare_codes.message_with_options(pipe_ignore=True) |
+      prepare_codes.message_with_options(args=None, kwargs=None, pipe_ignore=True) |
       launch_missiles.message()
   )
 
