@@ -45,6 +45,11 @@ class Retries(Middleware):
         >>> @actor(throws=(RuntimeError,))
         ... def example():
         ...     raise RuntimeError("never retried")
+        
+    Note that disabling this middleware will cause messages that failed
+    due to exceptions to be marked 'done' rather than 'rejected'.
+    If you don't want actors retrying automatically, it is recommended
+    to set `max_retries` to 0 instead.
 
     Parameters:
       max_retries(int): The maximum number of times tasks can be retried.
