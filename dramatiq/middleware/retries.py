@@ -34,6 +34,11 @@ class Retries(Middleware):
     """Middleware that automatically retries failed tasks with
     exponential backoff.
 
+    Disabling this middleware will cause messages that fail due to
+    exceptions to be marked 'done' rather than 'failed'.  If you don't
+    want actors to retry automatically, it's better to set their
+    ``max_retries`` options to ``0`` than to remove this middleware.
+
     If you need to intentionally retry an actor and you don't want the
     exception to get logged, then consider raising the
     :class:`Retry<dramatiq.Retry>` exception from within your actor.
