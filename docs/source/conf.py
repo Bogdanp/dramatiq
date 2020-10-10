@@ -128,6 +128,7 @@ html_sidebars = {
         'sidebarlogo.html',
         'navigation.html',
         'searchbox.html',
+        'sponsors.html',
         'versions.html',
         'analytics.html',
     ]
