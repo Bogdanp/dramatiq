@@ -1,11 +1,5 @@
 name: CI
-
-on:
-  push:
-  pull_request:
-  schedule:
-    - cron: "0 8 * * MON"
-
+on: [push, pull_request]
 jobs:
   lint:
     runs-on: ubuntu-18.04
