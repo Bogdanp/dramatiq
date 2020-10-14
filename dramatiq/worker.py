@@ -500,6 +500,12 @@ class _WorkerThread(Thread):
             self.consumers[message.queue_name].post_process_message(message)
             self.work_queue.task_done()
 
+            # NOTE: Since access to the `_exception` attribute is no longer
+            # necessary, clear it in order to prevent memory leakage due to
+            # cyclic references created between the exception object and local
+            # variable `message` that's already present in the stack frame.
+            message._exception = None
+
     def pause(self):
         """Pause this worker.
         """
