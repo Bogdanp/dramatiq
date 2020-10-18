@@ -107,12 +107,11 @@ setup(
     ],
     include_package_data=True,
     install_requires=dependencies,
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
     classifiers=[
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
