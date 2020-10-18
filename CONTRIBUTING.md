@@ -40,5 +40,5 @@ Please include a minimal, reproducible test case with every bug
 report.  If the issue is actually a question, consider asking it on
 the [discussion board] or Stack Overflow first.
 
-[Start a discussion]: https://reddit.com/r/dramatiq
-[discussion board]: https://reddit.com/r/dramatiq
+[Start a discussion]: https://groups.io/g/dramatiq-users
+[discussion board]: https://groups.io/g/dramatiq-users

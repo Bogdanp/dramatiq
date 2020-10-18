@@ -5,7 +5,7 @@ Dramatiq: background tasks
 
 Release v\ |release|. (:doc:`installation`, :doc:`changelog`, `Discuss`_, `Source Code`_)
 
-.. _Discuss: https://reddit.com/r/dramatiq
+.. _Discuss: https://groups.io/g/dramatiq-users
 .. _Source Code: https://github.com/Bogdanp/dramatiq
 
 .. image:: https://img.shields.io/badge/license-LGPL-blue.svg
@@ -102,5 +102,5 @@ Project Info
    Source Code <https://github.com/Bogdanp/dramatiq>
    changelog
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
-   Discussion Board <https://reddit.com/r/dramatiq>
+   Discussion Board <https://groups.io/g/dramatiq-users>
    license
