@@ -2,7 +2,10 @@ import time
 
 from dramatiq.rate_limits import BucketRateLimiter
 
+from .common import skip_in_ci
 
+
+@skip_in_ci
 def test_bucket_rate_limiter_limits_per_bucket(rate_limiter_backend):
     # Given that I have a bucket rate limiter and a call database
     limiter = BucketRateLimiter(rate_limiter_backend, "sequential-test", limit=2)
