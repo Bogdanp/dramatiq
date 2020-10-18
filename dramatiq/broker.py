@@ -326,6 +326,11 @@ class MessageProxy:
         """
         self._exception = exception
 
+    def clear_exception(self):
+        """Remove the exception from this message.
+        """
+        del self._exception
+
     def fail(self):
         """Mark this message for rejection.
         """

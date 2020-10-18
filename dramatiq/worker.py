@@ -500,6 +500,11 @@ class _WorkerThread(Thread):
             self.consumers[message.queue_name].post_process_message(message)
             self.work_queue.task_done()
 
+            # See discussion #351.  Keeping a reference to the
+            # exception can lead to memory bloat because it may be a
+            # while before a GC triggers.
+            message.clear_exception()
+
     def pause(self):
         """Pause this worker.
         """

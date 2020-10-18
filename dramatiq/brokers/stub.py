@@ -192,6 +192,14 @@ class _StubConsumer(Consumer):
         try:
             data = self.queue.get(timeout=self.timeout / 1000)
             message = Message.decode(data)
-            return MessageProxy(message)
+            return _StubMessageProxy(message)
         except Empty:
             return None
+
+
+class _StubMessageProxy(MessageProxy):
+    def clear_exception(self):
+        """Let the GC handle the cycle once the message is no longer
+        in use.  This lets us keep showing full stack traces in
+        failing tests.  See comment in `Worker' for details.
+        """
