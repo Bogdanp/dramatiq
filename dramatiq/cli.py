@@ -77,6 +77,9 @@ examples:
   # Run with a broker named "broker" defined as attribute of "app" in "some_module".
   $ dramatiq some_module:app.broker
 
+  # Run with a callable that sets up a broker.
+  $ dramatiq some_module:setup_broker
+
   # Auto-reload dramatiq when files in the current directory change.
   $ dramatiq --watch . some_module
 
@@ -117,13 +120,17 @@ def import_object(value):
 
 
 def import_broker(value):
-    module, broker = import_object(value)
-    if broker is None:
+    module, broker_or_callable = import_object(value)
+    if broker_or_callable is None:
         return module, get_broker()
 
-    if not isinstance(broker, Broker):
+    if callable(broker_or_callable):
+        broker_or_callable()
+        return module, get_broker()
+
+    if not isinstance(broker_or_callable, Broker):
         raise ImportError("%r is not a Broker." % value)
-    return module, broker
+    return module, broker_or_callable
 
 
 def folder_path(value):

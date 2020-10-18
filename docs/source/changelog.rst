@@ -12,9 +12,12 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
+* The CLI now supports referencing a callable to set up the broker on
+  worker startup.  (`#350`_)
 * The ``--worker-shutdown-timeout`` flag.  (`#330`_, `@mic47`_)
 
 .. _#330: https://github.com/Bogdanp/dramatiq/pull/330
+.. _#350: https://github.com/Bogdanp/dramatiq/pull/350
 .. _@mic47: https://github.com/mic47
 
 
