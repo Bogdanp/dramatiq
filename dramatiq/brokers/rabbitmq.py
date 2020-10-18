@@ -32,7 +32,7 @@ from ..logging import get_logger
 from ..message import Message
 
 #: The maximum amount of time a message can be in the dead queue.
-DEAD_MESSAGE_TTL = os.getenv('dramatiq_dead_message_ttl', 86400000 * 7)
+DEAD_MESSAGE_TTL = int(os.getenv('dramatiq_dead_message_ttl', 86400000 * 7))
 
 #: The max number of times to attempt an enqueue operation in case of
 #: a connection error.
