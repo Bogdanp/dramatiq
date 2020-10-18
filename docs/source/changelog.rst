@@ -12,12 +12,17 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
+* The RabbitMQ broker dead message TTL can now be configured via the
+  ``dramatiq_dead_message_ttl`` environment variable.  (`#354`_,
+  `@evstratbg`_)
 * The CLI now supports referencing a callable to set up the broker on
   worker startup.  (`#350`_)
 * The ``--worker-shutdown-timeout`` flag.  (`#330`_, `@mic47`_)
 
 .. _#330: https://github.com/Bogdanp/dramatiq/pull/330
 .. _#350: https://github.com/Bogdanp/dramatiq/pull/350
+.. _#354: https://github.com/Bogdanp/dramatiq/pull/354
+.. _@evstratbg: https://github.com/evstratbg
 .. _@mic47: https://github.com/mic47
 
 
