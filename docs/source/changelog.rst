@@ -34,12 +34,14 @@ Fixed
   an unhandled signal.  (`#334`_, `@omegacoleman`_)
 * The results middleware now gracefully handles actor-not-found errors
   during nack. (`#336`_, `#337`_, `@AndreCimander`_)
+* A memory bloat issue with tasks that raise exceptions.  (`#351`_)
 
 .. _#326: https://github.com/Bogdanp/dramatiq/pull/326
 .. _#328: https://github.com/Bogdanp/dramatiq/pull/328
 .. _#334: https://github.com/Bogdanp/dramatiq/pull/334
 .. _#336: https://github.com/Bogdanp/dramatiq/pull/336
 .. _#337: https://github.com/Bogdanp/dramatiq/pull/337
+.. _#351: https://github.com/Bogdanp/dramatiq/pull/351
 .. _@AndreCimander: https://github.com/AndreCimander
 .. _@CaselIT: https://github.com/CaselIT
 .. _@omegacoleman: https://github.com/omegacoleman
