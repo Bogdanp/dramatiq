@@ -4,7 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from dramatiq.rate_limits import WindowRateLimiter
 
+from .common import skip_in_ci
 
+
+@skip_in_ci
 def test_window_rate_limiter_limits_per_window(rate_limiter_backend):
     # Given that I have a bucket rate limiter and a call database
     limiter = WindowRateLimiter(rate_limiter_backend, "window-test", limit=2, window=5)
