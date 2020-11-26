@@ -36,7 +36,10 @@ CONSUMER_RESTART_DELAY_SECS = CONSUMER_RESTART_DELAY / 1000
 #: calls after a connection error.
 POST_PROCESS_MESSAGE_RETRY_DELAY_SECS = 5
 
-#: The number of messages to prefetch from the queue for each worker
+#: The number of messages to prefetch from the queue for each worker.
+#: Currently processed messages are included in the count. When set to "1" a new message
+#: is only fetched once a previous one is done.
+#: If unset two times the number of configured worker threads are prefetched.
 QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
 
 
