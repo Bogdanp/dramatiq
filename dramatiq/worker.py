@@ -18,6 +18,7 @@
 import os
 import time
 from collections import defaultdict
+from functools import lru_cache
 from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
@@ -26,6 +27,7 @@ from .common import current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
+from .results.middleware import Results
 
 #: The number of milliseconds to wait before restarting consumers
 #: after a connection error.
@@ -473,8 +475,8 @@ class _WorkerThread(Thread):
                 actor = self.broker.get_actor(message.actor_name)
                 res = actor(*message.args, **message.kwargs)
                 if res is not None \
-                   and not actor.options.get("store_results", False) \
-                   and message.options.get("pipe_target") is None:
+                   and message.options.get("pipe_target") is None \
+                   and not has_results_middleware(self.broker):
                     self.logger.warning(
                         "Actor '%s' returned a value that is not None, and you haven't added the "
                         "Results middleware to the broker, so the value has been discarded. "
@@ -538,3 +540,8 @@ class _WorkerThread(Thread):
         """
         self.logger.debug("Stopping worker thread...")
         self.running = False
+
+
+@lru_cache
+def has_results_middleware(broker):
+    return any(type(m) is Results for m in broker.middleware)

@@ -93,6 +93,12 @@ class Results(Middleware):
         store_results, result_ttl = self._lookup_options(broker, message)
         if store_results and exception is None:
             self.backend.store_result(message, result, result_ttl)
+        if not store_results and result is not None:
+            self.logger.warning(
+                "Actor '%s' returned a value that is not None, but you "
+                "haven't set its `store_results' option to `True' so "
+                "the value has been discarded." % message.actor_name
+            )
 
     def after_nack(self, broker, message):
         store_results, result_ttl = self._lookup_options(broker, message)
