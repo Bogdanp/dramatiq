@@ -472,6 +472,15 @@ class _WorkerThread(Thread):
             if not message.failed:
                 actor = self.broker.get_actor(message.actor_name)
                 res = actor(*message.args, **message.kwargs)
+                if res is not None \
+                   and not actor.options.get("store_results", False) \
+                   and message.options.get("pipe_target") is None:
+                    self.logger.warning(
+                        "Actor '%s' returned a value that is not None, and you haven't added the "
+                        "Results middleware to the broker, so the value has been discarded. "
+                        "Consider adding the Results middleware to your broker or piping the "
+                        "result into another actor." % actor.actor_name
+                    )
 
             self.broker.emit_after("process_message", message, result=res)
 

@@ -212,6 +212,31 @@ def test_actor_warning_when_returns_result_and_no_results_middleware_present(stu
         assert any("Consider adding the Results middleware" in x for x in warning_messages)
 
 
+def test_actor_no_warning_when_returns_result_while_piping(stub_broker, stub_worker):
+    # Given that I've mocked the logging class
+    with patch("logging.Logger.warning") as warning_mock:
+        # And I have an actor that always returns 1, and does not store results
+        @dramatiq.actor
+        def always_1():
+            return 1
+
+        # And an actor that takes a single argument
+        @dramatiq.actor
+        def noop(x):
+            pass
+
+        # When I send that actor a message
+        (always_1.message() | noop.message()).run()
+
+        # And wait for the message to get processed
+        stub_broker.join(noop.queue_name)
+        stub_worker.join()
+
+        # Then a warning should be logged
+        warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
+        assert not any("Consider adding the Results middleware" in x for x in warning_messages)
+
+
 def test_actor_no_warning_when_returns_result_and_results_middleware_present(stub_broker, stub_worker, result_backend):
     # Given a result backend
     # And a broker with the results middleware
