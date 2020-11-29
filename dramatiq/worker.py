@@ -542,6 +542,6 @@ class _WorkerThread(Thread):
         self.running = False
 
 
-@lru_cache
+@lru_cache(maxsize=128)
 def has_results_middleware(broker):
     return any(type(m) is Results for m in broker.middleware)
