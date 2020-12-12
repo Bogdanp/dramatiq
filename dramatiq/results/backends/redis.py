@@ -88,9 +88,6 @@ class RedisBackend(ResultBackend):
 
         return self.unwrap_result(self.encoder.decode(data))
 
-    def unwrap_result(self, res):
-        return unwrap_result(res)
-
     def _store(self, message_key, result, ttl):
         with self.client.pipeline() as pipe:
             pipe.delete(message_key)

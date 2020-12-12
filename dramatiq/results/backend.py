@@ -56,6 +56,20 @@ class ResultBackend:
         self.namespace = namespace
         self.encoder = encoder or get_encoder()
 
+    def unwrap_result(self, res):
+        """Unwrap the serialized result.  Passes through to
+        :func:`unwrap_result` by default, but can be overridden to
+        complement changes to how :meth:`store_result` or
+        :meth:`store_exception` serialize their results.
+
+        Parameters:
+          res(object): The result data, typically a dict.
+
+        Returns:
+          object: The result.
+        """
+        return unwrap_result(res)
+
     def get_result(self, message, *, block: bool = False, timeout: int = None) -> Result:
         """Get a result from the backend.
 
@@ -94,7 +108,7 @@ class ResultBackend:
                 raise ResultMissing(message)
 
             else:
-                return unwrap_result(result)
+                return self.unwrap_result(result)
 
     def store_result(self, message, result: Result, ttl: int) -> None:
         """Store a result in the backend.
