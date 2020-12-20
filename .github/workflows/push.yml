@@ -91,9 +91,9 @@ jobs:
       - name: Install memcached
         run: |
           mkdir memcached
-          Invoke-WebRequest "https://s3.amazonaws.com/downloads.northscale.com/memcached-win64-1.4.4-14.zip" -OutFile "memcached\memcached.zip"
-          7z x memcached\memcached.zip -y -omemcached\
-          Start-Process memcached\memcached\memcached.exe -PassThru
+          Invoke-WebRequest "https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw/memcached-1.6.7-win32-mingw.zip" -OutFile "memcached\memcached.zip"
+          7z x memcached\memcached.zip -y -omemcached
+          Start-Process memcached\memcached-1.6.7-win32-mingw\bin\memcached.exe -PassThru
 
       - name: Install RabbitMQ and Redis
         run: |
