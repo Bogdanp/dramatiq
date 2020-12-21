@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+
+`1.10.0`_ -- 2020-12-21
+-----------------------
+
 Added
 ^^^^^
 
@@ -25,7 +29,6 @@ Added
 .. _@evstratbg: https://github.com/evstratbg
 .. _@mic47: https://github.com/mic47
 
-
 Changed
 ^^^^^^^
 
@@ -35,11 +38,12 @@ Changed
 Fixed
 ^^^^^
 
-* The CLI now return code ``1`` when one of the workers is killed by
+* The CLI now returns code ``1`` when one of the workers is killed by
   an unhandled signal.  (`#334`_, `@omegacoleman`_)
 * The results middleware now gracefully handles actor-not-found errors
   during nack. (`#336`_, `#337`_, `@AndreCimander`_)
 * A memory bloat issue with tasks that raise exceptions.  (`#351`_)
+* CI on Windows. (`#371`_, `@gdvalle`_)
 
 .. _#326: https://github.com/Bogdanp/dramatiq/pull/326
 .. _#328: https://github.com/Bogdanp/dramatiq/pull/328
@@ -47,8 +51,10 @@ Fixed
 .. _#336: https://github.com/Bogdanp/dramatiq/pull/336
 .. _#337: https://github.com/Bogdanp/dramatiq/pull/337
 .. _#351: https://github.com/Bogdanp/dramatiq/pull/351
+.. _#371: https://github.com/Bogdanp/dramatiq/pull/371
 .. _@AndreCimander: https://github.com/AndreCimander
 .. _@CaselIT: https://github.com/CaselIT
+.. _@gdvalle: https://github.com/gdvalle
 .. _@omegacoleman: https://github.com/omegacoleman
 
 
@@ -908,7 +914,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.9.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.10.0...HEAD
+.. _1.10.0: https://github.com/Bogdanp/dramatiq/compare/v1.9.0...v1.10.0
 .. _1.9.0: https://github.com/Bogdanp/dramatiq/compare/v1.8.1...v1.9.0
 .. _1.8.1: https://github.com/Bogdanp/dramatiq/compare/v1.8.0...v1.8.1
 .. _1.8.0: https://github.com/Bogdanp/dramatiq/compare/v1.7.0...v1.8.0
