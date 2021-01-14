@@ -22,6 +22,7 @@ from collections import namedtuple
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
+from .errors import DecodeError
 from .results import Results
 
 #: The global encoder instance.
@@ -93,7 +94,10 @@ class Message(namedtuple("Message", (
     def decode(cls, data):
         """Convert a bytestring to a message.
         """
-        return cls(**global_encoder.decode(data))
+        try:
+            return cls(**global_encoder.decode(data))
+        except Exception as e:
+            raise DecodeError("Failed to decode message: %s" % data) from e
 
     def encode(self):
         """Convert this message to a bytestring.

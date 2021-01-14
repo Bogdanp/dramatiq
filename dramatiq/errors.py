@@ -27,6 +27,11 @@ class DramatiqError(Exception):  # pragma: no cover
         return str(self.message) or repr(self.message)
 
 
+class DecodeError(DramatiqError):
+    """Raised when a message fails to decode.
+    """
+
+
 class BrokerError(DramatiqError):
     """Base class for broker-related errors.
     """

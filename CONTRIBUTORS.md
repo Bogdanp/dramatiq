@@ -47,3 +47,4 @@ of those changes to CLEARTYPE SRL.
 | [@omegacoleman](https://github.com/omegacoleman)      | You Cai                |
 | [@denhai](https://github.com/denhai)                  | Hayden Bartlett        |
 | [@rouge8](https://github.com/rouge8)                  | Andy Freeland          |
+| [@thomazthz](https://github.com/thomazthz)            | Thomaz Soares          |

@@ -27,7 +27,7 @@ import pika
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, xq_name
-from ..errors import ConnectionClosed, QueueJoinTimeout
+from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message
 
@@ -496,6 +496,11 @@ class _RabbitmqConsumer(Consumer):
                 pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
+        except DecodeError:
+            self.known_tags.add(method.delivery_tag)
+            message = _RabbitmqMessage(method.delivery_tag, None)
+            self.logger.warning("Failed to decode message", exc_info=True)
+            self.nack(message)
 
     def close(self):
         try:
