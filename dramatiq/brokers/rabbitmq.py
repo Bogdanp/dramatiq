@@ -29,7 +29,7 @@ from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, xq_name
 from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
-from ..message import Message
+from ..message import Message, get_encoder
 
 #: The maximum amount of time a message can be in the dead queue.
 DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
@@ -467,9 +467,7 @@ class _RabbitmqConsumer(Consumer):
     def nack(self, message):
         try:
             self.known_tags.remove(message._tag)
-            self.connection.add_callback_threadsafe(
-                partial(self.channel.basic_nack, message._tag, requeue=False),
-            )
+            self._nack(message._tag)
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
@@ -477,6 +475,11 @@ class _RabbitmqConsumer(Consumer):
             self.logger.warning("Failed to nack message: not in known tags.")
         except Exception:  # pragma: no cover
             self.logger.warning("Failed to nack message.", exc_info=True)
+
+    def _nack(self, tag):
+        self.connection.add_callback_threadsafe(
+            partial(self.channel.basic_nack, tag, requeue=False),
+        )
 
     def requeue(self, messages):
         """RabbitMQ automatically re-enqueues unacked messages when
@@ -488,19 +491,21 @@ class _RabbitmqConsumer(Consumer):
             method, properties, body = next(self.iterator)
             if method is None:
                 return None
-
-            message = Message.decode(body)
-            self.known_tags.add(method.delivery_tag)
-            return _RabbitmqMessage(method.delivery_tag, message)
         except (AssertionError,
                 pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
+
+        try:
+            message = Message.decode(body)
         except DecodeError:
-            self.known_tags.add(method.delivery_tag)
-            message = _RabbitmqMessage(method.delivery_tag, None)
-            self.logger.warning("Failed to decode message", exc_info=True)
-            self.nack(message)
+            self.logger.exception("Failed to decode message using encoder %r.", get_encoder())
+            self._nack(method.delivery_tag)
+            return None
+
+        rmq_message = _RabbitmqMessage(method.delivery_tag, message)
+        self.known_tags.add(method.delivery_tag)
+        return rmq_message
 
     def close(self):
         try:

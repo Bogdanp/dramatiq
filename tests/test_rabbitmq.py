@@ -466,27 +466,29 @@ def test_rabbitmq_messages_that_failed_to_decode_are_rejected(rabbitmq_broker, r
     def do_work(_):
         pass
 
-    # And an encoder that may fail to decode
-    def decode(self, data):
-        if "xfail" in str(data):
-            raise RuntimeError("xfail")
-        return self.super().decode(data)
-
     old_encoder = dramatiq.get_encoder()
-    new_encoder = type("_Encoder", (old_encoder.__class__,), {"decode": decode})
-    dramatiq.set_encoder(new_encoder())
 
-    # When I send a message that will fail to decode
-    do_work.send("xfail")
+    # And an encoder that may fail to decode
+    class BadEncoder(type(old_encoder)):
+        def decode(self, data):
+            if "xfail" in str(data):
+                raise RuntimeError("xfail")
+            return super().decode(data)
 
-    # And I join on the queue
-    rabbitmq_broker.join(do_work.queue_name)
-    rabbitmq_worker.join()
+    dramatiq.set_encoder(BadEncoder())
 
-    # Then I expect the message to get moved to the dead letter queue
-    q_count, dq_count, xq_count = rabbitmq_broker.get_queue_message_counts(do_work.queue_name)
+    try:
+        # When I send a message that will fail to decode
+        do_work.send("xfail")
 
-    assert q_count == dq_count == 0
-    assert xq_count == 1
+        # And I join on the queue
+        rabbitmq_broker.join(do_work.queue_name)
+        rabbitmq_worker.join()
 
-    dramatiq.set_encoder(old_encoder)
+        # Then I expect the message to get moved to the dead letter queue
+        q_count, dq_count, xq_count = rabbitmq_broker.get_queue_message_counts(do_work.queue_name)
+
+        assert q_count == dq_count == 0
+        assert xq_count == 1
+    finally:
+        dramatiq.set_encoder(old_encoder)

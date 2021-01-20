@@ -93,11 +93,15 @@ class Message(namedtuple("Message", (
     @classmethod
     def decode(cls, data):
         """Convert a bytestring to a message.
+
+        Raises:
+          DecodeError: When the decoder raises an exception while
+            decoding `data`.
         """
         try:
             return cls(**global_encoder.decode(data))
         except Exception as e:
-            raise DecodeError("Failed to decode message: %s" % data) from e
+            raise DecodeError("Failed to decode message.", data, e) from e
 
     def encode(self):
         """Convert this message to a bytestring.

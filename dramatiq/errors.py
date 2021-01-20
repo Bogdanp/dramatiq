@@ -31,6 +31,11 @@ class DecodeError(DramatiqError):
     """Raised when a message fails to decode.
     """
 
+    def __init__(self, message, data, error):
+        super().__init__(message)
+        self.data = data
+        self.error = error
+
 
 class BrokerError(DramatiqError):
     """Base class for broker-related errors.

@@ -20,8 +20,8 @@ from .broker import Broker, Consumer, MessageProxy, get_broker, set_broker
 from .composition import group, pipeline
 from .encoder import Encoder, JSONEncoder, PickleEncoder
 from .errors import (
-    ActorNotFound, BrokerError, ConnectionClosed, ConnectionError, ConnectionFailed, DramatiqError, QueueJoinTimeout,
-    QueueNotFound, RateLimitExceeded, Retry
+    ActorNotFound, BrokerError, ConnectionClosed, ConnectionError, ConnectionFailed, DecodeError, DramatiqError,
+    QueueJoinTimeout, QueueNotFound, RateLimitExceeded, Retry
 )
 from .generic import GenericActor
 from .logging import get_logger
@@ -44,7 +44,7 @@ __all__ = [
 
     # Errors
     "DramatiqError",
-    "BrokerError",
+    "BrokerError", "DecodeError",
     "ActorNotFound", "QueueNotFound", "QueueJoinTimeout",
     "ConnectionError", "ConnectionClosed", "ConnectionFailed",
     "RateLimitExceeded", "Retry",
