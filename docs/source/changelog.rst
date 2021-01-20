@@ -9,6 +9,22 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* :meth:`decode<dramatiq.Message.decode>` now raises a new error,
+  :class:`DecodeError<dramatiq.DecodeError>`, on exception. (`#375`_,
+  `@thomazthz`_)
+
+Changed
+^^^^^^^
+
+* The RabbitMQ broker moves messages that fail to decode to the
+  DLQ. (`#375`_, `@thomazthz`_)
+
+.. _#375: https://github.com/Bogdanp/dramatiq/pull/375
+.. _@thomazthz: https://github.com/thomazthz
+
 
 `1.10.0`_ -- 2020-12-21
 -----------------------

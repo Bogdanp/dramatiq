@@ -178,6 +178,8 @@ Errors
    :members:
 .. autoclass:: BrokerError
    :members:
+.. autoclass:: DecodeError
+   :members:
 .. autoclass:: ActorNotFound
    :members:
 .. autoclass:: QueueNotFound
