@@ -42,8 +42,9 @@ class TimeLimit(Middleware):
       this means that this middleware can't cancel system calls.
 
     Parameters:
-      time_limit(int): The maximum number of milliseconds actors may
-        run for.
+      time_limit(float): The maximum number of milliseconds actors may
+        run for. Use `float("inf")` to avoid setting a timeout for the
+        actor.
       interval(int): The interval (in milliseconds) with which to
         check for actors that have exceeded the limit.
     """
