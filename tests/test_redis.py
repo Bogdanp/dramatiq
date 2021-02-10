@@ -144,7 +144,7 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
 
     # If I enqueue many messages
     for message_id in message_ids:
-        redis_broker.do_enqueue(queue_name, message_id, b"message-data")
+        redis_broker.do_enqueue(queue_name, message_id, b'{"options":{}}')
 
     # And then fetch them
     for _ in message_ids:

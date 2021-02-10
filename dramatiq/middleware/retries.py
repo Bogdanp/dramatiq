@@ -80,6 +80,17 @@ class Retries(Middleware):
             "throws",
         }
 
+    def before_process_message(self, broker, message, *, result=None, exception=None):
+        max_revives = 1   # Or set by a config option
+
+        if "revives" in message.options and message.options["revives"] > max_revives:
+            self.logger.warning(
+                "This message exceeded its revive limit",
+                message.message_id
+            )
+            message.fail()
+            return
+
     def after_process_message(self, broker, message, *, result=None, exception=None):
         if exception is None:
             return

@@ -88,6 +88,12 @@ class Prometheus(Middleware):
             ["queue_name", "actor_name"],
             registry=registry,
         )
+        self.total_revived_messages = prom.Counter(
+            "dramatiq_message_revives_total",
+            "The total number of messages revived from dead workers.",
+            ["queue_name", "actor_name"],
+            registry=registry,
+        )
         self.inprogress_messages = prom.Gauge(
             "dramatiq_messages_inprogress",
             "The number of messages in progress.",
@@ -135,6 +141,9 @@ class Prometheus(Middleware):
         if message.message_id in self.delayed_messages:
             self.delayed_messages.remove(message.message_id)
             self.inprogress_delayed_messages.labels(*labels).dec()
+
+        if "revives" in message.options:
+            self.total_revived_messages.labels(*labels).inc()
 
         self.inprogress_messages.labels(*labels).inc()
         self.message_start_times[message.message_id] = current_millis()
