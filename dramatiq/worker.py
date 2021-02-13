@@ -466,6 +466,7 @@ class _WorkerThread(Thread):
         Parameters:
           message(MessageProxy)
         """
+        actor = None
         try:
             self.logger.debug("Received message %s with id %r.", message, message.message_id)
             self.broker.emit_before("process_message", message)
@@ -497,7 +498,7 @@ class _WorkerThread(Thread):
             # to pass exceptions into results.
             message.stuff_exception(e)
 
-            throws = message.options.get("throws") or actor.options.get("throws")
+            throws = message.options.get("throws") or (actor and actor.options.get("throws"))
             if isinstance(e, RateLimitExceeded):
                 self.logger.debug("Rate limit exceeded in message %s: %s.", message, e)
             elif throws and isinstance(e, throws):
