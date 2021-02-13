@@ -129,8 +129,14 @@ class RabbitmqBroker(Broker):
 
     @connection.deleter
     def connection(self):
+        del self.channel
         try:
             connection = self.state.connection
+            if connection.is_open:
+                try:
+                    connection.close()
+                except Exception:
+                    self.logger.exception("Encountered exception while closing Connection.")
             del self.state.connection
             self.connections.remove(connection)
         except AttributeError:
@@ -154,6 +160,11 @@ class RabbitmqBroker(Broker):
     def channel(self):
         try:
             channel = self.state.channel
+            if channel.is_open:
+                try:
+                    channel.close()
+                except Exception:
+                    self.logger.exception("Encountered exception while closing Channel.")
             del self.state.channel
             self.channels.remove(channel)
         except AttributeError:
@@ -237,7 +248,6 @@ class RabbitmqBroker(Broker):
                     pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
                 # Delete the channel and the connection so that the next
                 # caller may initiate new ones of each.
-                del self.channel
                 del self.connection
 
                 attempts += 1
@@ -320,7 +330,6 @@ class RabbitmqBroker(Broker):
                     pika.exceptions.AMQPChannelError) as e:
                 # Delete the channel and the connection so that the
                 # next caller/attempt may initiate new ones of each.
-                del self.channel
                 del self.connection
 
                 attempts += 1
