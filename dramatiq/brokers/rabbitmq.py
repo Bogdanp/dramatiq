@@ -132,15 +132,16 @@ class RabbitmqBroker(Broker):
         del self.channel
         try:
             connection = self.state.connection
-            if connection.is_open:
-                try:
-                    connection.close()
-                except Exception:
-                    self.logger.exception("Encountered exception while closing Connection.")
-            del self.state.connection
-            self.connections.remove(connection)
         except AttributeError:
-            pass
+            return
+
+        del self.state.connection
+        self.connections.remove(connection)
+        if connection.is_open:
+            try:
+                connection.close()
+            except Exception:
+                self.logger.exception("Encountered exception while closing Connection.")
 
     @property
     def channel(self):
@@ -160,15 +161,16 @@ class RabbitmqBroker(Broker):
     def channel(self):
         try:
             channel = self.state.channel
-            if channel.is_open:
-                try:
-                    channel.close()
-                except Exception:
-                    self.logger.exception("Encountered exception while closing Channel.")
-            del self.state.channel
-            self.channels.remove(channel)
         except AttributeError:
-            pass
+            return
+
+        del self.state.channel
+        self.channels.remove(channel)
+        if channel.is_open:
+            try:
+                channel.close()
+            except Exception:
+                self.logger.exception("Encountered exception while closing Channel.")
 
     def close(self):
         """Close all open RabbitMQ connections.
