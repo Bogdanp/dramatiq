@@ -116,18 +116,13 @@ if do_maintenance == "1" then
         local message_ids = redis.call("smembers", dead_worker_queue_acks)
         if next(message_ids) then
             for i, message_id in ipairs(message_ids) do
-              local encoded_message = redis.call("hget", queue_messages, message_id)
-              if encoded_message ~= nil then
-                local message = cjson.decode(encoded_message)
-                -- Do we need to do this in case of multiple people running domaintenance?
-                -- redis.call("hdel", queue_messages, message_id)
-                if message['options']['revives'] ~= nil then
-                  message['options']['revives'] = message['options']['revives'] + 1
-                else
-                  message['options']['revives'] = 0
-                end
-                redis.call("hset", queue_messages, message_id, cjson.encode(message))
+              local message = cjson.decode(redis.call("hget", queue_messages, message_id))
+              if message['options']['revives'] ~= nil then
+                message['options']['revives'] = message['options']['revives'] + 1
+              else
+                message['options']['revives'] = 1
               end
+              redis.call("hset", queue_messages, message_id, cjson.encode(message))
             end
 
             for message_ids_batch in iter_chunks(message_ids) do

@@ -381,6 +381,44 @@ def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
     assert set(compat_unacked) == valid_message_ids
 
 
+def test_redis_messages_revived_on_maintenance(redis_broker, redis_worker):
+    # Given that I have an actor that takes a long time to run
+    @dramatiq.actor
+    def do_work():
+        time.sleep(5)
+
+    do_work.send()
+
+    # When I kill the worker prematurely
+    redis_worker.stop(timeout=1)
+
+    # And maintenance runs for that actor's queue
+    redis_broker.heartbeat_timeout = 0
+    redis_broker.maintenance_chance = MAINTENANCE_SCALE
+    redis_broker.do_qsize(do_work.queue_name)
+
+    # My message should have a revived key on it
+    messages = redis_broker.do_fetch(do_work.queue_name, 1)
+
+    assert len(messages) == 1
+    assert Message.decode(messages[0]).options["revives"] == 1
+
+    redis_worker.start()
+    time.sleep(1)
+    redis_worker.stop(timeout=1)
+
+    # And maintenance runs for that actor"s queue
+    redis_broker.heartbeat_timeout = 0
+    redis_broker.maintenance_chance = MAINTENANCE_SCALE
+    redis_broker.do_qsize(do_work.queue_name)
+
+    # My message should have a revived key on it
+    messages = redis_broker.do_fetch(do_work.queue_name, 1)
+
+    assert len(messages) == 1
+    assert Message.decode(messages[0]).options["revives"] == 2
+
+
 def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_worker):
     # Given that I have an actor
     @dramatiq.actor
