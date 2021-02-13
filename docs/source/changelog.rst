@@ -25,6 +25,16 @@ Changed
 .. _#375: https://github.com/Bogdanp/dramatiq/pull/375
 .. _@thomazthz: https://github.com/thomazthz
 
+Fixed
+^^^^^
+
+* Deleting the connection off of a ``RabbitMQ`` broker now correctly
+  closes it and its associated channel (if any) before removing it
+  from the broker. (`#381`_, `#384`_)
+
+.. _#381: https://github.com/Bogdanp/dramatiq/issue/381
+.. _#381: https://github.com/Bogdanp/dramatiq/issue/384
+
 
 `1.10.0`_ -- 2020-12-21
 -----------------------
