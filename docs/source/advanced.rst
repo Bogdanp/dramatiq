@@ -222,8 +222,8 @@ Add a field to the ``options`` dictionary of the message called
 Assuming you want to enqueue a message on a queue named ``default``,
 run::
 
-  > HSET default.msgs $YOUR_REDIS_MESSAGE_ID $YOUR_MESSAGE_PAYLOAD
-  > RPUSH default $YOUR_REDIS_MESSAGE_ID
+  > HSET dramatiq:default.msgs $YOUR_REDIS_MESSAGE_ID $YOUR_MESSAGE_PAYLOAD
+  > RPUSH dramatiq:default $YOUR_REDIS_MESSAGE_ID
 
 ``$YOUR_REDIS_MESSAGE_ID`` is the ``redis_message_id`` in the ``options``
 field of the message payload.
