@@ -338,6 +338,8 @@ class _RedisConsumer(Consumer):
                     # cache and if there aren't, we go down the slow
                     # path of doing network IO.
                     data = self.message_cache.pop(0)
+                    if data is None:
+                        raise IndexError
                     self.misses = 0
 
                     message = Message.decode(data)
