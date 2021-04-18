@@ -16,6 +16,18 @@ Added
   :class:`DecodeError<dramatiq.DecodeError>`, on exception. (`#375`_,
   `@thomazthz`_)
 
+Fixed
+^^^^^
+
+* The Redis broker is now more defensive in how it handles
+  re-enqueueing messages.  This should fix a potential race condition
+  where a worker could hit its heartbeat timeout but still end up
+  re-enqueueing messages (thus ending up with the same message id
+  enqueued multiple times).  (`#266`_, `#395`_)
+
+.. _#266: https://github.com/Bogdanp/dramatiq/issues/266
+.. _#395: https://github.com/Bogdanp/dramatiq/pull/395
+
 Changed
 ^^^^^^^
 
