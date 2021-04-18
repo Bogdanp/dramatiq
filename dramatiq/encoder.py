@@ -20,6 +20,8 @@ import json
 import pickle
 import typing
 
+from .errors import DecodeError
+
 #: Represents the contents of a Message object as a dict.
 MessageData = typing.Dict[str, typing.Any]
 
@@ -49,7 +51,15 @@ class JSONEncoder(Encoder):
         return json.dumps(data, separators=(",", ":")).encode("utf-8")
 
     def decode(self, data: bytes) -> MessageData:
-        return json.loads(data.decode("utf-8"))
+        try:
+            data_str = data.decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise DecodeError("failed to decode data %r" % (data,), data, e)
+
+        try:
+            return json.loads(data_str)
+        except json.decoder.DecodeError as e:
+            raise DecodeError("failed to decode message %r" % (data_str,), data_str, e)
 
 
 class PickleEncoder(Encoder):
