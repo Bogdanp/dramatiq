@@ -338,6 +338,13 @@ class _RedisConsumer(Consumer):
                     # cache and if there aren't, we go down the slow
                     # path of doing network IO.
                     data = self.message_cache.pop(0)
+                    if data is None:
+                        self.logger.warning(
+                            "Found 'None' message in message cache for queue %r. "
+                            "This may be a bug in dramatiq (related to #266), please report it.",
+                            self.queue_name,
+                        )
+                        continue
                     self.misses = 0
 
                     message = Message.decode(data)
