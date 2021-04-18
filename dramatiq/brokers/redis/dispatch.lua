@@ -189,9 +189,10 @@ elseif command == "requeue" then
     for i=1,#ARGS do
         local message_id = ARGS[i]
 
-        redis.call("srem", queue_acks, message_id)
-        if redis.call("hexists", queue_messages, message_id) then
-            redis.call("rpush", queue_full_name, message_id)
+        if redis.call("srem", queue_acks, message_id) > 0 then
+            if redis.call("hexists", queue_messages, message_id) then
+                redis.call("rpush", queue_full_name, message_id)
+            end
         end
     end
 
@@ -200,8 +201,9 @@ elseif command == "requeue" then
 elseif command == "ack" then
     local message_id = ARGS[1]
 
-    redis.call("hdel", queue_messages, message_id)
-    redis.call("srem", queue_acks, message_id)
+    if redis.call("srem", queue_acks, message_id) > 0 then
+        redis.call("hdel", queue_messages, message_id)
+    end
 
 
 -- Moves a message from a queue to a dead-letter queue.
@@ -209,14 +211,14 @@ elseif command == "nack" then
     local message_id = ARGS[1]
 
     -- unack the message
-    redis.call("srem", queue_acks, message_id)
-
-    -- then pop it off the messages hash and move it onto the DLQ
-    local message = redis.call("hget", queue_messages, message_id)
-    if message then
-        redis.call("zadd", xqueue_full_name, timestamp, message_id)
-        redis.call("hset", xqueue_messages, message_id, message)
-        redis.call("hdel", queue_messages, message_id)
+    if redis.call("srem", queue_acks, message_id) > 0 then
+        -- then pop it off the messages hash and move it onto the DLQ
+        local message = redis.call("hget", queue_messages, message_id)
+        if message then
+            redis.call("zadd", xqueue_full_name, timestamp, message_id)
+            redis.call("hset", xqueue_messages, message_id, message)
+            redis.call("hdel", queue_messages, message_id)
+        end
     end
 
 
