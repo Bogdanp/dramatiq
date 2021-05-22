@@ -19,18 +19,6 @@ Added
   :class:`DecodeError<dramatiq.DecodeError>`, on exception. (`#375`_,
   `@thomazthz`_)
 
-Fixed
-^^^^^
-
-* The Redis broker is now more defensive in how it handles
-  re-enqueueing messages.  This should fix a potential race condition
-  where a worker could hit its heartbeat timeout but still end up
-  re-enqueueing messages (thus ending up with the same message id
-  enqueued multiple times).  (`#266`_, `#395`_)
-
-.. _#266: https://github.com/Bogdanp/dramatiq/issues/266
-.. _#395: https://github.com/Bogdanp/dramatiq/pull/395
-
 Changed
 ^^^^^^^
 
@@ -43,12 +31,19 @@ Changed
 Fixed
 ^^^^^
 
+* The Redis broker is now more defensive in how it handles
+  re-enqueueing messages.  This should fix a potential race condition
+  where a worker could hit its heartbeat timeout but still end up
+  re-enqueueing messages (thus ending up with the same message id
+  enqueued multiple times).  (`#266`_, `#395`_)
 * A code path that could lead to an unbound variable error has now
   been fixed.  (`#382`_)
 * Deleting the connection off of a ``RabbitMQ`` broker now correctly
   closes it and its associated channel (if any) before removing it
   from the broker. (`#381`_, `#384`_)
 
+.. _#266: https://github.com/Bogdanp/dramatiq/issues/266
+.. _#395: https://github.com/Bogdanp/dramatiq/pull/395
 .. _#381: https://github.com/Bogdanp/dramatiq/issue/381
 .. _#382: https://github.com/Bogdanp/dramatiq/issue/382
 .. _#384: https://github.com/Bogdanp/dramatiq/issue/384
