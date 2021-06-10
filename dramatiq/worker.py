@@ -474,7 +474,7 @@ class _WorkerThread(Thread):
             res = None
             if not message.failed:
                 actor = self.broker.get_actor(message.actor_name)
-                res = actor(*message.args, **message.kwargs)
+                res = actor(*message.args, **message.injections, **message.kwargs)
                 if res is not None \
                    and message.options.get("pipe_target") is None \
                    and not has_results_middleware(self.broker):
