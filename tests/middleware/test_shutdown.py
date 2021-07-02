@@ -84,6 +84,7 @@ def test_shutdown_notifications_options(stub_broker, actor_opt, message_opt, sho
     assert middleware.should_notify(do_work, message) == should_notify
 
 
+@pytest.mark.xfail(threading.is_gevent_active(), reason="Shutdown notification mechanism not supported with gevent.")
 @pytest.mark.skipif(not_supported, reason="Threading not supported on this platform.")
 def test_shutdown_notifications_are_received(stub_broker, stub_worker):
     # Given that I have a database
@@ -147,6 +148,7 @@ def test_shutdown_notifications_can_be_ignored(stub_broker, stub_worker):
     assert sum(successes) == 1
 
 
+@pytest.mark.xfail(threading.is_gevent_active(), reason="Shutdown notification mechanism not supported with gevent.")
 @pytest.mark.skipif(not_supported, reason="Threading not supported on this platform.")
 def test_shutdown_notifications_dont_notify_completed_threads(stub_broker, stub_worker):
     # Given that I have a database

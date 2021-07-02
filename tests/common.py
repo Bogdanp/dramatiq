@@ -6,6 +6,7 @@ import pika
 import pytest
 
 from dramatiq import Worker
+from dramatiq.middleware.threading import is_gevent_active
 
 
 @contextmanager
@@ -26,6 +27,8 @@ skip_in_ci = pytest.mark.skipif(
 
 skip_on_windows = pytest.mark.skipif(platform.system() == "Windows", reason="test skipped on Windows")
 skip_on_pypy = pytest.mark.skipif(platform.python_implementation() == "PyPy", reason="Time limits are not supported under PyPy.")
+skip_with_gevent = pytest.mark.skipif(is_gevent_active(), reason="Behaviour with gevent is different.")
+skip_without_gevent = pytest.mark.skipif(not is_gevent_active(), reason="Behaviour without gevent is different.")
 
 RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME", "guest")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
