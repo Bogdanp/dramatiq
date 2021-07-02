@@ -10,6 +10,7 @@ not_supported = threading.current_platform not in threading.supported_platforms
 
 
 @pytest.mark.skipif(not_supported, reason="Threading not supported on this platform.")
+@pytest.mark.skipif(threading.is_gevent_active(), reason="Thread exceptions not supported with gevent.")
 def test_raise_thread_exception():
     # Given that I have a database
     caught = []
@@ -36,6 +37,7 @@ def test_raise_thread_exception():
 
 
 @pytest.mark.skipif(not_supported, reason="Threading not supported on this platform.")
+@pytest.mark.skipif(threading.is_gevent_active(), reason="Thread exceptions not supported with gevent.")
 def test_raise_thread_exception_on_nonexistent_thread(caplog):
     # When an interrupt is raised on a nonexistent thread
     threading.raise_thread_exception(-1, threading.Interrupt)

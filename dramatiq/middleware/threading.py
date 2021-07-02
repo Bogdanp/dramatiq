@@ -30,6 +30,15 @@ current_platform = platform.python_implementation()
 supported_platforms = {"CPython"}
 
 
+def is_gevent_active():
+    """Detect if gevent monkey patching is active."""
+    try:
+        from gevent import monkey
+    except ImportError:  # pragma: no cover
+        return False
+    return bool(monkey.saved)
+
+
 class Interrupt(BaseException):
     """Base class for exceptions used to asynchronously interrupt a
     thread's execution.  An actor may catch these exceptions in order

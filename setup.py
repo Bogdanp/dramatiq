@@ -44,6 +44,10 @@ dependencies = [
 ]
 
 extra_dependencies = {
+    "gevent": [
+        "gevent>=1.1",
+    ],
+
     "memcached": [
         "pylibmc>=1.5,<2.0",
     ],
