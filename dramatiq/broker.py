@@ -90,14 +90,14 @@ class Broker:
             except MiddlewareError:
                 raise
             except Exception:
-                self.logger.critical("Unexpected failure in before_%s.", signal, exc_info=True)
+                self.logger.critical("Unexpected failure in before_%s of %r.", signal, middleware, exc_info=True)
 
     def emit_after(self, signal, *args, **kwargs):
         for middleware in reversed(self.middleware):
             try:
                 getattr(middleware, "after_" + signal)(self, *args, **kwargs)
             except Exception:
-                self.logger.critical("Unexpected failure in after_%s.", signal, exc_info=True)
+                self.logger.critical("Unexpected failure in after_%s of %r.", signal, middleware, exc_info=True)
 
     def add_middleware(self, middleware, *, before=None, after=None):
         """Add a middleware object to this broker.  The middleware is
