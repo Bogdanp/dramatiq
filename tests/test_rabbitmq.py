@@ -335,10 +335,10 @@ def test_rabbitmq_consumers_ignore_unknown_messages_in_ack_and_nack(rabbitmq_bro
 
     # If I attempt to ack a Message that wasn't consumed off of it
     # I expect nothing to happen
-    assert consumer.ack(Mock(_tag=1)) is None
+    assert consumer.ack(Mock(_tag=1)) is False
 
     # Likewise for nack
-    assert consumer.nack(Mock(_tag=1)) is None
+    assert consumer.nack(Mock(_tag=1)) is False
 
 
 def test_ignore_scary_logs_filter_ignores_logs():

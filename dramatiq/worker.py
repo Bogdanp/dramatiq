@@ -338,14 +338,14 @@ class _ConsumerThread(Thread):
                 if message.failed:
                     self.logger.debug("Rejecting message %r.", message.message_id)
                     self.broker.emit_before("nack", message)
-                    self.consumer.nack(message)
-                    self.broker.emit_after("nack", message)
+                    nacked = self.consumer.nack(message)
+                    self.broker.emit_after("nack", message, nacked=nacked)
 
                 else:
                     self.logger.debug("Acknowledging message %r.", message.message_id)
                     self.broker.emit_before("ack", message)
-                    self.consumer.ack(message)
-                    self.broker.emit_after("ack", message)
+                    acked = self.consumer.ack(message)
+                    self.broker.emit_after("ack", message, acked=acked)
 
                 return
 

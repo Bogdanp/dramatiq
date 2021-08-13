@@ -50,7 +50,7 @@ class Middleware:
         """Called before a message is acknowledged.
         """
 
-    def after_ack(self, broker, message):
+    def after_ack(self, broker, message, acked=None):
         """Called after a message has been acknowledged.
         """
 
@@ -58,7 +58,7 @@ class Middleware:
         """Called before a message is rejected.
         """
 
-    def after_nack(self, broker, message):
+    def after_nack(self, broker, message, nacked=None):
         """Called after a message has been rejected.
         """
 

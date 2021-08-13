@@ -272,7 +272,10 @@ class Consumer:
 
     def ack(self, message):  # pragma: no cover
         """Acknowledge that a message has been processed, removing it
-        from the broker.
+        from the broker. Return True if the message was acknowledged,
+        False if it wasn't, or None if no action was taken (as happens
+        with the StubBroker). Raises ConnectionClosed if a connection
+        error occurred.
 
         Parameters:
           message(MessageProxy): The message to acknowledge.
@@ -280,7 +283,10 @@ class Consumer:
         raise NotImplementedError
 
     def nack(self, message):  # pragma: no cover
-        """Move a message to the dead-letter queue.
+        """Move a message to the dead-letter queue. Return True if
+        the message was moved successfully, False otherwise, or None
+        if no action was taken (as happens with the StubBroker).
+        Raises ConnectionClosed if a connection error was occurred.
 
         Parameters:
           message(MessageProxy): The message to reject.

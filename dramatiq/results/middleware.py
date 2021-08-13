@@ -102,7 +102,7 @@ class Results(Middleware):
                 "the value has been discarded." % message.actor_name
             )
 
-    def after_nack(self, broker, message):
+    def after_nack(self, broker, message, nacked=None):
         store_results, result_ttl = self._lookup_options(broker, message)
         if store_results and message.failed:
             exception = message._exception or Exception("unknown")
