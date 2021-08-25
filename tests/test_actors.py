@@ -333,6 +333,30 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
         assert sum(runs) == 0
 
 
+def test_actor_messages_can_be_assigned_message_age_limits(stub_broker):
+    # Given that I have a database
+    runs = []
+
+    # And an actor without an explicit age limit
+    @dramatiq.actor()
+    def do_work():
+        runs.append(1)
+
+    # When I send it a message with a custom age limit
+    do_work.send_with_options(max_age=100)
+
+    # And wait for its age limit to pass
+    time.sleep(0.1)
+
+    # Then join on its queue
+    with worker(stub_broker, worker_timeout=100) as stub_worker:
+        stub_broker.join(do_work.queue_name)
+        stub_worker.join()
+
+        # I expect the message to have been skipped
+        assert sum(runs) == 0
+
+
 def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker):
     # Given that I have a database
     attempts = []
