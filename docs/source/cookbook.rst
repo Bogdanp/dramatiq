@@ -31,7 +31,8 @@ time an actor fails, even if the message is going to be retried.
    @dramatiq.actor
    def print_result(message_data, result):
        print(f"The result of message {message_data['message_id']} was {result}.")
-
+   
+   
    @dramatiq.actor
    def print_error(message_data, exception_data):
        print(f"Message {message_data['message_id']} failed:")
@@ -446,6 +447,7 @@ up::
       backend=dramatiq_abort.backends.RedisBackend()
   )
   dramatiq.get_broker().add_middleware(abortable)
+
 
   @dramatiq.actor
   def a_long_running_task():
