@@ -403,7 +403,6 @@ APScheduler_ is the recommended scheduler to use with Dramatiq:
 .. code-block:: python
 
    import dramatiq
-   import sys
 
    from apscheduler.schedulers.blocking import BlockingScheduler
    from apscheduler.triggers.cron import CronTrigger
