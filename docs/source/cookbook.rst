@@ -437,7 +437,9 @@ Aborting Messages
 
 The `dramatiq-abort`_ package provides a middleware that can be used
 to abort running actors by message id.  Here's how you might set it
-up::
+up:
+
+.. code-block:: python
 
   import dramatiq
   import dramatiq_abort.backends
