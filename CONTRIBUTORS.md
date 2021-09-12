@@ -48,4 +48,4 @@ of those changes to CLEARTYPE SRL.
 | [@denhai](https://github.com/denhai)                  | Hayden Bartlett        |
 | [@rouge8](https://github.com/rouge8)                  | Andy Freeland          |
 | [@thomazthz](https://github.com/thomazthz)            | Thomaz Soares          |
-| [@finnlidbetter](https://github.com/finnlidbetter)    | Finn Lidbetter         |
+| [@FinnLidbetter](https://github.com/FinnLidbetter)    | Finn Lidbetter         |
