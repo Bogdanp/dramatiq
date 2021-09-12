@@ -40,11 +40,11 @@ def test_raise_thread_exception_on_nonexistent_thread(caplog):
     # When an interrupt is raised on a nonexistent thread
     threading.raise_thread_exception(-1, threading.Interrupt)
 
+    processed_thread_id = -1 if threading.python_version < ("3", "7") else 2 ** 64 - 1
+    expected_message = "Failed to set exception (Interrupt) in thread %d." % processed_thread_id
     # I expect a 'failed to set exception' critical message to be logged
     assert caplog.record_tuples == [
-        ("dramatiq.middleware.threading", logging.CRITICAL, (
-            "Failed to set exception (Interrupt) in thread -1."
-        )),
+        ("dramatiq.middleware.threading", logging.CRITICAL, expected_message),
     ]
 
 
