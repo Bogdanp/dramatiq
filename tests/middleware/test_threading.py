@@ -38,11 +38,11 @@ def test_raise_thread_exception():
 @pytest.mark.skipif(not_supported, reason="Threading not supported on this platform.")
 def test_raise_thread_exception_on_nonexistent_thread(caplog):
     # When an interrupt is raised on a nonexistent thread
-    threading.raise_thread_exception(-1, threading.Interrupt)
+    thread_id = 2 ** 31 - 1
+    threading.raise_thread_exception(thread_id, threading.Interrupt)
 
-    processed_thread_id = -1 if threading.python_version < ("3", "7") else 2 ** 64 - 1
-    expected_message = "Failed to set exception (Interrupt) in thread %d." % processed_thread_id
     # I expect a 'failed to set exception' critical message to be logged
+    expected_message = "Failed to set exception (Interrupt) in thread %d." % thread_id
     assert caplog.record_tuples == [
         ("dramatiq.middleware.threading", logging.CRITICAL, expected_message),
     ]
