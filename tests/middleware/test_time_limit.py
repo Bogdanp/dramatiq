@@ -74,13 +74,13 @@ def test_time_limit_exceeded_gevent_worker_messages(on_expiration, caplog):
     # Given a time limit middleware instance and three gevent timers with
     # two short time limits and one long time limit
     middleware = time_limit.TimeLimit()
-    timer_1 = time_limit.GeventTimeout(
+    timer_1 = time_limit._GeventTimeout(
         seconds=.01, thread_id=1, logger=middleware.logger,
         exception=time_limit.TimeLimitExceeded)
-    timer_2 = time_limit.GeventTimeout(
+    timer_2 = time_limit._GeventTimeout(
         seconds=.02, thread_id=2, logger=middleware.logger,
         exception=time_limit.TimeLimitExceeded)
-    timer_3 = time_limit.GeventTimeout(
+    timer_3 = time_limit._GeventTimeout(
         seconds=10, thread_id=3, logger=middleware.logger,
         exception=time_limit.TimeLimitExceeded)
 
