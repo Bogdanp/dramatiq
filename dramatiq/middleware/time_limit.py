@@ -84,26 +84,29 @@ class TimeLimit(Middleware):
 
 class _CtypesTimeoutManager(Thread):
     def __init__(self, interval, logger=None):
-        super().__init__()
+        super().__init__(daemon=True)
         self.deadlines = {}
         self.interval = interval / 1000
         self.logger = logger or get_logger(__name__, type(self))
         self.mu = threading.RLock()
 
+    def _handle(self):
+        current_time = monotonic()
+        threads_to_kill = []
+        with self.mu:
+            for thread_id, deadline in self.deadlines.items():
+                if deadline and current_time >= deadline:
+                    self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
+                    self.deadlines[thread_id] = None
+                    threads_to_kill.append(thread_id)
+
+        for thread_id in threads_to_kill:
+            raise_thread_exception(thread_id, TimeLimitExceeded)
+
     def run(self):
         while True:
             try:
-                current_time = monotonic()
-                threads_to_kill = []
-                with self.mu:
-                    for thread_id, deadline in self.deadlines.items():
-                        if deadline and current_time >= deadline:
-                            self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
-                            self.deadlines[thread_id] = None
-                            threads_to_kill.append(thread_id)
-
-                for thread_id in threads_to_kill:
-                    raise_thread_exception(thread_id, TimeLimitExceeded)
+                self._handle()
             except Exception:  # pragma: no cover
                 self.logger.exception("Unhandled error while running the time limit handler.")
 
