@@ -14,6 +14,7 @@ from ..common import skip_with_gevent, skip_without_gevent
 not_supported = threading.current_platform not in threading.supported_platforms
 
 
+@skip_with_gevent
 def test_time_limit_platform_not_supported(recwarn, monkeypatch):
     # monkeypatch fake platform to test logging.
     monkeypatch.setattr(time_limit, "current_platform", "not supported")
