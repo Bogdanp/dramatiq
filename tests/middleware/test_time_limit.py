@@ -1,18 +1,15 @@
 import logging
 import time
-from threading import get_ident as get_thread_ident
 from unittest import mock
 
 import pytest
-from gevent.timeout import _FakeTimer
 from greenlet import getcurrent
 
 import dramatiq
 from dramatiq.brokers.stub import StubBroker
-from dramatiq.middleware import time_limit, threading
+from dramatiq.middleware import threading, time_limit
 
 from ..common import skip_with_gevent, skip_without_gevent
-
 
 not_supported = threading.current_platform not in threading.supported_platforms
 
@@ -44,11 +41,11 @@ def test_time_limit_exceeded_worker_messages(raise_thread_exception, caplog):
     # Given a middleware with two "threads" that have exceeded their deadlines
     # and one "thread" that has not
     middleware = time_limit.TimeLimit()
-    middleware.deadlines = {
+    middleware.manager.deadlines = {
         1: current_time - 2, 2: current_time - 1, 3: current_time + 50000}
 
     # When the time limit handler is triggered
-    middleware._handle()
+    middleware.manager._handle()
 
     # TimeLimitExceeded interrupts are raised in two of the threads
     raise_thread_exception.assert_has_calls([
@@ -146,128 +143,3 @@ def test_time_limits_are_handled(stub_broker, stub_worker):
     # I expect the time limit to have been exceeded
     assert sum(time_limits_exceeded) == 1
     assert sum(successes) == 0
-
-
-@skip_with_gevent
-@pytest.mark.parametrize("message_opt, actor_opt, expected_deadline", [
-    (None, None, 600), (None, 2000, 2), (1000, None, 1), (1000, 2000, 1),
-    (2000, 1000, 2), (1200, None, 1.2), (None, 1200, 1.2),
-    (float("inf"), 2000, float("inf")), (None, float("inf"), float("inf")),
-])
-@mock.patch("dramatiq.middleware.time_limit.monotonic", return_value=0)
-def test_time_limits_are_tracked(_mock_monotonic, message_opt, actor_opt, expected_deadline):
-    # Given that I have a time limit middleware instance
-    middleware = time_limit.TimeLimit()
-
-    # And a mock actor and mock message with the specified options
-    actor_options = {} if actor_opt is None else {"time_limit": actor_opt}
-    message_options = {} if message_opt is None else {"time_limit": message_opt}
-    mock_actor = mock.Mock(options=actor_options)
-    mock_broker = mock.Mock(get_actor=lambda _actor_name: mock_actor)
-    mock_message = mock.Mock(options=message_options)
-
-    # When I trigger before_process_message for the middleware
-    middleware.before_process_message(mock_broker, mock_message)
-
-    # The middleware sets the expected deadline for the thread.
-    thread_id = get_thread_ident()
-    assert len(middleware.deadlines) == 1
-    assert middleware.deadlines[thread_id] == expected_deadline
-
-
-@skip_without_gevent
-@pytest.mark.parametrize("message_opt, actor_opt, expected_seconds", [
-    (None, None, 600), (None, 2000, 2), (1000, None, 1), (1000, 2000, 1),
-    (2000, 1000, 2), (1200, None, 1.2), (None, 1200, 1.2),
-    (float("inf"), 2000, None), (None, float("inf"), None),
-])
-def test_time_limits_are_tracked_with_gevent(message_opt, actor_opt, expected_seconds):
-    # Given that I have a time limit middleware instance
-    middleware = time_limit.TimeLimit()
-
-    # And a mock actor and mock message with the specified options
-    actor_options = {} if actor_opt is None else {"time_limit": actor_opt}
-    message_options = {} if message_opt is None else {"time_limit": message_opt}
-    mock_actor = mock.Mock(options=actor_options)
-    mock_broker = mock.Mock(get_actor=lambda _actor_name: mock_actor)
-    mock_message = mock.Mock(options=message_options)
-
-    # When I trigger before_process_message for the middleware
-    middleware.before_process_message(mock_broker, mock_message)
-
-    # I expect the middleware to have set gevent timeouts with the expected
-    # number of seconds
-    thread_id = get_thread_ident()
-    assert len(middleware.gevent_timers) == 1
-    assert middleware.gevent_timers[thread_id].seconds == expected_seconds
-    # And the gevent timer is faked if the expected_seconds is None.
-    if expected_seconds is None:
-        assert isinstance(middleware.gevent_timers[thread_id].timer, type(_FakeTimer))
-
-    middleware.gevent_timers[thread_id].close()
-
-
-@skip_with_gevent
-def test_time_limits_are_cleaned_up_after_processing():
-    # Given that I have a time limit middleware instance
-    middleware = time_limit.TimeLimit()
-
-    # With a deadline set for a thread
-    thread_id = get_thread_ident()
-    middleware.deadlines[thread_id] = 1000
-
-    # After a message is processed by the thread, the deadline for the thread
-    # is set to None.
-    middleware.after_process_message(mock.Mock(), mock.Mock())
-    assert middleware.deadlines[thread_id] is None
-
-
-@skip_with_gevent
-def test_time_limits_are_cleaned_up_after_skipping():
-    # Given that I have a time limit middleware instance
-    middleware = time_limit.TimeLimit()
-
-    # With a deadline set for a thread
-    thread_id = get_thread_ident()
-    middleware.deadlines[thread_id] = 1000
-
-    # After a message is skipped by the thread, the deadline for the thread
-    # is set to None.
-    middleware.after_skip_message(mock.Mock(), mock.Mock())
-    assert middleware.deadlines[thread_id] is None
-
-
-@skip_without_gevent
-def test_time_limits_are_cleaned_up_after_processing_gevent():
-    # Given that I have a time limit middleware instance
-    middleware = time_limit.TimeLimit()
-
-    # With a mock gevent timeout set for a thread
-    thread_id = get_thread_ident()
-    mock_close = mock.Mock()
-    mock_timeout = mock.Mock(close=mock_close)
-    middleware.gevent_timers[thread_id] = mock_timeout
-
-    # After a message is processed by the thread, the timeout for the thread
-    # is closed and set to None.
-    middleware.after_process_message(mock.Mock(), mock.Mock())
-    assert mock_close.called
-    assert middleware.gevent_timers[thread_id] is None
-
-
-@skip_without_gevent
-def test_time_limits_are_cleaned_up_after_skipping_gevent():
-    # Given that I have a time limit middleware instance
-    middleware = time_limit.TimeLimit()
-
-    # With a mock gevent timeout set for a thread
-    thread_id = get_thread_ident()
-    mock_close = mock.Mock()
-    mock_timeout = mock.Mock(close=mock_close)
-    middleware.gevent_timers[thread_id] = mock_timeout
-
-    # After a message is processed by the thread, the timeout for the thread
-    # is closed and set to None.
-    middleware.after_skip_message(mock.Mock(), mock.Mock())
-    assert mock_close.called
-    assert middleware.gevent_timers[thread_id] is None
