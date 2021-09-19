@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Async exceptions now correctly set the thread id on Python 3.7 and
+  up.  (`#419`_, `#420`_, `@FinnLidbetter`_)
+
+.. _#419: https://github.com/Bogdanp/dramatiq/pull/419
+.. _#420: https://github.com/Bogdanp/dramatiq/pull/420
+.. _@FinnLidbetter: https://github.com/FinnLidbetter
+
 
 `1.11.0`_ -- 2021-05-22
 -----------------------
