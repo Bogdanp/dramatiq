@@ -61,7 +61,7 @@ class StubBroker(Broker):
                 timeout,
             )
         except KeyError:
-            raise QueueNotFound(queue_name)
+            raise QueueNotFound(queue_name) from None
 
     def declare_queue(self, queue_name):
         """Declare a queue.  Has no effect if a queue with the given
@@ -153,7 +153,7 @@ class StubBroker(Broker):
                 self.queues[dq_name(queue_name)],
             ]
         except KeyError:
-            raise QueueNotFound(queue_name)
+            raise QueueNotFound(queue_name) from None
 
         deadline = timeout and time.monotonic() + timeout / 1000
         while True:
