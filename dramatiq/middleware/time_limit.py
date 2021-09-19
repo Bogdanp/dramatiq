@@ -123,7 +123,7 @@ class _GeventTimeoutManager:
         pass
 
     def add_timeout(self, thread_id, ttl):
-        self.timers[thread_id] = GeventTimeout(
+        self.timers[thread_id] = _GeventTimeout(
             logger=self.logger,
             thread_id=thread_id,
             seconds=None if ttl == float("inf") else ttl / 1000,
@@ -137,10 +137,11 @@ class _GeventTimeoutManager:
             del self.timers[thread_id]
 
 
+_GeventTimeout = None
 if is_gevent_active():
     from gevent import Timeout
 
-    class TimeoutWithLogging(Timeout):
+    class _GeventTimeout(Timeout):
         """Cooperative timeout class for gevent with logging on timeouts."""
 
         def __init__(self, *args, thread_id=None, logger=None, **kwargs):
@@ -152,7 +153,3 @@ if is_gevent_active():
             self.logger.warning(
                 "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
             return super()._on_expiration(prev_greenlet, ex)
-
-    GeventTimeout = TimeoutWithLogging
-else:
-    GeventTimeout = None
