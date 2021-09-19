@@ -65,10 +65,9 @@ jobs:
       matrix:
         os: ["windows-2016"]
         python: ["3.5", "3.6", "3.7", "3.8", "3.9"]
-        concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}
-    name: test on ${{ matrix.python }} (${{ matrix.os }}, ${{ matrix.concurrency }})
+    name: test on ${{ matrix.python }} (${{ matrix.os }})
 
     steps:
       - uses: actions/checkout@master
@@ -117,9 +116,4 @@ jobs:
         run: pip install -e '.[dev]'
 
       - name: Run tests
-        if: ${{ matrix.concurrency == 'cpython' }}
         run: pytest --benchmark-skip
-
-      - name: Run tests
-        run: python pytest-gevent.py --benchmark-skip
-        if: ${{ matrix.concurrency == 'gevent' }}
