@@ -136,9 +136,9 @@ class _GeventTimeoutManager:
         self.timers[thread_id].start()
 
     def remove_timeout(self, thread_id):
-        if thread_id in self.timers:
-            self.timers[thread_id].close()
-            del self.timers[thread_id]
+        timer = self.timers.pop(thread_id, None)
+        if timer is not None:
+            timer.close()
 
 
 _GeventTimeout = None
