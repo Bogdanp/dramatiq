@@ -99,7 +99,7 @@ class _CtypesTimeoutManager(Thread):
                     for thread_id, deadline in self.deadlines.items():
                         if deadline and current_time >= deadline:
                             self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
-                            del self.deadlines[thread_id]
+                            self.deadlines[thread_id] = None
                             threads_to_kill.append(thread_id)
 
                 for thread_id in threads_to_kill:
@@ -115,7 +115,7 @@ class _CtypesTimeoutManager(Thread):
 
     def remove_timeout(self, thread_id):
         with self.mu:
-            del self.deadlines[thread_id]
+            self.deadlines[thread_id] = None
 
 
 class _GeventTimeoutManager:
