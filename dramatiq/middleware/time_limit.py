@@ -31,27 +31,6 @@ class TimeLimitExceeded(Interrupt):
     """
 
 
-if is_gevent_active():
-    from gevent import Timeout
-
-    class TimeoutWithLogging(Timeout):
-        """Cooperative timeout class for gevent with logging on timeouts."""
-
-        def __init__(self, *args, thread_id=None, logger=None, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.logger = logger or get_logger(__name__, type(self))
-            self.thread_id = thread_id
-
-        def _on_expiration(self, prev_greenlet, ex):
-            self.logger.warning(
-                "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
-            return super()._on_expiration(prev_greenlet, ex)
-
-    GeventTimeout = TimeoutWithLogging
-else:
-    GeventTimeout = None
-
-
 class TimeLimit(Middleware):
     """Middleware that cancels actors that run for too long.
     Currently, this is only available on CPython.
@@ -85,10 +64,7 @@ class TimeLimit(Middleware):
         return {"time_limit"}
 
     def after_process_boot(self, broker):
-        if is_gevent_active():  # works on all platforms, no setup required
-            pass
-
-        elif current_platform in supported_platforms:
+        if is_gevent_active() or current_platform in supported_platforms:
             self.manager.start()
 
         else:  # pragma: no cover
@@ -143,6 +119,9 @@ class _GeventTimeoutManager:
         self.timers = {}
         self.logger = logger or get_logger(__name__, type(self))
 
+    def start(self):
+        pass
+
     def add_timeout(self, thread_id, ttl):
         self.timers[thread_id] = GeventTimeout(
             logger=self.logger,
@@ -156,3 +135,24 @@ class _GeventTimeoutManager:
         if thread_id in self.timers:
             self.timers[thread_id].close()
             del self.timers[thread_id]
+
+
+if is_gevent_active():
+    from gevent import Timeout
+
+    class TimeoutWithLogging(Timeout):
+        """Cooperative timeout class for gevent with logging on timeouts."""
+
+        def __init__(self, *args, thread_id=None, logger=None, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.logger = logger or get_logger(__name__, type(self))
+            self.thread_id = thread_id
+
+        def _on_expiration(self, prev_greenlet, ex):
+            self.logger.warning(
+                "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
+            return super()._on_expiration(prev_greenlet, ex)
+
+    GeventTimeout = TimeoutWithLogging
+else:
+    GeventTimeout = None
