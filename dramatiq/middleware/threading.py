@@ -27,6 +27,8 @@ __all__ = ["Interrupt", "raise_thread_exception"]
 logger = get_logger(__name__)
 
 current_platform = platform.python_implementation()
+python_version = platform.python_version_tuple()
+thread_id_ctype = ctypes.c_long if python_version < ("3", "7") else ctypes.c_ulong
 supported_platforms = {"CPython"}
 
 
@@ -61,7 +63,7 @@ def raise_thread_exception(thread_id, exception):
 
 def _raise_thread_exception_cpython(thread_id, exception):
     exctype = (exception if inspect.isclass(exception) else type(exception)).__name__
-    thread_id = ctypes.c_long(thread_id)
+    thread_id = thread_id_ctype(thread_id)
     exception = ctypes.py_object(exception)
     count = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, exception)
     if count == 0:
