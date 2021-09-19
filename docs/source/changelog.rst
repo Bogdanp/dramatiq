@@ -8,6 +8,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Time limits now work under gevent. (`#408`_, `@FinnLidbetter`_)
+
+.. _#408: https://github.com/Bogdanp/dramatiq/pull/408
+.. _@FinnLidbetter: https://github.com/FinnLidbetter
+
 Fixed
 ^^^^^
 
