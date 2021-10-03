@@ -12,8 +12,10 @@ Added
 ^^^^^
 
 * Time limits now work under gevent. (`#408`_, `@FinnLidbetter`_)
+* Shutdown notifications now work under gevent. (`#426`_, `@FinnLidbetter`_)
 
 .. _#408: https://github.com/Bogdanp/dramatiq/pull/408
+.. _#426: https://github.com/Bogdanp/dramatiq/pull/426
 .. _@FinnLidbetter: https://github.com/FinnLidbetter
 
 Fixed
