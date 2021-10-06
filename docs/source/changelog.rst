@@ -18,6 +18,14 @@ Added
 .. _#426: https://github.com/Bogdanp/dramatiq/pull/426
 .. _@FinnLidbetter: https://github.com/FinnLidbetter
 
+Changed
+^^^^^^^
+
+* The ``watchdog`` library is no longer being pinned to a specific
+  version.  (`#428`_)
+
+.. _#428: https://github.com/Bogdanp/dramatiq/pull/428
+
 Fixed
 ^^^^^
 
