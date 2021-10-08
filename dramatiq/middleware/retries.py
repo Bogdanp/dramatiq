@@ -92,7 +92,9 @@ class Retries(Middleware):
             return
 
         retries = message.options.setdefault("retries", 0)
+
         message.options["retries"] += 1
+        message.options["traceback"] = traceback.format_exc(limit=30)
 
         max_retries = message.options.get("max_retries") or actor.options.get("max_retries", self.max_retries)
         retry_when = actor.options.get("retry_when", self.retry_when)
@@ -102,7 +104,6 @@ class Retries(Middleware):
             message.fail()
             return
 
-        message.options["traceback"] = traceback.format_exc(limit=30)
 
         if isinstance(exception, Retry) and exception.delay is not None:
             delay = exception.delay
