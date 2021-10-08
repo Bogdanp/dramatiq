@@ -44,6 +44,11 @@ POST_PROCESS_MESSAGE_RETRY_DELAY_SECS = 5
 #: provided, two times the number of configured worker threads are
 #: prefetched.
 QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
+#: The number of messages to prefetch from the delay queue for each worker.
+#: When set to "1", a new message is only fetched once a previous one is done. If no
+#: provided, a thousand times the number of configured worker threads are
+#: prefetched.
+DELAY_QUEUE_PREFETCH = int(os.getenv("dramatiq_delay_queue_prefetch", 0))
 
 
 class Worker:
@@ -76,7 +81,7 @@ class Worker:
         self.queue_prefetch = QUEUE_PREFETCH or min(worker_threads * 2, 65535)
         # Load a large factor more delay messages than there are
         # workers as those messages could have far-future etas.
-        self.delay_prefetch = min(worker_threads * 1000, 65535)
+        self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
         self.workers = []
         self.work_queue = PriorityQueue()
