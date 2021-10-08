@@ -19,7 +19,7 @@ import glob
 import random
 import time
 import warnings
-from os import path
+from os import getenv, path
 from threading import Lock
 from uuid import uuid4
 
@@ -45,6 +45,8 @@ DEFAULT_DEAD_MESSAGE_TTL = 86400000 * 7
 #: The amount of time in milliseconds that has to pass without a
 #: heartbeat for a worker to be considered offline.
 DEFAULT_HEARTBEAT_TIMEOUT = 60000
+
+DEFAULT_LUA_MAX_STACK = getenv("dramatiq_lua_max_stack", None)
 
 
 class RedisBroker(Broker):
@@ -250,7 +252,11 @@ class RedisBroker(Broker):
         if cls._max_unpack_size_val is None:
             with cls._max_unpack_size_mut:
                 if cls._max_unpack_size_val is None:
-                    cls._max_unpack_size_val = self.scripts["maxstack"]()
+                    cls._max_unpack_size_val = DEFAULT_LUA_MAX_STACK or self.scripts["maxstack"]()
+                    # We only want to use half of the max LUA stack to unpack values to avoid having
+                    # problems with multiple workers + great number of messages
+                    # See https://github.com/Bogdanp/dramatiq/issues/433
+                    cls._max_unpack_size_val = cls._max_unpack_size_val // 2
         return cls._max_unpack_size_val
 
     def _dispatch(self, command):
