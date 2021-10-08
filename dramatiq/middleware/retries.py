@@ -104,7 +104,6 @@ class Retries(Middleware):
             message.fail()
             return
 
-
         if isinstance(exception, Retry) and exception.delay is not None:
             delay = exception.delay
         else:
