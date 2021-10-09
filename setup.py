@@ -86,7 +86,7 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "wheel",
 
     # Testing
-    "pytest<4",
+    "pytest",
     "pytest-benchmark[histogram]",
     "pytest-cov",
     "tox",
