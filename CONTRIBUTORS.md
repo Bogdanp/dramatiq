@@ -49,3 +49,4 @@ of those changes to CLEARTYPE SRL.
 | [@rouge8](https://github.com/rouge8)                  | Andy Freeland          |
 | [@thomazthz](https://github.com/thomazthz)            | Thomaz Soares          |
 | [@FinnLidbetter](https://github.com/FinnLidbetter)    | Finn Lidbetter         |
+| [@giuppep](https://github.com/giuppep)                | Giuseppe Papallo       |
