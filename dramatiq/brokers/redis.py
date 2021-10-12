@@ -19,7 +19,7 @@ import glob
 import random
 import time
 import warnings
-from os import path
+from os import getenv, path
 from threading import Lock
 from uuid import uuid4
 
@@ -45,6 +45,8 @@ DEFAULT_DEAD_MESSAGE_TTL = 86400000 * 7
 #: The amount of time in milliseconds that has to pass without a
 #: heartbeat for a worker to be considered offline.
 DEFAULT_HEARTBEAT_TIMEOUT = 60000
+
+DEFAULT_LUA_MAX_STACK = getenv("dramatiq_lua_max_stack", None)
 
 
 class RedisBroker(Broker):
