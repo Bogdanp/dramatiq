@@ -50,3 +50,4 @@ of those changes to CLEARTYPE SRL.
 | [@thomazthz](https://github.com/thomazthz)            | Thomaz Soares          |
 | [@FinnLidbetter](https://github.com/FinnLidbetter)    | Finn Lidbetter         |
 | [@giuppep](https://github.com/giuppep)                | Giuseppe Papallo       |
+| [@ethervoid](https://github.com/ethervoid)            | Mario de Frutos        |
