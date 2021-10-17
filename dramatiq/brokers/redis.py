@@ -26,7 +26,7 @@ from uuid import uuid4
 import redis
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import compute_backoff, current_millis, dq_name
+from ..common import compute_backoff, current_millis, dq_name, getenv_int
 from ..errors import ConnectionClosed, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message
@@ -46,7 +46,9 @@ DEFAULT_DEAD_MESSAGE_TTL = 86400000 * 7
 #: heartbeat for a worker to be considered offline.
 DEFAULT_HEARTBEAT_TIMEOUT = 60000
 
-DEFAULT_LUA_MAX_STACK = getenv("dramatiq_lua_max_stack", None)
+#: A hint for the max lua stack size. The broker discovers this value
+#: the first time it's run, but it may be overwritten using this var.
+DEFAULT_LUA_MAX_STACK = getenv_int("dramatiq_lua_max_stack")
 
 
 class RedisBroker(Broker):
