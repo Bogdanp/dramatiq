@@ -11,12 +11,15 @@ All notable changes to this project will be documented in this file.
 Added
 ^^^^^
 
-* Time limits now work under gevent. (`#408`_, `@FinnLidbetter`_)
-* Shutdown notifications now work under gevent. (`#426`_, `@FinnLidbetter`_)
+* RabbitMQ messages now have a ``redelivered`` flag.  (`#405`_, `@nffdiogosilva`_)
+* Time limits now work under gevent.  (`#408`_, `@FinnLidbetter`_)
+* Shutdown notifications now work under gevent.  (`#426`_, `@FinnLidbetter`_)
 
+.. _#405: https://github.com/Bogdanp/dramatiq/pull/405
 .. _#408: https://github.com/Bogdanp/dramatiq/pull/408
 .. _#426: https://github.com/Bogdanp/dramatiq/pull/426
 .. _@FinnLidbetter: https://github.com/FinnLidbetter
+.. _@nffdiogosilva: https://github.com/nffdiogosilva
 
 Changed
 ^^^^^^^
