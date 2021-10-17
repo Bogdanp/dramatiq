@@ -23,8 +23,13 @@ Changed
 
 * The ``watchdog`` library is no longer being pinned to a specific
   version.  (`#428`_)
+* The redis broker now limits unpacks to half the size of the Lua
+  stack.  (`#433`_, `#434`_, `@ethervoid`_)
 
 .. _#428: https://github.com/Bogdanp/dramatiq/pull/428
+.. _#433: https://github.com/Bogdanp/dramatiq/issues/433
+.. _#434: https://github.com/Bogdanp/dramatiq/pull/434
+.. _@ethervoid: https://github.com/ethervoid
 
 Fixed
 ^^^^^
