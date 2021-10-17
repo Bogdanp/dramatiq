@@ -19,7 +19,7 @@ import glob
 import random
 import time
 import warnings
-from os import getenv, path
+from os import path
 from threading import Lock
 from uuid import uuid4
 
