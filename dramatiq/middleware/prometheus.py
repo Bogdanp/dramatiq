@@ -56,6 +56,7 @@ class Prometheus(Middleware):
         return [_run_exposition_server]
 
     def after_process_boot(self, broker):
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
         os.environ["prometheus_multiproc_dir"] = DB_PATH
 
         # This import MUST happen at runtime, after process boot and
@@ -154,6 +155,7 @@ class Prometheus(Middleware):
 
 class _metrics_handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
         os.environ["prometheus_multiproc_dir"] = DB_PATH
 
         # These imports must happen at runtime.  See above.
