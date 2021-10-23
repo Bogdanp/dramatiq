@@ -467,6 +467,7 @@ class _RabbitmqConsumer(Consumer):
             self.connection.add_callback_threadsafe(
                 partial(self.channel.basic_ack, message._tag),
             )
+            return True
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
@@ -474,11 +475,13 @@ class _RabbitmqConsumer(Consumer):
             self.logger.warning("Failed to ack message: not in known tags.")
         except Exception:  # pragma: no cover
             self.logger.warning("Failed to ack message.", exc_info=True)
+        return False
 
     def nack(self, message):
         try:
             self.known_tags.remove(message._tag)
             self._nack(message._tag)
+            return True
         except (pika.exceptions.AMQPConnectionError,
                 pika.exceptions.AMQPChannelError) as e:
             raise ConnectionClosed(e) from None
@@ -486,6 +489,7 @@ class _RabbitmqConsumer(Consumer):
             self.logger.warning("Failed to nack message: not in known tags.")
         except Exception:  # pragma: no cover
             self.logger.warning("Failed to nack message.", exc_info=True)
+        return False
 
     def _nack(self, tag):
         self.connection.add_callback_threadsafe(

@@ -318,6 +318,7 @@ class _RedisConsumer(Consumer):
         finally:
             if message.message_id in self.queued_message_ids:
                 self.queued_message_ids.remove(message.message_id)
+        return True
 
     def nack(self, message):
         try:
@@ -328,6 +329,7 @@ class _RedisConsumer(Consumer):
         finally:
             if message.message_id in self.queued_message_ids:
                 self.queued_message_ids.remove(message.message_id)
+        return True
 
     def requeue(self, messages):
         message_ids = [message.options["redis_message_id"] for message in messages]

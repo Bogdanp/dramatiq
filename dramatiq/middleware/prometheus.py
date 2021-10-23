@@ -117,7 +117,7 @@ class Prometheus(Middleware):
         self.logger.debug("Marking process dead...")
         multiprocess.mark_process_dead(os.getpid(), DB_PATH)
 
-    def after_nack(self, broker, message):
+    def after_nack(self, broker, message, nacked=None):
         labels = (message.queue_name, message.actor_name)
         self.total_rejected_messages.labels(*labels).inc()
 
