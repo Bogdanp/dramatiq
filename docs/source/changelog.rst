@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Removed
+^^^^^^^
+
+* Dropped Python 3.5 support as it reached end-of-life
+
+
 `1.12.0`_ -- 2021-10-23
 -----------------------
 
