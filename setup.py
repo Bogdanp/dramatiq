@@ -44,6 +44,10 @@ dependencies = [
 ]
 
 extra_dependencies = {
+    "gevent": [
+        "gevent>=1.1",
+    ],
+
     "memcached": [
         "pylibmc>=1.5,<2.0",
     ],
@@ -57,8 +61,8 @@ extra_dependencies = {
     ],
 
     "watch": [
-        "watchdog>=0.8,<0.9",
-        "watchdog_gevent==0.1",
+        "watchdog",
+        "watchdog_gevent",
     ],
 }
 
@@ -82,7 +86,7 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "wheel",
 
     # Testing
-    "pytest<4",
+    "pytest",
     "pytest-benchmark[histogram]",
     "pytest-cov",
     "tox",
@@ -107,12 +111,11 @@ setup(
     ],
     include_package_data=True,
     install_requires=dependencies,
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
     classifiers=[
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

@@ -14,11 +14,24 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from os import getenv
 from queue import Empty
 from random import uniform
 from time import time
 
 from .errors import QueueJoinTimeout
+
+
+def getenv_int(name):
+    """Parse an optional environment variable as an integer.
+    """
+    v = getenv(name, None)
+    if v is None:
+        return None
+    try:
+        return int(v)
+    except ValueError:
+        raise ValueError("invalid integer value for env var %r: %r" % (name, v)) from None
 
 
 def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_exponent=32):

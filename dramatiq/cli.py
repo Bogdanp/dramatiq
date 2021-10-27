@@ -115,7 +115,7 @@ def import_object(value):
         try:
             return module, functools.reduce(getattr, varnames, module)
         except AttributeError:
-            raise ImportError("Module %r does not define a %r variable." % (modname, varname))
+            raise ImportError("Module %r does not define a %r variable." % (modname, varname)) from None
     return module, None
 
 
@@ -243,7 +243,7 @@ def setup_pidfile(filename):
     except ValueError:
         # Abort here to avoid overwriting real files.  Eg. someone
         # accidentally specifies a config file as the pid file.
-        raise RuntimeError("PID file contains garbage. Aborting.")
+        raise RuntimeError("PID file contains garbage. Aborting.") from None
 
     try:
         with open(filename, "w") as pid_file:
@@ -253,7 +253,7 @@ def setup_pidfile(filename):
         os.chmod(filename, 0o644)
         return pid
     except (FileNotFoundError, PermissionError) as e:
-        raise RuntimeError("Failed to write PID file %r. %s." % (e.filename, e.strerror))
+        raise RuntimeError("Failed to write PID file %r. %s." % (e.filename, e.strerror)) from None
 
 
 def remove_pidfile(filename, logger):

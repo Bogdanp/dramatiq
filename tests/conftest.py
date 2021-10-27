@@ -32,21 +32,21 @@ def check_rabbitmq(broker):
     try:
         broker.connection
     except Exception as e:
-        raise e if CI else pytest.skip("No connection to RabbmitMQ server.")
+        raise e if CI else pytest.skip("No connection to RabbmitMQ server.") from None
 
 
 def check_redis(client):
     try:
         client.ping()
     except redis.ConnectionError as e:
-        raise e if CI else pytest.skip("No connection to Redis server.")
+        raise e if CI else pytest.skip("No connection to Redis server.") from None
 
 
 def check_memcached(client):
     try:
         client.get_stats()
     except pylibmc.SomeErrors as e:
-        raise e if CI else pytest.skip("No connection to memcached server.")
+        raise e if CI else pytest.skip("No connection to memcached server.") from None
 
 
 @pytest.fixture()

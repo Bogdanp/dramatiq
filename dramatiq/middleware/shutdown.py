@@ -20,7 +20,7 @@ import warnings
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, raise_thread_exception, supported_platforms
+from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
 
 
 class Shutdown(Interrupt):
@@ -48,7 +48,10 @@ class ShutdownNotifications(Middleware):
     def __init__(self, notify_shutdown=False):
         self.logger = get_logger(__name__, type(self))
         self.notify_shutdown = notify_shutdown
-        self.notifications = set()
+        if is_gevent_active():
+            self.manager = _GeventShutdownManager(self.logger)
+        else:
+            self.manager = _CtypesShutdownManager(self.logger)
 
     @property
     def actor_options(self):
@@ -69,20 +72,64 @@ class ShutdownNotifications(Middleware):
 
     def before_worker_shutdown(self, broker, worker):
         self.logger.debug("Sending shutdown notification to worker threads...")
-        for thread_id in self.notifications:
-            self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
-            raise_thread_exception(thread_id, Shutdown)
+        self.manager.shutdown()
 
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
 
         if self.should_notify(actor, message):
-            self.notifications.add(threading.get_ident())
+            self.manager.add_notification()
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        thread_id = threading.get_ident()
-
-        if thread_id in self.notifications:
-            self.notifications.remove(thread_id)
+        self.manager.remove_notification()
 
     after_skip_message = after_process_message
+
+
+class _CtypesShutdownManager:
+
+    def __init__(self, logger=None):
+        self.logger = logger or get_logger(__name__, type(self))
+        self.notifications = set()
+
+    def add_notification(self):
+        self.notifications.add(threading.get_ident())
+
+    def remove_notification(self):
+        thread_id = threading.get_ident()
+        if thread_id in self.notifications:
+            self.notifications.remove(threading.get_ident())
+
+    def shutdown(self):
+        for thread_id in self.notifications:
+            self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+            raise_thread_exception(thread_id, Shutdown)
+
+
+_GeventShutdownManager = None
+if is_gevent_active():
+    from gevent import getcurrent
+
+    class _GeventShutdownManager:
+
+        def __init__(self, logger=None):
+            self.logger = logger or get_logger(__name__, type(self))
+            self.notification_greenlets = set()
+
+        def add_notification(self):
+            current_greenlet = getcurrent()
+            # Get and store the threading ident rather than using the greenlet's
+            # minimal_ident for logging consistency with the time limit middleware.
+            thread_id = threading.get_ident()
+            self.notification_greenlets.add((thread_id, current_greenlet))
+
+        def remove_notification(self):
+            current_greenlet = getcurrent()
+            thread_id = threading.get_ident()
+            if (thread_id, current_greenlet) in self.notification_greenlets:
+                self.notification_greenlets.remove((thread_id, current_greenlet))
+
+        def shutdown(self):
+            for thread_id, greenlet in self.notification_greenlets:
+                self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+                greenlet.kill(Shutdown, block=False)

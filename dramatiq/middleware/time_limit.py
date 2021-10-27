@@ -22,7 +22,7 @@ from time import monotonic, sleep
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, raise_thread_exception, supported_platforms
+from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
 
 
 class TimeLimitExceeded(Interrupt):
@@ -46,40 +46,26 @@ class TimeLimit(Middleware):
         run for. Use `float("inf")` to avoid setting a timeout for the
         actor.
       interval(int): The interval (in milliseconds) with which to
-        check for actors that have exceeded the limit.
+        check for actors that have exceeded the limit. This does not take
+        effect when using gevent because the timers are managed by gevent.
     """
 
     def __init__(self, *, time_limit=600000, interval=1000):
         self.logger = get_logger(__name__, type(self))
         self.time_limit = time_limit
-        self.interval = interval / 1000
-        self.deadlines = {}
 
-    def _handle(self):
-        current_time = monotonic()
-        for thread_id, deadline in self.deadlines.items():
-            if deadline and current_time >= deadline:
-                self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
-                self.deadlines[thread_id] = None
-                raise_thread_exception(thread_id, TimeLimitExceeded)
-
-    def _timer(self):
-        while True:
-            try:
-                self._handle()
-            except Exception:  # pragma: no cover
-                self.logger.exception("Unhandled error while running the time limit handler.")
-
-            sleep(self.interval)
+        if is_gevent_active():
+            self.manager = _GeventTimeoutManager(logger=self.logger)
+        else:
+            self.manager = _CtypesTimeoutManager(interval, logger=self.logger)
 
     @property
     def actor_options(self):
         return {"time_limit"}
 
     def after_process_boot(self, broker):
-        if current_platform in supported_platforms:
-            thread = Thread(target=self._timer, daemon=True)
-            thread.start()
+        if is_gevent_active() or current_platform in supported_platforms:
+            self.manager.start()
 
         else:  # pragma: no cover
             msg = "TimeLimit cannot kill threads on your current platform (%r)."
@@ -88,10 +74,94 @@ class TimeLimit(Middleware):
     def before_process_message(self, broker, message):
         actor = broker.get_actor(message.actor_name)
         limit = message.options.get("time_limit") or actor.options.get("time_limit", self.time_limit)
-        deadline = monotonic() + limit / 1000
-        self.deadlines[threading.get_ident()] = deadline
+        self.manager.add_timeout(threading.get_ident(), limit)
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        self.deadlines[threading.get_ident()] = None
+        self.manager.remove_timeout(threading.get_ident())
 
     after_skip_message = after_process_message
+
+
+class _CtypesTimeoutManager(Thread):
+    def __init__(self, interval, logger=None):
+        super().__init__(daemon=True)
+        self.deadlines = {}
+        self.interval = interval / 1000
+        self.logger = logger or get_logger(__name__, type(self))
+        self.mu = threading.RLock()
+
+    def _handle(self):
+        current_time = monotonic()
+        threads_to_kill = []
+        with self.mu:
+            for thread_id, deadline in self.deadlines.items():
+                if deadline and current_time >= deadline:
+                    self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
+                    self.deadlines[thread_id] = None
+                    threads_to_kill.append(thread_id)
+
+        for thread_id in threads_to_kill:
+            raise_thread_exception(thread_id, TimeLimitExceeded)
+
+    def run(self):
+        while True:
+            try:
+                self._handle()
+            except Exception:  # pragma: no cover
+                self.logger.exception("Unhandled error while running the time limit handler.")
+
+            sleep(self.interval)
+
+    def add_timeout(self, thread_id, ttl):
+        with self.mu:
+            self.deadlines[thread_id] = monotonic() + ttl / 1000
+
+    def remove_timeout(self, thread_id):
+        with self.mu:
+            self.deadlines[thread_id] = None
+
+
+class _GeventTimeoutManager:
+    def __init__(self, logger=None):
+        self.timers = {}
+        self.logger = logger or get_logger(__name__, type(self))
+
+    def start(self):
+        pass
+
+    def add_timeout(self, thread_id, ttl):
+        self.timers[thread_id] = _GeventTimeout(
+            logger=self.logger,
+            thread_id=thread_id,
+            after_expiration=lambda: self.timers.pop(thread_id, None),
+            seconds=None if ttl == float("inf") else ttl / 1000,
+            exception=TimeLimitExceeded,
+        )
+        self.timers[thread_id].start()
+
+    def remove_timeout(self, thread_id):
+        timer = self.timers.pop(thread_id, None)
+        if timer is not None:
+            timer.close()
+
+
+_GeventTimeout = None
+if is_gevent_active():
+    from gevent import Timeout
+
+    class _GeventTimeout(Timeout):
+        """Cooperative timeout class for gevent with logging on timeouts."""
+
+        def __init__(self, *args, logger=None, thread_id=None, after_expiration=None, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.logger = logger or get_logger(__name__, type(self))
+            self.thread_id = thread_id
+            self.after_expiration = after_expiration
+
+        def _on_expiration(self, prev_greenlet, ex):
+            self.logger.warning(
+                "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
+            res = super()._on_expiration(prev_greenlet, ex)
+            if self.after_expiration is not None:
+                self.after_expiration()
+            return res

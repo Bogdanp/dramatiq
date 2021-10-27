@@ -2,11 +2,13 @@ import logging
 import time
 from unittest import mock
 
+import gevent
 import pytest
 
 import dramatiq
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.middleware import shutdown, threading
+from ..common import skip_with_gevent, skip_without_gevent
 
 not_supported = threading.current_platform not in threading.supported_platforms
 
@@ -27,6 +29,7 @@ def test_shutdown_notifications_platform_not_supported(recwarn, monkeypatch):
                                        "on your current platform ('not supported').")
 
 
+@skip_with_gevent
 @mock.patch("dramatiq.middleware.shutdown.raise_thread_exception")
 def test_shutdown_notifications_worker_shutdown_messages(raise_thread_exception, caplog):
     # capture all messages
@@ -34,7 +37,7 @@ def test_shutdown_notifications_worker_shutdown_messages(raise_thread_exception,
 
     # Given a middleware with two "threads"
     middleware = shutdown.ShutdownNotifications()
-    middleware.notifications = [1, 2]
+    middleware.manager.notifications = [1, 2]
 
     # Given a broker configured with the shutdown notifier
     broker = StubBroker(middleware=[middleware])
@@ -47,6 +50,42 @@ def test_shutdown_notifications_worker_shutdown_messages(raise_thread_exception,
         mock.call(1, shutdown.Shutdown),
         mock.call(2, shutdown.Shutdown),
     ])
+
+    # And shutdown notifications are logged
+    assert len(caplog.record_tuples) == 3
+    assert caplog.record_tuples == [
+        ("dramatiq.middleware.shutdown.ShutdownNotifications", logging.DEBUG, (
+            "Sending shutdown notification to worker threads..."
+        )),
+        ("dramatiq.middleware.shutdown.ShutdownNotifications", logging.INFO, (
+            "Worker shutdown notification. Raising exception in worker thread 1."
+        )),
+        ("dramatiq.middleware.shutdown.ShutdownNotifications", logging.INFO, (
+            "Worker shutdown notification. Raising exception in worker thread 2."
+        )),
+    ]
+
+
+@skip_without_gevent
+def test_shutdown_notifications_gevent_worker_shutdown_messages(caplog):
+    # capture all messages
+    caplog.set_level(logging.NOTSET)
+
+    # Given a middleware with two threads
+    middleware = shutdown.ShutdownNotifications()
+    greenlet_1 = gevent.spawn()
+    greenlet_2 = gevent.spawn()
+    middleware.manager.notification_greenlets = [(1, greenlet_1), (2, greenlet_2)]
+
+    # Given a broker configured with the shutdown notifier
+    broker = StubBroker(middleware=[middleware])
+
+    # When the worker is shutdown
+    broker.emit_before("worker_shutdown", None)
+
+    # Shutdown interrupts are raised in both threads
+    assert isinstance(greenlet_1.exception, shutdown.Shutdown)
+    assert isinstance(greenlet_2.exception, shutdown.Shutdown)
 
     # And shutdown notifications are logged
     assert len(caplog.record_tuples) == 3
