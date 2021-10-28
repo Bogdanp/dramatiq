@@ -261,6 +261,102 @@ def test_retry_exceptions_can_specify_a_delay(stub_broker, stub_worker):
     assert 0.1 <= timestamps[-1] - timestamps[-2] < 0.15
 
 
+def test_actors_can_be_assigned_zero_min_backoff(stub_broker, stub_worker):
+    # Given that I have a database of timestamps
+    timestamps = [time.monotonic()]
+
+    # And an actor that fails ten times with zero backoff
+    max_retries = 10
+
+    @dramatiq.actor(min_backoff=0, max_retries=max_retries)
+    def do_work():
+        timestamps.append(time.monotonic())
+        raise RuntimeError("failure")
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then the actor should have retried 10 times without delay
+    assert len(timestamps) == 2 + max_retries
+    assert timestamps[-1] - timestamps[0] < 0.2
+
+
+def test_actors_can_be_assigned_zero_max_backoff(stub_broker, stub_worker):
+    # Given that I have a database of timestamps
+    timestamps = [time.monotonic()]
+
+    # And an actor that fails ten times with zero backoff
+    max_retries = 10
+
+    @dramatiq.actor(max_backoff=0, max_retries=max_retries)
+    def do_work():
+        timestamps.append(time.monotonic())
+        raise RuntimeError("failure")
+
+    # When I send that actor a message
+    do_work.send()
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then the actor should have retried 10 times without delay
+    assert len(timestamps) == 2 + max_retries
+    assert timestamps[-1] - timestamps[0] < 0.2
+
+
+def test_actor_messages_can_be_assigned_zero_min_backoff(stub_broker, stub_worker):
+    # Given that I have a database of timestamps
+    timestamps = [time.monotonic()]
+
+    # And an actor that fails ten times with large backoff
+    max_retries = 10
+
+    @dramatiq.actor(min_backoff=10000, max_retries=max_retries)
+    def do_work():
+        timestamps.append(time.monotonic())
+        raise RuntimeError("failure")
+
+    # When I send that actor a message with zero min_backoff
+    do_work.send_with_options(min_backoff=0)
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then the actor should have retried 10 times without delay
+    assert len(timestamps) == 2 + max_retries
+    assert timestamps[-1] - timestamps[0] < 0.2
+
+
+def test_actor_messages_can_be_assigned_zero_max_backoff(stub_broker, stub_worker):
+    # Given that I have a database of timestamps
+    timestamps = [time.monotonic()]
+
+    # And an actor that fails ten times with large backoff
+    max_retries = 10
+
+    @dramatiq.actor(min_backoff=10000, max_retries=max_retries)
+    def do_work():
+        timestamps.append(time.monotonic())
+        raise RuntimeError("failure")
+
+    # When I send that actor a message with zero max_backoff
+    do_work.send_with_options(max_backoff=0)
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then the actor should have retried 10 times without delay
+    assert len(timestamps) == 2 + max_retries
+    assert timestamps[-1] - timestamps[0] < 0.2
+
+
 @skip_on_pypy
 def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     # Given that I have a database
