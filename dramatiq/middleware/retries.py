@@ -107,8 +107,8 @@ class Retries(Middleware):
         if isinstance(exception, Retry) and exception.delay is not None:
             delay = exception.delay
         else:
-            min_backoff = message.options.get("min_backoff") or actor.options.get("min_backoff", self.min_backoff)
-            max_backoff = message.options.get("max_backoff") or actor.options.get("max_backoff", self.max_backoff)
+            min_backoff = message.options.get("min_backoff", actor.options.get("min_backoff", self.min_backoff))
+            max_backoff = message.options.get("max_backoff", actor.options.get("max_backoff", self.max_backoff))
             max_backoff = min(max_backoff, DEFAULT_MAX_BACKOFF)
             _, delay = compute_backoff(retries, factor=min_backoff, max_backoff=max_backoff)
 
