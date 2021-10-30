@@ -316,8 +316,7 @@ class _RedisConsumer(Consumer):
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
         finally:
-            if message.message_id in self.queued_message_ids:
-                self.queued_message_ids.remove(message.message_id)
+            self.queued_message_ids.discard(message.message_id)
 
     def nack(self, message):
         try:
@@ -326,8 +325,7 @@ class _RedisConsumer(Consumer):
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
         finally:
-            if message.message_id in self.queued_message_ids:
-                self.queued_message_ids.remove(message.message_id)
+            self.queued_message_ids.discard(message.message_id)
 
     def requeue(self, messages):
         message_ids = [message.options["redis_message_id"] for message in messages]
