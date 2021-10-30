@@ -96,9 +96,7 @@ class _CtypesShutdownManager:
         self.notifications.add(threading.get_ident())
 
     def remove_notification(self):
-        thread_id = threading.get_ident()
-        if thread_id in self.notifications:
-            self.notifications.remove(threading.get_ident())
+        self.notifications.discard(threading.get_ident())
 
     def shutdown(self):
         for thread_id in self.notifications:
@@ -126,8 +124,7 @@ if is_gevent_active():
         def remove_notification(self):
             current_greenlet = getcurrent()
             thread_id = threading.get_ident()
-            if (thread_id, current_greenlet) in self.notification_greenlets:
-                self.notification_greenlets.remove((thread_id, current_greenlet))
+            self.notification_greenlets.discard((thread_id, current_greenlet))
 
         def shutdown(self):
             for thread_id, greenlet in self.notification_greenlets:
