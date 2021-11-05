@@ -391,6 +391,25 @@ stored yet or if it has already expired (results expire after 10
 minutes by default).  When the ``block`` parameter is ``True``,
 |ResultTimeout| is raised instead.
 
+Results may expiry, otherwise the result backend might
+eventually run out of space. 
+The timeout for the results expiration is set on `result_ttl`
+argument of |Results|, given in milliseconds. The default
+is 10 minutes.
+
+.. code-block:: python
+
+   # Results are valid only for one hour
+   Results(backend=result_backend, result_ttl=3600*1000)
+   
+The result expiration can be also set per an actor:
+
+.. code-block:: python
+   
+   # Add result expires in 30 seconds
+   @dramatiq.actor(store_results=True, result_ttl=30*1000)
+   def add(x, y):
+       return x + y
 
 Scheduling
 ----------
