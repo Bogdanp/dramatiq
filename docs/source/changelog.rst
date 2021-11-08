@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 Fixed
 ^^^^^
 
+* Actors and messages can now specify 0 backoff.  (`@FinnLidbetter`_, `#438`_)
 * An issue where Redis message ids could be put back onto the queue
   after ack/nack.  (`#442`_, `#444`_)
 
