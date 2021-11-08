@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* An issue where Redis message ids could be put back onto the queue
+  after ack/nack.  (`#442`_, `#444`_)
+
+.. _#442: https://github.com/Bogdanp/dramatiq/issues/442
+.. _#444: https://github.com/Bogdanp/dramatiq/pull/444
+
 Removed
 ^^^^^^^
 
