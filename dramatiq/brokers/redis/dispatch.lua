@@ -116,7 +116,7 @@ if do_maintenance == "1" then
         local message_ids = redis.call("smembers", dead_worker_queue_acks)
         if next(message_ids) then
             for _, message_id in ipairs(message_ids) do
-                if redis.call("hexists", queue_messages, message_id) then
+                if redis.call("hexists", queue_messages, message_id) > 0 then
                     redis.call("rpush", queue_full_name, message_id)
                 end
             end
@@ -192,7 +192,7 @@ elseif command == "requeue" then
         local message_id = ARGS[i]
 
         if redis.call("srem", queue_acks, message_id) > 0 then
-            if redis.call("hexists", queue_messages, message_id) then
+            if redis.call("hexists", queue_messages, message_id) > 0 then
                 redis.call("rpush", queue_full_name, message_id)
             end
         end
