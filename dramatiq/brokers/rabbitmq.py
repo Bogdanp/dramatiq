@@ -53,6 +53,16 @@ class RabbitmqBroker(Broker):
 
       >>> RabbitmqBroker(url="amqp://guest:guest@127.0.0.1:5672")
 
+      To support message priorities, provide a ``max_priority``...
+
+      >>> broker = RabbitmqBroker(url="...", max_priority=255)
+
+      ... then enqueue messages with the ``broker_priority`` option:
+
+      >>> broker.enqueue(an_actor.message_with_options(
+      ...    broker_priority=255,
+      ... ))
+
     See also:
       ConnectionParameters_ for a list of all the available connection
       parameters.
@@ -65,8 +75,8 @@ class RabbitmqBroker(Broker):
         and connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
-      max_priority(int): Configure the queues with x-max-priority to
-        support priority queue in RabbitMQ itself
+      max_priority(int): Configure queues with ``x-max-priority`` to
+        support queue-global priority queueing.
       parameters(list[dict]): A sequence of (pika) connection parameters
         to determine which Rabbit server(s) to connect to.
       **kwargs(dict): The (pika) connection parameters to use to
