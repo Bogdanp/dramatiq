@@ -5,6 +5,7 @@ import pytest
 
 import dramatiq
 from dramatiq.message import Message
+from dramatiq.middleware import Middleware, SkipMessage
 from dramatiq.results import ResultFailure, ResultMissing, Results, ResultTimeout
 from dramatiq.results.backends import StubBackend
 
@@ -310,3 +311,75 @@ def test_actor_no_warning_when_returns_result_and_results_middleware_present(stu
         # Then a warning should not be logged
         warning_messages = [args[0] for _, args, _ in warning_mock.mock_calls]
         assert not any("Consider adding the Results middleware" in x for x in warning_messages)
+
+
+def test_age_limit_skipped_messages_store_consistent_exceptions(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results and age limit (by default) middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that stores a result but has a strict age limit
+    @dramatiq.actor(store_results=True, max_age=1)
+    def do_work():
+        return 42
+
+    # When I send that actor a message that exceeds the age limit
+    message = do_work.send_with_options(args=[], kwargs={}, delay=2)
+
+    # And wait for a result
+    # Then the result should be an exception
+    with pytest.raises(ResultFailure) as exc_1:
+        result_backend.get_result(message, block=True)
+
+    assert str(exc_1.value) == "actor raised SkipMessage: Message age limit exceeded"
+    assert exc_1.value.orig_exc_type == "SkipMessage"
+    assert exc_1.value.orig_exc_msg == "Message age limit exceeded"
+
+    # If I sleep and get the result again
+    time.sleep(0.2)
+
+    # Then the result should still be the same exception
+    with pytest.raises(ResultFailure) as exc_2:
+        result_backend.get_result(message)
+    assert str(exc_2.value) == str(exc_1.value)
+    assert exc_2.value.orig_exc_type == exc_1.value.orig_exc_type
+    assert exc_2.value.orig_exc_msg == exc_1.value.orig_exc_msg
+
+
+def test_custom_skipped_messages_store_consistent_exceptions(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And a custom middleware that skips messages
+    class SkipMiddleware(Middleware):
+        def before_process_message(self, broker, message):
+            raise SkipMessage("Custom skip")
+    stub_broker.add_middleware(SkipMiddleware())
+
+    # And an actor that stores a result
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # When I send that actor a message that will be skipped
+    sent_message = do_work.send()
+
+    # And wait for a result
+    # Then the result should be an exception
+    with pytest.raises(ResultFailure) as exc_1:
+        result_backend.get_result(sent_message, block=True)
+
+    assert str(exc_1.value) == "actor raised SkipMessage: Custom skip"
+    assert exc_1.value.orig_exc_type == "SkipMessage"
+    assert exc_1.value.orig_exc_msg == "Custom skip"
+
+    # If I sleep and get the result again
+    time.sleep(0.2)
+
+    # Then the result should still be the same exception
+    with pytest.raises(ResultFailure) as exc_2:
+        result_backend.get_result(sent_message)
+    assert str(exc_2.value) == str(exc_1.value)
+    assert exc_2.value.orig_exc_type == exc_1.value.orig_exc_type
+    assert exc_2.value.orig_exc_msg == exc_1.value.orig_exc_msg
