@@ -386,6 +386,13 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, termhandler)
 
+    # Unblock the blocked signals inherited from the parent process.
+    if hasattr(signal, "pthread_sigmask"):
+        signal.pthread_sigmask(
+            signal.SIG_UNBLOCK,
+            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+        )
+
     running = True
     while running:
         time.sleep(1)
@@ -430,6 +437,13 @@ def fork_process(args, fork_id, fork_path, logging_pipe):
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, termhandler)
 
+    # Unblock the blocked signals inherited from the parent process.
+    if hasattr(signal, "pthread_sigmask"):
+        signal.pthread_sigmask(
+            signal.SIG_UNBLOCK,
+            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+        )
+
     return sys.exit(func())
 
 
@@ -451,6 +465,17 @@ def main(args=None):  # noqa
             return RET_PIDFILE
 
     canteen = multiprocessing.Value(Canteen)
+
+    # To prevent the main process from exiting due to signals after worker
+    # processes and fork processes have been defined but before the signal
+    # handling has been configured for those processes, block those signals
+    # that the main process is expected to handle.
+    if hasattr(signal, "pthread_sigmask"):
+        signal.pthread_sigmask(
+            signal.SIG_BLOCK,
+            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+        )
+
     worker_pipes = []
     worker_processes = []
     worker_process_events = []
@@ -496,17 +521,9 @@ def main(args=None):  # noqa
 
     running, reload_process = True, False
 
-    # To avoid issues with signal delivery to user threads on
-    # platforms such as FreeBSD 10.3, we make the main thread block
-    # the signals it expects to handle before spawning the file
-    # watcher and log watcher threads so that those threads can
-    # inherit the blocking behaviour.
-    if hasattr(signal, "pthread_sigmask"):
-        signal.pthread_sigmask(
-            signal.SIG_BLOCK,
-            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
-        )
-
+    # The file watcher and log watcher threads should inherit the signal
+    # signal blocking behaviour, so do not unblock the signals when starting
+    # those threads.
     if HAS_WATCHDOG and args.watch:
         if not hasattr(signal, "SIGHUP"):
             raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
@@ -540,14 +557,6 @@ def main(args=None):  # noqa
         logger.info("Sending signal %r to subprocesses...", getattr(signum, "name", signum))
         stop_subprocesses(signum)
 
-    # Now that the watcher threads have been started, it should be
-    # safe to unblock the signals that were previously blocked.
-    if hasattr(signal, "pthread_sigmask"):
-        signal.pthread_sigmask(
-            signal.SIG_UNBLOCK,
-            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
-        )
-
     retcode = RET_OK
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
@@ -555,6 +564,15 @@ def main(args=None):  # noqa
         signal.signal(signal.SIGHUP, sighandler)
     if hasattr(signal, "SIGBREAK"):
         signal.signal(signal.SIGBREAK, sighandler)
+
+    # Now that the watcher threads have been started and the sighandler
+    # for the main process has been defined, it should be safe to unblock
+    # the signals that were previously blocked.
+    if hasattr(signal, "pthread_sigmask"):
+        signal.pthread_sigmask(
+            signal.SIG_UNBLOCK,
+            {signal.SIGINT, signal.SIGTERM, signal.SIGHUP},
+        )
 
     # Wait for all workers to terminate.  If any of the processes
     # terminates unexpectedly, then shut down the rest as well.  The
