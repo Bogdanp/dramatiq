@@ -32,7 +32,7 @@ Compared to *
 
 I've used Celery_ professionally for years and my growing frustration
 with it is one of the reasons why I developed dramatiq.  Here are some
-of the main differences between Dramatiq, Celery and RQ:
+of the main differences between Dramatiq, Celery, Huey and RQ:
 
 +------------------------------+----------+---------------+--------------+--------------+
 |                              | Dramatiq | Celery_       | Huey_        | RQ_          |
