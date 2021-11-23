@@ -58,7 +58,7 @@ class Actor:
 
         Parameters:
           *args(tuple): Positional arguments to send to the actor.
-          **kwargs(dict): Keyword arguments to send to the actor.
+          **kwargs: Keyword arguments to send to the actor.
 
         Examples:
           >>> (add.message(1, 2) | add.message(3))
@@ -77,7 +77,7 @@ class Actor:
         Parameters:
           args(tuple): Positional arguments that are passed to the actor.
           kwargs(dict): Keyword arguments that are passed to the actor.
-          **options(dict): Arbitrary options that are passed to the
+          **options: Arbitrary options that are passed to the
             broker and any registered middleware.
 
         Returns:
@@ -103,7 +103,7 @@ class Actor:
 
         Parameters:
           *args(tuple): Positional arguments to send to the actor.
-          **kwargs(dict): Keyword arguments to send to the actor.
+          **kwargs: Keyword arguments to send to the actor.
 
         Returns:
           Message: The enqueued message.
@@ -120,7 +120,7 @@ class Actor:
           kwargs(dict): Keyword arguments that are passed to the actor.
           delay(int): The minimum amount of time, in milliseconds, the
             message should be delayed by.
-          **options(dict): Arbitrary options that are passed to the
+          **options: Arbitrary options that are passed to the
             broker and any registered middleware.
 
         Returns:
@@ -191,7 +191,7 @@ def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", 
         priority than the other then it will be processed first.
         Lower numbers represent higher priorities.
       broker(Broker): The broker to use with this actor.
-      **options(dict): Arbitrary options that vary with the set of
+      **options: Arbitrary options that vary with the set of
         middleware that you use.  See ``get_broker().actor_options``.
 
     Returns:

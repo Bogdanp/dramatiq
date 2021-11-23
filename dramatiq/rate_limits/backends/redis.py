@@ -28,7 +28,7 @@ class RedisBackend(RateLimiterBackend):
         then all other parameters are ignored.
       url(str): An optional connection URL.  If both a URL and
         connection parameters are provided, the URL is used.
-      **parameters(dict): Connection parameters are passed directly
+      **parameters: Connection parameters are passed directly
         to :class:`redis.Redis`.
 
     .. _redis: https://redis.io
