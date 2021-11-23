@@ -82,7 +82,7 @@ class RedisBroker(Broker):
       requeue_deadline(int): Deprecated.  Does nothing.
       requeue_interval(int): Deprecated.  Does nothing.
       client(redis.StrictRedis): A redis client to use.
-      **parameters(dict): Connection parameters are passed directly
+      **parameters: Connection parameters are passed directly
         to :class:`redis.Redis`.
 
     .. _Redis: http://redis-py.readthedocs.io/en/latest/#redis.Redis

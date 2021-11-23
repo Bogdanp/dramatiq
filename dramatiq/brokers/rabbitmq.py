@@ -79,7 +79,7 @@ class RabbitmqBroker(Broker):
         support queue-global priority queueing.
       parameters(list[dict]): A sequence of (pika) connection parameters
         to determine which Rabbit server(s) to connect to.
-      **kwargs(dict): The (pika) connection parameters to use to
+      **kwargs: The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
 
     .. _ConnectionParameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
