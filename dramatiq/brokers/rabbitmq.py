@@ -287,6 +287,7 @@ class RabbitmqBroker(Broker):
 
     def _declare_dq_queue(self, queue_name):
         arguments = self._build_queue_arguments(queue_name)
+        arguments["x-dead-letter-routing-key"] = queue_name  # Route messages to regular queue
         return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments=arguments)
 
     def _declare_xq_queue(self, queue_name):
@@ -311,6 +312,11 @@ class RabbitmqBroker(Broker):
         queue_name = message.queue_name
         self.declare_queue(queue_name, ensure=True)
 
+        message_properties = pika.BasicProperties(
+            delivery_mode=pika.DeliveryMode.Persistent,
+            priority=message.options.get("broker_priority")
+        )
+
         if delay is not None:
             queue_name = dq_name(queue_name)
             message_eta = current_millis() + delay
@@ -320,6 +326,7 @@ class RabbitmqBroker(Broker):
                     "eta": message_eta,
                 },
             )
+            message_properties.expiration = str(delay)
 
         attempts = 1
         while True:
@@ -330,10 +337,7 @@ class RabbitmqBroker(Broker):
                     exchange="",
                     routing_key=queue_name,
                     body=message.encode(),
-                    properties=pika.BasicProperties(
-                        delivery_mode=2,
-                        priority=message.options.get("broker_priority"),
-                    ),
+                    properties=message_properties
                 )
                 self.emit_after("enqueue", message, delay)
                 return message

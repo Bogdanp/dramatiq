@@ -185,6 +185,10 @@ class Worker:
                 return
 
     def _add_consumer(self, queue_name, *, delay=False):
+        if delay:
+            # Not creating the delayed queue, rely on message-ttl
+            return
+
         if queue_name in self.consumers:
             self.logger.debug("A consumer for queue %r is already running.", queue_name)
             return
@@ -273,7 +277,7 @@ class _ConsumerThread(Thread):
                         break
 
             except ConnectionError as e:
-                self.logger.critical("Consumer encountered a connection error: %s", e)
+                self.logger.critical("Consumer encountered a connection error: %s", e, exc_info=True)
                 self.delay_queue = PriorityQueue()
 
             except Exception:
