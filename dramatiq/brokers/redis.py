@@ -261,6 +261,8 @@ class RedisBroker(Broker):
                     cls._max_unpack_size_val = cls._max_unpack_size_val // 2
         return cls._max_unpack_size_val
 
+    _dispatch_lock = Lock()
+
     def _dispatch(self, command):
         # Micro-optimization: by hoisting these up here we avoid
         # allocating the list on every call.
@@ -280,7 +282,12 @@ class RedisBroker(Broker):
                 self._max_unpack_size(),
                 *args,
             ]
-            return dispatch(args=args, keys=keys)
+            try:
+                self._dispatch_lock.acquire()
+                return dispatch(args=args, keys=keys)
+            finally:
+                self._dispatch_lock.release()
+
         return do_dispatch
 
     def __getattr__(self, name):
