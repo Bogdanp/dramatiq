@@ -388,6 +388,8 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
         # worker process will realize that soon enough.
         event.set()
 
+    running = True
+
     def termhandler(signum, frame):
         nonlocal running
         if running:
@@ -408,7 +410,6 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
     # Unblock the blocked signals inherited from the parent process.
     try_unblock_signals()
 
-    running = True
     while running:
         time.sleep(1)
 
