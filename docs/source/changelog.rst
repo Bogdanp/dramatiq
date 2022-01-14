@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.12.2`_ -- 2022-01-14
+-----------------------
+
+Fixed
+^^^^^
+
+* An issue where stopping the process too quickly after boot could
+  lead to an ``AttributeError``. (`#463`_, `#464`_, `@FinnLidbetter`_)
+
 `1.12.1`_ -- 2021-12-19
 -----------------------
 
@@ -1011,7 +1020,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.12.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.12.2...HEAD
+.. _1.12.2: https://github.com/Bogdanp/dramatiq/compare/v1.12.1...v1.12.2
 .. _1.12.1: https://github.com/Bogdanp/dramatiq/compare/v1.12.0...v1.12.1
 .. _1.12.0: https://github.com/Bogdanp/dramatiq/compare/v1.11.0...v1.12.0
 .. _1.11.0: https://github.com/Bogdanp/dramatiq/compare/v1.10.0...v1.11.0
