@@ -350,6 +350,27 @@ def watch_logs(log_filename, pipes, stop):
 
 
 def worker_process(args, worker_id, logging_pipe, canteen, event):
+    running = True
+
+    def termhandler(signum, frame):
+        nonlocal running
+        if running:
+            logger.info("Stopping worker process...")
+            running = False
+        else:
+            logger.warning("Killing worker process...")
+            return sys.exit(RET_KILLED)
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, termhandler)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, termhandler)
+    if hasattr(signal, "SIGBREAK"):
+        signal.signal(signal.SIGBREAK, termhandler)
+
+    # Unblock the blocked signals inherited from the parent process
+    # before we start any worker threads and trigger middleware hooks.
+    try_unblock_signals()
     try:
         # Re-seed the random number generator from urandom on
         # supported platforms.  This should make it so that worker
@@ -388,27 +409,7 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
         # worker process will realize that soon enough.
         event.set()
 
-    running = True
-
-    def termhandler(signum, frame):
-        nonlocal running
-        if running:
-            logger.info("Stopping worker process...")
-            running = False
-        else:
-            logger.warning("Killing worker process...")
-            return sys.exit(RET_KILLED)
-
     logger.info("Worker process is ready for action.")
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGTERM, termhandler)
-    if hasattr(signal, "SIGHUP"):
-        signal.signal(signal.SIGHUP, termhandler)
-    if hasattr(signal, "SIGBREAK"):
-        signal.signal(signal.SIGBREAK, termhandler)
-
-    # Unblock the blocked signals inherited from the parent process.
-    try_unblock_signals()
 
     while running:
         time.sleep(1)
