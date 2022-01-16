@@ -19,7 +19,8 @@ class BrokerHolder:
 
 broker = RedisBroker()
 loaded_at = current_millis()
-fork_signal_mask_write_path = "/tmp/dramatiq-cli-fork-blocked-signals"
+fork_function_signal_mask_write_path = "/tmp/dramatiq-cli-fork-function-blocked-signals"
+middleware_fork_signal_mask_write_path = "/tmp/dramatiq-cli-middleware-fork-blocked-signals"
 consumer_signal_mask_write_path = "/tmp/dramatiq-cli-consumer-blocked-signals"
 after_process_boot_signal_mask_write_path = "/tmp/dramatiq-cli-boot-blocked-signals"
 
@@ -37,9 +38,10 @@ def write_masked_signals(filename):
         f.write(f"current_sigmask={current_sigmask}")
 
 
-def fork_write_masked_signals():
+def fork_function_write_masked_signals():
     current_sigmask = sorted(signal.pthread_sigmask(signal.SIG_BLOCK, []))
-    with open(fork_signal_mask_write_path, "w") as f:
+    print("Writing to fork function path")
+    with open(fork_function_signal_mask_write_path, "w") as f:
         f.write(f"current_sigmask={current_sigmask}")
 
 
@@ -58,10 +60,16 @@ def consumer_write_masked_signals():
     return None
 
 
+def fork_middleware_write_masked_signals():
+    current_sigmask = sorted(signal.pthread_sigmask(signal.SIG_BLOCK, []))
+    with open(middleware_fork_signal_mask_write_path, "w") as f:
+        f.write(f"current_sigmask={current_sigmask}")
+
+
 class ForkMaskWritingMiddleware(Middleware):
     @property
     def forks(self):
-        return [fork_write_masked_signals]
+        return [fork_middleware_write_masked_signals]
 
 
 middleware_fork_mask_writing_broker = RedisBroker(middleware=[ForkMaskWritingMiddleware()])
@@ -215,7 +223,7 @@ def test_consumer_threads_have_no_blocked_signals(start_cli):
 @skip_on_windows
 def test_middleware_fork_functions_have_no_blocked_signals(start_cli):
     # Given that I have a shared file that the fork process can use to communicate
-    filename = fork_signal_mask_write_path
+    filename = middleware_fork_signal_mask_write_path
 
     # When I start workers on a custom broker with middleware with a fork function that writes masked signals
     start_cli("tests.test_cli:middleware_fork_mask_writing_broker", extra_args=[
@@ -223,9 +231,12 @@ def test_middleware_fork_functions_have_no_blocked_signals(start_cli):
         "--threads", "1",
     ])
 
-    # And enqueue a task for a worker
+    # And enqueue a task for a worker, to wait for worker processes to finish setting up
     middleware_fork_actor.send()
     middleware_fork_mask_writing_broker.join(middleware_fork_actor.queue_name)
+
+    # And wait long enough for the fork function to execute
+    time.sleep(2)
 
     # And then read the blocked signals written to the file by the fork process
     with open(filename, "r") as f:
@@ -238,17 +249,21 @@ def test_middleware_fork_functions_have_no_blocked_signals(start_cli):
 @skip_on_windows
 def test_cli_fork_functions_have_no_blocked_signals(start_cli):
     # Given that I have a shared file that the fork process can use to communicate
-    filename = fork_signal_mask_write_path
+    filename = fork_function_signal_mask_write_path
 
     # When I start workers and a fork function
     start_cli("tests.test_cli:broker", extra_args=[
         "--processes", "1",
         "--threads", "1",
-        "--fork", "tests.test_cli:fork_write_masked_signals"
+        "--fork", "tests.test_cli:fork_function_write_masked_signals"
     ])
 
+    # And enqueue a task for a worker, to wait for worker processes to finish setting up
+    write_masked_signals.send("/tmp/dramatiq-dummy-not-used")
+    broker.join(write_masked_signals.queue_name)
+
     # And wait long enough for the fork function to execute
-    time.sleep(0.1)
+    time.sleep(2)
 
     # And then read the blocked signals written to the file by the fork process
     with open(filename, "r") as f:
