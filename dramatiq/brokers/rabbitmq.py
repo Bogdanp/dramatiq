@@ -132,20 +132,26 @@ class RabbitmqBroker(Broker):
         """
         connection = getattr(self.state, "connection", None)
         if connection is None:
-            connection = self.state.connection = pika.BlockingConnection(
-                parameters=self.parameters)
-            self.connections.add(connection)
+            connection = self.state.connection = self._get_new_connection()
         return connection
 
     @connection.deleter
     def connection(self):
-        del self.channel
         try:
             connection = self.state.connection
         except AttributeError:
             return
 
+        del self.channel
         del self.state.connection
+        self._close_connection(connection)
+
+    def _get_new_connection(self):
+        connection = pika.BlockingConnection(parameters=self.parameters)
+        self.connections.add(connection)
+        return connection
+
+    def _close_connection(self, connection):
         self.connections.remove(connection)
         if connection.is_open:
             try:
@@ -160,11 +166,7 @@ class RabbitmqBroker(Broker):
         """
         channel = getattr(self.state, "channel", None)
         if channel is None:
-            channel = self.state.channel = self.connection.channel()
-            if self.confirm_delivery:
-                channel.confirm_delivery()
-
-            self.channels.add(channel)
+            channel = self.state.channel = self._get_new_channel()
         return channel
 
     @channel.deleter
@@ -175,6 +177,17 @@ class RabbitmqBroker(Broker):
             return
 
         del self.state.channel
+        self._close_channel(channel)
+
+    def _get_new_channel(self):
+        channel = self.connection.channel()
+        if self.confirm_delivery:
+            channel.confirm_delivery()
+
+        self.channels.add(channel)
+        return channel
+
+    def _close_channel(self, channel):
         self.channels.remove(channel)
         if channel.is_open:
             try:
@@ -430,6 +443,51 @@ class RabbitmqBroker(Broker):
                 successes = 0
 
             self.connection.sleep(idle_time / 1000)
+
+
+class GeventRabbitmqBroker(RabbitmqBroker):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rested_connections = set()
+        self.rested_channels = {}
+
+    def _get_new_connection(self):
+        while self.rested_connections:
+            try:
+                connection = self.rested_connections.pop()
+            except KeyError:
+                break
+            if connection.is_open:
+                return connection
+            self.rested_channels.pop(connection, None)
+            super()._close_connection(connection)
+        return super()._get_new_connection()
+
+    def _close_connection(self, connection):
+        if connection.is_open:
+            self.rested_connections.add(connection)
+        else:
+            self.rested_channels.pop(connection, None)
+            super()._close_connection(connection)
+
+    def _get_new_channel(self):
+        connection = self.connection
+
+        try:
+            channel = self.rested_channels.pop(connection)
+        except KeyError:
+            return super()._get_new_channel()
+
+        if channel.is_open:
+            return channel
+        return super()._get_new_channel()
+
+    def _close_channel(self, channel):
+        if channel.is_open:
+            self.rested_channels[channel.connection] = channel
+        else:
+            super()._close_channel(channel)
 
 
 def URLRabbitmqBroker(url, *, middleware=None):
