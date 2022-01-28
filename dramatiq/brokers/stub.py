@@ -70,15 +70,17 @@ class StubBroker(Broker):
         Parameters:
           queue_name(str): The name of the new queue.
         """
-        if queue_name not in self.queues:
-            self.emit_before("declare_queue", queue_name)
-            self.queues[queue_name] = Queue()
-            self.emit_after("declare_queue", queue_name)
+        if queue_name in self.queues:
+            return
+            
+        self.emit_before("declare_queue", queue_name)
+        self.queues[queue_name] = Queue()
+        self.emit_after("declare_queue", queue_name)
 
-            delayed_name = dq_name(queue_name)
-            self.queues[delayed_name] = Queue()
-            self.delay_queues.add(delayed_name)
-            self.emit_after("declare_delay_queue", delayed_name)
+        delayed_name = dq_name(queue_name)
+        self.queues[delayed_name] = Queue()
+        self.delay_queues.add(delayed_name)
+        self.emit_after("declare_delay_queue", delayed_name)
 
     def enqueue(self, message, *, delay=None):
         """Enqueue a message.
