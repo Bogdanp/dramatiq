@@ -72,7 +72,7 @@ class StubBroker(Broker):
         """
         if queue_name in self.queues:
             return
-            
+
         self.emit_before("declare_queue", queue_name)
         self.queues[queue_name] = Queue()
         self.emit_after("declare_queue", queue_name)
