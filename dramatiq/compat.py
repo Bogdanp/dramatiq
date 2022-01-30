@@ -54,6 +54,10 @@ class StreamablePipe:
     def write(self, s):
         self.pipe.send_bytes(s.encode(self.encoding, errors="replace"))
 
+    @property
+    def closed(self):
+        return self.pipe.closed
+
 
 def file_or_stderr(filename, *, mode="a", encoding="utf-8"):
     """Returns a context object wrapping either the given file or
