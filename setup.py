@@ -97,6 +97,10 @@ setup(
     version=version,
     author="Bogdan Popa",
     author_email="bogdan@cleartype.io",
+    project_urls={
+        "Documentation": "https://dramatiq.io",
+        "Source": "https://github.com/Bogdanp/dramatiq",
+    },
     description="Background Processing for Python 3.",
     long_description=long_description,
     long_description_content_type="text/markdown",
