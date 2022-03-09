@@ -17,6 +17,11 @@ Fixed
 * An issue where signals remained blocked after worker process
   boot. (`#465`_, `#466`_, `@FinnLidbetter`_)
 
+Removed
+^^^^^^^
+
+* Dropped Python 3.6 support as it reached end-of-life
+
 
 `1.12.2`_ -- 2022-01-14
 -----------------------

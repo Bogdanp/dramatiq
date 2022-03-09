@@ -45,7 +45,7 @@ Here's what it looks like:
   count_words.send("http://example.com")
 
 **Dramatiq** is :doc:`licensed<license>` under the LGPL and it
-officially supports Python 3.6 and later.
+officially supports Python 3.7 and later.
 
 
 Get It Now
