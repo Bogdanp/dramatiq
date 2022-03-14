@@ -232,7 +232,9 @@ class RedisBroker(Broker):
                 raise QueueJoinTimeout(queue_name)
 
             size = 0
-            for name in (queue_name, dq_name(queue_name)):
+            # The delay queue needs to be checked before the normal queue.
+            # See https://github.com/Bogdanp/dramatiq/issues/480 for details.
+            for name in (dq_name(queue_name), queue_name):
                 size += self.do_qsize(name)
 
             if size == 0:
