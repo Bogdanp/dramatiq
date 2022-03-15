@@ -53,3 +53,4 @@ of those changes to CLEARTYPE SRL.
 | [@ethervoid](https://github.com/ethervoid)            | Mario de Frutos        |
 | [@pcrockett](https://github.com/pcrockett)            | Phil Crockett          |
 | [@nathanielobrown](https://github.com/nathanielobrown)| Nathaniel Brown        |
+| [@staticdev](https://github.com/staticdev)            | Thiago                 |
