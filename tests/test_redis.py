@@ -493,7 +493,12 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
 
 
 def test_redis_join_race_condition(redis_broker, redis_worker):
-    "test for issue https://github.com/Bogdanp/dramatiq/issues/480"
+    """
+    test for issue https://github.com/Bogdanp/dramatiq/issues/480
+
+    this test was triggered a race condition when ``qsize`` returned only the size of the
+    requested queue, not also of the delay queue.
+    """
     old_qsize = redis_broker.do_qsize
     events = defaultdict(threading.Event)
 
