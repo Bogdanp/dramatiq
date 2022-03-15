@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+from typing import Dict
 
 from ..backend import Missing, ResultBackend
 
@@ -29,7 +30,7 @@ class StubBackend(ResultBackend):
         result data.  Defaults to :class:`.JSONEncoder`.
     """
 
-    results = {}
+    results: Dict[str, str] = {}
 
     def _get(self, message_key):
         data, expiration = self.results.get(message_key, (None, None))

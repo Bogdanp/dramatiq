@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
@@ -23,7 +25,7 @@ from .middleware import MiddlewareError, default_middleware
 global_broker = None
 
 
-def get_broker() -> "Broker":
+def get_broker() -> Optional["Broker"]:
     """Get the global broker instance.  If no global broker is set,
     this initializes a RabbitmqBroker and returns it.
 
