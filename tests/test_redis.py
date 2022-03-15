@@ -1,4 +1,6 @@
+import threading
 import time
+from collections import defaultdict
 from unittest import mock
 
 import pytest
@@ -488,3 +490,41 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
         options={"redis_message_id": "XXXXXXXXX"}
     )  # Bogus ID
     consumer.nack(message)
+
+
+def test_redis_join_race_condition(redis_broker, redis_worker):
+    "test for issue https://github.com/Bogdanp/dramatiq/issues/480"
+    old_qsize = redis_broker.do_qsize
+    events = defaultdict(threading.Event)
+
+    class M(dramatiq.Middleware):
+        def before_enqueue(self, broker, message, delay):
+            if not delay:
+                events['default'].set()
+                events['default_done'].wait(2)
+
+        def after_ack(self, broker, message):
+            if message.options.get("eta"):
+                events[dq_name('default')].set()
+
+    def qsize(qn):
+        events[qn].wait(2)
+        events[qn].clear()
+        res = old_qsize(qn)
+        events[f'{qn}_done'].set()
+        return res
+
+    redis_broker.add_middleware(M())
+    redis_broker.do_qsize = qsize
+    called = False
+
+    @dramatiq.actor
+    def go():
+        nonlocal called
+        called = True
+
+    go.send_with_options(delay=50)
+    redis_broker.join('default')
+    redis_worker.join()
+
+    assert called
