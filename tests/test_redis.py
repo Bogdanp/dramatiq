@@ -500,18 +500,18 @@ def test_redis_join_race_condition(redis_broker, redis_worker):
     class M(dramatiq.Middleware):
         def before_enqueue(self, broker, message, delay):
             if not delay:
-                events['default'].set()
-                events['default_done'].wait(2)
+                events["default"].set()
+                events["default_done"].wait(2)
 
         def after_ack(self, broker, message):
             if message.options.get("eta"):
-                events[dq_name('default')].set()
+                events[dq_name("default")].set()
 
     def qsize(qn):
         events[qn].wait(2)
         events[qn].clear()
         res = old_qsize(qn)
-        events[f'{qn}_done'].set()
+        events[f"{qn}_done"].set()
         return res
 
     redis_broker.add_middleware(M())
@@ -524,7 +524,7 @@ def test_redis_join_race_condition(redis_broker, redis_worker):
         called = True
 
     go.send_with_options(delay=50)
-    redis_broker.join('default')
+    redis_broker.join("default")
     redis_worker.join()
 
     assert called

@@ -231,11 +231,7 @@ class RedisBroker(Broker):
             if deadline and time.monotonic() >= deadline:
                 raise QueueJoinTimeout(queue_name)
 
-            size = 0
-            # The delay queue needs to be checked before the normal queue.
-            # See https://github.com/Bogdanp/dramatiq/issues/480 for details.
-            for name in (dq_name(queue_name), queue_name):
-                size += self.do_qsize(name)
+            size = self.do_qsize(queue_name)
 
             if size == 0:
                 return

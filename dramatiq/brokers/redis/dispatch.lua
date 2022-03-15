@@ -229,8 +229,17 @@ elseif command == "purge" then
     redis.call("del", queue_full_name, queue_acks, queue_messages, xqueue_full_name, xqueue_messages)
 
 
--- Used in tests to determine the size of the queue.
+-- Used in tests to determine the size of the queue and its connected delay queue.
 elseif command == "qsize" then
-    return redis.call("hlen", queue_messages) + redis.call("scard", queue_acks)
+    local q_aks = acks .. "." .. queue_canonical_name
+    local q_fn = namespace .. ":" .. queue_canonical_name
+    local q_msgs = q_fn .. ".msgs"
+    local dq_q_aks = q_aks .. ".DQ"
+    local dq_q_msgs = q_fn .. ".DQ" .. ".msgs"
+
+    return redis.call("hlen", dq_q_msgs) +
+           redis.call("scard", dq_q_aks) +
+           redis.call("hlen", q_msgs) +
+           redis.call("scard", q_aks)
 
 end
