@@ -30,7 +30,7 @@ class StubBackend(ResultBackend):
         result data.  Defaults to :class:`.JSONEncoder`.
     """
 
-    results: Dict[str, Tuple[Optional[str], Optional[str]]] = {}
+    results: Dict[str, Tuple[Optional[str], Optional[float]]] = {}
 
     def _get(self, message_key):
         data, expiration = self.results.get(message_key, (None, None))
