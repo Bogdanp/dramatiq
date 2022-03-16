@@ -1,6 +1,4 @@
-import threading
 import time
-from collections import defaultdict
 from unittest import mock
 
 import pytest
@@ -505,15 +503,15 @@ def test_redis_join_race_condition(redis_broker, redis_worker):
     @dramatiq.actor
     def go():
         go_again.send_with_options(delay=50)
-        size.append(redis_broker.do_qsize('default'))  # go ack + go msg + go_again msg
-        size.append(redis_broker.do_qsize(dq_name('default')))  # does the same
+        size.append(redis_broker.do_qsize("default"))  # go ack + go msg + go_again msg
+        size.append(redis_broker.do_qsize(dq_name("default")))  # does the same
 
     @dramatiq.actor
     def go_again():
         nonlocal called
         called = True
-        size.append(redis_broker.do_qsize('default'))  # go_again msg + go_again ack
-        size.append(redis_broker.do_qsize(dq_name('default')))  # does the same
+        size.append(redis_broker.do_qsize("default"))  # go_again msg + go_again ack
+        size.append(redis_broker.do_qsize(dq_name("default")))  # does the same
 
     go.send()
     redis_broker.join("default")
