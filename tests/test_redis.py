@@ -490,7 +490,7 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
     consumer.nack(message)
 
 
-def test_redis_join_race_condition(redis_broker, redis_worker):
+def test_redis_join_race_condition(redis_broker):
     """
     test for issue https://github.com/Bogdanp/dramatiq/issues/480
 
@@ -503,7 +503,9 @@ def test_redis_join_race_condition(redis_broker, redis_worker):
     @dramatiq.actor
     def go():
         go_again.send_with_options(delay=1000)
-        size.append(redis_broker.do_qsize("default"))  # go ack + go msg + go_again msg
+        time.sleep(0.25)
+        # go ack + go msg + go_again dq.msg + go_again db.ack
+        size.append(redis_broker.do_qsize("default"))
         size.append(redis_broker.do_qsize(dq_name("default")))  # does the same
 
     @dramatiq.actor
@@ -513,9 +515,10 @@ def test_redis_join_race_condition(redis_broker, redis_worker):
         size.append(redis_broker.do_qsize("default"))  # go_again msg + go_again ack
         size.append(redis_broker.do_qsize(dq_name("default")))  # does the same
 
-    go.send()
-    redis_broker.join("default")
-    redis_worker.join()
+    with worker(redis_broker, worker_timeout=50, worker_threads=1) as redis_worker:
+        go.send()
+        redis_broker.join("default")
+        redis_worker.join()
 
     assert called
-    assert size == [3, 3, 2, 2]
+    assert size == [4, 4, 2, 2]
