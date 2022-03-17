@@ -488,3 +488,37 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
         options={"redis_message_id": "XXXXXXXXX"}
     )  # Bogus ID
     consumer.nack(message)
+
+
+def test_redis_join_race_condition(redis_broker):
+    """
+    test for issue https://github.com/Bogdanp/dramatiq/issues/480
+
+    this test verifies that do_qsize counts all messages in the queue and delay queue at the same
+    time, removing the race condition mentioned in the issue
+    """
+    called = False
+    size = []
+
+    @dramatiq.actor
+    def go():
+        go_again.send_with_options(delay=1000)
+        time.sleep(0.25)
+        # go ack + go msg + go_again dq.msg + go_again db.ack
+        size.append(redis_broker.do_qsize("default"))
+        size.append(redis_broker.do_qsize(dq_name("default")))  # does the same
+
+    @dramatiq.actor
+    def go_again():
+        nonlocal called
+        called = True
+        size.append(redis_broker.do_qsize("default"))  # go_again msg + go_again ack
+        size.append(redis_broker.do_qsize(dq_name("default")))  # does the same
+
+    with worker(redis_broker, worker_timeout=50, worker_threads=1) as redis_worker:
+        go.send()
+        redis_broker.join("default")
+        redis_worker.join()
+
+    assert called
+    assert size == [4, 4, 2, 2]
