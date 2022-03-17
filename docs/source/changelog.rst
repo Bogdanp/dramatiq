@@ -16,6 +16,12 @@ Fixed
 
 * An issue where signals remained blocked after worker process
   boot. (`#465`_, `#466`_, `@FinnLidbetter`_)
+* A race condition in the Redis broker's ``join`` method. (`#480`_,
+  `#481`_, `@CaselIT`_)
+
+.. _#480: https://github.com/Bogdanp/dramatiq/issues/480
+.. _#481: https://github.com/Bogdanp/dramatiq/pull/481
+.. _@CaselIT: https://github.com/CaselIT
 
 
 `1.12.2`_ -- 2022-01-14
