@@ -25,14 +25,14 @@ GitHub issues are for bugs.  If you have questions, please ask them on the [disc
 
 ## What did you do?
 
-<!-- be descriptive, but succint -->
+<!-- be descriptive, but succinct -->
 
 
 ## What did you expect would happen?
 
-<!-- be descriptive, but succint -->
+<!-- be descriptive, but succinct -->
 
 
 ## What happened?
 
-<!-- be descriptive, but succint -->
+<!-- be descriptive, but succinct -->

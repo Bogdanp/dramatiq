@@ -231,9 +231,7 @@ class RedisBroker(Broker):
             if deadline and time.monotonic() >= deadline:
                 raise QueueJoinTimeout(queue_name)
 
-            size = 0
-            for name in (queue_name, dq_name(queue_name)):
-                size += self.do_qsize(name)
+            size = self.do_qsize(queue_name)
 
             if size == 0:
                 return

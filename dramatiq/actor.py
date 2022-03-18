@@ -102,7 +102,7 @@ class Actor:
         """Asynchronously send a message to this actor.
 
         Parameters:
-          *args(tuple): Positional arguments to send to the actor.
+          *args: Positional arguments to send to the actor.
           **kwargs: Keyword arguments to send to the actor.
 
         Returns:
