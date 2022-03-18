@@ -223,7 +223,7 @@ HANDLED_SIGNALS = {signal.SIGINT, signal.SIGTERM}
 if hasattr(signal, "SIGHUP"):
     HANDLED_SIGNALS.add(signal.SIGHUP)
 if hasattr(signal, "SIGBREAK"):
-    HANDLED_SIGNALS.add(signal.SIGBREAK)
+    HANDLED_SIGNALS.add(signal.SIGBREAK)  # type: ignore
 
 
 def try_block_signals():

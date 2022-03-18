@@ -58,7 +58,7 @@ class JSONEncoder(Encoder):
 
         try:
             return json.loads(data_str)
-        except json.decoder.DecodeError as e:
+        except json.decoder.JSONDecodeError as e:
             raise DecodeError("failed to decode message %r" % (data_str,), data_str, e) from None
 
 

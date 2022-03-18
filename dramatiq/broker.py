@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import cast
+
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
@@ -41,6 +43,7 @@ def get_broker() -> "Broker":
             connection_attempts=5,
             blocked_connection_timeout=30,
         ))
+    global_broker = cast("Broker", global_broker)
     return global_broker
 
 

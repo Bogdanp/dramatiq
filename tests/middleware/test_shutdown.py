@@ -8,6 +8,7 @@ import pytest
 import dramatiq
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.middleware import shutdown, threading
+
 from ..common import skip_with_gevent, skip_without_gevent
 
 not_supported = threading.current_platform not in threading.supported_platforms
