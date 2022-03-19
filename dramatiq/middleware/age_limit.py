@@ -46,4 +46,5 @@ class AgeLimit(Middleware):
 
         if current_millis() - message.message_timestamp >= max_age:
             self.logger.warning("Message %r has exceeded its age limit.", message.message_id)
+            message.fail()
             raise SkipMessage("Message age limit exceeded")

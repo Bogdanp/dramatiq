@@ -351,7 +351,7 @@ def test_custom_skipped_messages_store_consistent_exceptions(stub_broker, stub_w
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
 
-    # And a custom middleware that skips messages
+    # And a custom middleware that skips messages but does not fail messages
     class SkipMiddleware(Middleware):
         def before_process_message(self, broker, message):
             raise SkipMessage("Custom skip")

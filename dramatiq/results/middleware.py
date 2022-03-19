@@ -102,6 +102,11 @@ class Results(Middleware):
                 "the value has been discarded." % message.actor_name
             )
 
+    def after_skip_message(self, broker, message):
+        store_results, result_ttl = self._lookup_options(broker, message)
+        if store_results and message._exception is not None:
+            self.backend.store_exception(message, message._exception, result_ttl)
+
     def after_nack(self, broker, message):
         store_results, result_ttl = self._lookup_options(broker, message)
         if store_results and message.failed:
