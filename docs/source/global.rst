@@ -1,7 +1,7 @@
 .. References
 
-.. |AgeLimit| replace:: :class:`Callbacks<dramatiq.middleware.AgeLimit>`
-.. |Barriers| replace:: :class:`Barrires<dramatiq.rate_limits.Barrier>`
+.. |AgeLimit| replace:: :class:`AgeLimit<dramatiq.middleware.AgeLimit>`
+.. |Barriers| replace:: :class:`Barriers<dramatiq.rate_limits.Barrier>`
 .. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Broker| replace:: :class:`Broker<dramatiq.Broker>`
 .. |Callbacks| replace:: :class:`Callbacks<dramatiq.middleware.Callbacks>`
@@ -24,6 +24,7 @@
 .. |RedisResBackend| replace:: :class:`Redis<dramatiq.results.backends.RedisBackend>`
 .. |ResultBackends| replace:: :class:`ResultBackends<dramatiq.results.ResultBackend>`
 .. |ResultBackend| replace:: :class:`ResultBackend<dramatiq.results.ResultBackend>`
+.. |ResultFailure| replace:: :class:`ResultFailure<dramatiq.results.ResultFailure>`
 .. |ResultMissing| replace:: :class:`ResultMissing<dramatiq.results.ResultMissing>`
 .. |ResultTimeout| replace:: :class:`ResultTimeout<dramatiq.results.ResultTimeout>`
 .. |Results| replace:: :class:`Results<dramatiq.results.Results>`

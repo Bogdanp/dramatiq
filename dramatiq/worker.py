@@ -496,7 +496,8 @@ class _WorkerThread(Thread):
             self.broker.emit_after("process_message", message, result=res)
 
         except SkipMessage as e:
-            message.stuff_exception(e)
+            if message.failed:
+                message.stuff_exception(e)
             self.logger.warning("Message %s was skipped.", message)
             self.broker.emit_after("skip_message", message)
 

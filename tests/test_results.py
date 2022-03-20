@@ -346,7 +346,7 @@ def test_age_limit_skipped_messages_store_consistent_exceptions(stub_broker, stu
     assert exc_2.value.orig_exc_msg == exc_1.value.orig_exc_msg
 
 
-def test_custom_skipped_messages_store_consistent_exceptions(stub_broker, stub_worker, result_backend):
+def test_custom_skipped_messages_with_no_fail_stores_none(stub_broker, stub_worker, result_backend):
     # Given a result backend
     # And a broker with the results middleware
     stub_broker.add_middleware(Results(backend=result_backend))
@@ -366,20 +366,11 @@ def test_custom_skipped_messages_store_consistent_exceptions(stub_broker, stub_w
     sent_message = do_work.send()
 
     # And wait for a result
-    # Then the result should be an exception
-    with pytest.raises(ResultFailure) as exc_1:
-        result_backend.get_result(sent_message, block=True)
-
-    assert str(exc_1.value) == "actor raised SkipMessage: Custom skip"
-    assert exc_1.value.orig_exc_type == "SkipMessage"
-    assert exc_1.value.orig_exc_msg == "Custom skip"
+    # Then the result should be None.
+    assert result_backend.get_result(sent_message, block=True) is None
 
     # If I sleep and get the result again
     time.sleep(0.2)
 
-    # Then the result should still be the same exception
-    with pytest.raises(ResultFailure) as exc_2:
-        result_backend.get_result(sent_message)
-    assert str(exc_2.value) == str(exc_1.value)
-    assert exc_2.value.orig_exc_type == exc_1.value.orig_exc_type
-    assert exc_2.value.orig_exc_msg == exc_1.value.orig_exc_msg
+    # Then the result should still be None.
+    assert result_backend.get_result(sent_message) is None

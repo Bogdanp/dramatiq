@@ -391,7 +391,17 @@ stored yet or if it has already expired (results expire after 10
 minutes by default).  When the ``block`` parameter is ``True``,
 |ResultTimeout| is raised instead.
 
-Results may expiry, otherwise the result backend might
+If processing a message fails (after exceeding allowed retries),
+then getting a result raises |ResultFailure| and information about
+the exception associated with the failure is stored on the
+|ResultFailure| exception object. If a message is skipped, via
+raising a |SkipMessage| exception, then if the message was failed
+with ``message.fail()`` (as in the |AgeLimit| middleware), then
+getting a result raises |ResultFailure|.
+Otherwise, if the message was skipped but not failed, then ``None``
+will be stored as the result.
+
+Results may expire, otherwise the result backend might
 eventually run out of space. 
 The timeout for the results expiration is set on `result_ttl`
 argument of |Results|, given in milliseconds. The default
