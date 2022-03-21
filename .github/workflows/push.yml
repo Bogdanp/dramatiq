@@ -87,7 +87,7 @@ jobs:
 
       - name: Build libmemcached
         run: |
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           set INCLUDE=%cd%\..;%INCLUDE%
           msbuild libmemcached.vcxproj /p:UseEnv=true /p:Configuration=Release /t:Build;CopyFiles
           cp Lib\memcached.dll %WINDIR%\system32
