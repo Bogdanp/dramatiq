@@ -18,7 +18,13 @@ Fixed
   boot. (`#465`_, `#466`_, `@FinnLidbetter`_)
 * A race condition in the Redis broker's ``join`` method. (`#480`_,
   `#481`_, `@CaselIT`_)
+* Skipped messages and messages failed due to |AgeLimit| now store
+  results more consistently. (`#440`_, `#449`_, `@FinnLidbetter`_)
 
+.. _#440: https://github.com/Bogdanp/dramatiq/issues/440
+.. _#449: https://github.com/Bogdanp/dramatiq/pull/449
+.. _#465: https://github.com/Bogdanp/dramatiq/issues/465
+.. _#466: https://github.com/Bogdanp/dramatiq/pull/466
 .. _#480: https://github.com/Bogdanp/dramatiq/issues/480
 .. _#481: https://github.com/Bogdanp/dramatiq/pull/481
 .. _@CaselIT: https://github.com/CaselIT
