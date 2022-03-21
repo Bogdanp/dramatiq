@@ -63,7 +63,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: ["windows-2016"]
+        os: ["windows-2019"]
         python: ["3.7", "3.8", "3.9"]
 
     runs-on: ${{ matrix.os }}
