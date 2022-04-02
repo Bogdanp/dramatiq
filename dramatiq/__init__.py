@@ -62,4 +62,4 @@ __all__ = [
     "Worker",
 ]
 
-__version__ = "1.12.3"
+__version__ = "1.13.0"
