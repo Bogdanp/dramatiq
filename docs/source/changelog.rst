@@ -22,6 +22,20 @@ Fixed
 .. _#481: https://github.com/Bogdanp/dramatiq/pull/481
 .. _@CaselIT: https://github.com/CaselIT
 
+Changed
+^^^^^^^
+
+* Typing support has been improved.  (`#482`_, `@staticdev`_)
+* The default broker now falls back to Redis if the RabbitMQ extras
+  are not installed, in an attempt to make the getting started process
+  easier. (`#483`_, `#486`_, `@kurtmckee`_)
+
+.. _#482: https://github.com/Bogdanp/dramatiq/issues/482
+.. _#483: https://github.com/Bogdanp/dramatiq/issues/483
+.. _#486: https://github.com/Bogdanp/dramatiq/pull/486
+.. _@kurtmckee: https://github.com/kurtmckee
+.. _@staticdev: https://github.com/staticdev
+
 
 `1.12.3`_ -- 2022-01-16
 -----------------------
