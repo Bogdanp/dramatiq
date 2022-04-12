@@ -153,3 +153,8 @@ class Middleware:
 
         There is no ``after_worker_thread_boot``.
         """
+
+    def before_broker_consume(self, broker, thread):
+        """Called before a consumer thread starts consuming messages. This may
+        be used to pause and resume consumer threads.
+        """
