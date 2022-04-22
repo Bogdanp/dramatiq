@@ -24,6 +24,7 @@ from threading import Lock
 from uuid import uuid4
 
 import redis
+from redis.exceptions import ResponseError
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import compute_backoff, current_millis, dq_name, getenv_int
@@ -360,10 +361,14 @@ class _RedisConsumer(Consumer):
                     # prefetch up to that number of messages.
                     messages = []
                     if self.outstanding_message_count < self.prefetch:
-                        self.message_cache = messages = self.broker.do_fetch(
-                            self.queue_name,
-                            self.prefetch - self.outstanding_message_count,
-                        )
+                        try:
+                            self.message_cache = messages = self.broker.do_fetch(
+                                self.queue_name,
+                                self.prefetch - self.outstanding_message_count,
+                            )
+                        except ResponseError as exc:
+                            self.message_cache = messages
+                            print(f"caught response error {str(exc)}")
 
                     # Because we didn't get any messages, we should
                     # progressively long poll up to the idle timeout.
