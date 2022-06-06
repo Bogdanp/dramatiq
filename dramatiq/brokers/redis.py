@@ -359,16 +359,17 @@ class _RedisConsumer(Consumer):
                     # If there are fewer messages currently being
                     # processed than we're allowed to prefetch,
                     # prefetch up to that number of messages.
-                    messages = []
-                    if self.outstanding_message_count < self.prefetch:
-                        try:
-                            self.message_cache = messages = self.broker.do_fetch(
-                                self.queue_name,
-                                self.prefetch - self.outstanding_message_count,
-                            )
-                        except ResponseError as exc:
-                            self.message_cache = messages
-                            print(f"caught response error {str(exc)}")
+                    for i in range(5):
+                        messages = []
+                        if self.outstanding_message_count < self.prefetch:
+                            try:
+                                self.message_cache = messages = self.broker.do_fetch(
+                                    self.queue_name,
+                                    self.prefetch - self.outstanding_message_count,
+                                )
+                                break
+                            except ResponseError as exc:
+                                print(f"caught response error {str(exc)} retrying {i} more times")
 
                     # Because we didn't get any messages, we should
                     # progressively long poll up to the idle timeout.
