@@ -42,6 +42,10 @@
 -- $namespace:$queue_name.XQ.msgs
 --   A hash of message ids -> message data.
 
+-- This is required because SCAN is non-deterministic and Redis won't allow
+-- writes after that unless replicate_commands has been called.
+redis.replicate_commands()
+
 local namespace = KEYS[1]
 
 local command = ARGV[1]
@@ -125,7 +129,14 @@ if do_maintenance == "1" then
 
         -- If there are no more ack groups for this worker, then
         -- remove it from the heartbeats set.
-        local ack_queues = redis.call("keys", dead_worker_acks .. "*")
+        local next_scan = "0"
+        local ack_queues = {}
+        repeat
+            local scan_result = redis.call("scan", "0", "match", dead_worker_acks .. "*")
+            next_scan = scan_result[1]
+            ack_queues = scan_result[2]
+        until next_scan == "0" or next(ack_queues) ~= nil
+
         if not next(ack_queues) then
             redis.call("zrem", heartbeats, dead_worker)
         end
@@ -151,7 +162,6 @@ if do_maintenance == "1" then
         end
     end
 end
-
 
 -- Enqueues a new message on $queue_full_name.
 if command == "enqueue" then
