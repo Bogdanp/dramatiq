@@ -150,6 +150,7 @@ local function clean_dead_workers_with_scan(dead_workers)
             redis.call("zrem", heartbeats, dead_worker)
         end
     end
+end
 
 local function clean_dead_workers_with_keys(dead_workers)
     for i=1,#dead_workers do
@@ -158,6 +159,7 @@ local function clean_dead_workers_with_keys(dead_workers)
             redis.call("zrem", heartbeats, dead_worker)
         end
     end
+end
 
 -- Every call to dispatch has some % chance to trigger maintenance on
 -- a queue.  Maintenance moves any unacked messages belonging to dead
