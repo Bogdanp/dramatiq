@@ -127,7 +127,7 @@ end
 -- remove it from the heartbeats set.
 local function clean_dead_workers_with_scan(dead_workers)
     local dead_worker_pattern = namespace .. ":__acks__.*"
-    local prefix_length = string.length(dead_worker_pattern) - 1
+    local prefix_length = string.len(dead_worker_pattern) - 1
     local next_scan = "0"
     local has_ack_groups = {}
     -- Find out which workers have ack groups and save their ids in a single SCAN.
