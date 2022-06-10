@@ -42,9 +42,25 @@
 -- $namespace:$queue_name.XQ.msgs
 --   A hash of message ids -> message data.
 
--- This is required because SCAN is non-deterministic and Redis won't allow
--- writes after that unless replicate_commands has been called.
-redis.replicate_commands()
+-- Until 7.0, by default Redis didnt't allow writing to the store after
+-- running a non-deterministic command (i.e. SCAN). There's a few cases to consider.
+-- WARNING: THIS CAN BREAK ON REDIS VERSION CHANGES!
+-- If you have problems with a specific redis version,
+-- check if the following snippet is the cause.
+local use_scan = nil
+-- For 3.2 to 7.0 we need to manually enable replicate_commands before we use SCAN
+if redis.replicate_commands ~= nil then
+    redis.replicate_commands()
+    use_scan = true
+-- 7.0 introduces REDIS_VERSION and removes replicate_commands
+-- and we can safely use SCAN as it is.
+elseif redis.REDIS_VERSION ~= nil then
+    use_scan = true
+-- If REDIS_VERSION and replicate_commands are both missing, we are most likely
+-- running 3.1 or below. In this case we can't use SCAN so fall back to KEYS.
+else
+    use_scan = false
+end
 
 local namespace = KEYS[1]
 
@@ -107,6 +123,42 @@ local function iter_chunks(tbl)
 end
 
 
+-- If there are no more ack groups for a (dead) worker, then
+-- remove it from the heartbeats set.
+local function clean_dead_workers_with_scan(dead_workers)
+    local dead_worker_pattern = namespace .. ":__acks__.*"
+    local prefix_length = string.length(dead_worker_pattern) - 1
+    local next_scan = "0"
+    local has_ack_groups = {}
+    -- Find out which workers have ack groups and save their ids in a single SCAN.
+    repeat
+        local scan_result = redis.call("scan", "0", "match", dead_worker_pattern)
+        next_scan = scan_result[1]
+        local ack_queues = scan_result[2]
+        for i=1,#ack_queues do
+            ack_queue = ack_queues[i]
+            local truncated = string.sub(ack_queue, prefix_length + 1)
+            local dot, _ = string.find(truncated, '.')
+            local worker_id = string.sub(truncated, 1, dot)
+            has_ack_groups[worker_id] = true
+        end
+    until next_scan == "0"
+
+    for i=1,#dead_workers do
+        local dead_worker = dead_workers[i]
+        if not has_ack_groups[dead_worker] then
+            redis.call("zrem", heartbeats, dead_worker)
+        end
+    end
+
+local function clean_dead_workers_with_keys(dead_workers)
+    for i=1,#dead_workers do
+        ack_queues = redis.call("keys", namespace .. ":__acks__." .. dead_worker .. "*")
+        if next(ack_queues) == nil then
+            redis.call("zrem", heartbeats, dead_worker)
+        end
+    end
+
 -- Every call to dispatch has some % chance to trigger maintenance on
 -- a queue.  Maintenance moves any unacked messages belonging to dead
 -- workers back to their queues and deletes any expired messages from
@@ -126,20 +178,12 @@ if do_maintenance == "1" then
             end
             redis.call("del", dead_worker_queue_acks)
         end
+    end
 
-        -- If there are no more ack groups for this worker, then
-        -- remove it from the heartbeats set.
-        local next_scan = "0"
-        local ack_queues = {}
-        repeat
-            local scan_result = redis.call("scan", "0", "match", dead_worker_acks .. "*")
-            next_scan = scan_result[1]
-            ack_queues = scan_result[2]
-        until next_scan == "0" or next(ack_queues) ~= nil
-
-        if not next(ack_queues) then
-            redis.call("zrem", heartbeats, dead_worker)
-        end
+    if use_scan then
+        clean_dead_workers_with_scan(dead_workers)
+    else
+        clean_dead_workers_with_keys(dead_workers)
     end
 
     local dead_message_ids = redis.call("zrangebyscore", xqueue_full_name, 0, timestamp - dead_message_ttl)
