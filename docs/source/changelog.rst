@@ -8,6 +8,45 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.13.0`_ -- 2022-04-02
+-----------------------
+
+Fixed
+^^^^^
+
+* A race condition in the Redis broker's ``join`` method. (`#480`_,
+  `#481`_, `@CaselIT`_)
+* Skipped messages and messages failed due to |AgeLimit| now store
+  results more consistently. (`#440`_, `#449`_, `@FinnLidbetter`_)
+
+.. _#440: https://github.com/Bogdanp/dramatiq/issues/440
+.. _#449: https://github.com/Bogdanp/dramatiq/pull/449
+.. _#480: https://github.com/Bogdanp/dramatiq/issues/480
+.. _#481: https://github.com/Bogdanp/dramatiq/pull/481
+.. _@CaselIT: https://github.com/CaselIT
+
+Changed
+^^^^^^^
+
+* Typing support has been improved.  (`#482`_, `@staticdev`_)
+* The default broker now falls back to Redis if the RabbitMQ extras
+  are not installed, in an attempt to make the getting started process
+  easier. (`#483`_, `#486`_, `@kurtmckee`_)
+
+.. _#482: https://github.com/Bogdanp/dramatiq/issues/482
+.. _#483: https://github.com/Bogdanp/dramatiq/issues/483
+.. _#486: https://github.com/Bogdanp/dramatiq/pull/486
+.. _@kurtmckee: https://github.com/kurtmckee
+.. _@staticdev: https://github.com/staticdev
+
+Removed
+^^^^^^^
+
+* Dropped Python 3.6 support as it reached end-of-life
+.. _#465: https://github.com/Bogdanp/dramatiq/issues/465
+.. _#466: https://github.com/Bogdanp/dramatiq/pull/466
+
+
 `1.12.3`_ -- 2022-01-16
 -----------------------
 
@@ -16,11 +55,6 @@ Fixed
 
 * An issue where signals remained blocked after worker process
   boot. (`#465`_, `#466`_, `@FinnLidbetter`_)
-
-Removed
-^^^^^^^
-
-* Dropped Python 3.6 support as it reached end-of-life
 
 
 `1.12.2`_ -- 2022-01-14
@@ -1036,7 +1070,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.12.3...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.13.0...HEAD
+.. _1.13.0: https://github.com/Bogdanp/dramatiq/compare/v1.12.3...v1.13.0
 .. _1.12.3: https://github.com/Bogdanp/dramatiq/compare/v1.12.2...v1.12.3
 .. _1.12.2: https://github.com/Bogdanp/dramatiq/compare/v1.12.1...v1.12.2
 .. _1.12.1: https://github.com/Bogdanp/dramatiq/compare/v1.12.0...v1.12.1

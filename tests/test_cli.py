@@ -5,8 +5,8 @@ from subprocess import PIPE, STDOUT
 
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
-from dramatiq.middleware import Middleware
 from dramatiq.common import current_millis
+from dramatiq.middleware import Middleware
 
 from .common import skip_on_windows
 

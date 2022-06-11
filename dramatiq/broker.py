@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import cast
+
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
@@ -24,23 +26,35 @@ global_broker = None
 
 
 def get_broker() -> "Broker":
-    """Get the global broker instance.  If no global broker is set,
-    this initializes a RabbitmqBroker and returns it.
+    """Get the global broker instance.
+
+    If no global broker is set, a RabbitMQ broker will be returned.
+    If the RabbitMQ dependencies are not installed, a Redis broker
+    will be returned.
 
     Returns:
       Broker: The default Broker.
     """
     global global_broker
     if global_broker is None:
-        from .brokers.rabbitmq import RabbitmqBroker
+        # RabbitMQ will be tried first, but its dependencies might not
+        # be installed if the user only installed the [redis] extras.
+        try:
+            from .brokers.rabbitmq import RabbitmqBroker
 
-        set_broker(RabbitmqBroker(
-            host="127.0.0.1",
-            port=5672,
-            heartbeat=5,
-            connection_attempts=5,
-            blocked_connection_timeout=30,
-        ))
+            set_broker(RabbitmqBroker(
+                host="127.0.0.1",
+                port=5672,
+                heartbeat=5,
+                connection_attempts=5,
+                blocked_connection_timeout=30,
+            ))
+        except ImportError:
+            # Fall back to the Redis broker.
+            from .brokers.redis import RedisBroker
+
+            set_broker(RedisBroker())
+    global_broker = cast("Broker", global_broker)
     return global_broker
 
 

@@ -466,7 +466,10 @@ class _WorkerThread(Thread):
 
     def process_message(self, message):
         """Process a message pulled off of the work queue then push it
-        back to its associated consumer for post processing.
+        back to its associated consumer for post processing. Stuff any SkipMessage
+        exception or BaseException into the message [proxy] so that it may be used
+        by the stub broker to provide a nicer testing experience. Also used by the
+        results middleware to pass exceptions into results.
 
         Parameters:
           message(MessageProxy)
@@ -492,15 +495,13 @@ class _WorkerThread(Thread):
 
             self.broker.emit_after("process_message", message, result=res)
 
-        except SkipMessage:
+        except SkipMessage as e:
+            if message.failed:
+                message.stuff_exception(e)
             self.logger.warning("Message %s was skipped.", message)
             self.broker.emit_after("skip_message", message)
 
         except BaseException as e:
-            # Stuff the exception into the message [proxy] so that it
-            # may be used by the stub broker to provide a nicer
-            # testing experience.  Also used by the results middleware
-            # to pass exceptions into results.
             message.stuff_exception(e)
 
             throws = message.options.get("throws") or (actor and actor.options.get("throws"))
