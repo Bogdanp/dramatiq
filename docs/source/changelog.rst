@@ -56,6 +56,9 @@ Fixed
 * An issue where signals remained blocked after worker process
   boot. (`#465`_, `#466`_, `@FinnLidbetter`_)
 
+.. _#465: https://github.com/Bogdanp/dramatiq/issues/465
+.. _#466: https://github.com/Bogdanp/dramatiq/pull/466
+
 
 `1.12.2`_ -- 2022-01-14
 -----------------------
