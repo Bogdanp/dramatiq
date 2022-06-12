@@ -39,6 +39,13 @@ Changed
 .. _@kurtmckee: https://github.com/kurtmckee
 .. _@staticdev: https://github.com/staticdev
 
+Removed
+^^^^^^^
+
+* Dropped Python 3.6 support as it reached end-of-life
+.. _#465: https://github.com/Bogdanp/dramatiq/issues/465
+.. _#466: https://github.com/Bogdanp/dramatiq/pull/466
+
 
 `1.12.3`_ -- 2022-01-16
 -----------------------
