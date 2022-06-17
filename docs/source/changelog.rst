@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Removed
+^^^^^^^
+
+* Dropped Python 3.6 support as it reached end-of-life
+
+.. _#465: https://github.com/Bogdanp/dramatiq/issues/465
+.. _#466: https://github.com/Bogdanp/dramatiq/pull/466
+
+
 `1.13.0`_ -- 2022-04-02
 -----------------------
 
@@ -38,13 +47,6 @@ Changed
 .. _#486: https://github.com/Bogdanp/dramatiq/pull/486
 .. _@kurtmckee: https://github.com/kurtmckee
 .. _@staticdev: https://github.com/staticdev
-
-Removed
-^^^^^^^
-
-* Dropped Python 3.6 support as it reached end-of-life
-.. _#465: https://github.com/Bogdanp/dramatiq/issues/465
-.. _#466: https://github.com/Bogdanp/dramatiq/pull/466
 
 
 `1.12.3`_ -- 2022-01-16
