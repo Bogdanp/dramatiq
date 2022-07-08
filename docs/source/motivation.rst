@@ -55,7 +55,7 @@ of the main differences between Dramatiq, Celery, Huey and RQ:
 | Locks and rate limiting      | Yes      | No            | Yes          | No           |
 |                              |          |               |              |              |
 +------------------------------+----------+---------------+--------------+--------------+
-| Task prioritization          | Yes      | No [#prio]_   | Yes          | No [#prio]_  |
+| Task prioritization          | Yes      | No [#prio]_   | Yes          | Yes          |
 |                              | [#prio]_ |               |              |              |
 +------------------------------+----------+---------------+--------------+--------------+
 | Delayed tasks                | Yes      | Yes [#]_      | Yes          | No           |
@@ -103,7 +103,7 @@ of the main differences between Dramatiq, Celery, Huey and RQ:
           usage of runtime stack frame manipulation leads to
           heisenbugs.
 
-.. [#prio] Celery and RQ don't support task prioritization.  Dramatiq
+.. [#prio] Celery doesn't support task prioritization.  Dramatiq
            supports global prioritization under RabbitMQ via the
            ``broker_priority``.  It also provides worker-local
            prioritization of prefetched messages.
