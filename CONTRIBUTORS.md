@@ -55,3 +55,4 @@ of those changes to CLEARTYPE SRL.
 | [@nathanielobrown](https://github.com/nathanielobrown)| Nathaniel Brown        |
 | [@staticdev](https://github.com/staticdev)            | Thiago                 |
 | [@kurtmckee](https://github.com/kurtmckee)            | Kurt McKee             |
+| [@cmflynn](https://github.com/cmflynn)                | Cody Flynn             |
