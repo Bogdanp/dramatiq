@@ -63,7 +63,7 @@ class Message(namedtuple("Message", (
     """Encapsulates metadata about messages being sent to individual actors.
 
     Parameters:
-      queue_name(str): The name of the queue the message belogns to.
+      queue_name(str): The name of the queue the message belongs to.
       actor_name(str): The name of the actor that will receive the message.
       args(tuple): Positional arguments that are passed to the actor.
       kwargs(dict): Keyword arguments that are passed to the actor.
