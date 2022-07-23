@@ -44,7 +44,7 @@ def test_concurrent_rate_limiter_can_act_as_a_mutex(rate_limiter_backend):
         for future in futures:
             future.result()
 
-    # I exepct only one call to have succeeded
+    # I expect only one call to have succeeded
     assert sum(calls) == 1
 
 
