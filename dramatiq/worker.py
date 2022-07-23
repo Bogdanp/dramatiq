@@ -174,7 +174,7 @@ class Worker:
             self.work_queue.join()
 
             # If nothing got put on the delay queues while we were
-            # joining on the work queue then it shoud be safe to exit.
+            # joining on the work queue then it should be safe to exit.
             # This could still miss stuff but the chances are slim.
             for consumer in self.consumers.values():
                 if consumer.delay_queue.unfinished_tasks:
