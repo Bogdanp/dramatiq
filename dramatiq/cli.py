@@ -202,7 +202,7 @@ def make_argument_parser():
             help=(
                 "watch a directory and reload the workers when any source files "
                 "change (this feature must only be used during development). "
-                "This option is currently only supproted on unix systems."
+                "This option is currently only supported on unix systems."
             )
         )
         parser.add_argument(
