@@ -95,7 +95,7 @@ jobs:
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
           set INCLUDE=%cd%\..;%INCLUDE%
-          msbuild libmemcached.vcxproj /p:UseEnv=true /p:Configuration=Release /p:VCToolsVersion=14.29.30133 /t:Build;CopyFiles
+          msbuild libmemcached.vcxproj /p:UseEnv=true /p:Configuration=Release /t:Build;CopyFiles
           cp Lib\memcached.dll %WINDIR%\system32
           pip install --install-option="--without-zlib" --install-option="--with-libmemcached=%cd%" pylibmc
         shell: cmd
@@ -104,9 +104,9 @@ jobs:
       - name: Install memcached
         run: |
           mkdir memcached
-          Invoke-WebRequest "https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw/memcached-1.6.7-win32-mingw.zip" -OutFile "memcached\memcached.zip"
+          Invoke-WebRequest "https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw/memcached-1.6.8-win32-mingw.zip" -OutFile "memcached\memcached.zip"
           7z x memcached\memcached.zip -y -omemcached
-          Start-Process memcached\memcached-1.6.7-win32-mingw\bin\memcached.exe -PassThru
+          Start-Process memcached\memcached-1.6.8-win32-mingw\bin\memcached.exe -PassThru
 
       - name: Install RabbitMQ and Redis
         run: |
