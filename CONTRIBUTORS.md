@@ -56,3 +56,4 @@ of those changes to CLEARTYPE SRL.
 | [@staticdev](https://github.com/staticdev)            | Thiago                 |
 | [@kurtmckee](https://github.com/kurtmckee)            | Kurt McKee             |
 | [@cmflynn](https://github.com/cmflynn)                | Cody Flynn             |
+| [@dancardin](https://github.com/dancardin)            | Dan Cardin             |
