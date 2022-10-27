@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - run: pip install tox
       - run: tox -e lint
 
@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-18.04"]
-        python: ["3.7", "3.8", "3.9", "3.10"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}
