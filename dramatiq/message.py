@@ -18,6 +18,7 @@
 import time
 import uuid
 from collections import namedtuple
+from typing import Optional
 
 from .broker import get_broker
 from .composition import pipeline
@@ -39,7 +40,7 @@ def get_encoder() -> Encoder:
     return global_encoder
 
 
-def set_encoder(encoder: Encoder):
+def set_encoder(encoder: Encoder) -> None:
     """Set the global encoder object.
 
     Parameters:
@@ -85,13 +86,13 @@ class Message(namedtuple("Message", (
         """
         return pipeline([self, other])
 
-    def asdict(self):
+    def asdict(self) -> dict:
         """Convert this message to a dictionary.
         """
         return self._asdict()
 
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data: bytes) -> "Message":
         """Convert a bytestring to a message.
 
         Raises:
@@ -103,12 +104,12 @@ class Message(namedtuple("Message", (
         except Exception as e:
             raise DecodeError("Failed to decode message.", data, e) from e
 
-    def encode(self):
+    def encode(self) -> bytes:
         """Convert this message to a bytestring.
         """
         return global_encoder.encode(self._asdict())
 
-    def copy(self, **attributes):
+    def copy(self, **attributes) -> "Message":
         """Create a copy of this message.
         """
         updated_options = attributes.pop("options", {})
@@ -116,7 +117,12 @@ class Message(namedtuple("Message", (
         options.update(updated_options)
         return self._replace(**attributes, options=options)
 
-    def get_result(self, *, backend=None, block=False, timeout=None):
+    def get_result(
+        self, *,
+        backend=None,
+        block: bool = False,
+        timeout: Optional[int] = None,
+    ):
         """Get the result associated with this message from a result
         backend.
 
@@ -154,7 +160,7 @@ class Message(namedtuple("Message", (
 
         return backend.get_result(self, block=block, timeout=timeout)
 
-    def __str__(self):
+    def __str__(self) -> str:
         params = ", ".join(repr(arg) for arg in self.args)
         if self.kwargs:
             params += ", " if params else ""

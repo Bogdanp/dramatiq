@@ -17,16 +17,19 @@
 
 import re
 import time
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, overload
 
-from .broker import get_broker
+from .broker import Broker, get_broker
 from .logging import get_logger
 from .message import Message
 
 #: The regular expression that represents valid queue names.
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 
+R = TypeVar("R")
 
-class Actor:
+
+class Actor(Generic[R]):
     """Thin wrapper around callables that stores metadata about how
     they should be executed asynchronously.  Actors are callable.
 
@@ -41,7 +44,16 @@ class Actor:
         and middleware.
     """
 
-    def __init__(self, fn, *, broker, actor_name, queue_name, priority, options):
+    def __init__(
+        self,
+        fn: Callable[..., R],
+        *,
+        broker: Broker,
+        actor_name: str,
+        queue_name: str,
+        priority: int,
+        options: Dict[str, Any],
+    ) -> None:
         self.logger = get_logger(fn.__module__, actor_name)
         self.fn = fn
         self.broker = broker
@@ -51,7 +63,7 @@ class Actor:
         self.options = options
         self.broker.declare_actor(self)
 
-    def message(self, *args, **kwargs):
+    def message(self, *args, **kwargs) -> Message:
         """Build a message.  This method is useful if you want to
         compose actors.  See the actor composition documentation for
         details.
@@ -69,7 +81,12 @@ class Actor:
         """
         return self.message_with_options(args=args, kwargs=kwargs)
 
-    def message_with_options(self, *, args=None, kwargs=None, **options):
+    def message_with_options(
+        self, *,
+        args: tuple = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        **options,
+    ) -> Message:
         """Build a message with an arbitrary set of processing options.
         This method is useful if you want to compose actors.  See the
         actor composition documentation for details.
@@ -94,11 +111,12 @@ class Actor:
         return Message(
             queue_name=self.queue_name,
             actor_name=self.actor_name,
-            args=args or (), kwargs=kwargs or {},
+            args=args,
+            kwargs=kwargs or {},
             options=options,
         )
 
-    def send(self, *args, **kwargs):
+    def send(self, *args, **kwargs) -> Message:
         """Asynchronously send a message to this actor.
 
         Parameters:
@@ -110,7 +128,13 @@ class Actor:
         """
         return self.send_with_options(args=args, kwargs=kwargs)
 
-    def send_with_options(self, *, args=None, kwargs=None, delay=None, **options):
+    def send_with_options(
+        self, *,
+        args: tuple = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        delay: Optional[int] = None,
+        **options,
+    ) -> Message:
         """Asynchronously send a message to this actor, along with an
         arbitrary set of processing options for the broker and
         middleware.
@@ -129,7 +153,7 @@ class Actor:
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> R:
         """Synchronously call this actor.
 
         Parameters:
@@ -147,14 +171,33 @@ class Actor:
             delta = time.perf_counter() - start
             self.logger.debug("Completed after %.02fms.", delta * 1000)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Actor(%(fn)r, queue_name=%(queue_name)r, actor_name=%(actor_name)r)" % vars(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Actor(%(actor_name)s)" % vars(self)
 
 
-def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", priority=0, broker=None, **options):
+@overload
+def actor(fn: Callable[..., R], **kwargs) -> Actor[R]:
+    pass
+
+
+@overload
+def actor(**kwargs) -> Callable[[Callable[..., R]], Actor[R]]:
+    pass
+
+
+def actor(
+    fn: Optional[Callable[..., R]] = None,
+    *,
+    actor_class: Callable[..., Actor[R]] = Actor,
+    actor_name: Optional[str] = None,
+    queue_name: str = "default",
+    priority: int = 0,
+    broker: Optional[Broker] = None,
+    **options,
+) -> Union[Actor, Callable]:
     """Declare an actor.
 
     Examples:
@@ -197,7 +240,7 @@ def actor(fn=None, *, actor_class=Actor, actor_name=None, queue_name="default", 
     Returns:
       Actor: The decorated function.
     """
-    def decorator(fn):
+    def decorator(fn: Callable[..., R]) -> Actor[R]:
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
         if not _queue_name_re.fullmatch(queue_name):

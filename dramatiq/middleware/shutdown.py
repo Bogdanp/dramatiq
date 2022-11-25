@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import threading
-from typing import Optional, Type
 import warnings
+from typing import Optional, Type
 
 from ..logging import get_logger
 from .middleware import Middleware

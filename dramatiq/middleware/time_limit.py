@@ -16,15 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import threading
-from typing import TYPE_CHECKING, Optional
 import warnings
 from threading import Thread
 from time import monotonic, sleep
+from typing import TYPE_CHECKING, Optional
 
 from ..logging import get_logger
 from .middleware import Middleware
 from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
-
 
 if TYPE_CHECKING:
     import gevent
