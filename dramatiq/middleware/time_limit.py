@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import threading
+from typing import TYPE_CHECKING, Optional
 import warnings
 from threading import Thread
 from time import monotonic, sleep
@@ -23,6 +24,10 @@ from time import monotonic, sleep
 from ..logging import get_logger
 from .middleware import Middleware
 from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
+
+
+if TYPE_CHECKING:
+    import gevent
 
 
 class TimeLimitExceeded(Interrupt):
@@ -145,11 +150,11 @@ class _GeventTimeoutManager:
             timer.close()
 
 
-_GeventTimeout = None
+_GeventTimeout: Optional["gevent.Timeout"] = None
 if is_gevent_active():
     from gevent import Timeout
 
-    class _GeventTimeout(Timeout):
+    class __GeventTimeout(Timeout):
         """Cooperative timeout class for gevent with logging on timeouts."""
 
         def __init__(self, *args, logger=None, thread_id=None, after_expiration=None, **kwargs):
@@ -165,3 +170,5 @@ if is_gevent_active():
             if self.after_expiration is not None:
                 self.after_expiration()
             return res
+
+    _GeventTimeout = __GeventTimeout

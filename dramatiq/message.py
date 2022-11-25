@@ -26,7 +26,7 @@ from .errors import DecodeError
 from .results import Results
 
 #: The global encoder instance.
-global_encoder = JSONEncoder()
+global_encoder: Encoder = JSONEncoder()
 
 
 def get_encoder() -> Encoder:
