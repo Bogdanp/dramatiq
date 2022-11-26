@@ -61,6 +61,7 @@ class Actor(Generic[R]):
         self.queue_name = queue_name
         self.priority = priority
         self.options = options
+        self.injections = {}
         self.broker.declare_actor(self)
 
     def message(self, *args, **kwargs) -> Message:
@@ -166,7 +167,7 @@ class Actor(Generic[R]):
         try:
             self.logger.debug("Received args=%r kwargs=%r.", args, kwargs)
             start = time.perf_counter()
-            return self.fn(*args, **kwargs)
+            return self.fn(*args, **{**self.injections, **kwargs})
         finally:
             delta = time.perf_counter() - start
             self.logger.debug("Completed after %.02fms.", delta * 1000)

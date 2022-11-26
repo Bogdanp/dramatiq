@@ -75,11 +75,14 @@ class Message(namedtuple("Message", (
     """
 
     def __new__(cls, *, queue_name, actor_name, args, kwargs, options, message_id=None, message_timestamp=None):
-        return super().__new__(
+        self = super().__new__(
             cls, queue_name, actor_name, tuple(args), kwargs, options,
             message_id=message_id or generate_unique_id(),
             message_timestamp=message_timestamp or int(time.time() * 1000),
         )
+        # This is specifically not part of namedtuple so it's not part of _asdict() and such
+        self.injections = {}
+        return self
 
     def __or__(self, other) -> pipeline:
         """Combine this message into a pipeline with "other".
