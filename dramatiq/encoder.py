@@ -70,5 +70,8 @@ class PickleEncoder(Encoder):
       Use it at your own risk.
     """
 
-    encode = pickle.dumps
-    decode = pickle.loads
+    def encode(self, data: MessageData) -> bytes:
+        return pickle.dumps(data)
+
+    def decode(self, data: bytes) -> MessageData:
+        return pickle.loads(data)

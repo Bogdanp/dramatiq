@@ -37,7 +37,7 @@ Missing = type("Missing", (object,), {})()
 Result = typing.Any
 
 #: A union representing a Result that may or may not be there.
-MResult = typing.Union[type(Missing), Result]
+MResult = typing.Union[typing.Type[object], Result]
 
 
 class ResultBackend:
@@ -50,7 +50,7 @@ class ResultBackend:
         result data.  Defaults to :class:`.JSONEncoder`.
     """
 
-    def __init__(self, *, namespace: str = "dramatiq-results", encoder: Encoder = None):
+    def __init__(self, *, namespace: str = "dramatiq-results", encoder: typing.Optional[Encoder] = None):
         from ..message import get_encoder
 
         self.namespace = namespace
@@ -70,7 +70,7 @@ class ResultBackend:
         """
         return unwrap_result(res)
 
-    def get_result(self, message, *, block: bool = False, timeout: int = None) -> Result:
+    def get_result(self, message, *, block: bool = False, timeout: typing.Optional[int] = None) -> Result:
         """Get a result from the backend.
 
         Parameters:

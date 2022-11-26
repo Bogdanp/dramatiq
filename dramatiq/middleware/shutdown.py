@@ -17,6 +17,7 @@
 
 import threading
 import warnings
+from typing import Optional, Type
 
 from ..logging import get_logger
 from .middleware import Middleware
@@ -86,7 +87,22 @@ class ShutdownNotifications(Middleware):
     after_skip_message = after_process_message
 
 
-class _CtypesShutdownManager:
+class _ShutdownManager:
+
+    def __init__(self, logger=None) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+    def add_notification(self) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+    def remove_notification(self) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+    def shutdown(self) -> None:  # pragma: no cover
+        raise NotImplementedError
+
+
+class _CtypesShutdownManager(_ShutdownManager):
 
     def __init__(self, logger=None):
         self.logger = logger or get_logger(__name__, type(self))
@@ -104,11 +120,11 @@ class _CtypesShutdownManager:
             raise_thread_exception(thread_id, Shutdown)
 
 
-_GeventShutdownManager = None
+_GeventShutdownManager: Optional[Type[_ShutdownManager]] = None
 if is_gevent_active():
     from gevent import getcurrent
 
-    class _GeventShutdownManager:
+    class __GeventShutdownManager(_ShutdownManager):
 
         def __init__(self, logger=None):
             self.logger = logger or get_logger(__name__, type(self))
@@ -130,3 +146,5 @@ if is_gevent_active():
             for thread_id, greenlet in self.notification_greenlets:
                 self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
                 greenlet.kill(Shutdown, block=False)
+
+    _GeventShutdownManager = __GeventShutdownManager
