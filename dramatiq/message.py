@@ -15,19 +15,21 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import dataclasses
 import time
 import uuid
-from collections import namedtuple
-from typing import Optional
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .errors import DecodeError
-from .results import Results
+from .results import ResultBackend, Results
 
 #: The global encoder instance.
 global_encoder: Encoder = JSONEncoder()
+
+R = TypeVar("R")
 
 
 def get_encoder() -> Encoder:
@@ -57,10 +59,8 @@ def generate_unique_id() -> str:
     return str(uuid.uuid4())
 
 
-class Message(namedtuple("Message", (
-        "queue_name", "actor_name", "args", "kwargs",
-        "options", "message_id", "message_timestamp",
-))):
+@dataclasses.dataclass(frozen=True)
+class Message(Generic[R]):
     """Encapsulates metadata about messages being sent to individual actors.
 
     Parameters:
@@ -73,23 +73,23 @@ class Message(namedtuple("Message", (
       message_timestamp(int): The UNIX timestamp in milliseconds
         representing when the message was first enqueued.
     """
-
-    def __new__(cls, *, queue_name, actor_name, args, kwargs, options, message_id=None, message_timestamp=None):
-        return super().__new__(
-            cls, queue_name, actor_name, tuple(args), kwargs, options,
-            message_id=message_id or generate_unique_id(),
-            message_timestamp=message_timestamp or int(time.time() * 1000),
-        )
+    queue_name: str
+    actor_name: str
+    args: tuple
+    kwargs: Dict[str, Any]
+    options: Dict[str, Any]
+    message_id: str = dataclasses.field(default_factory=generate_unique_id)
+    message_timestamp: int = dataclasses.field(default_factory=lambda: int(time.time() * 1000))
 
     def __or__(self, other) -> pipeline:
         """Combine this message into a pipeline with "other".
         """
         return pipeline([self, other])
 
-    def asdict(self) -> dict:
+    def asdict(self) -> Dict[str, Any]:
         """Convert this message to a dictionary.
         """
-        return self._asdict()
+        return dataclasses.asdict(self)
 
     @classmethod
     def decode(cls, data: bytes) -> "Message":
@@ -107,22 +107,20 @@ class Message(namedtuple("Message", (
     def encode(self) -> bytes:
         """Convert this message to a bytestring.
         """
-        return global_encoder.encode(self._asdict())
+        return global_encoder.encode(self.asdict())
 
     def copy(self, **attributes) -> "Message":
         """Create a copy of this message.
         """
-        updated_options = attributes.pop("options", {})
-        options = self.options.copy()
-        options.update(updated_options)
-        return self._replace(**attributes, options=options)
+        new_options = attributes.pop("options", {})
+        return dataclasses.replace(self, **attributes, options={**self.options, **new_options})
 
     def get_result(
         self, *,
-        backend=None,
+        backend: Optional[ResultBackend] = None,
         block: bool = False,
         timeout: Optional[int] = None,
-    ):
+    ) -> R:
         """Get the result associated with this message from a result
         backend.
 
@@ -149,7 +147,7 @@ class Message(namedtuple("Message", (
         Returns:
           object: The result.
         """
-        if not backend:
+        if backend is None:
             broker = get_broker()
             for middleware in broker.middleware:
                 if isinstance(middleware, Results):
