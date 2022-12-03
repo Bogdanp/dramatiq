@@ -63,7 +63,7 @@ class Actor(Generic[R]):
         self.options = options
         self.broker.declare_actor(self)
 
-    def message(self, *args, **kwargs) -> Message:
+    def message(self, *args, **kwargs) -> Message[R]:
         """Build a message.  This method is useful if you want to
         compose actors.  See the actor composition documentation for
         details.
@@ -86,7 +86,7 @@ class Actor(Generic[R]):
         args: tuple = (),
         kwargs: Optional[Dict[str, Any]] = None,
         **options,
-    ) -> Message:
+    ) -> Message[R]:
         """Build a message with an arbitrary set of processing options.
         This method is useful if you want to compose actors.  See the
         actor composition documentation for details.
@@ -116,7 +116,7 @@ class Actor(Generic[R]):
             options=options,
         )
 
-    def send(self, *args, **kwargs) -> Message:
+    def send(self, *args, **kwargs) -> Message[R]:
         """Asynchronously send a message to this actor.
 
         Parameters:
@@ -134,7 +134,7 @@ class Actor(Generic[R]):
         kwargs: Optional[Dict[str, Any]] = None,
         delay: Optional[int] = None,
         **options,
-    ) -> Message:
+    ) -> Message[R]:
         """Asynchronously send a message to this actor, along with an
         arbitrary set of processing options for the broker and
         middleware.
