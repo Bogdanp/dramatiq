@@ -190,7 +190,7 @@ def actor(fn: Callable[P, R], **kwargs) -> Actor[P, R]:
 
 
 @overload
-def actor(fn: None, **kwargs) -> Callable[[Callable[P, R]], Actor[P, R]]:
+def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, R]], Actor[P, R]]:
     pass
 
 
