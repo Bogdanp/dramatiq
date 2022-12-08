@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     from typing_extensions import ParamSpec
 
     P = ParamSpec("P")
+else:
+    P = TypeVar("P")
 
 #: The regular expression that represents valid queue names.
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
@@ -35,7 +37,7 @@ _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 R = TypeVar("R")
 
 
-class Actor(Generic["P", R]):
+class Actor(Generic[P, R]):
     """Thin wrapper around callables that stores metadata about how
     they should be executed asynchronously.  Actors are callable.
 
