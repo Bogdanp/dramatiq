@@ -100,7 +100,9 @@ class Message(Generic[R]):
             decoding `data`.
         """
         try:
-            return cls(**global_encoder.decode(data))
+            fields = global_encoder.decode(data)
+            fields["args"] = tuple(fields["args"])
+            return cls(**fields)
         except Exception as e:
             raise DecodeError("Failed to decode message.", data, e) from e
 
@@ -165,3 +167,6 @@ class Message(Generic[R]):
             params += ", ".join("%s=%r" % (name, value) for name, value in self.kwargs.items())
 
         return "%s(%s)" % (self.actor_name, params)
+
+    def __lt__(self, other: "Message") -> bool:
+        return dataclasses.astuple(self) < dataclasses.astuple(other)
