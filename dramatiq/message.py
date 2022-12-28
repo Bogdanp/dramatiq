@@ -81,6 +81,13 @@ class Message(Generic[R]):
     message_id: str = dataclasses.field(default_factory=generate_unique_id)
     message_timestamp: int = dataclasses.field(default_factory=lambda: int(time.time() * 1000))
 
+    def __post_init__(self):
+        # For backwards-compatibility, enforce that `args' is a tuple.
+        if type(self.args) is not tuple:
+            # The class is marked frozen, so we have to use the
+            # primitive setattr here.  Direct assignment would fail.
+            object.__setattr__(self, "args", tuple(self.args))
+
     def __or__(self, other) -> pipeline:
         """Combine this message into a pipeline with "other".
         """
