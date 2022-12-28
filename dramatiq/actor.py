@@ -14,14 +14,22 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
 
 import re
 import time
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Optional, TypeVar, Union, overload
 
 from .broker import Broker, get_broker
 from .logging import get_logger
 from .message import Message
+
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
+
+    P = ParamSpec("P")
+else:
+    P = TypeVar("P")
 
 #: The regular expression that represents valid queue names.
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
@@ -29,7 +37,7 @@ _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 R = TypeVar("R")
 
 
-class Actor(Generic[R]):
+class Actor(Generic[P, R]):
     """Thin wrapper around callables that stores metadata about how
     they should be executed asynchronously.  Actors are callable.
 
@@ -46,7 +54,7 @@ class Actor(Generic[R]):
 
     def __init__(
         self,
-        fn: Callable[..., R],
+        fn: Callable[P, R],
         *,
         broker: Broker,
         actor_name: str,
@@ -63,7 +71,7 @@ class Actor(Generic[R]):
         self.options = options
         self.broker.declare_actor(self)
 
-    def message(self, *args, **kwargs) -> Message[R]:
+    def message(self, *args: P.args, **kwargs: P.kwargs) -> Message[R]:
         """Build a message.  This method is useful if you want to
         compose actors.  See the actor composition documentation for
         details.
@@ -116,7 +124,7 @@ class Actor(Generic[R]):
             options=options,
         )
 
-    def send(self, *args, **kwargs) -> Message[R]:
+    def send(self, *args: P.args, **kwargs: P.kwargs) -> Message[R]:
         """Asynchronously send a message to this actor.
 
         Parameters:
@@ -153,7 +161,7 @@ class Actor(Generic[R]):
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
-    def __call__(self, *args, **kwargs) -> R:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """Synchronously call this actor.
 
         Parameters:
@@ -179,25 +187,25 @@ class Actor(Generic[R]):
 
 
 @overload
-def actor(fn: Callable[..., R], **kwargs) -> Actor[R]:
+def actor(fn: Callable[P, R], **kwargs) -> Actor[P, R]:
     pass
 
 
 @overload
-def actor(**kwargs) -> Callable[[Callable[..., R]], Actor[R]]:
+def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, R]], Actor[P, R]]:
     pass
 
 
 def actor(
-    fn: Optional[Callable[..., R]] = None,
+    fn: Optional[Callable[P, R]] = None,
     *,
-    actor_class: Callable[..., Actor[R]] = Actor,
+    actor_class: Callable[..., Actor[P, R]] = Actor,  # type: ignore[assignment]
     actor_name: Optional[str] = None,
     queue_name: str = "default",
     priority: int = 0,
     broker: Optional[Broker] = None,
     **options,
-) -> Union[Actor, Callable]:
+) -> Union[Actor[P, R], Callable]:
     """Declare an actor.
 
     Examples:
@@ -240,7 +248,7 @@ def actor(
     Returns:
       Actor: The decorated function.
     """
-    def decorator(fn: Callable[..., R]) -> Actor[R]:
+    def decorator(fn: Callable[..., R]) -> Actor[P, R]:
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
         if not _queue_name_re.fullmatch(queue_name):
