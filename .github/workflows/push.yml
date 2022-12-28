@@ -2,7 +2,7 @@ name: CI
 on: [push, pull_request]
 jobs:
   lint:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     name: lint
     steps:
       - uses: actions/checkout@master
@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: ["ubuntu-18.04"]
+        os: ["ubuntu-20.04"]
         python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         concurrency: ["cpython", "gevent"]
 
