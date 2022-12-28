@@ -52,9 +52,8 @@ class pipeline:
             else:
                 messages.append(child.copy())
 
-        rev = messages[::-1]
-        for message, prev_message in zip(rev, rev[1:]):
-            prev_message.options["pipe_target"] = message.asdict()
+        for message, next_message in zip(messages, messages[1:]):
+            message.options["pipe_target"] = next_message.asdict()
 
     def __len__(self):
         """Returns the length of the pipeline.

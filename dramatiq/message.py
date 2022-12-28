@@ -89,7 +89,12 @@ class Message(Generic[R]):
     def asdict(self) -> Dict[str, Any]:
         """Convert this message to a dictionary.
         """
-        return dataclasses.asdict(self)
+        # For backward compatibility, we can't use `dataclasses.asdict`
+        # because it creates a copy of all values, including `options`.
+        result = {}
+        for field in dataclasses.fields(self):
+            result[field.name] = getattr(self, field.name)
+        return result
 
     @classmethod
     def decode(cls, data: bytes) -> "Message":
