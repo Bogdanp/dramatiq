@@ -14,13 +14,18 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
 
 import time
+from typing import TYPE_CHECKING, Iterable
 from uuid import uuid4
 
 from .broker import get_broker
 from .rate_limits import Barrier
 from .results import ResultMissing
+
+if TYPE_CHECKING:
+    from .message import Message
 
 
 class pipeline:
@@ -34,9 +39,11 @@ class pipeline:
       broker(Broker): The broker to run the pipeline on.  Defaults to
         the current global broker.
     """
+    messages: list[Message]
 
-    def __init__(self, children, *, broker=None):
+    def __init__(self, children: Iterable[Message | pipeline], *, broker=None):
         self.broker = broker or get_broker()
+        messages: list[Message]
         self.messages = messages = []
 
         for child in children:
