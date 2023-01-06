@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 from threading import Thread
 from threading import Event
 from unittest.mock import Mock, patch
@@ -10,6 +11,7 @@ import pytest
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
+from dramatiq.brokers.rabbitmqv2 import RabbitmqBrokerV2
 from dramatiq.common import current_millis
 
 from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME
@@ -29,7 +31,7 @@ def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
 def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a ;-separated string
-    broker = RabbitmqBroker(
+    broker = RabbitmqBrokerV2(
         url="amqp://127.0.0.1:55672;amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD))
 
     # The the broker should connect to the host that is up
@@ -39,7 +41,7 @@ def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
 def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a list
-    broker = RabbitmqBroker(
+    broker = RabbitmqBrokerV2(
         url=["amqp://127.0.0.1:55672", "amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)])
 
     # The the broker should connect to the host that is up
@@ -51,17 +53,17 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
     # When I try to give it both a connection URL and a list of connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
+        RabbitmqBrokerV2(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
 
     # When I try to give it both a connection URL and pika connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(host="127.0.0.1", url="amqp://127.0.0.1:5672")
+        RabbitmqBrokerV2(host="127.0.0.1", url="amqp://127.0.0.1:5672")
 
     # When I try to give it both a list of parameters and individual flags
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(host="127.0.0.1", parameters=[dict(host="127.0.0.1")])
+        RabbitmqBrokerV2(host="127.0.0.1", parameters=[dict(host="127.0.0.1")])
 
 
 def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
@@ -72,7 +74,7 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
     ]
 
     # When I pass those parameters to RabbitmqBroker
-    broker = RabbitmqBroker(parameters=parameters)
+    broker = RabbitmqBrokerV2(parameters=parameters)
 
     # Then I should still get a connection to the host that is up
     assert broker.connection
@@ -215,7 +217,7 @@ def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_worker)
 
 def test_rabbitmq_broker_connections_are_lazy():
     # When I create an RMQ broker
-    broker = RabbitmqBroker(
+    broker = RabbitmqBrokerV2(
         host="127.0.0.1",
         max_priority=10,
         credentials=RABBITMQ_CREDENTIALS,
@@ -494,20 +496,21 @@ def test_rabbitmq_messages_that_failed_to_decode_are_rejected(rabbitmq_broker, r
     finally:
         dramatiq.set_encoder(old_encoder)
 
-@dramatiq.actor
-def hello_world(input, input2=None):
-    print(f"hello world -> {input} {input2}")
-
 def test_rabbitmq_broker_65k_actor_invocations():
     # When I create an RMQ broker
-    broker = RabbitmqBroker(
+    broker = RabbitmqBrokerV2(
         host="127.0.0.1",
         credentials=RABBITMQ_CREDENTIALS,
     )
-    dramatiq.set_broker(broker)        
+    dramatiq.set_broker(broker)
+    
+    @dramatiq.actor
+    def hello_world(input, input2=None):
+        print(f"hello world -> {input} {input2}")
+    
     threads = []
     count = 0
-    for i in range(86000):
+    for i in range(66000):
         t = Thread(target=hello_world, args=[str(i)])
         threads.append(t)
         if count % 300 == 0:
