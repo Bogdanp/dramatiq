@@ -68,9 +68,11 @@ class RabbitmqBrokerV2(RabbitmqBroker):
 			self.workers.append(worker)
 		for worker in self.workers:
 			worker.start()
+
 	def enqueue(self, message, *, delay=None):
 		print(f"enqueueing message -> {message}, delay -> {delay}")
 		self.work_queue.put(message)
+
 	def stop(self):
 		for worker in self.workers:
 			try:
