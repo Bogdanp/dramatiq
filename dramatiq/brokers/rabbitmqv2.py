@@ -25,7 +25,7 @@ class MQWorkerThread(Thread):
 			message = self.work_queue.get()
 			print(f"MQWorkerThread -> message -> {message}")
 			queue_name = message.queue_name
-			broker.declare_queue(queue_name, ensure=True)
+			self.broker.declare_queue(queue_name, ensure=True)
 			attempts = 1
 			while True:
 				try:

@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+import sys, traceback
 from threading import Thread
 from threading import Event
 from unittest.mock import Mock, patch
@@ -508,10 +509,17 @@ def test_rabbitmq_broker_65k_actor_invocations():
     def hello_world(input, input2=None):
         print(f"hello world -> {input} {input2}")
     
+    def target_func(input, input2, input3="dummy"):
+        try:
+            print(f"{threading.current_thread().getName()} -> invoking async send with input -> {input}")
+            hello_world.send(input, input2)
+        except Exception as e:
+            print(f"{threading.current_thread().getName()} -> Exception in target_func: -> {traceback.format_exc()}")
+
     threads = []
     count = 0
     for i in range(66000):
-        t = Thread(target=hello_world, args=[str(i)])
+        t = Thread(target=target_func, args=[str(i), str(i+1)])
         threads.append(t)
         if count % 300 == 0:
             for p in threads:
@@ -524,3 +532,4 @@ def test_rabbitmq_broker_65k_actor_invocations():
         p.start()
     for p in threads:
         p.join()
+    broker.stop()
