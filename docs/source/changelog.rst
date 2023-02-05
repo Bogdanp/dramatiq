@@ -8,13 +8,31 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+
+`1.14.0`_ -- 2023-02-05
+-----------------------
+
 Removed
 ^^^^^^^
 
 * Dropped Python 3.6 support as it reached end-of-life
 
+Changed
+^^^^^^^
+
+* Added Python 3.11 support to CI builds. (`#511`_, `@FinnLidbetter`_)
+* Improved typing support.  ``Message`` is now a dataclass, but it
+  should be compatible with the previous namedtuple-based
+  implementation. (`#512`_, `#513`_, `#515`_, `#516`_, `@orsinium`_)
+
 .. _#465: https://github.com/Bogdanp/dramatiq/issues/465
 .. _#466: https://github.com/Bogdanp/dramatiq/pull/466
+.. _#511: https://github.com/Bogdanp/dramatiq/pull/511
+.. _#512: https://github.com/Bogdanp/dramatiq/pull/512
+.. _#513: https://github.com/Bogdanp/dramatiq/pull/513
+.. _#515: https://github.com/Bogdanp/dramatiq/pull/515
+.. _#516: https://github.com/Bogdanp/dramatiq/pull/516
+.. _@orsinium: https://github.com/orsinium
 
 
 `1.13.0`_ -- 2022-04-02
@@ -1075,7 +1093,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.13.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.14.0...HEAD
+.. _1.14.0: https://github.com/Bogdanp/dramatiq/compare/v1.13.0...v1.14.0
 .. _1.13.0: https://github.com/Bogdanp/dramatiq/compare/v1.12.3...v1.13.0
 .. _1.12.3: https://github.com/Bogdanp/dramatiq/compare/v1.12.2...v1.12.3
 .. _1.12.2: https://github.com/Bogdanp/dramatiq/compare/v1.12.1...v1.12.2
