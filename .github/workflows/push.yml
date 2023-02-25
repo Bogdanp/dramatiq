@@ -6,7 +6,7 @@ jobs:
     name: lint
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
       - run: pip install tox
@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - run: sudo apt-get update -qq && sudo apt-get install -y libmemcached-dev
