@@ -9,6 +9,17 @@ All notable changes to this project will be documented in this file.
 -------------
 
 
+`1.14.1`_ -- 2023-02-25
+-----------------------
+
+Fixed
+^^^^^
+
+* Added missing ``py.typed`` file to distributions. (`#531`_)
+
+.. _#531: https://github.com/Bogdanp/dramatiq/pull/531
+
+
 `1.14.0`_ -- 2023-02-05
 -----------------------
 
@@ -1093,7 +1104,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.14.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.14.1...HEAD
+.. _1.14.1: https://github.com/Bogdanp/dramatiq/compare/v1.14.0...v1.14.1
 .. _1.14.0: https://github.com/Bogdanp/dramatiq/compare/v1.13.0...v1.14.0
 .. _1.13.0: https://github.com/Bogdanp/dramatiq/compare/v1.12.3...v1.13.0
 .. _1.12.3: https://github.com/Bogdanp/dramatiq/compare/v1.12.2...v1.12.3
