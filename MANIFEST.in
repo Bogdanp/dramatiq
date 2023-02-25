@@ -1,6 +1,7 @@
 include COPYING
 include COPYING.LESSER
 include README.md
+include dramatiq/py.typed
 include setup.cfg
 include setup.py
 
