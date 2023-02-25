@@ -36,11 +36,12 @@ def import_memcached():
 
         return MemcachedBackend
     except ModuleNotFoundError:
-        warning = ImportWarning(
+        warnings.warn(
             "MemcachedBackend is not available.  Run `pip install dramatiq[memcached]` "
             "to add support for that backend.",
+            category=ImportWarning,
+            stacklevel=2,
         )
-        warnings.warn(warning)
         raise
 
 
@@ -50,11 +51,12 @@ def import_redis():
 
         return RedisBackend
     except ModuleNotFoundError:
-        warning = ImportWarning(
+        warnings.warn(
             "RedisBackend is not available.  Run `pip install dramatiq[redis]` "
             "to add support for that backend.",
+            category=ImportWarning,
+            stacklevel=2,
         )
-        warnings.warn(warning)
         raise
 
 

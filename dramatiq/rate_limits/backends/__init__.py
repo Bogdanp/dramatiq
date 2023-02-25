@@ -24,7 +24,9 @@ try:
 except ImportError:  # pragma: no cover
     warnings.warn(
         "MemcachedBackend is not available.  Run `pip install dramatiq[memcached]` "
-        "to add support for that backend.", ImportWarning,
+        "to add support for that backend.",
+        category=ImportWarning,
+        stacklevel=2,
     )
 
 try:
@@ -32,7 +34,9 @@ try:
 except ImportError:  # pragma: no cover
     warnings.warn(
         "RedisBackend is not available.  Run `pip install dramatiq[redis]` "
-        "to add support for that backend.", ImportWarning,
+        "to add support for that backend.",
+        category=ImportWarning,
+        stacklevel=2,
     )
 
 
