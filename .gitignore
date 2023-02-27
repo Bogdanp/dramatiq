@@ -9,3 +9,8 @@
 /*.egg-info
 /htmlcov
 __pycache__
+.venv
+.vscode
+env
+run_test.py
+test.py

@@ -47,19 +47,18 @@ extra_dependencies = {
     "gevent": [
         "gevent>=1.1",
     ],
-
     "memcached": [
         "pylibmc>=1.5,<2.0",
     ],
-
     "rabbitmq": [
         "pika>=1.0,<2.0",
     ],
-
     "redis": [
         "redis>=2.0,<5.0",
     ],
-
+    "postgres": [
+        "psycopg==3.1.8",
+    ],
     "watch": [
         "watchdog",
         "watchdog_gevent",
@@ -72,19 +71,16 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "alabaster",
     "sphinx<1.8",
     "sphinxcontrib-napoleon",
-
     # Linting
     "flake8",
     "flake8-bugbear",
     "flake8-quotes",
     "isort",
-
     # Misc
     "bumpversion",
     "hiredis",
     "twine",
     "wheel",
-
     # Testing
     "pytest",
     "pytest-benchmark[histogram]",

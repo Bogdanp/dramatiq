@@ -19,7 +19,7 @@ import warnings
 
 from .stub import StubBackend
 
-__all__ = ["StubBackend", "MemcachedBackend", "RedisBackend"]
+__all__ = ["StubBackend", "MemcachedBackend", "RedisBackend", "PostgresBackend"]
 
 
 def __getattr__(name):
@@ -60,7 +60,22 @@ def import_redis():
         raise
 
 
+def import_postgres():
+    try:
+        from .postgres import PostgresBackend
+
+        return PostgresBackend
+    except ModuleNotFoundError:
+        warning = ImportWarning(
+            "PostgresBackend is not available.  Run `pip install dramatiq[postgres]` "
+            "to add support for that backend.",
+        )
+        warnings.warn(warning)
+        raise
+
+
 _module_importers = {
     "MemcachedBackend": import_memcached,
     "RedisBackend": import_redis,
+    "PostgresBackend": import_postgres,
 }
