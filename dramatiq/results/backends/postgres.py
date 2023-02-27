@@ -1,10 +1,11 @@
-import datetime
 import asyncio
+import datetime
+import time
+from typing import Optional
 
 import psycopg
-from psycopg.sql import SQL, Identifier
 from psycopg import AsyncConnection, AsyncCursor
-from typing import Optional
+from psycopg.sql import SQL, Identifier
 
 from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
 
@@ -35,7 +36,6 @@ class PostgresBackend(ResultBackend):
         self.connection_params = connection_params or {}
         self.connection: AsyncConnection = None
         self.cursor: AsyncCursor = None
-        self.loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
 
     async def connect(self):
         if not self.connection:
@@ -60,7 +60,11 @@ class PostgresBackend(ResultBackend):
                 ).format(Identifier(self.namespace)),
             )
 
-            await self.connection.commit()
+        # Because of the way sessions interact with notifications (see NOTIFY documentation),
+        # you should keep the connection in autocommit mode
+        # if you wish to receive or send notifications in a timely manner.
+        if not self.connection.autocommit:
+            raise Exception("psycopg postgres connection must have autocommit=True")
 
     def get_result(self, message, *, block=False, timeout=None):
         """Get a result from the backend.
@@ -75,17 +79,18 @@ class PostgresBackend(ResultBackend):
         Returns:
           object: The result.
         """
+
         if timeout is None:
             timeout = DEFAULT_TIMEOUT
 
         message_key = self.build_message_key(message)
 
         try:
+            loop  = asyncio.new_event_loop()
             x = asyncio.wait_for(
                 self._get_result(message_key, block), timeout=timeout / 1000
             )
-            data = self.loop.run_until_complete(x)
-            print(data, x)
+            data = loop.run_until_complete(x)
 
         except IndexError:
             raise ResultMissing(message)
@@ -97,21 +102,19 @@ class PostgresBackend(ResultBackend):
     async def _get_result(self, message_key, block):
         await self.connect()
 
-        def check_notification(payload):
-            print(payload)
-            if payload is message_key:
+        def check_notification(notify):
+            if notify.payload == message_key:
                 future.set_result(True)
 
         if block:
             future = asyncio.Future()
-            # self.connection.add_notify_handler(check_notification)
-            await self.connection.execute("LISTEN dramatiq")
-            gen = self.connection.notifies()
-            async for notify in gen:
-                print(notify)
-                if notify.payload == message_key:
-                    future.set_result(True)
-                    gen.close()
+            self.connection.add_notify_handler(check_notification)
+            await self.connection.execute("LISTEN dramatiq") # we need to keep requesting
+            await self.connection.commit()
+            while not (future.done() and not future.cancelled() and future.exception() is None):
+                # TODO look for better method to poll data on the driver level with self
+                await self.connection.execute("SELECT 1")
+                time.sleep(1)
             await future
 
         await self.cursor.execute(
@@ -131,6 +134,7 @@ class PostgresBackend(ResultBackend):
         return data
 
     def _store(self, message_id, result, ttl):
+
         async def async_store(message_id, result, ttl):
             await self.connect()
             expires_at = datetime.datetime.now().astimezone() + datetime.timedelta(
@@ -146,14 +150,11 @@ class PostgresBackend(ResultBackend):
                     expires_at,
                 ),
             )
-
-            await self.connection.commit()
-
             await self.connection.execute(
                 "SELECT pg_notify(%s, %s)", ["dramatiq", message_id]
             )
-
             await self.connection.commit()
 
         result = async_store(message_id, result, ttl)
-        self.loop.run_until_complete(result)
+        loop  = asyncio.new_event_loop()
+        loop.run_until_complete(result)
