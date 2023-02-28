@@ -26,6 +26,7 @@ Run the test suite with `tox`.  The tests require running [RabbitMQ],
 [RabbitMQ]: https://www.rabbitmq.com/
 [Redis]: https://redis.io
 [Memcached]: https://memcached.org/
+[PostgreSQL]: https://www.postgresql.org/
 [isort]: https://github.com/timothycrosley/isort
 [rebase]: https://github.com/edx/edx-platform/wiki/How-to-Rebase-a-Pull-Request
 

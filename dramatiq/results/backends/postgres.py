@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import time
 import typing
 
 import psycopg
@@ -10,7 +9,6 @@ from psycopg.sql import SQL, Identifier
 from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
 
 # Types
-
 MessageData = typing.Dict[str, typing.Any]
 Result = typing.Any
 
@@ -25,6 +23,8 @@ class PostgresBackend(ResultBackend):
         `psycopg.connect()` function.
       url(str): An optional connection URL.  If both a URL and
         connection parameters are provided, the URL is used.
+      connection(AsyncConnection): A postgres connection to use, cant be a (connection)
+      due to the heavy use of asyncio
     """
 
     def __init__(
@@ -45,13 +45,15 @@ class PostgresBackend(ResultBackend):
         asyncio.new_event_loop().run_until_complete(self.connect(connection))
 
     async def connect(self, connection):
-        """_summary_
+        """connects to postgres backend
 
         Args:
-            connection (_type_): _description_
+            connection (AsyncConnection): an AsyncConnection to postgres
+            if none create a new connection to postgres
 
         Raises:
-            Exception: _description_
+            Exception: if autocommit isn't enabled or
+            if the postgres connection isn't an AsyncConnection
         """
         # creating connection
         if not connection:
@@ -65,6 +67,17 @@ class PostgresBackend(ResultBackend):
                 )
         else:
             self.connection = connection
+
+        # Because of the way sessions interact with notifications (see NOTIFY documentation),
+        # you should keep the connection in autocommit mode
+        # if you wish to receive or send notifications in a timely manner.
+        if not self.connection.autocommit:
+            raise Exception("Psycopg postgres connection must have autocommit=True")
+
+        # Because of the heavy use of AsyncConnection the use
+        # of a Connection to postgres would not work
+        if not isinstance(self.connection, AsyncConnection):
+            raise Exception("Please use an AsyncConnection to postgres")
 
         # postgres listener
         self.gen = self.connection.notifies()
@@ -82,12 +95,6 @@ class PostgresBackend(ResultBackend):
             ).format(Identifier(self.namespace)),
         )
 
-        # Because of the way sessions interact with notifications (see NOTIFY documentation),
-        # you should keep the connection in autocommit mode
-        # if you wish to receive or send notifications in a timely manner.
-        if not self.connection.autocommit:
-            raise Exception("psycopg postgres connection must have autocommit=True")
-
     def get_result(self, message, *, block=False, timeout=None) -> MessageData:
         """Get a result from the backend.
         Parameters:
@@ -96,10 +103,10 @@ class PostgresBackend(ResultBackend):
           timeout(int): The maximum amount of time, in ms, to wait for
             a result when block is True.  Defaults to 10 seconds.
         Raises:
-          ResultMissing: When block is False and the result isn't set.
+          ResultMissing: When the result isn't set.
           ResultTimeout: When waiting for a result times out.
         Returns:
-          object: The result.
+          MessageData: The MessageData.
         """
 
         if timeout is None:
@@ -107,6 +114,9 @@ class PostgresBackend(ResultBackend):
 
         message_key = self.build_message_key(message)
 
+        # Run a asyncio event loop that exits until the timeout timer is reached
+        # this allows for dynamically getting the message if block is True
+        # as otherwise it would have to wait the timeout then look for the message
         try:
             loop = asyncio.new_event_loop()
             wait = asyncio.wait_for(
@@ -122,21 +132,26 @@ class PostgresBackend(ResultBackend):
         return self.unwrap_result(self.encoder.decode(data))
 
     async def _get_result(self, message_key: str, block: bool):
+        """Runs the operation that retrieves the message from the backend
 
+        Args:
+            message_key (str): the message
+            block (bool): Whether to block or not
+
+        Returns:
+            data: The data that was stored in postgres is none if the message has expired
+        """
+
+        # If block is True then listen for a notification from postgres
+        # that has the same message_key as the one that we are trying
+        # to retrieve, allowing dynamic message fetching
         if block:
             future = asyncio.Future()
 
             while not (
                 future.done() and not future.cancelled() and future.exception() is None
             ):
-                # TODO look for better method to poll data on the driver level with self
                 async for notify in self.gen:
-                    print(
-                        notify,
-                        notify.payload,
-                        message_key,
-                        notify.payload == message_key,
-                    )
                     if notify.payload == message_key:
                         future.set_result(True)
                         break
@@ -153,6 +168,7 @@ class PostgresBackend(ResultBackend):
 
         data = all_data[0]
 
+        # check if the message has expired or not
         time_check = all_data[1]
         if time_check:
             if time_check < datetime.datetime.now().astimezone():
@@ -160,6 +176,14 @@ class PostgresBackend(ResultBackend):
         return data
 
     def _store(self, message_key: str, result: Result, ttl: int):
+        """Stores the message inside postgres
+
+        Args:
+            message_key (str): The message_key which is used as a primary key
+            result (Result): The result of the task
+            ttl (int): Time to live
+        """
+
         async def async_store(message_key: str, result: Result, ttl: int):
             expires_at = datetime.datetime.now().astimezone() + datetime.timedelta(
                 milliseconds=ttl

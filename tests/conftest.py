@@ -24,8 +24,7 @@ logging.getLogger("pika").setLevel(logging.WARN)
 
 random.seed(1337)
 
-CI = os.getenv("GITHUB_ACTION") or \
-    os.getenv("APPVEYOR") == "true"
+CI = os.getenv("GITHUB_ACTION") or os.getenv("APPVEYOR") == "true"
 
 
 def check_rabbitmq(broker):
@@ -159,7 +158,11 @@ def stub_rate_limiter_backend():
 
 
 @pytest.fixture
-def rate_limiter_backends(memcached_rate_limiter_backend, redis_rate_limiter_backend, stub_rate_limiter_backend):
+def rate_limiter_backends(
+    memcached_rate_limiter_backend,
+    redis_rate_limiter_backend,
+    stub_rate_limiter_backend,
+):
     return {
         "memcached": memcached_rate_limiter_backend,
         "redis": redis_rate_limiter_backend,
@@ -195,14 +198,28 @@ def stub_result_backend():
 
 
 @pytest.fixture
-def result_backends(memcached_result_backend, redis_result_backend, stub_result_backend):
+def postgres_result_backend():
+    backend = res_backends.PostgresBackend(
+        url="postgresql://postgres@localhost:5432/postgres"
+    )
+    return backend
+
+
+@pytest.fixture
+def result_backends(
+    memcached_result_backend,
+    redis_result_backend,
+    stub_result_backend,
+    postgres_result_backend,
+):
     return {
         "memcached": memcached_result_backend,
         "redis": redis_result_backend,
         "stub": stub_result_backend,
+        "postgres": postgres_result_backend,
     }
 
 
-@pytest.fixture(params=["memcached", "redis", "stub"])
+@pytest.fixture(params=["memcached", "redis", "stub", "postgres"])
 def result_backend(request, result_backends):
     return result_backends[request.param]
