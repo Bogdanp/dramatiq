@@ -1,13 +1,18 @@
 import asyncio
 import datetime
 import time
-from typing import Optional
+import typing
 
 import psycopg
-from psycopg import AsyncConnection, AsyncCursor
+from psycopg import AsyncConnection, Notify
 from psycopg.sql import SQL, Identifier
 
 from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
+
+# Types
+
+MessageData = typing.Dict[str, typing.Any]
+Result = typing.Any
 
 
 class PostgresBackend(ResultBackend):
@@ -29,36 +34,53 @@ class PostgresBackend(ResultBackend):
         encoder=None,
         connection_params=None,
         url=None,
+        connection=None
     ):
         super().__init__(namespace=namespace, encoder=encoder)
 
         self.url = url
         self.connection_params = connection_params or {}
-        self.connection: AsyncConnection = None
-        self.cursor: AsyncCursor = None
+        self.connection: AsyncConnection
+        self.gen: typing.AsyncGenerator[Notify, None]
+        asyncio.new_event_loop().run_until_complete(self.connect(connection))
 
-    async def connect(self):
-        if not self.connection:
+    async def connect(self, connection):
+        """_summary_
+
+        Args:
+            connection (_type_): _description_
+
+        Raises:
+            Exception: _description_
+        """
+        # creating connection
+        if not connection:
             if self.url is not None:
-                self.connection = await psycopg.AsyncConnection.connect(self.url)
+                self.connection = await psycopg.AsyncConnection.connect(
+                    self.url, autocommit=True
+                )
             else:
                 self.connection = await psycopg.AsyncConnection.connect(
-                    **self.connection_params
+                    **self.connection_params, autocommit=True
                 )
+        else:
+            self.connection = connection
 
-            self.cursor = self.connection.cursor()
+        # postgres listener
+        self.gen = self.connection.notifies()
+        await self.connection.execute("LISTEN dramatiq")  # we need to keep requesting
 
-            # Create the result table if it doesn't exist
-            await self.cursor.execute(
-                SQL(
-                    "CREATE TABLE IF NOT EXISTS {} ("
-                    "message_key VARCHAR(256) PRIMARY KEY,"
-                    "result BYTEA NOT NULL,"
-                    "created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),"
-                    "expires_at TIMESTAMP WITH TIME ZONE NULL"
-                    ")"
-                ).format(Identifier(self.namespace)),
-            )
+        # Create the result table if it doesn't exist
+        await self.connection.execute(
+            SQL(
+                "CREATE TABLE IF NOT EXISTS {} ("
+                "message_key VARCHAR(256) PRIMARY KEY,"
+                "result BYTEA NOT NULL,"
+                "created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),"
+                "expires_at TIMESTAMP WITH TIME ZONE NULL"
+                ")"
+            ).format(Identifier(self.namespace)),
+        )
 
         # Because of the way sessions interact with notifications (see NOTIFY documentation),
         # you should keep the connection in autocommit mode
@@ -66,7 +88,7 @@ class PostgresBackend(ResultBackend):
         if not self.connection.autocommit:
             raise Exception("psycopg postgres connection must have autocommit=True")
 
-    def get_result(self, message, *, block=False, timeout=None):
+    def get_result(self, message, *, block=False, timeout=None) -> MessageData:
         """Get a result from the backend.
         Parameters:
           message(Message)
@@ -86,75 +108,77 @@ class PostgresBackend(ResultBackend):
         message_key = self.build_message_key(message)
 
         try:
-            loop  = asyncio.new_event_loop()
-            x = asyncio.wait_for(
+            loop = asyncio.new_event_loop()
+            wait = asyncio.wait_for(
                 self._get_result(message_key, block), timeout=timeout / 1000
             )
-            data = loop.run_until_complete(x)
+            data = loop.run_until_complete(wait)
 
-        except IndexError:
-            raise ResultMissing(message)
-        except asyncio.TimeoutError:
-            raise ResultTimeout(message)
+        except IndexError as error:
+            raise ResultMissing(message) from error
+        except asyncio.TimeoutError as error:
+            raise ResultTimeout(message) from error
 
         return self.unwrap_result(self.encoder.decode(data))
 
-    async def _get_result(self, message_key, block):
-        await self.connect()
-
-        def check_notification(notify):
-            if notify.payload == message_key:
-                future.set_result(True)
+    async def _get_result(self, message_key: str, block: bool):
 
         if block:
             future = asyncio.Future()
-            self.connection.add_notify_handler(check_notification)
-            await self.connection.execute("LISTEN dramatiq") # we need to keep requesting
-            await self.connection.commit()
-            while not (future.done() and not future.cancelled() and future.exception() is None):
+
+            while not (
+                future.done() and not future.cancelled() and future.exception() is None
+            ):
                 # TODO look for better method to poll data on the driver level with self
-                await self.connection.execute("SELECT 1")
-                time.sleep(1)
+                async for notify in self.gen:
+                    print(
+                        notify,
+                        notify.payload,
+                        message_key,
+                        notify.payload == message_key,
+                    )
+                    if notify.payload == message_key:
+                        future.set_result(True)
+                        break
+
             await future
 
-        await self.cursor.execute(
+        exe = await self.connection.execute(
             SQL("SELECT result, expires_at FROM {} WHERE message_key=%s").format(
                 Identifier(self.namespace)
             ),
             (message_key,),
         )
-        all_data = await self.cursor.fetchall()
+        all_data = await exe.fetchone()
 
-        data = all_data[0][0]
+        data = all_data[0]
 
-        time_check = all_data[0][1]
+        time_check = all_data[1]
         if time_check:
             if time_check < datetime.datetime.now().astimezone():
                 data = None
         return data
 
-    def _store(self, message_id, result, ttl):
-
-        async def async_store(message_id, result, ttl):
-            await self.connect()
+    def _store(self, message_key: str, result: Result, ttl: int):
+        async def async_store(message_key: str, result: Result, ttl: int):
             expires_at = datetime.datetime.now().astimezone() + datetime.timedelta(
                 milliseconds=ttl
             )
-            await self.cursor.execute(
+            await self.connection.execute(
                 SQL(
                     "INSERT INTO {} (message_key, result, expires_at) VALUES (%s, %s, %s)"
                 ).format(Identifier(self.namespace)),
                 (
-                    message_id,
+                    message_key,
                     self.encoder.encode(result),
                     expires_at,
                 ),
             )
             await self.connection.execute(
-                "SELECT pg_notify(%s, %s)", ["dramatiq", message_id]
+                "SELECT pg_notify(%s, %s)", ["dramatiq", message_key]
             )
             await self.connection.commit()
 
-        result = async_store(message_id, result, ttl)
-        loop  = asyncio.new_event_loop()
+        result = async_store(message_key, result, ttl)
+        loop = asyncio.new_event_loop()
         loop.run_until_complete(result)
