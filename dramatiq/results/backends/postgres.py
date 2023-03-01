@@ -42,7 +42,9 @@ class PostgresBackend(ResultBackend):
         self.connection_params = connection_params or {}
         self.connection: AsyncConnection
         self.gen: typing.AsyncGenerator[Notify, None]
-        asyncio.new_event_loop().run_until_complete(self.connect(connection))
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.connect(connection))
+        loop.close()
 
     async def connect(self, connection):
         """connects to postgres backend
@@ -120,18 +122,19 @@ class PostgresBackend(ResultBackend):
         try:
             loop = asyncio.new_event_loop()
             wait = asyncio.wait_for(
-                self._get_result(message_key, block), timeout=timeout / 1000
+                self.async_get_result(message_key, block), timeout=timeout / 1000
             )
             data = loop.run_until_complete(wait)
+            loop.close()
 
-        except IndexError as error:
+        except TypeError as error:
             raise ResultMissing(message) from error
         except asyncio.TimeoutError as error:
             raise ResultTimeout(message) from error
 
         return self.unwrap_result(self.encoder.decode(data))
 
-    async def _get_result(self, message_key: str, block: bool):
+    async def async_get_result(self, message_key: str, block: bool):
         """Runs the operation that retrieves the message from the backend
 
         Args:
@@ -146,17 +149,26 @@ class PostgresBackend(ResultBackend):
         # that has the same message_key as the one that we are trying
         # to retrieve, allowing dynamic message fetching
         if block:
-            future = asyncio.Future()
+            try:
+                return await self.postgres_select(message_key)
+            except TypeError:
+                future = asyncio.Future()
 
-            while not (
-                future.done() and not future.cancelled() and future.exception() is None
-            ):
-                async for notify in self.gen:
-                    if notify.payload == message_key:
-                        future.set_result(True)
-                        break
+                while not (
+                    future.done()
+                    and not future.cancelled()
+                    and future.exception() is None
+                ):
+                    async for notify in self.gen:
+                        if notify.payload == message_key:
+                            future.set_result(True)
+                            break
 
-            await future
+                await future
+
+        return await self.postgres_select(message_key)
+
+    async def postgres_select(self, message_key: str):
 
         exe = await self.connection.execute(
             SQL("SELECT result, expires_at FROM {} WHERE message_key=%s").format(
@@ -201,8 +213,7 @@ class PostgresBackend(ResultBackend):
             await self.connection.execute(
                 "SELECT pg_notify(%s, %s)", ["dramatiq", message_key]
             )
-            await self.connection.commit()
 
-        result = async_store(message_key, result, ttl)
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(result)
+        loop.run_until_complete(async_store(message_key, result, ttl))
+        loop.close()

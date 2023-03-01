@@ -199,7 +199,9 @@ def stub_result_backend():
 
 @pytest.fixture
 def postgres_result_backend():
-    backend = res_backends.PostgresBackend(url="postgresql://@localhost:5432/postgres")
+    backend = res_backends.PostgresBackend(
+        url="postgresql://postgres@localhost:5432/postgres"
+    )
     return backend
 
 

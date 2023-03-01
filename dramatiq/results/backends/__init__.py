@@ -66,11 +66,12 @@ def import_postgres():
 
         return PostgresBackend
     except ModuleNotFoundError:
-        warning = ImportWarning(
+        warnings.warn(
             "PostgresBackend is not available.  Run `pip install dramatiq[postgres]` "
             "to add support for that backend.",
+            category=ImportWarning,
+            stacklevel=2,
         )
-        warnings.warn(warning)
         raise
 
 
