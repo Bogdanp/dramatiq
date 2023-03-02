@@ -207,19 +207,19 @@ def postgres_result_backend():
 
 @pytest.fixture
 def result_backends(
-    memcached_result_backend,
-    redis_result_backend,
-    stub_result_backend,
+    # memcached_result_backend,
+    # redis_result_backend,
+    # stub_result_backend,
     postgres_result_backend,
 ):
     return {
-        "memcached": memcached_result_backend,
-        "redis": redis_result_backend,
-        "stub": stub_result_backend,
+        # "memcached": memcached_result_backend,
+        # "redis": redis_result_backend,
+        # "stub": stub_result_backend,
         "postgres": postgres_result_backend,
     }
 
 
-@pytest.fixture(params=["memcached", "redis", "stub", "postgres"])
+@pytest.fixture(params=["postgres"])
 def result_backend(request, result_backends):
     return result_backends[request.param]

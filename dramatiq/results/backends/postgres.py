@@ -1,9 +1,10 @@
-import asyncio
 import datetime
 import typing
+import time
+import asyncio
 
 import psycopg
-from psycopg import AsyncConnection, Notify
+from psycopg import Connection, Notify
 from psycopg.sql import SQL, Identifier
 
 from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
@@ -40,31 +41,14 @@ class PostgresBackend(ResultBackend):
 
         self.url = url
         self.connection_params = connection_params or {}
-        self.connection: AsyncConnection
-        self.gen: typing.AsyncGenerator[Notify, None]
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.connect(connection))
-        loop.close()
+        self.connection: Connection
+        self.gen: typing.Generator[Notify, None, None]
 
-    async def connect(self, connection):
-        """connects to postgres backend
-
-        Args:
-            connection (AsyncConnection): an AsyncConnection to postgres
-            if none create a new connection to postgres
-
-        Raises:
-            Exception: if autocommit isn't enabled or
-            if the postgres connection isn't an AsyncConnection
-        """
-        # creating connection
         if not connection:
             if self.url is not None:
-                self.connection = await psycopg.AsyncConnection.connect(
-                    self.url, autocommit=True
-                )
+                self.connection = psycopg.Connection.connect(self.url, autocommit=True)
             else:
-                self.connection = await psycopg.AsyncConnection.connect(
+                self.connection = psycopg.Connection.connect(
                     **self.connection_params, autocommit=True
                 )
         else:
@@ -78,15 +62,15 @@ class PostgresBackend(ResultBackend):
 
         # Because of the heavy use of AsyncConnection the use
         # of a Connection to postgres would not work
-        if not isinstance(self.connection, AsyncConnection):
-            raise Exception("Please use an AsyncConnection to postgres")
+        if not isinstance(self.connection, Connection):
+            raise Exception("Please use an Connection to postgres")
 
         # postgres listener
         self.gen = self.connection.notifies()
-        await self.connection.execute("LISTEN dramatiq")  # we need to keep requesting
+        self.connection.execute("LISTEN dramatiq")  # we need to keep requesting
 
         # Create the result table if it doesn't exist
-        await self.connection.execute(
+        self.connection.execute(
             SQL(
                 "CREATE TABLE IF NOT EXISTS {} ("
                 "message_key VARCHAR(256) PRIMARY KEY,"
@@ -119,64 +103,53 @@ class PostgresBackend(ResultBackend):
         # Run a asyncio event loop that exits until the timeout timer is reached
         # this allows for dynamically getting the message if block is True
         # as otherwise it would have to wait the timeout then look for the message
+        def _get_result(message_key, block):
+            if block and timeout != 0:
+                try:
+                    data = self.postgres_select(message_key)
+                except TypeError:
+                    for notify in self.gen:
+                        if notify.payload == message_key:
+                            break
+
+            data = self.postgres_select(message_key)
+
+            if data is None:
+                raise ResultMissing(message)
+
+            return data
+
         try:
+            # loop = asyncio.get_event_loop()
             loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             wait = asyncio.wait_for(
-                self.async_get_result(message_key, block), timeout=timeout / 1000
+                loop.run_in_executor(None, _get_result, message_key, block),
+                timeout=timeout / 1000,
             )
             data = loop.run_until_complete(wait)
             loop.close()
 
         except TypeError as error:
             raise ResultMissing(message) from error
-        except asyncio.TimeoutError as error:
+        except asyncio.exceptions.TimeoutError as error:
             raise ResultTimeout(message) from error
+        # except Exception as ex:
+        #     # print("i should not go here")
+        #     # print(ex)
+        #     raise ex
 
         return self.unwrap_result(self.encoder.decode(data))
 
-    async def async_get_result(self, message_key: str, block: bool):
-        """Runs the operation that retrieves the message from the backend
+    def postgres_select(self, message_key: str):
 
-        Args:
-            message_key (str): the message
-            block (bool): Whether to block or not
-
-        Returns:
-            data: The data that was stored in postgres is none if the message has expired
-        """
-
-        # If block is True then listen for a notification from postgres
-        # that has the same message_key as the one that we are trying
-        # to retrieve, allowing dynamic message fetching
-        if block:
-            try:
-                return await self.postgres_select(message_key)
-            except TypeError:
-                future = asyncio.Future()
-
-                while not (
-                    future.done()
-                    and not future.cancelled()
-                    and future.exception() is None
-                ):
-                    async for notify in self.gen:
-                        if notify.payload == message_key:
-                            future.set_result(True)
-                            break
-
-                await future
-
-        return await self.postgres_select(message_key)
-
-    async def postgres_select(self, message_key: str):
-
-        exe = await self.connection.execute(
+        exe = self.connection.execute(
             SQL("SELECT result, expires_at FROM {} WHERE message_key=%s").format(
                 Identifier(self.namespace)
             ),
             (message_key,),
         )
-        all_data = await exe.fetchone()
+        all_data = exe.fetchone()
 
         data = all_data[0]
 
@@ -196,24 +169,17 @@ class PostgresBackend(ResultBackend):
             ttl (int): Time to live
         """
 
-        async def async_store(message_key: str, result: Result, ttl: int):
-            expires_at = datetime.datetime.now().astimezone() + datetime.timedelta(
-                milliseconds=ttl
-            )
-            await self.connection.execute(
-                SQL(
-                    "INSERT INTO {} (message_key, result, expires_at) VALUES (%s, %s, %s)"
-                ).format(Identifier(self.namespace)),
-                (
-                    message_key,
-                    self.encoder.encode(result),
-                    expires_at,
-                ),
-            )
-            await self.connection.execute(
-                "SELECT pg_notify(%s, %s)", ["dramatiq", message_key]
-            )
-
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(async_store(message_key, result, ttl))
-        loop.close()
+        expires_at = datetime.datetime.now().astimezone() + datetime.timedelta(
+            milliseconds=ttl
+        )
+        self.connection.execute(
+            SQL(
+                "INSERT INTO {} (message_key, result, expires_at) VALUES (%s, %s, %s)"
+            ).format(Identifier(self.namespace)),
+            (
+                message_key,
+                self.encoder.encode(result),
+                expires_at,
+            ),
+        )
+        self.connection.execute("SELECT pg_notify(%s, %s)", ["dramatiq", message_key])
