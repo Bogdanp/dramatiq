@@ -1,7 +1,6 @@
+import asyncio
 import datetime
 import typing
-import time
-import asyncio
 
 import psycopg
 from psycopg import Connection, Notify
@@ -134,10 +133,6 @@ class PostgresBackend(ResultBackend):
             raise ResultMissing(message) from error
         except asyncio.exceptions.TimeoutError as error:
             raise ResultTimeout(message) from error
-        # except Exception as ex:
-        #     # print("i should not go here")
-        #     # print(ex)
-        #     raise ex
 
         return self.unwrap_result(self.encoder.decode(data))
 
