@@ -18,7 +18,7 @@
 import dataclasses
 import time
 import uuid
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, Tuple, TypeVar
 
 from .broker import get_broker
 from .composition import pipeline
@@ -182,3 +182,17 @@ class Message(Generic[R]):
 
     def __lt__(self, other: "Message") -> bool:
         return dataclasses.astuple(self) < dataclasses.astuple(other)
+
+    # Backwards-compatibility with namedtuple.
+    _asdict = asdict
+
+    @property
+    def _field_defaults(self) -> Dict[str, Any]:
+        return {f.name: f.default for f in dataclasses.fields(self) if f.default is not dataclasses.MISSING}
+
+    @property
+    def _fields(self) -> Tuple[str, ...]:
+        return tuple(f.name for f in dataclasses.fields(self))
+
+    def _replace(self, **changes) -> "Message[R]":
+        return dataclasses.replace(self, **changes)
