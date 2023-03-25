@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.14.2`_ -- 2023-03-25
+-----------------------
+
+Fixed
+^^^^^
+
+* Restored ``namedtuple`` instance methods on ``Message``. (`#538`_)
+
+.. _#538: https://github.com/Bogdanp/dramatiq/pull/538
+
 
 `1.14.1`_ -- 2023-02-25
 -----------------------
@@ -1104,7 +1114,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.14.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.14.2...HEAD
+.. _1.14.2: https://github.com/Bogdanp/dramatiq/compare/v1.14.1...v1.14.2
 .. _1.14.1: https://github.com/Bogdanp/dramatiq/compare/v1.14.0...v1.14.1
 .. _1.14.0: https://github.com/Bogdanp/dramatiq/compare/v1.13.0...v1.14.0
 .. _1.13.0: https://github.com/Bogdanp/dramatiq/compare/v1.12.3...v1.13.0
