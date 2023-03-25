@@ -110,6 +110,8 @@ Fixed
 * An issue where stopping the process too quickly after boot could
   lead to an ``AttributeError``. (`#463`_, `#464`_, `@FinnLidbetter`_)
 
+.. _#463: https://github.com/Bogdanp/dramatiq/issues/463
+.. _#464: https://github.com/Bogdanp/dramatiq/pull/464
 
 `1.12.1`_ -- 2021-12-19
 -----------------------
@@ -121,6 +123,7 @@ Fixed
 * An issue where Redis message ids could be put back onto the queue
   after ack/nack.  (`#442`_, `#444`_)
 
+.. _#438: https://github.com/Bogdanp/dramatiq/pull/438
 .. _#442: https://github.com/Bogdanp/dramatiq/issues/442
 .. _#444: https://github.com/Bogdanp/dramatiq/pull/444
 
