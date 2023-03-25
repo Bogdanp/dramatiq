@@ -1,6 +1,6 @@
 # Issues
 
-GitHub issues are for bugs.  If you have questions, please ask them on the [discussion board](https://reddit.com/r/dramatiq).
+GitHub issues are for bugs.  If you have questions, please ask them on the [mailing list](https://groups.io/g/dramatiq-users/topics).
 
 ## Checklist
 
