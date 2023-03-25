@@ -70,7 +70,7 @@ extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
 extra_dependencies["dev"] = extra_dependencies["all"] + [
     # Docs
     "alabaster",
-    "sphinx<1.8",
+    "sphinx",
     "sphinxcontrib-napoleon",
 
     # Linting
