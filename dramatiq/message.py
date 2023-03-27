@@ -150,7 +150,7 @@ class Message(Generic[R]):
           block(bool): Whether or not to block while waiting for a
             result.
           timeout(int): The maximum amount of time, in ms, to block
-            while waiting for a result.
+            while waiting for a result.  Defaults to 10 seconds.
 
         Raises:
           RuntimeError: If there is no result backend on the default
