@@ -4,15 +4,23 @@ from unittest import mock
 
 import pytest
 
-from dramatiq.middleware.asyncio import AsyncActor, AsyncMiddleware, EventLoopThread, async_actor
+from dramatiq.middleware.asyncio import (
+    AsyncMiddleware,
+    EventLoopThread,
+    async_to_sync,
+    get_event_loop_thread,
+    set_event_loop_thread,
+)
 
 
 @pytest.fixture
 def started_thread():
     thread = EventLoopThread(logger=mock.Mock())
     thread.start()
+    set_event_loop_thread(thread)
     yield thread
     thread.join()
+    set_event_loop_thread(None)
 
 
 @pytest.fixture
@@ -34,12 +42,12 @@ def test_event_loop_thread_run_coroutine(started_thread: EventLoopThread):
     result = {}
 
     async def get_thread_id():
-        result["thread_id"] = threading.get_ident()
+        return threading.get_ident()
 
-    started_thread.run_coroutine(get_thread_id())
+    result = started_thread.run_coroutine(get_thread_id())
 
     # the coroutine executed in the event loop thread
-    assert result["thread_id"] == started_thread.ident
+    assert result == started_thread.ident
 
 
 def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThread):
@@ -52,60 +60,59 @@ def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThre
         started_thread.run_coroutine(coro)
 
 
-@mock.patch.object(EventLoopThread, "start")
-@mock.patch.object(EventLoopThread, "run_coroutine")
-def test_async_middleware_before_worker_boot(
-    EventLoopThread_run_coroutine, EventLoopThread_start
-):
-    broker = mock.Mock()
-    worker = mock.Mock()
+@mock.patch("dramatiq.middleware.asyncio.EventLoopThread")
+def test_async_middleware_before_worker_boot(EventLoopThreadMock):
     middleware = AsyncMiddleware()
 
-    middleware.before_worker_boot(broker, worker)
+    try:
+        middleware.before_worker_boot(None, None)
 
-    assert isinstance(middleware.event_loop_thread, EventLoopThread)
+        assert get_event_loop_thread() is EventLoopThreadMock.return_value
 
-    EventLoopThread_start.assert_called_once()
-
-    middleware.run_coroutine("foo")
-    EventLoopThread_run_coroutine.assert_called_once_with("foo")
-
-    # broker was patched with run_coroutine
-    broker.run_coroutine("bar")
-    EventLoopThread_run_coroutine.assert_called_with("bar")
+        EventLoopThreadMock.assert_called_once_with(middleware.logger)
+        EventLoopThreadMock().start.assert_called_once_with()
+    finally:
+        set_event_loop_thread(None)
 
 
 def test_async_middleware_after_worker_shutdown():
-    broker = mock.Mock()
-    broker.run_coroutine = lambda x: x
-    worker = mock.Mock()
+    middleware = AsyncMiddleware()
     event_loop_thread = mock.Mock()
 
-    middleware = AsyncMiddleware()
-    middleware.event_loop_thread = event_loop_thread
-    middleware.after_worker_shutdown(broker, worker)
+    set_event_loop_thread(event_loop_thread)
 
-    event_loop_thread.join.assert_called_once()
-    assert middleware.event_loop_thread is None
-    assert not hasattr(broker, "run_coroutine")
+    try:
+        middleware.after_worker_shutdown(None, None)
+
+        with pytest.raises(RuntimeError):
+            get_event_loop_thread()
+
+        event_loop_thread.join.assert_called_once_with()
+    finally:
+        set_event_loop_thread(None)
 
 
-def test_async_actor(started_thread):
-    broker = mock.Mock()
-    broker.actor_options = {"max_retries"}
+async def async_fn(value: int = 2) -> int:
+    return value + 1
 
-    @async_actor(broker=broker)
-    async def foo(*args, **kwargs):
-        pass
 
-    assert isinstance(foo, AsyncActor)
+@mock.patch("dramatiq.middleware.asyncio.get_event_loop_thread")
+def test_async_to_sync(get_event_loop_thread_mocked):
+    thread = get_event_loop_thread_mocked()
 
-    foo(2, a="b")
+    fn = async_to_sync(async_fn)
+    actual = fn(2)
+    thread.run_coroutine.assert_called_once()
+    assert actual is thread.run_coroutine()
 
-    broker.run_coroutine.assert_called_once()
 
-    # no recursion errors here:
-    repr(foo)
+@pytest.mark.usefixtures("started_thread")
+def test_async_to_sync_with_actual_thread(started_thread):
+    fn = async_to_sync(async_fn)
 
-    # this is just to stop "never awaited" warnings
-    started_thread.run_coroutine(broker.run_coroutine.call_args[0][0])
+    assert fn(2) == 3
+
+
+def test_async_to_sync_no_thread():
+    with pytest.raises(RuntimeError):
+        async_to_sync(async_fn)

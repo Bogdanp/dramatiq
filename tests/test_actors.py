@@ -482,3 +482,19 @@ def test_currrent_message_middleware_exposes_the_current_message(stub_broker, st
     # When I try to access the current message from a non-worker thread
     # Then I should get back None
     assert CurrentMessage.get_current_message() is None
+
+
+@patch("dramatiq.middleware.asyncio.async_to_sync")
+def test_actors_can_wrap_asyncio(async_to_sync_mock, stub_broker):
+    # Define an asyncio function and wrap it in an actor
+    async def add(x, y):
+        return x + y
+
+    actor = dramatiq.actor(add)
+
+    # I expect that function to become an instance of Actor
+    assert isinstance(actor, dramatiq.Actor)
+
+    # The wrapped function should be wrapped with 'async_to_sync'
+    async_to_sync_mock.assert_called_once_with(add)
+    assert actor.fn == async_to_sync_mock.return_value

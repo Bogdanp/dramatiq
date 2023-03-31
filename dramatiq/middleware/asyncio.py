@@ -1,16 +1,63 @@
+from __future__ import annotations
+
 import asyncio
+import functools
 import threading
 import time
 from concurrent.futures import TimeoutError
-from typing import Awaitable, Optional
+from typing import TYPE_CHECKING, Awaitable, Callable, Optional, TypeVar
 
-import dramatiq
 from dramatiq.middleware import Middleware
 
 from ..logging import get_logger
 from .threading import Interrupt
 
-__all__ = ["AsyncActor", "AsyncMiddleware", "async_actor"]
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
+
+    P = ParamSpec("P")
+else:
+    P = TypeVar("P")
+R = TypeVar("R")
+
+__all__ = ["AsyncMiddleware", "async_to_sync"]
+
+# the global event loop thread
+global_event_loop_thread = None
+
+
+def get_event_loop_thread() -> "EventLoopThread":
+    """Get the global event loop thread.
+
+    If no global broker is set, RuntimeError error will be raised.
+
+    Returns:
+      Broker: The global EventLoopThread.
+    """
+    global global_event_loop_thread
+    if global_event_loop_thread is None:
+        raise RuntimeError(
+            "The usage of asyncio in dramatiq requires the AsyncMiddleware "
+            "to be configured."
+        )
+    return global_event_loop_thread
+
+
+def set_event_loop_thread(event_loop_thread: Optional["EventLoopThread"]) -> None:
+    global global_event_loop_thread
+    global_event_loop_thread = event_loop_thread
+
+
+def async_to_sync(async_fn: Callable[P, Awaitable[R]]) -> Callable[P, R]:
+    """Wrap an 'async def' function to make it synchronous."""
+    # assert presence of event loop thread:
+    get_event_loop_thread()
+
+    @functools.wraps(async_fn)
+    def wrapper(*args, **kwargs) -> R:
+        return get_event_loop_thread().run_coroutine(async_fn(*args, **kwargs))
+
+    return wrapper
 
 
 class EventLoopThread(threading.Thread):
@@ -48,7 +95,7 @@ class EventLoopThread(threading.Thread):
             self.logger.info("Stopping the event loop...")
             self.loop.call_soon_threadsafe(self.loop.stop)
 
-    def run_coroutine(self, coro: Awaitable) -> None:
+    def run_coroutine(self, coro: Awaitable[R]) -> R:
         """To be called from outside the thread
 
         Blocks until the coroutine is finished.
@@ -60,15 +107,13 @@ class EventLoopThread(threading.Thread):
             try:
                 # Use a timeout to be able to catch asynchronously raised dramatiq
                 # exceptions (Interrupt).
-                future.result(timeout=self.INTERRUPT_CHECK_INTERVAL)
+                return future.result(timeout=self.INTERRUPT_CHECK_INTERVAL)
             except Interrupt:
                 # Asynchronously raised from another thread: cancel the future and
                 # reiterate to wait for possible cleanup actions.
                 self.loop.call_soon_threadsafe(future.cancel)
             except TimeoutError:
                 continue
-
-            break
 
     def start(self, *args, **kwargs):
         super().start(*args, **kwargs)
@@ -88,65 +133,15 @@ class AsyncMiddleware(Middleware):
     This thread is used to schedule coroutines on from the worker threads.
     """
 
-    event_loop_thread: Optional[EventLoopThread] = None
-
     def __init__(self):
         self.logger = get_logger(__name__, type(self))
 
-    def run_coroutine(self, coro: Awaitable) -> None:
-        self.event_loop_thread.run_coroutine(coro)
-
     def before_worker_boot(self, broker, worker):
-        self.event_loop_thread = EventLoopThread(self.logger)
-        self.event_loop_thread.start()
+        event_loop_thread = EventLoopThread(self.logger)
+        event_loop_thread.start()
 
-        # Monkeypatch the broker to make the event loop thread reachable
-        # from an actor or from other middleware.
-        broker.run_coroutine = self.event_loop_thread.run_coroutine
+        set_event_loop_thread(event_loop_thread)
 
     def after_worker_shutdown(self, broker, worker):
-        self.event_loop_thread.join()
-        self.event_loop_thread = None
-
-        delattr(broker, "run_coroutine")
-
-
-class AsyncActor(dramatiq.Actor):
-    """To configure coroutines as a dramatiq actor.
-
-    Requires AsyncMiddleware to be active.
-
-    Example usage:
-
-    >>> @dramatiq.actor(..., actor_class=AsyncActor)
-    ... async def my_task(x):
-    ...     print(x)
-
-    Notes:
-
-    The coroutine is scheduled on an event loop that is shared between
-    worker threads. See AsyncMiddleware and EventLoopThread.
-
-    This is compatible with ShutdownNotifications ("notify_shutdown") and
-    TimeLimit ("time_limit"). Both result in an asyncio.CancelledError raised inside
-    the async function. There is currently no way to tell the two apart from
-    within the coroutine.
-    """
-
-    def __init__(self, fn, *args, **kwargs):
-        super().__init__(
-            lambda *args, **kwargs: self.broker.run_coroutine(fn(*args, **kwargs)),
-            *args,
-            **kwargs
-        )
-
-
-def async_actor(awaitable=None, **kwargs):
-    if awaitable is not None:
-        return dramatiq.actor(awaitable, actor_class=AsyncActor, **kwargs)
-    else:
-
-        def wrapper(awaitable):
-            return dramatiq.actor(awaitable, actor_class=AsyncActor, **kwargs)
-
-        return wrapper
+        get_event_loop_thread().join()
+        set_event_loop_thread(None)
