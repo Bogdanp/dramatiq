@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Asyncio support.  (`#536`_, `@caspervdw`_)
+
+.. _#536: https://github.com/Bogdanp/dramatiq/pull/536
+.. _@caspervdw: https://github.com/caspervdw
+
+
 `1.14.2`_ -- 2023-03-25
 -----------------------
 
