@@ -135,11 +135,10 @@ class EventLoopThread(threading.Thread):
                 # Use a timeout to be able to catch asynchronously
                 # raised dramatiq exceptions (Interrupt).
                 return future.result(timeout=self.interrupt_check_ival)
-            except Interrupt as e:
+            except Interrupt:
                 # Asynchronously raised from another thread: cancel
                 # the future and reiterate to wait for possible
                 # cleanup actions.
                 self.loop.call_soon_threadsafe(future.cancel)
-                raise e from None
             except concurrent.futures.TimeoutError:
                 continue
