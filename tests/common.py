@@ -6,7 +6,7 @@ import pika
 import pytest
 
 from dramatiq import Worker
-from dramatiq.middleware.threading import is_gevent_active
+from dramatiq.threading import is_gevent_active
 
 
 @contextmanager
