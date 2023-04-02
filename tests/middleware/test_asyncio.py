@@ -61,7 +61,7 @@ def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThre
         started_thread.run_coroutine(coro)
 
 
-@mock.patch("dramatiq.middleware.asyncio.EventLoopThread")
+@mock.patch("dramatiq.asyncio.EventLoopThread")
 def test_async_middleware_before_worker_boot(EventLoopThreadMock):
     middleware = AsyncIO()
     try:
