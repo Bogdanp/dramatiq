@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import concurrent.futures
 import functools
 import logging
 import threading
@@ -61,7 +62,7 @@ def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
         if event_loop_thread is None:
             raise RuntimeError(
                 "Global event loop thread not set. "
-                "Have you added the AsyncMiddleware to your middleware stack?"
+                "Have you added the AsyncIO middleware to your middleware stack?"
             )
         return event_loop_thread.run_coroutine(async_fn(*args, **kwargs))
 
@@ -140,5 +141,5 @@ class EventLoopThread(threading.Thread):
                 # cleanup actions.
                 self.loop.call_soon_threadsafe(future.cancel)
                 raise e from None
-            except TimeoutError:
+            except concurrent.futures.TimeoutError:
                 continue

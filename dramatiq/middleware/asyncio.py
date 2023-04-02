@@ -5,8 +5,8 @@ from ..logging import get_logger
 from . import Middleware
 
 
-class AsyncMiddleware(Middleware):
-    """This middleware manages the event loop thread.
+class AsyncIO(Middleware):
+    """This middleware manages the event loop thread for async actors.
     """
 
     def __init__(self):

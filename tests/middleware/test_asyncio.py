@@ -6,7 +6,7 @@ import pytest
 
 from dramatiq.asyncio import EventLoopThread, async_to_sync, get_event_loop_thread, set_event_loop_thread
 from dramatiq.logging import get_logger
-from dramatiq.middleware.asyncio import AsyncMiddleware
+from dramatiq.middleware.asyncio import AsyncIO
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThre
 
 @mock.patch("dramatiq.middleware.asyncio.EventLoopThread")
 def test_async_middleware_before_worker_boot(EventLoopThreadMock):
-    middleware = AsyncMiddleware()
+    middleware = AsyncIO()
     try:
         middleware.before_worker_boot(None, None)
         assert get_event_loop_thread() is EventLoopThreadMock.return_value
@@ -72,7 +72,7 @@ def test_async_middleware_before_worker_boot(EventLoopThreadMock):
 
 
 def test_async_middleware_after_worker_shutdown():
-    middleware = AsyncMiddleware()
+    middleware = AsyncIO()
     event_loop_thread = mock.Mock()
     set_event_loop_thread(event_loop_thread)
     try:
