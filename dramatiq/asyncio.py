@@ -126,7 +126,7 @@ class EventLoopThread(threading.Thread):
         Returns:
           R: The result of the coroutine.
         """
-        if self.loop is None or not self.loop.is_running():
+        if not self.loop.is_running():
             raise RuntimeError("Event loop is not running.")
 
         future = asyncio.run_coroutine_threadsafe(coro, self.loop)
