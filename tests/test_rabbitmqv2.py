@@ -36,7 +36,6 @@ def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     assert broker.connection
     broker.close()
 
-
 def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a list
@@ -46,7 +45,6 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # The the broker should connect to the host that is up
     assert broker.connection
     broker.close()
-
 
 def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations():
     # Given that I have a RabbitmqBroker
@@ -79,7 +77,6 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
     # Then I should still get a connection to the host that is up
     assert broker.connection
     broker.close()
-
 
 def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
@@ -242,7 +239,6 @@ def test_rabbitmq_broker_connections_are_lazy():
     # Then it should connect
     assert get_connection() is not None
     broker.close()
-
 
 def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
     # Given that I have a rabbit instance that lost its connection
