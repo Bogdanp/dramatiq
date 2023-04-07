@@ -171,10 +171,14 @@ class EventLoopThread(threading.Thread):
                     continue
                 else:
                     break
-        except Interrupt:
+        except Interrupt as e:
             # Asynchronously raised from another thread: cancel
-            # the future and reiterate to wait for possible
-            # cleanup actions.
+            # the future and wait for possible cleanup actions.
             self.loop.call_soon_threadsafe(task.cancel)
+            try:
+                future.result()
+            except asyncio.CancelledError:
+                pass
+            raise e  # raises Interrupt, not asyncio.CancelledError
 
         return future.result()
