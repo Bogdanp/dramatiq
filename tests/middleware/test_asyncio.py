@@ -73,6 +73,13 @@ def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThre
     assert e.traceback[-1].name == "raise_actual_error"
 
 
+@pytest.mark.skipif(
+    threading.current_platform not in threading.supported_platforms,
+    reason="Threading not supported on this platform.",
+)
+@pytest.mark.skipif(
+    threading.is_gevent_active(), reason="Thread exceptions not supported with gevent."
+)
 def test_event_loop_thread_run_coroutine_interrupted(started_thread: EventLoopThread):
     side_effect_target = {"cleanup": False}
 
