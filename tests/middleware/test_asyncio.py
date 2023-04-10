@@ -1,15 +1,12 @@
 import asyncio
 from threading import get_ident
 from unittest import mock
+import traceback
 from dramatiq import threading
 import pytest
+import concurrent.futures
 
-from dramatiq.asyncio import (
-    EventLoopThread,
-    async_to_sync,
-    get_event_loop_thread,
-    set_event_loop_thread,
-)
+from dramatiq.asyncio import EventLoopThread, async_to_sync, get_event_loop_thread, set_event_loop_thread
 from dramatiq.logging import get_logger
 from dramatiq.middleware.asyncio import AsyncIO
 
@@ -59,7 +56,7 @@ def test_event_loop_thread_run_coroutine(started_thread: EventLoopThread):
 def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThread):
     async def raise_actual_error():
         raise TypeError("bla")
-
+    
     async def raise_error():
         await raise_actual_error()
 
@@ -77,7 +74,6 @@ def test_event_loop_thread_run_coroutine_interrupted(started_thread: EventLoopTh
     side_effect_target = {"cleanup": False}
 
     async def sleep_interrupt(worker_thread_id: int):
-        await asyncio.sleep(0.01)
         threading.raise_thread_exception(worker_thread_id, threading.Interrupt)
         try:
             for _ in range(100):
@@ -86,7 +82,7 @@ def test_event_loop_thread_run_coroutine_interrupted(started_thread: EventLoopTh
             await asyncio.sleep(0.01)
             side_effect_target["cleanup"] = True
 
-    with pytest.raises(asyncio.CancelledError):
+    with pytest.raises(concurrent.futures.CancelledError) as e:
         started_thread.run_coroutine(sleep_interrupt(get_ident()))
 
     assert side_effect_target["cleanup"]

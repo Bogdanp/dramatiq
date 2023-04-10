@@ -20,8 +20,7 @@ import concurrent.futures
 import functools
 import logging
 import threading
-from concurrent.futures import Future
-from typing import Awaitable, Callable, Optional, Tuple, TypeVar
+from typing import Awaitable, Callable, Optional, TypeVar
 
 from .threading import Interrupt
 
@@ -29,7 +28,7 @@ __all__ = [
     "EventLoopThread",
     "async_to_sync",
     "get_event_loop_thread",
-    "set_event_loop_thread",
+    "set_event_loop_thread"
 ]
 
 R = TypeVar("R")
@@ -47,7 +46,8 @@ def get_event_loop_thread() -> Optional["EventLoopThread"]:
 
 
 def set_event_loop_thread(thread: Optional["EventLoopThread"]) -> None:
-    """Set the global event loop thread."""
+    """Set the global event loop thread.
+    """
     global _event_loop_thread
     _event_loop_thread = thread
 
@@ -56,7 +56,6 @@ def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
     """Wrap an async function to run it on the event loop thread and
     synchronously wait for its result on the calling thread.
     """
-
     @functools.wraps(async_fn)
     def wrapper(*args, **kwargs) -> R:
         event_loop_thread = get_event_loop_thread()
@@ -71,7 +70,8 @@ def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
 
 
 class EventLoopThread(threading.Thread):
-    """A thread that runs an asyncio event loop."""
+    """A thread that runs an asyncio event loop.
+    """
 
     interrupt_check_ival: float
     logger: logging.Logger
@@ -114,37 +114,6 @@ class EventLoopThread(threading.Thread):
             self.logger.info("Stopping event loop...")
             self.loop.call_soon_threadsafe(self.loop.stop)
 
-    def run_callback(self, callback: Callable[[], R]) -> R:
-        """Run a (sync) callback on the event loop and return the result."""
-        future = Future()
-
-        def call_and_set_result() -> None:
-            future.set_result(callback())
-
-        self.loop.call_soon_threadsafe(call_and_set_result)
-        return future.result()
-
-    def create_task(self, coro: Awaitable[R]) -> Tuple[asyncio.Task, Future]:
-        """Schedule the coroutine to run on the event loop
-
-        Also conveniently creates as concurrent.future.Future that allows for
-        waiting on the task to finish.
-        """
-        future = Future()
-
-        def task_done_callback(fut: asyncio.Future) -> None:
-            try:
-                future.set_result(fut.result())
-            except BaseException as e:
-                future.set_exception(e)
-
-        def create_task() -> asyncio.Task:
-            task = self.loop.create_task(coro)
-            task.add_done_callback(task_done_callback)
-            return task
-
-        return self.run_callback(create_task), future
-
     def run_coroutine(self, coro: Awaitable[R]) -> R:
         """Runs the given coroutine on the event loop.
 
@@ -160,21 +129,16 @@ class EventLoopThread(threading.Thread):
         if not self.loop.is_running():
             raise RuntimeError("Event loop is not running.")
 
-        task, future = self.create_task(coro)
-        try:
-            while True:
-                try:
-                    # Use a timeout to be able to catch asynchronously
-                    # raised dramatiq exceptions (Interrupt).
-                    future.result(timeout=self.interrupt_check_ival)
-                except concurrent.futures.TimeoutError:
-                    continue
-                else:
-                    break
-        except Interrupt:
-            # Asynchronously raised from another thread: cancel
-            # the future and reiterate to wait for possible
-            # cleanup actions.
-            self.loop.call_soon_threadsafe(task.cancel)
-
-        return future.result()
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        while True:
+            try:
+                # Use a timeout to be able to catch asynchronously
+                # raised dramatiq exceptions (Interrupt).
+                return future.result(timeout=self.interrupt_check_ival)
+            except Interrupt:
+                # Asynchronously raised from another thread: cancel
+                # the future and reiterate to wait for possible
+                # cleanup actions.
+                self.loop.call_soon_threadsafe(future.cancel)
+            except concurrent.futures.TimeoutError:
+                continue
