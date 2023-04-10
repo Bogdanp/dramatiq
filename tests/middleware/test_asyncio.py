@@ -86,7 +86,7 @@ def test_event_loop_thread_run_coroutine_interrupted(started_thread: EventLoopTh
             await asyncio.sleep(0.01)
             side_effect_target["cleanup"] = True
 
-    with pytest.raises(threading.Interrupt):
+    with pytest.raises(asyncio.CancelledError):
         started_thread.run_coroutine(sleep_interrupt(get_ident()))
 
     assert side_effect_target["cleanup"]
