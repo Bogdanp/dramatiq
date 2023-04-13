@@ -492,3 +492,14 @@ def test_rabbitmq_messages_that_failed_to_decode_are_rejected(rabbitmq_broker, r
         assert xq_count == 1
     finally:
         dramatiq.set_encoder(old_encoder)
+
+
+def test_rabbitmq_queues_only_contains_canonical_name(rabbitmq_broker, rabbitmq_worker):
+    assert len(rabbitmq_broker.queues) == 0
+
+    @dramatiq.actor
+    def put():
+        pass
+
+    assert len(rabbitmq_broker.queues) == 1
+    assert put.queue_name in rabbitmq_broker.queues

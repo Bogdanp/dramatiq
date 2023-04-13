@@ -26,7 +26,7 @@ from threading import Event, local
 import pika
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import current_millis, dq_name, xq_name
+from ..common import current_millis, dq_name, q_name, xq_name
 from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message, get_encoder
@@ -232,7 +232,7 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: When ensure=True if the underlying channel
             or connection fails.
         """
-        if queue_name not in self.queues:
+        if q_name(queue_name) not in self.queues:
             self.emit_before("declare_queue", queue_name)
             self.queues.add(queue_name)
             self.queues_pending.add(queue_name)
