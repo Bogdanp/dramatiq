@@ -109,7 +109,9 @@ of the main differences between Dramatiq, Celery, Huey and RQ:
            prioritization of prefetched messages.
 
 .. [#cron] For cron-like scheduling functionality, you can combine
-           Dramatiq with APScheduler_ or Periodiq_.
+           Dramatiq with APScheduler_ or Periodiq_. 3rd-party packages
+           exist which implement this approach for various frameworks,
+           like: Dramatiq-Crontab_
 
 
 .. _Celery: http://celeryproject.org
@@ -117,3 +119,4 @@ of the main differences between Dramatiq, Celery, Huey and RQ:
 .. _RQ: http://python-rq.org/
 .. _APScheduler: https://apscheduler.readthedocs.io/
 .. _Periodiq: https://gitlab.com/bersace/periodiq
+.. _Dramatiq-Crontab: https://github.com/voiio/dramatiq-crontab
