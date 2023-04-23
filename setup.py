@@ -106,6 +106,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=[
         "dramatiq",
+        "dramatiq.asyncio",
         "dramatiq.brokers",
         "dramatiq.middleware",
         "dramatiq.rate_limits",
