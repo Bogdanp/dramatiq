@@ -456,7 +456,7 @@ class _WorkerThread(Thread):
                 continue
 
             try:
-                _, message = self.work_queue.get(timeout=self.timeout)
+                _, message = self.work_queue.get(block=False)
                 self.process_message(message)
             except Empty:
                 continue
