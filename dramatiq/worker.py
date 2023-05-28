@@ -84,7 +84,7 @@ class Worker:
         self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
         self.workers = []
-        self.work_queue = PriorityQueue()
+        self.work_queue = PriorityQueue(maxsize=self.queue_prefetch)
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
 
