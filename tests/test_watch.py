@@ -75,4 +75,3 @@ def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
         timestamp_3 = int(f.read())
 
     assert last_loaded_at == timestamp_3
-
