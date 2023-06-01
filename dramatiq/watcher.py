@@ -35,7 +35,17 @@ class _SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):  # pra
     the current process.
     """
 
-    def on_any_event(self, event):
+    def on_any_event(self, event: watchdog.events.FileSystemEvent):
+        # watchdog >= 2.3 emits an extra event when a file is opened that will cause unnecessary
+        # restarts.  This affects any usage of watchdog where a custom event handler is used, including
+        # this _SourceChangesHandler.
+        #
+        # For more context, see:
+        #   https://github.com/gorakhargosh/watchdog/issues/949
+        #   https://github.com/pallets/werkzeug/pull/2604/files
+        if event.event_type == "opened":
+            return
+
         logger = logging.getLogger("SourceChangesHandler")
         logger.info("Detected changes to %r.", event.src_path)
         os.kill(os.getpid(), signal.SIGHUP)

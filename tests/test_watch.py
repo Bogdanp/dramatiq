@@ -62,3 +62,17 @@ def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
 
     # And the second time to be at least a second apart from the first
     assert timestamp_2 - timestamp_1 >= 1000
+
+    # When I open a watched file, this should not trigger a reload
+    last_loaded_at = timestamp_2
+    with (Path("tests") / "test_watch.py").open("r"):
+        time.sleep(5)
+        write_loaded_at.send(filename)
+        broker.join(write_loaded_at.queue_name)
+
+    # Then I expect another timestamp to have been written to the file
+    with open(filename, "r") as f:
+        timestamp_3 = int(f.read())
+
+    assert last_loaded_at == timestamp_3
+
