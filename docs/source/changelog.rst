@@ -13,8 +13,16 @@ Added
 
 * Asyncio support.  (`#536`_, `@caspervdw`_)
 
+Changed
+^^^^^^^
+
+* Filesystem watcher no longer reloads dramatiq on file open events.
+  (`#552`_, `@seanpile`_)
+
 .. _#536: https://github.com/Bogdanp/dramatiq/pull/536
+.. _#552: https://github.com/Bogdanp/dramatiq/pull/552
 .. _@caspervdw: https://github.com/caspervdw
+.. _@caspervdw: https://github.com/seanpile
 
 
 `1.14.2`_ -- 2023-03-25
