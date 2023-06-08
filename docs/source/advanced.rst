@@ -333,7 +333,7 @@ Grafana Dashboard
 
 You can find a Grafana dashboard that displays these metrics here_.
 
-.. _here: https://grafana.com/dashboards/3692
+.. _here: https://grafana.com/grafana/dashboards/3692-dramatiq/
 
 Gotchas with Prometheus
 ~~~~~~~~~~~~~~~~~~~~~~~
