@@ -24,6 +24,7 @@ from itertools import chain
 from threading import Event, local
 
 import pika
+from pika.exceptions import ChannelClosedByBroker
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, q_name, xq_name
@@ -85,7 +86,8 @@ class RabbitmqBroker(Broker):
     .. _ConnectionParameters: https://pika.readthedocs.io/en/stable/modules/parameters.html
     """
 
-    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs):
+    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None,
+                 **kwargs):
         super().__init__(middleware=middleware)
 
         if max_priority is not None and not (0 < max_priority <= 255):
@@ -216,7 +218,7 @@ class RabbitmqBroker(Broker):
         Returns:
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
-        self.declare_queue(queue_name, ensure=True)
+        self.declare_queue(queue_name, ensure="strict")
         return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name, *, ensure=False):
@@ -225,8 +227,9 @@ class RabbitmqBroker(Broker):
 
         Parameters:
           queue_name(str): The name of the new queue.
-          ensure(bool): When True, the queue is created immediately on
-            the server.
+          ensure(bool|str): When True, the queue is created immediately on
+            the server. When 'strict', make sure the queue is created on the
+            server.
 
         Raises:
           ConnectionClosed: When ensure=True if the underlying channel
@@ -243,13 +246,13 @@ class RabbitmqBroker(Broker):
             self.emit_after("declare_delay_queue", delayed_name)
 
         if ensure:
-            self._ensure_queue(queue_name)
+            self._ensure_queue(queue_name, ensure == "strict")
 
-    def _ensure_queue(self, queue_name):
+    def _ensure_queue(self, queue_name, strict=False):
         attempts = 1
         while True:
             try:
-                if queue_name in self.queues_pending:
+                if strict or queue_name in self.queues_pending:
                     self._declare_queue(queue_name)
                     self._declare_dq_queue(queue_name)
                     self._declare_xq_queue(queue_name)
@@ -309,7 +312,6 @@ class RabbitmqBroker(Broker):
             has been closed.
         """
         queue_name = message.queue_name
-        self.declare_queue(queue_name, ensure=True)
 
         if delay is not None:
             queue_name = dq_name(queue_name)
@@ -324,6 +326,7 @@ class RabbitmqBroker(Broker):
         attempts = 1
         while True:
             try:
+                self.declare_queue(queue_name, ensure=True)
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
                 self.emit_before("enqueue", message, delay)
                 self.channel.basic_publish(
@@ -343,6 +346,10 @@ class RabbitmqBroker(Broker):
                 # Delete the channel and the connection so that the
                 # next caller/attempt may initiate new ones of each.
                 del self.connection
+
+                if isinstance(e, ChannelClosedByBroker) and e.reply_code == 404:
+                    self.queues_pending.add(queue_name(queue_name))
+                    raise ConnectionClosed(e) from None
 
                 attempts += 1
                 if attempts > MAX_ENQUEUE_ATTEMPTS:

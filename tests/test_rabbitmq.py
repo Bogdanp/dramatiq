@@ -2,6 +2,8 @@ import os
 import time
 from threading import Event
 from unittest.mock import Mock, patch
+import string
+import random
 
 import pika.exceptions
 import pytest
@@ -50,7 +52,8 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
     # When I try to give it both a connection URL and a list of connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
+        RabbitmqBroker(url="amqp://127.0.0.1:5672",
+                       parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
 
     # When I try to give it both a connection URL and pika connection parameters
     # Then a RuntimeError should be raised
@@ -462,6 +465,41 @@ def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors
             assert executed
         finally:
             worker.stop()
+
+
+def test_rabbitmq_broker_retries_declaring_queues_when_declared_queues_is_gone(rabbitmq_broker):
+    executed = False
+
+    # I declare an actor
+    characters = string.ascii_letters + string.digits
+    suffix = "".join(random.choice(characters) for _ in range(2))
+
+    @dramatiq.actor(queue_name=f"flaky_queue_{suffix}")
+    def do_work():
+        nonlocal executed
+        executed = True
+
+    # Let worker to ensure_queue and consume message
+    worker = Worker(rabbitmq_broker, worker_threads=1)
+    worker.start()
+
+    # Check the queue is declared
+    rabbitmq_broker.channel.queue_declare(do_work.queue_name)
+    # Let the queue go unexpectedly
+    rabbitmq_broker.channel.queue_delete(do_work.queue_name)
+    with pytest.raises(pika.exceptions.ChannelClosedByBroker):
+        rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
+
+    # And I send that actor a message
+    do_work.send()
+    try:
+        rabbitmq_broker.join(do_work.queue_name, timeout=20000)
+        worker.join()
+    finally:
+        worker.stop()
+
+    # Then the queue should eventually be declared and the message executed
+    assert executed
 
 
 def test_rabbitmq_messages_that_failed_to_decode_are_rejected(rabbitmq_broker, rabbitmq_worker):
