@@ -58,3 +58,4 @@ of those changes to CLEARTYPE SRL.
 | [@cmflynn](https://github.com/cmflynn)                 | Cody Flynn             |
 | [@dancardin](https://github.com/dancardin)             | Dan Cardin             |
 | [@caspervdw](https://github.com/caspervdw)             | Casper van der Wel     |
+| [@jenstroeger](https://github.com/jenstroeger/)        | Jens Troeger           |

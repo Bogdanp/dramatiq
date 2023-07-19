@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import cast
+from typing import Optional, cast
 
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
 
 #: The global broker instance.
-global_broker = None
+global_broker: Optional["Broker"] = None
 
 
 def get_broker() -> "Broker":
