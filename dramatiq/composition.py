@@ -178,6 +178,7 @@ class pipeline:
             backend = self.broker.get_results_backend()
             yield message.get_result(backend=backend, block=block, timeout=timeout)
 
+
 class group:
     """Run a group of actors in parallel.
 

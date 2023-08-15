@@ -24,7 +24,7 @@ from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .errors import DecodeError
-from .results import ResultBackend, Results
+from .results import ResultBackend
 
 #: The global encoder instance.
 global_encoder: Encoder = JSONEncoder()
