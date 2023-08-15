@@ -20,6 +20,7 @@ from typing import Optional, cast
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
+from .results import Results
 
 #: The global broker instance.
 global_broker: Optional["Broker"] = None
@@ -255,6 +256,21 @@ class Broker:
           on this Broker.
         """
         return self.delay_queues.copy()
+
+    def get_results_backend(self):
+        """Get the backend of the Results middleware.
+
+        Raises:
+          RuntimeError: If the broker doesn't have a results backend.
+
+        Returns:
+          ResultBackend: The backend.
+        """
+        for middleware in self.middleware:
+            if isinstance(middleware, Results):
+                return middleware.backend
+        else:
+            raise RuntimeError("The broker doesn't have a results backend.")
 
     def flush(self, queue_name):  # pragma: no cover
         """Drop all the messages from a queue.
