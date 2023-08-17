@@ -251,6 +251,9 @@ class group:
         Parameters:
           delay(int): The minimum amount of time, in milliseconds,
             each message in the group should be delayed by.
+
+        Returns:
+          group: This same group.
         """
         if self.completion_callbacks:
             from .middleware.group_callbacks import GROUP_CALLBACK_BARRIER_TTL, GroupCallbacks
