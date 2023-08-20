@@ -1,4 +1,5 @@
 import time
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
@@ -258,8 +259,8 @@ def test_actors_can_delay_messages_independent_of_each_other(stub_broker, stub_w
     # If I send it a delayed message
     append.send_with_options(args=(1,), delay=1500)
 
-    # And then another delayed message with a smaller delay
-    append.send_with_options(args=(2,), delay=1000)
+    # And then another delayed message with a smaller delay and using a timedelta
+    append.send_with_options(args=(2,), delay=timedelta(seconds=1))
 
     # Then join on the queue
     stub_broker.join(append.queue_name)
