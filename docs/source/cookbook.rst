@@ -54,10 +54,10 @@ Dramatiq has built-in support for a couple high-level composition
 constructs.  You can use these to combine generalized tasks that don't
 know about one another into complex workflows.
 
-In order to take advantage of group and pipeline result management,
-you need to enable result storage and your actors need to store
-results.  Check out the `Results`_ section for more information on
-result storage.
+In order to take advantage of group and pipeline result management
+or to wait for a group or pipeline to finish, you need to enable
+result storage and your actors need to store results.  Check out the
+`Results`_ section for more information on result storage.
 
 Groups
 ^^^^^^
@@ -340,7 +340,8 @@ You can use Dramatiq's |RateLimiters| to constrain actor concurrency.
 
 Whenever two ``one_at_a_time`` actors run at the same time, one of
 them will be retried with exponential backoff.  This works by raising
-an exception and relying on the built-in Retries middleware to do the
+an exception and relying on the built-in
+:class:`Retries<dramatiq.middleware.Retries>` middleware to do the
 work of re-enqueueing the task.
 
 If you want rate limiters not to raise an exception when they can't be
