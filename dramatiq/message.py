@@ -24,7 +24,7 @@ from .broker import get_broker
 from .composition import pipeline
 from .encoder import Encoder, JSONEncoder
 from .errors import DecodeError
-from .results import ResultBackend, Results
+from .results import ResultBackend
 
 #: The global encoder instance.
 global_encoder: Encoder = JSONEncoder()
@@ -163,12 +163,7 @@ class Message(Generic[R]):
         """
         if backend is None:
             broker = get_broker()
-            for middleware in broker.middleware:
-                if isinstance(middleware, Results):
-                    backend = middleware.backend
-                    break
-            else:
-                raise RuntimeError("The default broker doesn't have a results backend.")
+            backend = broker.get_results_backend()
 
         return backend.get_result(self, block=block, timeout=timeout)
 

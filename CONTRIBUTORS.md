@@ -60,3 +60,4 @@ of those changes to CLEARTYPE SRL.
 | [@caspervdw](https://github.com/caspervdw)             | Casper van der Wel     |
 | [@jenstroeger](https://github.com/jenstroeger/)        | Jens Troeger           |
 | [@h3nnn4n](https://github.com/h3nnn4n/)                | Renan S Silva          |
+| [@DiegoPomares](https://github.com/DiegoPomares/)      | Diego Pomares          |
