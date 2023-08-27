@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from ..asyncio import EventLoopThread, get_event_loop_thread, set_event_loop_thread
 from ..logging import get_logger
-from . import Middleware
+from .middleware import Middleware
 
 
 class AsyncIO(Middleware):
