@@ -79,6 +79,8 @@ The following middleware are all enabled by default.
 .. autoclass:: dramatiq.middleware.AsyncIO
 .. autoclass:: dramatiq.middleware.Callbacks
 .. autoclass:: dramatiq.middleware.CurrentMessage
+   :members:
+   :member-order: bysource
 .. autoclass:: dramatiq.middleware.Pipelines
 .. autoclass:: dramatiq.middleware.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
