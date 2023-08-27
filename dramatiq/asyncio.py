@@ -129,16 +129,28 @@ class EventLoopThread(threading.Thread):
         if not self.loop.is_running():
             raise RuntimeError("Event loop is not running.")
 
-        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
-        while True:
+        done = threading.Event()
+
+        async def wrapped_coro() -> R:
             try:
-                # Use a timeout to be able to catch asynchronously
-                # raised dramatiq exceptions (Interrupt).
-                return future.result(timeout=self.interrupt_check_ival)
-            except Interrupt:
-                # Asynchronously raised from another thread: cancel
-                # the future and reiterate to wait for possible
-                # cleanup actions.
-                self.loop.call_soon_threadsafe(future.cancel)
-            except concurrent.futures.TimeoutError:
-                continue
+                return await coro
+            finally:
+                done.set()
+
+        future = asyncio.run_coroutine_threadsafe(wrapped_coro(), self.loop)
+        try:
+            while True:
+                try:
+                    # Use a timeout to be able to catch asynchronously
+                    # raised dramatiq exceptions (Interrupt).
+                    return future.result(timeout=self.interrupt_check_ival)
+                except concurrent.futures.TimeoutError:
+                    continue
+        except Interrupt:
+            # Asynchronously raised from another thread: cancel the future.
+            self.loop.call_soon_threadsafe(future.cancel)
+            # Wait for the 'done' event instead of the future; the future will
+            # raise CancelledError immediately while we should wait for the coro
+            # to actually finish its cleanup actions.
+            done.wait()
+            raise
