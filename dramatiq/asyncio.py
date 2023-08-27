@@ -28,7 +28,7 @@ __all__ = [
     "EventLoopThread",
     "async_to_sync",
     "get_event_loop_thread",
-    "set_event_loop_thread"
+    "set_event_loop_thread",
 ]
 
 R = TypeVar("R")
@@ -46,8 +46,7 @@ def get_event_loop_thread() -> Optional["EventLoopThread"]:
 
 
 def set_event_loop_thread(thread: Optional["EventLoopThread"]) -> None:
-    """Set the global event loop thread.
-    """
+    """Set the global event loop thread."""
     global _event_loop_thread
     _event_loop_thread = thread
 
@@ -56,6 +55,7 @@ def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
     """Wrap an async function to run it on the event loop thread and
     synchronously wait for its result on the calling thread.
     """
+
     @functools.wraps(async_fn)
     def wrapper(*args, **kwargs) -> R:
         event_loop_thread = get_event_loop_thread()
@@ -70,8 +70,7 @@ def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
 
 
 class EventLoopThread(threading.Thread):
-    """A thread that runs an asyncio event loop.
-    """
+    """A thread that runs an asyncio event loop."""
 
     interrupt_check_ival: float
     logger: logging.Logger
@@ -104,7 +103,7 @@ class EventLoopThread(threading.Thread):
         super().start()
 
         ready = threading.Event()
-        self.loop.call_soon_threadsafe(lambda: ready.set())
+        self.loop.call_soon_threadsafe(ready.set)
         if not ready.wait(timeout=timeout):
             raise RuntimeError("Event loop failed to start.")
         self.logger.info("Event loop is running.")
@@ -147,10 +146,13 @@ class EventLoopThread(threading.Thread):
                 except concurrent.futures.TimeoutError:
                     continue
         except Interrupt:
-            # Asynchronously raised from another thread: cancel the future.
+            # Asynchronously raised from another thread: cancel the
+            # future.
             self.loop.call_soon_threadsafe(future.cancel)
-            # Wait for the 'done' event instead of the future; the future will
-            # raise CancelledError immediately while we should wait for the coro
-            # to actually finish its cleanup actions.
-            done.wait()
+            # Wait for the 'done' event instead of the future; the
+            # future will raise CancelledError immediately while we
+            # should wait for the coro to actually finish its cleanup
+            # actions.
+            if not done.wait(timeout=1.0):
+                raise RuntimeError("Timed out while waiting for coroutine.")
             raise
