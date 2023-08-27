@@ -8,21 +8,41 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* The ``global_broker`` variable is now type hinted. (`@jenstroeger`_)
+* Pipeline result retrieval works with non-default brokers. (`#563`_,
+  `#564`_, `@DiegoPomares`_)
+
+.. _#563: https://github.com/Bogdanp/dramatiq/pull/563
+.. _#564: https://github.com/Bogdanp/dramatiq/issues/564
+.. _@DiegoPomares: https://github.com/DiegoPomares
+.. _@jenstroeger: https://github.com/jenstroeger
+
 Added
 ^^^^^
 
-* Asyncio support.  (`#536`_, `@caspervdw`_)
+* Asyncio support. (`#536`_, `@caspervdw`_)
+* Timedelta support for delay arguments. (`#569`_, `@h3nnn4n`_)
+
+.. _#536: https://github.com/Bogdanp/dramatiq/pull/536
+.. _#569: https://github.com/Bogdanp/dramatiq/pull/569
+.. _@h3nnn4n: https://github.com/h3nnn4n
 
 Changed
 ^^^^^^^
 
 * Filesystem watcher no longer reloads dramatiq on file open events.
   (`#552`_, `@seanpile`_)
+* The version bound on ``redis-py`` has been increased to include
+  version 5.0. (`#567`_, `@scott-8`_)
 
-.. _#536: https://github.com/Bogdanp/dramatiq/pull/536
 .. _#552: https://github.com/Bogdanp/dramatiq/pull/552
+.. _#567: https://github.com/Bogdanp/dramatiq/pull/567
 .. _@caspervdw: https://github.com/caspervdw
-.. _@caspervdw: https://github.com/seanpile
+.. _@scott-8: https://github.com/scott-8
+.. _@seanpile: https://github.com/seanpile
 
 
 `1.14.2`_ -- 2023-03-25
