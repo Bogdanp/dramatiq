@@ -145,7 +145,7 @@ class EventLoopThread(threading.Thread):
                     return future.result(timeout=self.interrupt_check_ival)
                 except concurrent.futures.TimeoutError:
                     continue
-        except Interrupt:
+        except Interrupt as e:
             # Asynchronously raised from another thread: cancel the
             # future.
             self.loop.call_soon_threadsafe(future.cancel)
@@ -154,5 +154,5 @@ class EventLoopThread(threading.Thread):
             # should wait for the coro to actually finish its cleanup
             # actions.
             if not done.wait(timeout=1.0):
-                raise RuntimeError("Timed out while waiting for coroutine.")
+                raise RuntimeError("Timed out while waiting for coroutine.") from e
             raise
