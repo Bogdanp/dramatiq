@@ -356,6 +356,9 @@ class group:
         Parameters:
           timeout(int): The maximum amount of time, in ms, to wait.
             Defaults to 10 seconds.
+
+        Raises:
+          ResultTimeout: When waiting times out.
         """
         for _ in self.get_results(block=True, timeout=timeout):  # pragma: no cover
             pass
