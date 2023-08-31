@@ -123,11 +123,13 @@ Middleware
 ^^^^^^^^^^
 
 .. autoclass:: dramatiq.results.Results
+   :members:
 
 Backends
 ^^^^^^^^
 
 .. autoclass:: dramatiq.results.ResultBackend
+   :members:
 .. autoclass:: dramatiq.results.backends.MemcachedBackend
 .. autoclass:: dramatiq.results.backends.RedisBackend
 .. autoclass:: dramatiq.results.backends.StubBackend
@@ -146,6 +148,7 @@ Backends
 Rate limiter backends are used to store metadata about rate limits.
 
 .. autoclass:: dramatiq.rate_limits.RateLimiterBackend
+   :members:
 .. autoclass:: dramatiq.rate_limits.backends.MemcachedBackend
 .. autoclass:: dramatiq.rate_limits.backends.RedisBackend
 .. autoclass:: dramatiq.rate_limits.backends.StubBackend
