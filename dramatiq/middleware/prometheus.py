@@ -24,7 +24,7 @@ from ..logging import get_logger
 from .middleware import Middleware
 
 #: The path to the file to use to race Exposition servers against one another.
-LOCK_PATH = os.getenv("dramatiq_prom_lock", "/tmp/dramatiq-prometheus.lock")
+LOCK_PATH = os.getenv("dramatiq_prom_lock", "%s/dramatiq-prometheus.lock" % tempfile.gettempdir())
 
 #: The path to store the prometheus database files.  This path is
 #: cleared before every run.
