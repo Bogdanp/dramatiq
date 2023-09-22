@@ -286,7 +286,16 @@ class Broker:
         raise NotImplementedError()
 
     def join(self, queue_name, *, timeout=None):  # pragma: no cover
-        """
+        """Wait for all the messages on the given queue to be
+        processed.  This method is only meant to be used in tests to
+        wait for all the messages in a queue to be processed.
+
+        Subclasses that implement this function may add parameters.
+
+        Parameters:
+          queue_name(str): The queue to wait on.
+          timeout(Optional[int]): The max amount of time, in
+            milliseconds, to wait on this queue.
         """
         raise NotImplementedError()
 
