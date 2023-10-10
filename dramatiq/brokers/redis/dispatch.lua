@@ -162,6 +162,17 @@ if command == "enqueue" then
     redis.call("rpush", queue_full_name, message_id)
 
 
+-- Dequeues a message on $queue_full_name.
+if command == "dequeue" then
+    local message_id = ARGS[1]
+    local n = redis.call("lrem", queue_full_name, message_id)
+
+    -- If at least one message was removed from the queue, then we're guaranteed that no worker has pulled it yet.
+    if n > 0 then
+        redis.call("hdel", queue_messages, message_id)
+    end
+
+
 -- Returns up to $prefetch number of messages from $queue_full_name.
 elseif command == "fetch" then
     -- Ensure prefetch isn't so large that we get errors fetching
