@@ -23,15 +23,14 @@ from .errors import QueueJoinTimeout
 
 
 def getenv_int(name):
-    """Parse an optional environment variable as an integer.
-    """
+    """Parse an optional environment variable as an integer."""
     v = getenv(name, None)
     if v is None:
         return None
     try:
         return int(v)
     except ValueError:
-        raise ValueError("invalid integer value for env var %r: %r" % (name, v)) from None
+        raise ValueError(f"invalid integer value for env var {name!r}: {v!r}") from None
 
 
 def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_exponent=32):
@@ -47,7 +46,7 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
       tuple: The new number of attempts and the backoff in milliseconds.
     """
     exponent = min(attempts, max_exponent)
-    backoff = min(factor * 2 ** exponent, max_backoff)
+    backoff = min(factor * 2**exponent, max_backoff)
     if jitter:
         backoff /= 2
         backoff = int(backoff + uniform(0, backoff))
@@ -55,8 +54,7 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
 
 
 def current_millis():
-    """Returns the current UNIX time in milliseconds.
-    """
+    """Returns the current UNIX time in milliseconds."""
     return int(time() * 1000)
 
 
@@ -112,8 +110,7 @@ def join_all(joinables, timeout):
 
 
 def q_name(queue_name):
-    """Returns the canonical queue name for a given queue.
-    """
+    """Returns the canonical queue name for a given queue."""
     if queue_name.endswith(".DQ") or queue_name.endswith(".XQ"):
         return queue_name[:-3]
     return queue_name

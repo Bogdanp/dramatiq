@@ -1,10 +1,9 @@
 import time
 from unittest import mock
 
+import dramatiq
 import pytest
 import redis
-
-import dramatiq
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
@@ -151,7 +150,7 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
         redis_broker.do_fetch(queue_name, 1)
 
     # Then both must be in the acks set
-    ack_group = "dramatiq:__acks__.%s.%s" % (redis_broker.broker_id, queue_name)
+    ack_group = f"dramatiq:__acks__.{redis_broker.broker_id}.{queue_name}"
     unacked = redis_broker.client.smembers(ack_group)
     assert sorted(unacked) == sorted(message_ids)
 
@@ -162,7 +161,7 @@ def test_redis_unacked_messages_can_be_requeued(redis_broker):
     redis_broker.do_qsize(queue_name)
 
     # Then all messages should be requeued
-    ack_group = "dramatiq:__acks__.%s.%s" % (redis_broker.broker_id, queue_name)
+    ack_group = f"dramatiq:__acks__.{redis_broker.broker_id}.{queue_name}"
     unacked = redis_broker.client.smembers(ack_group)
     assert not unacked
 
@@ -220,7 +219,8 @@ def test_redis_messages_belonging_to_missing_actors_are_rejected(redis_broker, r
     message = Message(
         queue_name="some-queue",
         actor_name="some-actor",
-        args=(), kwargs={},
+        args=(),
+        kwargs={},
         options={},
     )
     redis_broker.declare_queue("some-queue")
@@ -335,8 +335,7 @@ def test_redis_broker_warns_about_deprecated_parameters():
     with pytest.warns(DeprecationWarning) as record:
         RedisBroker(requeue_deadline=1000)
 
-    assert str(record[0].message) == \
-        "requeue_{deadline,interval} have been deprecated and no longer do anything"
+    assert str(record[0].message) == "requeue_{deadline,interval} have been deprecated and no longer do anything"
 
 
 def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(redis_broker):
@@ -394,6 +393,7 @@ def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_wo
     do_ack = redis_broker.do_ack
 
     with mock.patch.object(consumer.broker, "do_ack") as ack_mock:
+
         def side_effect(queue, msg_id):
             if ack_mock.call_count == 1:
                 # On the first try, I expect there to be an outstanding message
@@ -435,6 +435,7 @@ def test_redis_consumer_nack_can_retry_on_connection_error(redis_broker, redis_w
     do_nack = redis_broker.do_nack
 
     with mock.patch.object(consumer.broker, "do_nack") as nack_mock:
+
         def side_effect(queue, msg_id):
             if nack_mock.call_count == 1:
                 # On the first try, I expect there to be an outstanding message
@@ -473,6 +474,7 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
     redis.exceptions.ResponseError: Error running script (call to f_e9668bc413bd4a2d63c8108b124f5b7df0d01263):
     @user_script:218: @user_script: 218: Lua redis() command arguments must be strings or integers
     """
+
     # Given that I have an actor
     @dramatiq.actor(max_retries=0)
     def do_work():
@@ -484,8 +486,9 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
     message = Message(
         queue_name=do_work.queue_name,
         actor_name=do_work.actor_name,
-        args=(), kwargs={},
-        options={"redis_message_id": "XXXXXXXXX"}
+        args=(),
+        kwargs={},
+        options={"redis_message_id": "XXXXXXXXX"},
     )  # Bogus ID
     consumer.nack(message)
 

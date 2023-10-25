@@ -1,7 +1,6 @@
 import multiprocessing
 
 import pytest
-
 from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
 
 

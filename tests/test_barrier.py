@@ -2,7 +2,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-
 from dramatiq.rate_limits import Barrier
 
 

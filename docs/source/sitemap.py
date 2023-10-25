@@ -9,7 +9,7 @@ def setup(app):
 
 
 def collect_pages(basedir):
-    for root, dirs, files in os.walk(basedir):
+    for root, _dirs, files in os.walk(basedir):
         for filename in files:
             if not filename.endswith(".html"):
                 continue
@@ -29,7 +29,7 @@ def collect_pages(basedir):
             stat = os.stat(path)
             last_mod = datetime.fromtimestamp(stat.st_mtime).date().isoformat()
 
-            page_path = path[len(basedir):].lstrip("/")
+            page_path = path[len(basedir) :].lstrip("/")
             yield page_path, last_mod, priority
 
 

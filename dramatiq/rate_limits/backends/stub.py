@@ -23,8 +23,7 @@ from ..backend import RateLimiterBackend
 
 
 class StubBackend(RateLimiterBackend):
-    """An in-memory rate limiter backend.  For use in unit tests.
-    """
+    """An in-memory rate limiter backend.  For use in unit tests."""
 
     def __init__(self):
         self.conditions = defaultdict(lambda: Condition(self.mutex))

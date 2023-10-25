@@ -27,25 +27,21 @@ MessageData = typing.Dict[str, typing.Any]
 
 
 class Encoder(abc.ABC):
-    """Base class for message encoders.
-    """
+    """Base class for message encoders."""
 
     @abc.abstractmethod
     def encode(self, data: MessageData) -> bytes:  # pragma: no cover
-        """Convert message metadata into a bytestring.
-        """
+        """Convert message metadata into a bytestring."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def decode(self, data: bytes) -> MessageData:  # pragma: no cover
-        """Convert a bytestring into message metadata.
-        """
+        """Convert a bytestring into message metadata."""
         raise NotImplementedError
 
 
 class JSONEncoder(Encoder):
-    """Encodes messages as JSON.  This is the default encoder.
-    """
+    """Encodes messages as JSON.  This is the default encoder."""
 
     def encode(self, data: MessageData) -> bytes:
         return json.dumps(data, separators=(",", ":")).encode("utf-8")
@@ -54,12 +50,12 @@ class JSONEncoder(Encoder):
         try:
             data_str = data.decode("utf-8")
         except UnicodeDecodeError as e:
-            raise DecodeError("failed to decode data %r" % (data,), data, e) from None
+            raise DecodeError(f"failed to decode data {data!r}", data, e) from None
 
         try:
             return json.loads(data_str)
         except json.decoder.JSONDecodeError as e:
-            raise DecodeError("failed to decode message %r" % (data_str,), data_str, e) from None
+            raise DecodeError(f"failed to decode message {data_str!r}", data_str, e) from None
 
 
 class PickleEncoder(Encoder):

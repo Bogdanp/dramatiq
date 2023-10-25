@@ -28,11 +28,7 @@ def main(args):
 
     messages = []
     for _ in range(args.count):
-        messages.append(sleep_then_add.send(
-            random.randint(1, 5),
-            random.randint(0, 1000),
-            random.randint(0, 1000)
-        ))
+        messages.append(sleep_then_add.send(random.randint(1, 5), random.randint(0, 1000), random.randint(0, 1000)))
 
     for message in messages:
         print(message.get_result(block=True))

@@ -7,9 +7,8 @@ import sys
 import time
 
 import celery
-import pylibmc
-
 import dramatiq
+import pylibmc
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 
@@ -75,20 +74,28 @@ def benchmark_arg(value):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--benchmark", help="the benchmark to run",
-        type=benchmark_arg, default="latency",
+        "--benchmark",
+        help="the benchmark to run",
+        type=benchmark_arg,
+        default="latency",
     )
     parser.add_argument(
-        "--count", help="the number of messages to benchmark with",
-        type=int, default=10000,
+        "--count",
+        help="the number of messages to benchmark with",
+        type=int,
+        default=10000,
     )
     parser.add_argument(
-        "--use-green-threads", help="run workers with green threads rather than system threads",
-        action="store_true", default=False,
+        "--use-green-threads",
+        help="run workers with green threads rather than system threads",
+        action="store_true",
+        default=False,
     )
     parser.add_argument(
-        "--use-celery", help="run the benchmark under Celery",
-        action="store_true", default=False,
+        "--use-celery",
+        help="run the benchmark under Celery",
+        action="store_true",
+        default=False,
     )
     return parser.parse_args()
 

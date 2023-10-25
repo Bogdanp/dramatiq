@@ -1,10 +1,9 @@
 import sys
 from datetime import datetime
 
+import dramatiq
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
-
-import dramatiq
 
 
 @dramatiq.actor

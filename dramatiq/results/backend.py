@@ -143,12 +143,7 @@ class ResultBackend:
         Returns:
           str
         """
-        message_key = "%(namespace)s:%(queue_name)s:%(actor_name)s:%(message_id)s" % {
-            "namespace": self.namespace,
-            "queue_name": q_name(message.queue_name),
-            "actor_name": message.actor_name,
-            "message_id": message.message_id,
-        }
+        message_key = f"{self.namespace}:{q_name(message.queue_name)}:{message.actor_name}:{message.message_id}"
         return hashlib.md5(message_key.encode("utf-8")).hexdigest()
 
     def _get(self, message_key: str) -> MResult:  # pragma: no cover
@@ -156,15 +151,11 @@ class ResultBackend:
         this method if they want to use the default, polling,
         implementation of get_result.
         """
-        raise NotImplementedError("%(classname)r does not implement _get()" % {
-            "classname": type(self).__name__,
-        })
+        raise NotImplementedError(f"{type(self).__name__!r} does not implement _get()")
 
     def _store(self, message_key: str, result: Result, ttl: int) -> None:  # pragma: no cover
         """Store a result in the backend.  Subclasses may implement
         this method if they want to use the default implementation of
         set_result.
         """
-        raise NotImplementedError("%(classname)r does not implement _store()" % {
-            "classname": type(self).__name__,
-        })
+        raise NotImplementedError(f"{type(self).__name__!r} does not implement _store()")

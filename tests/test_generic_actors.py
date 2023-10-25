@@ -1,8 +1,7 @@
 from unittest.mock import Mock
 
-import pytest
-
 import dramatiq
+import pytest
 
 
 def test_generic_actors_can_be_defined(stub_broker):

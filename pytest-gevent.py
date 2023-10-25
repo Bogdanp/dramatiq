@@ -1,6 +1,8 @@
 #!python
 try:
-    from gevent import monkey; monkey.patch_all()  # noqa
+    from gevent import monkey
+
+    monkey.patch_all()  # noqa
 except ImportError:
     import sys
 

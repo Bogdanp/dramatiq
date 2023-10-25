@@ -115,7 +115,7 @@ def import_object(value):
         try:
             return module, functools.reduce(getattr, varnames, module)
         except AttributeError:
-            raise ImportError("Module %r does not define a %r variable." % (modname, varname)) from None
+            raise ImportError(f"Module {modname!r} does not define a {varname!r} variable.") from None
     return module, None
 
 
@@ -151,67 +151,77 @@ def make_argument_parser():
         help="the broker to use (eg: 'module' or 'module:a_broker')",
     )
     parser.add_argument(
-        "modules", metavar="module", nargs="*",
+        "modules",
+        metavar="module",
+        nargs="*",
         help="additional python modules to import",
     )
     parser.add_argument(
-        "--processes", "-p", default=CPUS, type=int,
+        "--processes",
+        "-p",
+        default=CPUS,
+        type=int,
         help="the number of worker processes to run (default: %s)" % CPUS,
     )
     parser.add_argument(
-        "--threads", "-t", default=8, type=int,
+        "--threads",
+        "-t",
+        default=8,
+        type=int,
         help="the number of worker threads per process (default: 8)",
     )
+    parser.add_argument("--path", "-P", default=".", nargs="*", type=str, help="the module import path (default: .)")
     parser.add_argument(
-        "--path", "-P", default=".", nargs="*", type=str,
-        help="the module import path (default: .)"
-    )
-    parser.add_argument(
-        "--queues", "-Q", nargs="*", type=str,
+        "--queues",
+        "-Q",
+        nargs="*",
+        type=str,
         help="listen to a subset of queues (default: all queues)",
     )
     parser.add_argument(
-        "--pid-file", type=str,
+        "--pid-file",
+        type=str,
         help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", type=str,
+        "--log-file",
+        type=str,
         help="write all logs to a file (default: sys.stderr)",
     )
+    parser.add_argument("--skip-logging", action="store_true", help="do not call logging.basicConfig()")
     parser.add_argument(
-        "--skip-logging",
-        action="store_true",
-        help="do not call logging.basicConfig()"
+        "--use-spawn", action="store_true", help="start processes by spawning (default: fork on unix, spawn on windows)"
     )
     parser.add_argument(
-        "--use-spawn", action="store_true",
-        help="start processes by spawning (default: fork on unix, spawn on windows)"
+        "--fork-function",
+        "-f",
+        action="append",
+        dest="forks",
+        default=[],
+        help="fork a subprocess to run the given function",
     )
     parser.add_argument(
-        "--fork-function", "-f", action="append", dest="forks", default=[],
-        help="fork a subprocess to run the given function"
-    )
-    parser.add_argument(
-        "--worker-shutdown-timeout", type=int, default=600000,
-        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
+        "--worker-shutdown-timeout",
+        type=int,
+        default=600000,
+        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)",
     )
 
     if HAS_WATCHDOG:
         parser.add_argument(
-            "--watch", type=folder_path, metavar="DIR",
+            "--watch",
+            type=folder_path,
+            metavar="DIR",
             help=(
                 "watch a directory and reload the workers when any source files "
                 "change (this feature must only be used during development). "
                 "This option is currently only supported on unix systems."
-            )
+            ),
         )
         parser.add_argument(
             "--watch-use-polling",
             action="store_true",
-            help=(
-                "poll the filesystem for changes rather than using a "
-                "system-dependent filesystem event emitter"
-            )
+            help=("poll the filesystem for changes rather than using a " "system-dependent filesystem event emitter"),
         )
 
     parser.add_argument("--version", action="version", version=__version__)
@@ -241,7 +251,7 @@ def try_unblock_signals():
 def setup_pidfile(filename):
     try:
         pid = os.getpid()
-        with open(filename, "r") as pid_file:
+        with open(filename) as pid_file:
             old_pid = int(pid_file.read().strip())
             # This can happen when reloading the process via SIGHUP.
             if old_pid == pid:
@@ -272,7 +282,7 @@ def setup_pidfile(filename):
         os.chmod(filename, 0o644)
         return pid
     except (FileNotFoundError, PermissionError) as e:
-        raise RuntimeError("Failed to write PID file %r. %s." % (e.filename, e.strerror)) from None
+        raise RuntimeError(f"Failed to write PID file {e.filename!r}. {e.strerror}.") from None
 
 
 def remove_pidfile(filename, logger):
@@ -303,7 +313,7 @@ def make_logging_setup(prefix):
             logging.basicConfig(level=level, format=LOGFORMAT, stream=logging_pipe)
 
         logging.getLogger("pika").setLevel(logging.CRITICAL)
-        return get_logger("dramatiq", "%s(%s)" % (prefix, child_id))
+        return get_logger("dramatiq", f"{prefix}({child_id})")
 
     return setup_logging
 
@@ -391,7 +401,7 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
                 logger.debug("Sending forks to main process...")
                 for middleware in broker.middleware:
                     for fork in middleware.forks:
-                        fork_path = "%s:%s" % (fork.__module__, fork.__name__)
+                        fork_path = f"{fork.__module__}:{fork.__name__}"
                         canteen_add(canteen, fork_path)
 
         logger.debug("Starting worker threads...")
@@ -589,7 +599,9 @@ def main(args=None):  # noqa
                 continue
 
             if running:  # pragma: no cover
-                logger.critical("Worker with PID %r exited unexpectedly (code %r). Shutting down...", proc.pid, proc.exitcode)
+                logger.critical(
+                    "Worker with PID %r exited unexpectedly (code %r). Shutting down...", proc.pid, proc.exitcode
+                )
                 stop_subprocesses(signal.SIGTERM)
                 retcode = proc.exitcode
                 break

@@ -19,8 +19,7 @@ from . import actor
 
 
 class generic_actor(type):
-    """Meta for class-based actors.
-    """
+    """Meta for class-based actors."""
 
     def __new__(metacls, name, bases, attrs):
         clazz = super().__new__(metacls, name, bases, attrs)
@@ -95,8 +94,7 @@ class GenericActor(metaclass=generic_actor):
 
     @property
     def __name__(self):
-        """The default name of this actor.
-        """
+        """The default name of this actor."""
         return type(self).__name__
 
     def __call__(self, *args, **kwargs):

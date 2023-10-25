@@ -1,0 +1,39 @@
+[tool.ruff]
+line-length = 120
+target-version = "py37"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+
+]
+ignore = [
+    "E402",
+    "E501",
+    "F403",
+    "F811",
+    "B010",
+    "B020",
+    "B905",
+    "B018",
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.isort]
+known-third-party = ["dramatiq"]
+order-by-type = true
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

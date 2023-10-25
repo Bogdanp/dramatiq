@@ -31,11 +31,7 @@ class Buffer(Array):
 # Canteen is the collective noun for a set of cutlery.
 # It's OK to be cute every once in a while.
 class Canteen(Structure):
-    _fields_ = [
-        ("initialized", c_bool),
-        ("last_position", c_int),
-        ("paths", Buffer)
-    ]
+    _fields_ = [("initialized", c_bool), ("last_position", c_int), ("paths", Buffer)]
 
 
 def canteen_add(canteen, path):
@@ -52,7 +48,7 @@ def canteen_get(canteen, timeout=1):
     if not wait(canteen, timeout):
         return []
 
-    data = bytes(canteen.paths[:canteen.last_position])
+    data = bytes(canteen.paths[: canteen.last_position])
     return data.decode("utf-8").split(";")[:-1]
 
 

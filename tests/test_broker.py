@@ -1,7 +1,6 @@
-import pytest
-
 import dramatiq
 import dramatiq.broker
+import pytest
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.middleware import Middleware
 

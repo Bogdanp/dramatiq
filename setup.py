@@ -28,7 +28,7 @@ with open(rel("README.md")) as f:
     long_description = f.read()
 
 
-with open(rel("dramatiq", "__init__.py"), "r") as f:
+with open(rel("dramatiq", "__init__.py")) as f:
     version_marker = "__version__ = "
     for line in f:
         if line.startswith(version_marker):
@@ -47,19 +47,15 @@ extra_dependencies = {
     "gevent": [
         "gevent>=1.1",
     ],
-
     "memcached": [
         "pylibmc>=1.5,<2.0",
     ],
-
     "rabbitmq": [
         "pika>=1.0,<2.0",
     ],
-
     "redis": [
         "redis>=2.0,<6.0",
     ],
-
     "watch": [
         "watchdog",
         "watchdog_gevent",
@@ -72,19 +68,13 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "alabaster",
     "sphinx",
     "sphinxcontrib-napoleon",
-
     # Linting
-    "flake8",
-    "flake8-bugbear",
-    "flake8-quotes",
-    "isort",
-
+    "ruff",
     # Misc
     "bumpversion",
     "hiredis",
     "twine",
     "wheel",
-
     # Testing
     "pytest",
     "pytest-benchmark[histogram]",

@@ -31,7 +31,7 @@ def test_cli_scrubs_stale_pid_files(start_cli):
         time.sleep(1)
 
         # Then the process should write its pid to the file
-        with open(filename, "r") as f:
+        with open(filename) as f:
             pid = int(f.read())
 
         assert pid == proc.pid
