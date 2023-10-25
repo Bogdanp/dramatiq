@@ -167,7 +167,7 @@ def test_rabbitmq_actors_can_have_their_messages_delayed(rabbitmq_broker, rabbit
     assert run_time - start_time >= 1000
 
 
-def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_broker, rabbitmq_worker):
+def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_broker):
     # Given that I have a database
     results = []
 
@@ -176,22 +176,26 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_b
     def append(x):
         results.append(x)
 
-    # When I pause the worker
-    rabbitmq_worker.pause()
+    # And a worker
+    broker = rabbitmq_broker
+    worker = Worker(broker, worker_threads=1)
 
-    # And I send it a delayed message
-    append.send_with_options(args=(1,), delay=1500)
+    try:
+        # And I send it a delayed message
+        append.send_with_options(args=(1,), delay=1500)
 
-    # And then another delayed message with a smaller delay
-    append.send_with_options(args=(2,), delay=1000)
+        # And then another delayed message with a smaller delay
+        append.send_with_options(args=(2,), delay=1000)
 
-    # Then resume the worker and join on the queue
-    rabbitmq_worker.resume()
-    rabbitmq_broker.join(append.queue_name, min_successes=20)
-    rabbitmq_worker.join()
+        # Then resume the worker and join on the queue
+        worker.start()
+        broker.join(append.queue_name, min_successes=20)
+        worker.join()
 
-    # I expect the latter message to have been run first
-    assert results == [2, 1]
+        # I expect the latter message to have been run first
+        assert results == [2, 1]
+    finally:
+        worker.stop()
 
 
 def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_worker):

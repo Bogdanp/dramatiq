@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 import time
+from datetime import timedelta
 from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar, Union, overload
 
@@ -141,7 +142,7 @@ class Actor(Generic[P, R]):
         self, *,
         args: tuple = (),
         kwargs: Optional[Dict[str, Any]] = None,
-        delay: Optional[int] = None,
+        delay: Optional[timedelta | int] = None,
         **options,
     ) -> Message[R]:
         """Asynchronously send a message to this actor, along with an
@@ -152,13 +153,16 @@ class Actor(Generic[P, R]):
           args(tuple): Positional arguments that are passed to the actor.
           kwargs(dict): Keyword arguments that are passed to the actor.
           delay(int): The minimum amount of time, in milliseconds, the
-            message should be delayed by.
+            message should be delayed by. Also accepts a timedelta.
           **options: Arbitrary options that are passed to the
             broker and any registered middleware.
 
         Returns:
           Message: The enqueued message.
         """
+        if isinstance(delay, timedelta):
+            delay = delay.total_seconds() * 1000
+
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 

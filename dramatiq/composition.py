@@ -141,7 +141,13 @@ class pipeline:
         Returns:
           object: The result.
         """
-        return self.messages[-1].get_result(block=block, timeout=timeout)
+        last_message = self.messages[-1]
+
+        if isinstance(last_message, (group, pipeline)):
+            return last_message.get_result(block=block, timeout=timeout)
+
+        backend = self.broker.get_results_backend()
+        return last_message.get_result(backend=backend, block=block, timeout=timeout)
 
     def get_results(self, *, block=False, timeout=None):
         """Get the results of each job in the pipeline.
@@ -166,7 +172,11 @@ class pipeline:
             if deadline:
                 timeout = max(0, int((deadline - time.monotonic()) * 1000))
 
-            yield message.get_result(block=block, timeout=timeout)
+            if isinstance(message, (group, pipeline)):
+                yield message.get_result(block=block, timeout=timeout)
+
+            backend = self.broker.get_results_backend()
+            yield message.get_result(backend=backend, block=block, timeout=timeout)
 
 
 class group:
@@ -251,6 +261,9 @@ class group:
         Parameters:
           delay(int): The minimum amount of time, in milliseconds,
             each message in the group should be delayed by.
+
+        Returns:
+          group: This same group.
         """
         if self.completion_callbacks:
             from .middleware.group_callbacks import GROUP_CALLBACK_BARRIER_TTL, GroupCallbacks
@@ -330,8 +343,11 @@ class group:
 
             if isinstance(child, group):
                 yield list(child.get_results(block=block, timeout=timeout))
-            else:
+            elif isinstance(child, pipeline):
                 yield child.get_result(block=block, timeout=timeout)
+            else:
+                backend = self.broker.get_results_backend()
+                yield child.get_result(backend=backend, block=block, timeout=timeout)
 
     def wait(self, *, timeout=None):
         """Block until all the jobs in the group have finished or
@@ -340,6 +356,9 @@ class group:
         Parameters:
           timeout(int): The maximum amount of time, in ms, to wait.
             Defaults to 10 seconds.
+
+        Raises:
+          ResultTimeout: When waiting times out.
         """
         for _ in self.get_results(block=True, timeout=timeout):  # pragma: no cover
             pass

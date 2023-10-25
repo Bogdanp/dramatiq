@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .age_limit import AgeLimit
+from .asyncio import AsyncIO
 from .callbacks import Callbacks
 from .current_message import CurrentMessage
 from .group_callbacks import GroupCallbacks
@@ -35,9 +36,9 @@ __all__ = [
     "Interrupt", "raise_thread_exception",
 
     # Middlewares
-    "AgeLimit", "Callbacks", "CurrentMessage", "GroupCallbacks", "Pipelines", "Retries",
-    "Shutdown", "ShutdownNotifications", "TimeLimit", "TimeLimitExceeded",
-    "Prometheus",
+    "AgeLimit", "AsyncIO", "Callbacks", "CurrentMessage", "GroupCallbacks",
+    "Pipelines", "Retries", "Shutdown", "ShutdownNotifications", "TimeLimit",
+    "TimeLimitExceeded", "Prometheus",
 ]
 
 

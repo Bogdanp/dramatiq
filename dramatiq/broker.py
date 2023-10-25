@@ -20,6 +20,7 @@ from typing import Optional, cast
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
+from .results import Results
 
 #: The global broker instance.
 global_broker: Optional["Broker"] = None
@@ -256,6 +257,21 @@ class Broker:
         """
         return self.delay_queues.copy()
 
+    def get_results_backend(self):
+        """Get the backend of the Results middleware.
+
+        Raises:
+          RuntimeError: If the broker doesn't have a results backend.
+
+        Returns:
+          ResultBackend: The backend.
+        """
+        for middleware in self.middleware:
+            if isinstance(middleware, Results):
+                return middleware.backend
+        else:
+            raise RuntimeError("The broker doesn't have a results backend.")
+
     def flush(self, queue_name):  # pragma: no cover
         """Drop all the messages from a queue.
 
@@ -270,7 +286,16 @@ class Broker:
         raise NotImplementedError()
 
     def join(self, queue_name, *, timeout=None):  # pragma: no cover
-        """
+        """Wait for all the messages on the given queue to be
+        processed.  This method is only meant to be used in tests to
+        wait for all the messages in a queue to be processed.
+
+        Subclasses that implement this function may add parameters.
+
+        Parameters:
+          queue_name(str): The queue to wait on.
+          timeout(Optional[int]): The max amount of time, in
+            milliseconds, to wait on this queue.
         """
         raise NotImplementedError()
 
