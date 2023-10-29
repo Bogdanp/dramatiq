@@ -176,6 +176,17 @@ class StubBroker(Broker):
 
                 return
 
+    def get_queue_size(self, queue_name):
+        """Returns the number of messages in a queue.
+
+        Parameters:
+          queue_name(str): The queue to inspect.
+
+        Returns:
+          int: The number of messages in the queue.
+        """
+        return self.queues[queue_name].qsize() + self.queues[dq_name(queue_name)].qsize()
+
 
 class _StubConsumer(Consumer):
     def __init__(self, queue, dead_letters, timeout):

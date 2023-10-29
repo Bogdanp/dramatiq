@@ -299,6 +299,16 @@ class Broker:
         """
         raise NotImplementedError()
 
+    def get_queue_size(self, queue_name: str):
+        """
+        Get the number of messages in a queue.  This method is only meant to be used in unit and integration tests.
+        Parameters:
+            queue_name(str): The queue whose message counts to get.
+
+        Returns: The number of messages in the queue, including the delay queue
+        """
+        raise NotImplementedError()
+
 
 class Consumer:
     """Consumers iterate over messages on a queue.

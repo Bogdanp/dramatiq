@@ -431,6 +431,16 @@ class RabbitmqBroker(Broker):
 
             self.connection.sleep(idle_time / 1000)
 
+    def get_queue_size(self, queue_name: str):
+        """
+        Get the number of messages in a queue.  This method is only meant to be used in unit and integration tests.
+        Parameters:
+            queue_name(str): The queue whose message counts to get.
+
+        Returns: The number of messages in the queue, including the delay queue
+        """
+        return sum(self.get_queue_message_counts(queue_name)[:-1])
+
 
 def URLRabbitmqBroker(url, *, middleware=None):
     """Alias for the RabbitMQ broker that takes a connection URL as a

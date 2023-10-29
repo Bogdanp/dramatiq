@@ -76,6 +76,49 @@ failover if the currently connected node fails.
 .. _high availability cluster: https://www.rabbitmq.com/ha.html
 .. _connection parameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
 
+Broker Priority Queues
+^^^^^^^^^^^^^^^^^^^^^^^
+Dramatiq supports priority queues on RabbitMQ and Redis.
+To configure the broker to work with priority queues, you should set the ``max_priority`` parameter of the broker.
+To enqueue a message with a priority, you should set the ``broker_priority`` parameter of the |Message|'s options.
+
+
+.. code-block:: python
+
+   import dramatiq
+   from dramatiq.brokers.rabbitmq import RabbitmqBroker
+
+   # Using max_priority parameter:
+
+   rabbitmq_broker = RabbitmqBroker(url="amqp://guest:guest@127.0.0.1:5672", max_priority=10)
+
+    # Define an actor with priority:
+    @dramatiq.actor(broker=rabbitmq_broker)
+    def operation(priority):
+        print(priority)
+
+   # Enqueue a message with priority (lower number means higher priority):
+    operation.send_with_options(args=(3,), options={"broker_priority": 3})
+    operation.send_with_options(args=(2,), options={"broker_priority": 2})
+    operation.send_with_options(args=(1,), options={"broker_priority": 1})
+
+
+RabbitMQ
+~~~~~~~~
+Dramatiq supports RabbitMQ's `priority queues`_ feature.
+To use it, you should set the ``max_priority`` parameter of the |RabbitmqBroker| to a value
+between 0 and 255 (10 is the recommended values).
+
+.. `priority queues`_: https://www.rabbitmq.com/priority.html
+
+
+Redis
+~~~~~
+Dramatiq take similar approach as celery to implement priority queues on Redis.
+To use it, you should set the ``max_priority`` parameter of the |RedisBroker| to a value up to 10.
+The broker will created multiple queues for each priority level defined by ``priority_steps``, (default is 4 steps).
+The consumer will consume messages from the highest priority queue first.
+This method isn't as reliable as RabbitMQ's, for example, large number of messages ending up in the same queue.
 
 Other brokers
 ^^^^^^^^^^^^^

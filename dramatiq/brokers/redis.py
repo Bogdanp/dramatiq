@@ -19,6 +19,8 @@ import glob
 import random
 import time
 import warnings
+from bisect import bisect
+from collections import defaultdict
 from os import path
 from threading import Lock
 from uuid import uuid4
@@ -49,6 +51,33 @@ DEFAULT_HEARTBEAT_TIMEOUT = 60000
 #: A hint for the max lua stack size. The broker discovers this value
 #: the first time it's run, but it may be overwritten using this var.
 DEFAULT_LUA_MAX_STACK = getenv_int("dramatiq_lua_max_stack")
+
+#: The default priority steps. Each step will create a new queue
+DEFAULT_PRIORITY_STEPS = [0, 3, 6, 9]
+
+
+def _get_all_priority_queue_names(queue_name, priority_steps):
+    """
+    Yields the queue names for a given queue name and a list of priority steps.
+    Parameters:
+        queue_name(str): The queue name
+        priority_steps(list[int]): The configured priority steps
+    Returns: The queue names for the given queue name and priority steps
+    """
+    if dq_name(queue_name) == queue_name:
+        return
+    for step in priority_steps:
+        yield pri_name(queue_name, step)
+
+
+def pri_name(queue_name, priority):
+    """Returns the queue name for a given queue name and a priority.  If the given
+    queue name already belongs to a priority queue, then it is returned
+    unchanged.
+    """
+    if queue_name.endswith(".PR{}".format(priority)):
+        return queue_name
+    return "{}.PR{}".format(queue_name, priority)
 
 
 class RedisBroker(Broker):
@@ -81,6 +110,11 @@ class RedisBroker(Broker):
         dead-lettered messages are kept in Redis for.
       requeue_deadline(int): Deprecated.  Does nothing.
       requeue_interval(int): Deprecated.  Does nothing.
+      max_priority(int): Configure queues with max priority to support message’s broker_priority option.
+       The queuing is done by having multiple queues for each named queue.
+       The queues are then consumed by in order of priority. The max value of max_priority is 10.
+      priority_steps(list[int]): The priority range that is collapsed into the queues (4 by default).
+       The number of steps can be configured by providing a list of numbers in sorted order
       client(redis.StrictRedis): A redis client to use.
       **parameters: Connection parameters are passed directly
         to :class:`redis.Redis`.
@@ -97,6 +131,8 @@ class RedisBroker(Broker):
             requeue_deadline=None,
             requeue_interval=None,
             client=None,
+            max_priority=None,
+            priority_steps=None,
             **parameters
     ):
         super().__init__(middleware=middleware)
@@ -114,6 +150,14 @@ class RedisBroker(Broker):
         self.heartbeat_timeout = heartbeat_timeout
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
+        if max_priority:
+            if max_priority > 10:
+                raise ValueError("max priority is supported up to 10")
+            if not priority_steps:
+                self.priority_steps = DEFAULT_PRIORITY_STEPS[:bisect(DEFAULT_PRIORITY_STEPS, max_priority) - 1]
+            self.priority_steps = priority_steps or []
+        else:
+            self.priority_steps = []
         # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
         self.client = client or redis.StrictRedis(**parameters)
         self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
@@ -163,6 +207,9 @@ class RedisBroker(Broker):
           ValueError: If ``delay`` is longer than 7 days.
         """
         queue_name = message.queue_name
+        if "broker_priority" in message.options and delay is None:
+            priority = message.options["broker_priority"]
+            queue_name = self.priority_queue_name(queue_name, priority)
 
         # Each enqueued message must have a unique id in Redis so
         # using the Message's id isn't safe because messages may be
@@ -202,7 +249,7 @@ class RedisBroker(Broker):
         Parameters:
           queue_name(str): The queue to flush.
         """
-        for name in (queue_name, dq_name(queue_name)):
+        for name in (queue_name, dq_name(queue_name), *_get_all_priority_queue_names(queue_name, self.priority_steps)):
             self.do_purge(name)
 
     def flush_all(self):
@@ -231,12 +278,34 @@ class RedisBroker(Broker):
             if deadline and time.monotonic() >= deadline:
                 raise QueueJoinTimeout(queue_name)
 
-            size = self.do_qsize(queue_name)
+            size = self.get_queue_size(queue_name)
 
             if size == 0:
                 return
 
             time.sleep(interval / 1000)
+
+    def get_queue_size(self, queue_name):
+        """
+        Get the number of messages in a queue.  This method is only meant to be used in unit and integration tests.
+        Parameters:
+            queue_name(str): The queue whose message counts to get.
+
+        Returns: The number of messages in the queue, including the delay queue
+        """
+        size = self.do_qsize(queue_name)
+        if self.priority_steps:
+            for queue_name in _get_all_priority_queue_names(queue_name, self.priority_steps):
+                qsize = self.do_qsize(queue_name)
+                size += qsize
+        return size
+
+    def priority_queue_name(self, queue, priority):
+        if priority is None or dq_name(queue) == queue:
+            return queue
+
+        queue_number = self.priority_steps[bisect(self.priority_steps, priority) - 1]
+        return pri_name(queue, queue_number)
 
     def _should_do_maintenance(self, command):
         return int(
@@ -310,7 +379,8 @@ class _RedisConsumer(Consumer):
             # The current queue might be different from message.queue_name
             # if the message has been delayed so we want to ack on the
             # current queue.
-            self.broker.do_ack(self.queue_name, message.options["redis_message_id"])
+            queue_name = self.broker.priority_queue_name(self.queue_name, message.options.get("broker_priority"))
+            self.broker.do_ack(queue_name, message.options["redis_message_id"])
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
         finally:
@@ -319,19 +389,26 @@ class _RedisConsumer(Consumer):
     def nack(self, message):
         try:
             # Same deal as above.
-            self.broker.do_nack(self.queue_name, message.options["redis_message_id"])
+            queue_name = self.broker.priority_queue_name(self.queue_name, message.options.get("broker_priority"))
+            self.broker.do_nack(queue_name, message.options["redis_message_id"])
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
         finally:
             self.queued_message_ids.discard(message.message_id)
 
     def requeue(self, messages):
-        message_ids = [message.options["redis_message_id"] for message in messages]
-        if not message_ids:
-            return
+        messages_id_by_queue = defaultdict(list)
+        for message in messages:
+            priority = message.options.get("broker_priority")
+            if priority is None:
+                queue_name = self.queue_name
+            else:
+                queue_name = self.broker.priority_queue_name(self.queue_name, priority)
+            messages_id_by_queue[queue_name].append(message.options["redis_message_id"])
 
-        self.logger.debug("Re-enqueueing %r on queue %r.", message_ids, self.queue_name)
-        self.broker.do_requeue(self.queue_name, *message_ids)
+        for queue_name, message_ids in messages_id_by_queue.items():
+            self.logger.debug("Re-enqueueing %r on queue %r.", message_ids, self.queue_name)
+            self.broker.do_requeue(queue_name, *message_ids)
 
     def __next__(self):
         try:
@@ -360,11 +437,16 @@ class _RedisConsumer(Consumer):
                     # prefetch up to that number of messages.
                     messages = []
                     if self.outstanding_message_count < self.prefetch:
-                        self.message_cache = messages = self.broker.do_fetch(
-                            self.queue_name,
-                            self.prefetch - self.outstanding_message_count,
-                        )
+                        for queue_name in self.queue_names():
+                            # Ideally, we would want to sort the messages by their priority,
+                            # but that will require decoding them now
+                            self.message_cache = messages = self.broker.do_fetch(
+                                queue_name,
+                                self.prefetch - self.outstanding_message_count,
+                            )
 
+                            if messages:
+                                break
                     # Because we didn't get any messages, we should
                     # progressively long poll up to the idle timeout.
                     if not messages:
@@ -373,6 +455,10 @@ class _RedisConsumer(Consumer):
                         return None
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
+
+    def queue_names(self):
+        yield from _get_all_priority_queue_names(self.queue_name, self.broker.priority_steps)
+        yield self.queue_name
 
 
 _scripts = {}

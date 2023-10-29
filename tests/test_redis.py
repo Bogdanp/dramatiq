@@ -6,10 +6,10 @@ import redis
 
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout
-from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
+from dramatiq import Worker
+from dramatiq.brokers.redis import DEFAULT_HEARTBEAT_TIMEOUT, DEFAULT_MAINTENANCE_CHANCE, MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
 from dramatiq.errors import ConnectionError
-
 from .common import worker
 
 LUA_MAX_UNPACK_SIZE = 7999
@@ -522,3 +522,127 @@ def test_redis_join_race_condition(redis_broker):
 
     assert called
     assert size == [4, 4, 2, 2]
+
+
+def test_redis_consumer_ack_in_the_correct_order_when_priority_is_used(redis_broker):
+    # Given that I have prioritized redis broker
+    number_of_messages_to_enqueue = 10
+    redis_broker.priority_steps = list(range(number_of_messages_to_enqueue))
+    priorities = []
+
+    # And an actor that consumes messages and store the priority
+    @dramatiq.actor()
+    def run(priority):
+        priorities.append(priority)
+
+    # If I send that actor many async messages with increasing priority
+    for i in sorted(range(number_of_messages_to_enqueue), reverse=True):
+        assert run.send_with_options(args=(i,), broker_priority=i)
+
+    # And I give the worker time to process the messages
+    redis_worker = Worker(broker=redis_broker, worker_timeout=50, worker_threads=1)
+    redis_worker.queue_prefetch = 1
+    size = redis_broker.get_queue_size(run.queue_name)
+    assert size == number_of_messages_to_enqueue
+    redis_worker.start()
+    redis_broker.join(run.queue_name)
+    redis_worker.join()
+    redis_worker.stop(10000)
+
+    # I expect the messages to be processed in decreasing order
+    assert priorities == redis_broker.priority_steps
+
+
+def test_redis_consumer_nack_prioritized_to_the_same_dead_letter_queue(redis_broker):
+    # Given that I have a broker with no retries
+    number_of_messages_to_enqueue = 3
+    redis_broker.priority_steps = list(range(number_of_messages_to_enqueue))
+
+    # And an actor that always fails
+    @dramatiq.actor(max_retries=0)
+    def run():
+        raise RuntimeError
+
+    # If I send that actor many async messages with increasing priority
+    for i in sorted(range(number_of_messages_to_enqueue), reverse=True):
+        assert run.send_with_options(broker_priority=i)
+
+    # And I give the workers time to process the messages
+    with worker(redis_broker, worker_timeout=50, worker_threads=1) as redis_worker:
+        redis_broker.join(run.queue_name)
+        redis_worker.join()
+
+    # I expect it all messages to end up in the same dead letter queue
+    dead_queue_name = f"dramatiq:{xq_name(run.queue_name)}"
+    dead_ids = redis_broker.client.zrangebyscore(dead_queue_name, 0, "+inf")
+    assert dead_ids
+
+
+def test_redis_consumer_recover_unacked_prioritized_messages_to_the_same_queue(redis_broker):
+    # Given that I have a redis broker
+    number_of_messages_to_enqueue = 3
+    priorities = []
+    redis_broker.priority_steps = list(range(number_of_messages_to_enqueue))
+
+    # And an actor that consumes messages and store the priority
+    @dramatiq.actor()
+    def run(value: int):
+        priorities.append(value)
+
+    # If I send that actor many async messages with increasing priority
+    for i in sorted(range(number_of_messages_to_enqueue), reverse=True):
+        assert run.send_with_options(args=(i,), broker_priority=i)
+
+    # And consume one message with acking or nacking
+    redis_broker.do_fetch(f"{run.queue_name}.PR0", 1)
+
+    # I expect it the message to return to the original queue after maintenance
+    redis_broker.maintenance_chance = MAINTENANCE_SCALE
+    redis_broker.heartbeat_timeout = 0
+    redis_broker.broker_id = "some-other-id"
+    size = redis_broker.get_queue_size(run.queue_name)
+
+    assert size == number_of_messages_to_enqueue
+
+    redis_broker.heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT
+    redis_broker.maintenance_chance = DEFAULT_MAINTENANCE_CHANCE
+
+    # And then I expect all messages to dequeue in the correct order
+    with worker(redis_broker, worker_timeout=50, worker_threads=1) as redis_worker:
+        redis_broker.join(run.queue_name)
+        redis_worker.join()
+    assert priorities == redis_broker.priority_steps
+
+
+def test_redis_consumer_requeue_prioritized_messages_to_the_same_queue(redis_broker):
+    # Given that I have a redis broker
+    number_of_messages_to_enqueue = 3
+    redis_broker.priority_steps = list(range(number_of_messages_to_enqueue))
+    priorities = []
+
+    # And an actor that consumes messages and store the priority
+    @dramatiq.actor()
+    def run(priority):
+        time.sleep(1)
+        priorities.append(priority)
+
+    # If I send that actor many async messages with increasing priority
+    for i in sorted(range(number_of_messages_to_enqueue), reverse=True):
+        assert run.send_with_options(args=(i,), broker_priority=i)
+
+    # And I give the workers very little time to process the messages
+    redis_worker = Worker(broker=redis_broker, worker_timeout=50, worker_threads=1)
+    redis_worker.queue_prefetch = number_of_messages_to_enqueue
+    redis_worker.start()
+    redis_worker.stop(10000)
+
+    # I expect to some messages to not be processed and requeued
+    assert priorities == [0]
+
+    # And then I start new worker and give time to process the messages
+    with worker(redis_broker, worker_timeout=50, worker_threads=1) as redis_worker:
+        redis_broker.join(run.queue_name)
+        redis_worker.join()
+
+    # I expect the messages to be processed in decreasing order
+    assert priorities == redis_broker.priority_steps

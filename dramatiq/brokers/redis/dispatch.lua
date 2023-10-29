@@ -68,6 +68,9 @@ local queue_acks = acks .. "." .. queue_name
 local queue_full_name = namespace .. ":" .. queue_name
 local queue_messages = queue_full_name .. ".msgs"
 local xqueue_full_name = namespace .. ":" .. queue_canonical_name .. ".XQ"
+if string.sub(queue_canonical_name, -4, -2) == ".PR" then
+    xqueue_full_name = namespace .. ":" .. string.sub(queue_canonical_name, 1, -5) .. ".XQ"
+end
 local xqueue_messages = xqueue_full_name .. ".msgs"
 
 -- Command-specific arguments.
