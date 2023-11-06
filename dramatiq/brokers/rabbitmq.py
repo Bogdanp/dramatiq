@@ -352,6 +352,8 @@ class RabbitmqBroker(Broker):
                     "Retrying enqueue due to closed connection. [%d/%d]",
                     attempts, MAX_ENQUEUE_ATTEMPTS,
                 )
+            finally:
+                del self.connection
 
     def get_declared_queues(self):
         """Get all declared queues.
