@@ -143,10 +143,8 @@ class ResultBackend:
         Returns:
           str
         """
-        message_key = "%(namespace)s:%(queue_name)s:%(actor_name)s:%(message_id)s" % {
+        message_key = "%(namespace)s:%(message_id)s" % {
             "namespace": self.namespace,
-            "queue_name": q_name(message.queue_name),
-            "actor_name": message.actor_name,
             "message_id": message.message_id,
         }
         return hashlib.md5(message_key.encode("utf-8")).hexdigest()
