@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from threading import local
+import contextvars
 
 from .middleware import Middleware
 
@@ -36,7 +36,9 @@ class CurrentMessage(Middleware):
 
     """
 
-    STATE = local()
+    _MESSAGE: contextvars.ContextVar[
+        dict
+    ] = contextvars.ContextVar("_MESSAGE", default=None)
 
     @classmethod
     def get_current_message(cls):
@@ -44,10 +46,10 @@ class CurrentMessage(Middleware):
         are thread local so this returns ``None`` when called outside
         of actor code.
         """
-        return getattr(cls.STATE, "message", None)
+        return cls._MESSAGE.get()
 
     def before_process_message(self, broker, message):
-        setattr(self.STATE, "message", message)
+        self._MESSAGE.set(message)
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        delattr(self.STATE, "message")
+        self._MESSAGE.set(None)
