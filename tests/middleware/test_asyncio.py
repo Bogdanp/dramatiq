@@ -1,7 +1,8 @@
 import asyncio
 from threading import get_ident
 from unittest import mock
-from dramatiq import threading
+from dramatiq import threading, actor
+from dramatiq.middleware import CurrentMessage
 import pytest
 
 from dramatiq.asyncio import (
@@ -12,6 +13,8 @@ from dramatiq.asyncio import (
 )
 from dramatiq.logging import get_logger
 from dramatiq.middleware.asyncio import AsyncIO
+
+from ..common import worker
 
 
 @pytest.fixture
@@ -139,3 +142,33 @@ def test_async_to_sync_with_actual_thread(started_thread):
 def test_async_to_sync_no_thread():
     with pytest.raises(RuntimeError):
         async_to_sync(async_fn)(2)
+
+
+def test_anyio_currrent_message_middleware_exposes_the_current_message(stub_broker):
+    # Given that I have a CurrentMessage middleware
+    stub_broker.add_middleware(AsyncIO())
+    stub_broker.add_middleware(CurrentMessage())
+
+    with worker(stub_broker, worker_timeout=100, worker_threads=1) as stub_worker:
+        # And an actor that accesses the current message
+        sent_messages = []
+        received_messages = []
+    
+        @actor
+        async def accessor(x):
+            message_proxy = CurrentMessage.get_current_message()
+            received_messages.append(message_proxy._message)
+    
+        # When I send it a couple messages
+        sent_messages.append(accessor.send(1))
+        sent_messages.append(accessor.send(2))
+    
+        # And wait for it to finish its work
+        stub_broker.join(accessor.queue_name)
+    
+        # Then the sent messages and the received messages should be the same
+        assert sorted(sent_messages) == sorted(received_messages)
+    
+        # When I try to access the current message from a non-worker thread
+        # Then I should get back None
+        assert CurrentMessage.get_current_message() is None
