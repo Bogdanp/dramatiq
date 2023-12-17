@@ -30,10 +30,10 @@ jobs:
         ports:
           - 11211:11211
       rabbitmq:
-        image: bitnami/rabbitmq:latest
+        image: rabbitmq:3
         env:
-          RABBITMQ_USERNAME: "dramatiq"
-          RABBITMQ_PASSWORD: "dramatiq"
+          RABBITMQ_DEFAULT_USER: "dramatiq"
+          RABBITMQ_DEFAULT_PASS: "dramatiq"
         ports:
           - 5672:5672
         options: '--hostname "rmq" --health-cmd "rabbitmqctl status" --health-interval 10s --health-timeout 10s --health-retries 3 --health-start-period 60s'
