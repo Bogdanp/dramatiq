@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* The ``CurrentMessage`` middleware now works under AsyncIO. (`#586`_,
+  `#593`_, `@pahrohfit`_)
+
+.. _#586: https://github.com/Bogdanp/dramatiq/issues/586
+.. _#593: https://github.com/Bogdanp/dramatiq/pull/593
+.. _@pahrohfit: https://github.com/pahrohfit
+
 `1.15.0`_ -- 2023-10-23
 -----------------------
 
