@@ -348,11 +348,11 @@ def watch_logs(log_filename, pipes, stop):
                                 event.close()
                                 raise
 
-                            data = data.decode("utf-8", errors="replace").rstrip("\n")
-                            if not data:
+                            data = data.decode("utf-8", errors="replace")
+                            if not data.rstrip("\n"):
                                 continue
 
-                            log_file.write(data + "\n")
+                            log_file.write(data)
                             log_file.flush()
                     except BrokenPipeError:
                         event.close()
