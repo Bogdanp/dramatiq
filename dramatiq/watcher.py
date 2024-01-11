@@ -13,7 +13,7 @@ except ImportError:
     EVENTED_OBSERVER = watchdog.observers.Observer
 
 
-def setup_file_watcher(path, use_polling=False):
+def setup_file_watcher(path, use_polling=False, include_patterns=None, exclude_patterns=None):
     """Sets up a background thread that watches for source changes and
     automatically sends SIGHUP to the current process whenever a file
     changes.
@@ -23,7 +23,12 @@ def setup_file_watcher(path, use_polling=False):
     else:
         observer_class = EVENTED_OBSERVER
 
-    file_event_handler = _SourceChangesHandler(patterns=["*.py"])
+    if include_patterns is None:
+        include_patterns = ["*.py"]
+
+    file_event_handler = _SourceChangesHandler(
+        patterns=include_patterns, ignore_patterns=exclude_patterns
+    )
     file_watcher = observer_class()
     file_watcher.schedule(file_event_handler, path, recursive=True)
     file_watcher.start()
