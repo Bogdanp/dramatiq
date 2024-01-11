@@ -1,4 +1,4 @@
-[#](#) Contributors
+# Contributors
 
 This file lists the contributors to the Dramatiq project.
 
