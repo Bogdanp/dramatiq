@@ -86,8 +86,11 @@ class Retry(DramatiqError):
 
     If the ``delay`` argument is provided, then the message will be
     retried after at least that amount of time (in milliseconds).
+    If the ``max_retries`` argument is provided, then the message will
+    be retried at most that many times.
     """
 
-    def __init__(self, message="", delay=None):
+    def __init__(self, message="", delay=None, max_retries=None):
         super().__init__(message)
         self.delay = delay
+        self.max_retries = max_retries

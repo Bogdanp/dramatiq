@@ -118,6 +118,26 @@ def test_retry_exceptions_can_specify_a_delay(stub_broker, stub_worker):
     assert 0.1 <= timestamps[-1] - timestamps[-2] < 0.15
 
 
+def test_retry_exceptions_can_specify_a_max_retries(stub_broker, stub_worker):
+    # Given that I have a database
+    attempts = []
+
+    @dramatiq.actor(max_retries=99)
+    def do_work():
+        attempts.append(1)
+        raise Retry(max_retries=4)
+
+    # When I send it a message with custom max retries
+    do_work.send_with_options(max_retries=50)
+
+    # And join on the queue
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then I expect it to be retried as specified in the Retry options
+    assert sum(attempts) == 5
+
+
 def test_actors_can_be_assigned_zero_min_backoff(stub_broker, stub_worker):
     # Given that I have a database of timestamps
     timestamps = [time.monotonic()]
