@@ -13,10 +13,14 @@ Fixed
 
 * The ``CurrentMessage`` middleware now works under AsyncIO. (`#586`_,
   `#593`_, `@pahrohfit`_)
+* Improved logging behavior under different buffer modes. (`#596`_,
+  `@5tefan`_)
 
 .. _#586: https://github.com/Bogdanp/dramatiq/issues/586
 .. _#593: https://github.com/Bogdanp/dramatiq/pull/593
+.. _#596: https://github.com/Bogdanp/dramatiq/pull/596
 .. _@pahrohfit: https://github.com/pahrohfit
+.. _@5tefan: https://github.com/5tefan
 
 Added
 ^^^^^
