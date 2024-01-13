@@ -213,6 +213,24 @@ def make_argument_parser():
                 "system-dependent filesystem event emitter"
             )
         )
+        parser.add_argument(
+            "-i",
+            "--watch-include",
+            action="append",
+            dest="include_patterns",
+            default=["**.py"],
+            help=(
+                "Patterns to include when watching for changes. "
+                "Always includes all python files (*.py)."
+            ),
+        )
+        parser.add_argument(
+            "-x",
+            "--watch-exclude",
+            action="append",
+            dest="exclude_patterns",
+            help="Patterns to ignore when watching for changes",
+        )
 
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0, help="turn on verbose log output")
@@ -536,7 +554,9 @@ def main(args=None):  # noqa
     if HAS_WATCHDOG and args.watch:
         if not hasattr(signal, "SIGHUP"):
             raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
-        file_watcher = setup_file_watcher(args.watch, args.watch_use_polling)
+        file_watcher = setup_file_watcher(
+            args.watch, args.watch_use_polling, args.include_patterns, args.exclude_patterns
+        )
 
     log_watcher_stop_event = Event()
     log_watcher = Thread(

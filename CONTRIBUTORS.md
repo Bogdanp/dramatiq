@@ -62,3 +62,4 @@ of those changes to CLEARTYPE SRL.
 | [@h3nnn4n](https://github.com/h3nnn4n/)                | Renan S Silva          |
 | [@DiegoPomares](https://github.com/DiegoPomares/)      | Diego Pomares          |
 | [@pahrohfit](https://github.com/pahrohfit/)            | Robert Dailey          |
+| [@nhairs](https://github.com/nhairs)                   | Nicholas Hairs         |
