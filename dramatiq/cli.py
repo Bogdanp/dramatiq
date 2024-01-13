@@ -338,10 +338,6 @@ def watch_logs(log_filename, pipes, stop):
                 for event in events:
                     try:
                         while event.poll():
-                            # StreamHandler writes newlines into the pipe separately
-                            # from the actual log entry; to avoid back-to-back newlines
-                            # in the events pipe (causing multiple entries on a single
-                            # line), discard newline-only data from the pipe
                             try:
                                 data = event.recv_bytes()
                             except EOFError:
@@ -349,9 +345,6 @@ def watch_logs(log_filename, pipes, stop):
                                 raise
 
                             data = data.decode("utf-8", errors="replace")
-                            if not data.rstrip("\n"):
-                                continue
-
                             log_file.write(data)
                             log_file.flush()
                     except BrokenPipeError:
