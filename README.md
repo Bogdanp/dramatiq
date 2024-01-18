@@ -23,12 +23,7 @@
   <a href="https://franz.defn.io" target="_blank">
     <img width="64px" src="docs/source/_static/franz-logo.png">
     <br/>
-    Franz: macOS Kafka Client
-  </a>
-  <br/>
-  <br/>
-  <a href="https://www.sendcloud.com/jobs/?utm_source=dramatiq.io&utm_medium=Banner&utm_campaign=Sponsored%20Banner&utm_content=V1" target="_blank">
-    <img width="222px" src="docs/source/_static/sendcloud-logo.png">
+    Franz: Desktop Client for Apache Kafka
   </a>
 </p>
 

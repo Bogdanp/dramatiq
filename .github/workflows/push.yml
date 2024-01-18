@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: pip install tox
       - run: tox -e lint
 
@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-20.04"]
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}
@@ -30,10 +30,10 @@ jobs:
         ports:
           - 11211:11211
       rabbitmq:
-        image: bitnami/rabbitmq:latest
+        image: rabbitmq:3
         env:
-          RABBITMQ_USERNAME: "dramatiq"
-          RABBITMQ_PASSWORD: "dramatiq"
+          RABBITMQ_DEFAULT_USER: "dramatiq"
+          RABBITMQ_DEFAULT_PASS: "dramatiq"
         ports:
           - 5672:5672
         options: '--hostname "rmq" --health-cmd "rabbitmqctl status" --health-interval 10s --health-timeout 10s --health-retries 3 --health-start-period 60s'

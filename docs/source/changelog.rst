@@ -8,6 +8,29 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* The ``CurrentMessage`` middleware now works under AsyncIO. (`#586`_,
+  `#593`_, `@pahrohfit`_)
+* Improved logging behavior under different buffer modes. (`#596`_,
+  `@5tefan`_)
+
+.. _#586: https://github.com/Bogdanp/dramatiq/issues/586
+.. _#593: https://github.com/Bogdanp/dramatiq/pull/593
+.. _#596: https://github.com/Bogdanp/dramatiq/pull/596
+.. _@pahrohfit: https://github.com/pahrohfit
+.. _@5tefan: https://github.com/5tefan
+
+Added
+^^^^^
+
+* CLI watcher now supports setting include and exclude patterns (`#594`_,
+  `@nhairs`_)
+
+.. _#594: https://github.com/Bogdanp/dramatiq/issues/594
+.. _@nhairs: https://github.com/nhairs
+
 `1.15.0`_ -- 2023-10-23
 -----------------------
 
