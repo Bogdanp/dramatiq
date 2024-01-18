@@ -8,14 +8,10 @@ repos:
       - id: check-merge-conflict
         language_version: python3
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.2
-    hooks:
-      - id: ruff
-        args: [ --fix, --unsafe-fixes, --exit-non-zero-on-fix ]
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.2
+    rev: v0.1.8
     hooks:
       - id: ruff-format
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
 
