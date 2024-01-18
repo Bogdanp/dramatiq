@@ -228,7 +228,7 @@ Changed
 Fixed
 ^^^^^
 
-* Async exceptions now correctly set the thread id on Python 3.7 and
+* Async exceptions now correctly set the thread id on Python 3.8 and
   up.  (`#419`_, `#420`_, `@FinnLidbetter`_)
 
 .. _#419: https://github.com/Bogdanp/dramatiq/pull/419
@@ -563,7 +563,7 @@ Fixed
 ^^^^^
 
 * Consumers are now stopped after workers finish running their tasks.  (`#160`_, `@brownan`_)
-* Worker logging on Python 3.7 is no longer delayed.
+* Worker logging on Python 3.8 is no longer delayed.
 
 .. _#160: https://github.com/Bogdanp/dramatiq/pull/160
 .. _@brownan: https://github.com/brownan
