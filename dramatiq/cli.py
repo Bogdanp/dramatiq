@@ -229,10 +229,7 @@ def make_argument_parser():
             action="append",
             dest="include_patterns",
             default=["**.py"],
-            help=(
-                "Patterns to include when watching for changes. "
-                "Always includes all python files (*.py)."
-            ),
+            help=("Patterns to include when watching for changes. " "Always includes all python files (*.py)."),
         )
         parser.add_argument(
             "-x",

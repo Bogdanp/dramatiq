@@ -36,9 +36,7 @@ class CurrentMessage(Middleware):
 
     """
 
-    _MESSAGE: contextvars.ContextVar[
-        dict
-    ] = contextvars.ContextVar("_MESSAGE", default=None)
+    _MESSAGE: contextvars.ContextVar[dict] = contextvars.ContextVar("_MESSAGE", default=None)
 
     @classmethod
     def get_current_message(cls):

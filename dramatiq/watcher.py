@@ -26,9 +26,7 @@ def setup_file_watcher(path, use_polling=False, include_patterns=None, exclude_p
     if include_patterns is None:
         include_patterns = ["*.py"]
 
-    file_event_handler = _SourceChangesHandler(
-        patterns=include_patterns, ignore_patterns=exclude_patterns
-    )
+    file_event_handler = _SourceChangesHandler(patterns=include_patterns, ignore_patterns=exclude_patterns)
     file_watcher = observer_class()
     file_watcher.schedule(file_event_handler, path, recursive=True)
     file_watcher.start()
