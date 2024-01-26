@@ -8,6 +8,14 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* The ``python_requires`` version in ``setup.py``. (`#606`_, `@niccodemus`_)
+
+.. _#606: https://github.com/Bogdanp/dramatiq/pull/606
+.. _@niccodemus: https://github.com/nicoddemus
+
 `1.16.0`_ -- 2024-01-25
 -----------------------
 
