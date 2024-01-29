@@ -8,6 +8,40 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* The ``python_requires`` version in ``setup.py``. (`#606`_, `@niccodemus`_)
+
+.. _#606: https://github.com/Bogdanp/dramatiq/pull/606
+.. _@niccodemus: https://github.com/nicoddemus
+
+`1.16.0`_ -- 2024-01-25
+-----------------------
+
+Fixed
+^^^^^
+
+* The ``CurrentMessage`` middleware now works under AsyncIO. (`#586`_,
+  `#593`_, `@pahrohfit`_)
+* Improved logging behavior under different buffer modes. (`#596`_,
+  `@5tefan`_)
+
+.. _#586: https://github.com/Bogdanp/dramatiq/issues/586
+.. _#593: https://github.com/Bogdanp/dramatiq/pull/593
+.. _#596: https://github.com/Bogdanp/dramatiq/pull/596
+.. _@pahrohfit: https://github.com/pahrohfit
+.. _@5tefan: https://github.com/5tefan
+
+Added
+^^^^^
+
+* CLI watcher now supports setting include and exclude patterns (`#594`_,
+  `@nhairs`_)
+
+.. _#594: https://github.com/Bogdanp/dramatiq/issues/594
+.. _@nhairs: https://github.com/nhairs
+
 `1.15.0`_ -- 2023-10-23
 -----------------------
 
@@ -1157,7 +1191,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.15.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.16.0...HEAD
+.. _1.16.0: https://github.com/Bogdanp/dramatiq/compare/v1.15.0...v1.16.0
 .. _1.15.0: https://github.com/Bogdanp/dramatiq/compare/v1.14.2...v1.15.0
 .. _1.14.2: https://github.com/Bogdanp/dramatiq/compare/v1.14.1...v1.14.2
 .. _1.14.1: https://github.com/Bogdanp/dramatiq/compare/v1.14.0...v1.14.1

@@ -61,4 +61,7 @@ of those changes to CLEARTYPE SRL.
 | [@jenstroeger](https://github.com/jenstroeger/)        | Jens Troeger           |
 | [@h3nnn4n](https://github.com/h3nnn4n/)                | Renan S Silva          |
 | [@DiegoPomares](https://github.com/DiegoPomares/)      | Diego Pomares          |
+| [@pahrohfit](https://github.com/pahrohfit/)            | Robert Dailey          |
+| [@nhairs](https://github.com/nhairs)                   | Nicholas Hairs         |
+| [@5tefan](https://github.com/5tefan/)                  | Stefan Codrescu        |
 | [@santigandolfo](https://github.com/santigandolfo/)    | Santi Gandolfo         |
