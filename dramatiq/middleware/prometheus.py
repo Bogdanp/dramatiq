@@ -19,12 +19,9 @@ import os
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from ..common import current_millis
+from ..common import current_millis, q_name
 from ..logging import get_logger
 from .middleware import Middleware
-
-#: The path to the file to use to race Exposition servers against one another.
-LOCK_PATH = os.getenv("dramatiq_prom_lock", "%s/dramatiq-prometheus.lock" % tempfile.gettempdir())
 
 #: The path to store the prometheus database files.  This path is
 #: cleared before every run.
@@ -111,6 +108,11 @@ class Prometheus(Middleware):
             registry=registry,
         )
 
+    @staticmethod
+    def _standard_labels(message):
+        # use canonical queue names in metrics
+        return q_name(message.queue_name), message.actor_name
+
     def after_worker_shutdown(self, broker, worker):
         from prometheus_client import multiprocess
 
@@ -118,21 +120,21 @@ class Prometheus(Middleware):
         multiprocess.mark_process_dead(os.getpid(), DB_PATH)
 
     def after_nack(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         self.total_rejected_messages.labels(*labels).inc()
 
     def after_enqueue(self, broker, message, delay):
         if "retries" in message.options:
-            labels = (message.queue_name, message.actor_name)
+            labels = self._standard_labels(message)
             self.total_retried_messages.labels(*labels).inc()
 
     def before_delay_message(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         self.delayed_messages.add(message.message_id)
         self.inprogress_delayed_messages.labels(*labels).inc()
 
     def before_process_message(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         if message.message_id in self.delayed_messages:
             self.delayed_messages.remove(message.message_id)
             self.inprogress_delayed_messages.labels(*labels).dec()
@@ -141,7 +143,7 @@ class Prometheus(Middleware):
         self.message_start_times[message.message_id] = current_millis()
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         message_start_time = self.message_start_times.pop(message.message_id, current_millis())
         message_duration = current_millis() - message_start_time
         self.message_durations.labels(*labels).observe(message_duration)
