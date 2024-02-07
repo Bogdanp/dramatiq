@@ -192,7 +192,7 @@ class group:
     def __init__(self, children, *, broker=None):
         self.children = list(children)
         self.broker = broker or get_broker()
-        self.completion_callbacks = []
+        self._completion_callbacks = []
 
     def __len__(self):
         """Returns the size of the group.
@@ -215,7 +215,21 @@ class group:
         Parameters:
           message(Message)
         """
-        self.completion_callbacks.append(message.asdict())
+        from .middleware.group_callbacks import GROUP_CALLBACK_BARRIER_TTL, \
+            GroupCallbacks
+
+        rate_limiter_backend = None
+        for middleware in self.broker.middleware:
+            if isinstance(middleware, GroupCallbacks):
+                rate_limiter_backend = middleware.rate_limiter_backend
+                break
+        else:
+            raise RuntimeError(
+                "GroupCallbacks middleware not found! Did you forget "
+                "to set it up? It is required if you want to use "
+                "group callbacks."
+            )
+        self._completion_callbacks.append(message.asdict())
 
     @property
     def completed(self):
@@ -265,21 +279,7 @@ class group:
         Returns:
           group: This same group.
         """
-        if self.completion_callbacks:
-            from .middleware.group_callbacks import GROUP_CALLBACK_BARRIER_TTL, GroupCallbacks
-
-            rate_limiter_backend = None
-            for middleware in self.broker.middleware:
-                if isinstance(middleware, GroupCallbacks):
-                    rate_limiter_backend = middleware.rate_limiter_backend
-                    break
-            else:
-                raise RuntimeError(
-                    "GroupCallbacks middleware not found! Did you forget "
-                    "to set it up? It is required if you want to use "
-                    "group callbacks."
-                )
-
+        if self._completion_callbacks:
             # Generate a new completion uuid on every run so that if a
             # group is re-run, the barriers are all separate.
             # Re-using a barrier's name is an unsafe operation.
