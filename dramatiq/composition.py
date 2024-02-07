@@ -46,14 +46,31 @@ class pipeline:
         messages: list[Message]
         self.messages = messages = []
 
+        for child, next_child in zip(children, children[1:]):
+            if isinstance(child, group):
+                child.add_completion_callback(next_child)
+
         for child in children:
             if isinstance(child, pipeline):
-                messages.extend(message.copy() for message in child.messages)
+                messages.extend((message.copy(),) for message in child.messages)
+            elif isinstance(child, group):
+                group_tasks = child.get_children()
+                group_messages = []
+                for message in group_tasks:
+                    if isinstance(message, pipeline):
+                        group_messages.append(message.messages[0].copy())
+                    else:
+                        group_messages.append(message.copy())
+                messages.append(tuple(group_messages))
             else:
-                messages.append(child.copy())
+                messages.append((child.copy(),))
 
-        for message, next_message in zip(messages, messages[1:]):
-            message.options["pipe_target"] = next_message.asdict()
+        for messages, next_messages in zip(messages, messages[1:]):
+            if len(message) > 1:
+                # this is a group with a completion callback. No need to set pipe_target
+                continue
+            message_dicts = [message.asdict() for message in next_messages]
+            messages[0].options["pipe_target"] = message_dicts
 
     def __len__(self):
         """Returns the length of the pipeline.
