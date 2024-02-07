@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
+import signal
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -23,18 +25,31 @@ from ..common import current_millis, q_name
 from ..logging import get_logger
 from .middleware import Middleware
 
-#: The path to store the prometheus database files.  This path is
-#: cleared before every run.
-DB_PATH = os.getenv("dramatiq_prom_db", "%s/dramatiq-prometheus" % tempfile.gettempdir())
+#: The path to store the prometheus database files. This path should
+#: be unique for every parent process instance. Dramatiq would try to clean-up
+#: this directory upon shutdown.
+DB_PATH = f"{tempfile.gettempdir()}/dramatiq-prometheus-{os.getpid()}"
 
-# Ensure the DB_PATH exists.
-os.makedirs(DB_PATH, exist_ok=True)
+#: The path to store the prometheus database files, as configured
+#: via default Prometheus environment variables. If present, this
+#: directory is used by Dramatiq, but not cleaned-up.
+STANDARD_DB_PATH = os.getenv("PROMETHEUS_MULTIPROC_DIR", os.getenv("prometheus_multiproc_dir"))
 
 #: The HTTP host the exposition server should bind to.
 HTTP_HOST = os.getenv("dramatiq_prom_host", "0.0.0.0")
 
 #: The HTTP port the exposition server should listen on.
 HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
+
+
+def _setup_prometheus_env():
+    # leaving the standard prometheus envs as is
+    # whoever set it should know what they are doing
+    if STANDARD_DB_PATH:
+        return
+    # otherwise use the generated path for prometheus multiproc db
+    os.makedirs(DB_PATH, exist_ok=True)
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
 
 
 class Prometheus(Middleware):
@@ -50,11 +65,10 @@ class Prometheus(Middleware):
 
     @property
     def forks(self):
-        return [_run_exposition_server]
+        return [_run_exposition_server, _cleanup_on_shutdown]
 
     def after_process_boot(self, broker):
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
-        os.environ["prometheus_multiproc_dir"] = DB_PATH
+        _setup_prometheus_env()
 
         # This import MUST happen at runtime, after process boot and
         # after the env variable has been set up.
@@ -114,10 +128,15 @@ class Prometheus(Middleware):
         return q_name(message.queue_name), message.actor_name
 
     def after_worker_shutdown(self, broker, worker):
+        # if we used a generated dir (DB_PATH), mark dead is not required
+        # DB_PATH would be deleted upon shutdown
+        if not STANDARD_DB_PATH:
+            return
+
         from prometheus_client import multiprocess
 
         self.logger.debug("Marking process dead...")
-        multiprocess.mark_process_dead(os.getpid(), DB_PATH)
+        multiprocess.mark_process_dead(os.getpid(), STANDARD_DB_PATH)
 
     def after_nack(self, broker, message):
         labels = self._standard_labels(message)
@@ -157,8 +176,7 @@ class Prometheus(Middleware):
 
 class _metrics_handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
-        os.environ["prometheus_multiproc_dir"] = DB_PATH
+        _setup_prometheus_env()
 
         # These imports must happen at runtime.  See above.
         import prometheus_client as prom
@@ -181,6 +199,11 @@ def _run_exposition_server():
     logger = get_logger(__name__, "_run_exposition_server")
     logger.debug("Starting exposition server...")
 
+    def sig_handler(_signum, _frame):
+        logger.debug("Caught SIGTERM")
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, sig_handler)
+
     try:
         address = (HTTP_HOST, HTTP_PORT)
         httpd = HTTPServer(address, _metrics_handler)
@@ -188,5 +211,24 @@ def _run_exposition_server():
     except KeyboardInterrupt:
         logger.debug("Stopping exposition server...")
         httpd.shutdown()
+
+    return 0
+
+
+def _cleanup_on_shutdown():
+    """
+    Main process fork. Waits for SIGTERM (graceful shutdown) and cleans up DB_PATH dir, if used.
+    """
+    logger = get_logger(__name__, "_cleanup_on_shutdown")
+    logger.debug("Starting cleanup waiter...")
+    if not STANDARD_DB_PATH:
+        signal.sigwaitinfo([signal.SIGTERM])
+        logger.debug("Caught SIGTERM, cleaning up db directory...")
+        try:
+            shutil.rmtree(DB_PATH)
+        except OSError:
+            logger.exception("error during db directory cleanup")
+    else:
+        logger.debug("Cleanup waiter skipped, not using DB_PATH")
 
     return 0
