@@ -279,35 +279,7 @@ class group:
         Returns:
           group: This same group.
         """
-        if self._completion_callbacks:
-            # Generate a new completion uuid on every run so that if a
-            # group is re-run, the barriers are all separate.
-            # Re-using a barrier's name is an unsafe operation.
-            completion_uuid = str(uuid4())
-            completion_barrier = Barrier(rate_limiter_backend, completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
-            completion_barrier.create(len(self.children))
-
-            children = []
-            for child in self.children:
-                if isinstance(child, group):
-                    raise NotImplementedError
-
-                elif isinstance(child, pipeline):
-                    pipeline_children = child.messages[:]
-                    pipeline_children[-1] = pipeline_children[-1].copy(options={
-                        "group_completion_uuid": completion_uuid,
-                        "group_completion_callbacks": self.completion_callbacks,
-                    })
-
-                    children.append(pipeline(pipeline_children, broker=child.broker))
-
-                else:
-                    children.append(child.copy(options={
-                        "group_completion_uuid": completion_uuid,
-                        "group_completion_callbacks": self.completion_callbacks,
-                    }))
-        else:
-            children = self.children
+        children = self.get_children()
 
         for child in children:
             if isinstance(child, (group, pipeline)):
@@ -316,6 +288,46 @@ class group:
                 self.broker.enqueue(child, delay=delay)
 
         return self
+
+    def get_children(self) -> list[Message | pipeline]:
+        """Return the group's children, possibly with completion callbacks added.
+
+        Returns:
+            list[Message | Pipeline]: The group's children.
+        """
+
+        if not self._completion_callbacks:
+            return self.children
+
+        # Generate a new completion uuid on every run so that if a
+        # group is re-run, the barriers are all separate.
+        # Re-using a barrier's name is an unsafe operation.
+        completion_uuid = str(uuid4())
+        completion_barrier = Barrier(rate_limiter_backend, completion_uuid,
+                                     ttl=GROUP_CALLBACK_BARRIER_TTL)
+        completion_barrier.create(len(self.children))
+
+        children = []
+        for child in self.children:
+            if isinstance(child, group):
+                raise NotImplementedError
+
+            elif isinstance(child, pipeline):
+                pipeline_children = child.messages[:]
+                pipeline_children[-1] = pipeline_children[-1].copy(options={
+                    "group_completion_uuid": completion_uuid,
+                    "group_completion_callbacks": self._completion_callbacks,
+                })
+
+                children.append(pipeline(pipeline_children, broker=child.broker))
+
+            else:
+                children.append(child.copy(options={
+                    "group_completion_uuid": completion_uuid,
+                    "group_completion_callbacks": self._completion_callbacks,
+                }))
+
+        return children
 
     def get_results(self, *, block=False, timeout=None):
         """Get the results of each job in the group.
