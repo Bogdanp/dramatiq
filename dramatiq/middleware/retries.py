@@ -96,7 +96,13 @@ class Retries(Middleware):
         message.options["retries"] += 1
         message.options["traceback"] = traceback.format_exc(limit=30)
 
-        max_retries = message.options.get("max_retries") or actor.options.get("max_retries", self.max_retries)
+        if isinstance(exception, Retry) and exception.max_retries is not None:
+            max_retries = exception.max_retries
+        else:
+            max_retries = (
+                message.options.get("max_retries")
+                or actor.options.get("max_retries", self.max_retries)
+            )
         retry_when = actor.options.get("retry_when", self.retry_when)
         if retry_when is not None and not retry_when(retries, exception) or \
            retry_when is None and max_retries is not None and retries >= max_retries:
