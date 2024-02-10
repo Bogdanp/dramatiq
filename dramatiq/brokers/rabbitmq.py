@@ -82,7 +82,7 @@ class RabbitmqBroker(Broker):
       **kwargs: The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
 
-    .. _ConnectionParameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
+    .. _ConnectionParameters: https://pika.readthedocs.io/en/stable/modules/parameters.html
     """
 
     def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs):
