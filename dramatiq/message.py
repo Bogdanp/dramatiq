@@ -191,3 +191,6 @@ class Message(Generic[R]):
 
     def _replace(self, **changes) -> "Message[R]":
         return dataclasses.replace(self, **changes)
+
+    def set_completion_uuid_and_callbacks(self, uuid, callbacks):
+        return self.copy(options={"group_completion_uuid": uuid, "group_completion_callbacks": callbacks})

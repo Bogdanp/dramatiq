@@ -47,11 +47,10 @@ class Pipelines(Middleware):
 
         actor = broker.get_actor(message.actor_name)
         targets = message.options.get("pipe_targets")
-        if message_data is not None:
+        if targets is not None:
             for message_data in targets:
                 next_message = Message(**message_data)
                 pipe_ignore = next_message.options.get("pipe_ignore") or actor.options.get("pipe_ignore")
                 if not pipe_ignore:
                     next_message = next_message.copy(args=next_message.args + (result,))
-
-            broker.enqueue(next_message, delay=next_message.options.get("delay"))
+                broker.enqueue(next_message, delay=next_message.options.get("delay"))
