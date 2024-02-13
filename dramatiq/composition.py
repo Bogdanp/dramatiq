@@ -45,39 +45,32 @@ class pipeline:
 
     def __init__(self, children: Iterable[Message | pipeline | group], *, broker=None):
         self.broker = broker or get_broker()
-        self.rate_limiter_backend = None
-        messages: list[Message]
-
         self.steps = children
-        if any(isinstance(child, group) for child in self.steps):
-            for middleware in self.broker.middleware:
-                if isinstance(middleware, GroupCallbacks):
-                    self.rate_limiter_backend = middleware.rate_limiter_backend
-                    break
-        self._messages = self.flatten_messages()
 
-    def flatten_messages(self):
+        self.rate_limiter_backend = None
+        for middleware in self.broker.middleware:
+            if isinstance(middleware, GroupCallbacks):
+                self.rate_limiter_backend = middleware.rate_limiter_backend
+                break
+        self._messages = self.generate_messages()
+
+
+    def generate_messages(self) -> list[tuple[Message]]:
         messages = []
         for child, next_child in zip(self.steps, self.steps[1:] + [None]):
 
             if isinstance(child, pipeline):
-                messages.extend(deepcopy(child.flatten_messages()))
+                messages.extend(child.generate_messages())
 
             elif isinstance(child, group):
-                group_messages = []
-                for message in child.children:
-                    if isinstance(message, pipeline):
-                        # only need to kick off first task in pipeline since pipeline
-                        # messages already have pipe targets set
-                        group_messages.append(message._messages[0][0].copy())
-                    else:
-                        group_messages.append(message.copy())
+                if next_child is not None:
+                    child.add_completion_callback(next_child)
+                group_messages = child.generate_messages()
                 messages.append(tuple(group_messages))
 
             else:
                 # assumed to be a Message
-                messages.append((child.copy(),))
-
+                messages.append((child,))
         for message_tup, next_message_tup in zip(messages, messages[1:]):
             if len(message_tup) > 1:
                 # we add completion callbacks inside run method
@@ -90,7 +83,7 @@ class pipeline:
     def __len__(self):
         """Returns the length of the pipeline.
         """
-        return len(self._messages)
+        return len(self.steps)
 
     def __or__(self, other):
         """Returns a new pipeline with "other" added to the end.
@@ -157,32 +150,16 @@ class pipeline:
         Returns:
           pipeline: Itself.
         """
+        self._messages = self.generate_messages()
         max_message_delay = max(
             message.options.get("delay") or 0 for message in self._messages[0]
         )
         delay = max(delay or 0, max_message_delay) or None
-        # set completion callbacks for groups in pipeline
-        breakpoint()
-        for messages, next_messages in zip(self._messages, self._messages[1:]):
-            if len(messages) > 1:
-                if self.rate_limiter_backend is None:
-                    raise RuntimeError(
-                        "GroupCallbacks middleware not found! Did you forget "
-                        "to set it up? It is required if you want to use "
-                        "groups inside pipelines."
-                    )
-                callbacks = messages[0].options.get('group_completion_callbacks') or []
-                callbacks.extend(m.asdict() for m in next_messages)
-
-                completion_uuid = str(uuid4())
-                completion_barrier = Barrier(self.rate_limiter_backend, completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
-
-                completion_barrier.create(len(messages))
-                for message in messages:
-                    message.set_completion_uuid_and_callbacks(completion_uuid, callbacks)
 
         for message in self._messages[0]:
             self.broker.enqueue(message, delay=delay)
+        for step in self.steps:
+            step.remove_group_completion_uuids()
         return self
 
     def get_result(self, *, block=False, timeout=None):
@@ -204,8 +181,10 @@ class pipeline:
           object: The result.
         """
         last_message = self.steps[-1]
+        if isinstance(last_message, group):
+            raise RuntimeError("Pipelines ending in groups can't return a single result. Call get_results instead.")
 
-        if isinstance(last_message, (group, pipeline)):
+        if isinstance(last_message, pipeline):
             return last_message.get_result(block=block, timeout=timeout)
 
         backend = self.broker.get_results_backend()
@@ -239,13 +218,12 @@ class pipeline:
                 yield message.get_result(backend=backend, block=block, timeout=timeout)
 
     def set_completion_uuid_and_callbacks(self, uuid, callbacks):
-        new_last_step = self.steps[-1].set_completion_uuid_and_callbacks(uuid, callbacks)
-        return type(self)(self.steps[:-1] + [new_last_step], broker=self.broker)
+        for msg in self._messages[-1]:
+            msg.set_completion_uuid_and_callbacks(uuid, callbacks)
 
-    def get_completion_callbacks(self):
-        if not isinstance(self.steps[-1], Message):
-            return self.steps[-1].get_completion_callbacks()
-        return []
+    def remove_group_completion_uuids(self):
+        if isinstance(self.steps[-1], (group, pipeline)):
+            self.steps[-1].remove_completion_uuids()
 
 
 class group:
@@ -261,7 +239,8 @@ class group:
     def __init__(self, children, *, broker=None):
         self.children = list(children)
         self.broker = broker or get_broker()
-        self._completion_callbacks = []
+        self.completion_callbacks = dict()
+        self.completion_uuid = None
 
         self.rate_limiter_backend = None
         for middleware in self.broker.middleware:
@@ -277,7 +256,12 @@ class group:
     def __str__(self):  # pragma: no cover
         return "group([%s])" % ", ".join(str(c) for c in self.children)
 
-    def add_completion_callback(self, message):
+    def __or__(self, other) -> pipeline:
+        """Combine this message into a pipeline with "other".
+        """
+        return pipeline([self, other])
+
+    def add_completion_callback(self, message: Message | pipeline | group):
         """Adds a completion callback to run once every job in this
         group has completed.  Each group may have multiple completion
         callbacks.
@@ -298,9 +282,12 @@ class group:
                 "group callbacks."
             )
         if isinstance(message, pipeline):
-            self._completion_callbacks.extend(m.asdict() for m in message._messages[0])
+            for m in message.generate_messages():
+                self.completion_callbacks[m.message_id] = m.asdict()
+                if isinstance(m, pipeline):
+                    break
         else:
-            self._completion_callbacks.append(message.asdict())
+            self.completion_callbacks[message.message_id] = message.asdict()
 
     @property
     def completed(self):
@@ -350,31 +337,36 @@ class group:
         Returns:
           group: This same group.
         """
-        if not self._completion_callbacks:
-            for child in self.children:
-                if isinstance(child, (group, pipeline)):
-                    child.run(delay=delay)
-                else:
-                    self.broker.enqueue(child, delay=delay)
-            return self
+        for message in self.generate_messages():
+            self.broker.enqueue(message, delay=delay)
+        self.completion_uuid = None
+        return self
 
-        # Generate a new completion uuid on every run so that if a
-        # group is re-run, the barriers are all separate.
-        # Re-using a barrier's name is an unsafe operation.
-        completion_uuid = str(uuid4())
-        completion_barrier = Barrier(self.rate_limiter_backend, completion_uuid,
-                                     ttl=GROUP_CALLBACK_BARRIER_TTL)
-
-        completion_barrier.create(len(self.children))
+    def generate_messages(self, ) -> list[Message]:
+        messages = []
+        if self.completion_callbacks and not self.completion_uuid:
+            # Generate a new completion uuid on every run so that if a
+            # group is re-run, the barriers are all separate.
+            # Re-using a barrier's name is an unsafe operation.
+            completion_uuid = str(uuid4())
+            completion_barrier = Barrier(self.rate_limiter_backend, completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
+            completion_barrier.create(self.get_barrier_number())
+            self.completion_uuid = completion_uuid
 
         for child in self.children:
-            child = child.set_completion_uuid_and_callbacks(completion_uuid, self._completion_callbacks)
-            if isinstance(child, (group, pipeline)):
-                child.run(delay=delay)
-            else:
-                self.broker.enqueue(child, delay=delay)
+            if isinstance(child, group):
+                messages.extend(child.generate_messages())
 
-        return self
+            elif isinstance(child, pipeline):
+                messages.extend(child.generate_messages()[0])
+            else:
+                messages.append(child)
+            if self.completion_callbacks:
+                try:
+                    child.set_completion_uuid_and_callbacks(self.completion_uuid, self.completion_callbacks)
+                except:
+                    breakpoint()
+        return messages
 
     def get_barrier_number(self) -> list[Message | pipeline]:
 
@@ -389,14 +381,6 @@ class group:
                 num_tasks += 1
 
         return num_tasks
-
-    def get_steps_to_run(self):
-        """Return the group's children, possibly with completion callbacks added.
-
-        Returns:
-            list[Message | Pipeline]: The group's children.
-        """
-
 
     def get_results(self, *, block=False, timeout=None):
         """Get the results of each job in the group.
@@ -445,8 +429,10 @@ class group:
             pass
 
     def set_completion_uuid_and_callbacks(self, uuid, callbacks):
-        new_children = []
         for child in self.children:
-            new_child = child.set_completion_uuid(uuid, callbacks)
-            new_children.append(new_child)
-        return type(self)(new_children, broker=self.broker)
+            child.set_completion_uuid_and_callbacks(uuid, callbacks)
+
+    def remove_group_completion_uuids(self):
+        self.completion_uuid = None
+        for child in self.children:
+            child.remove_group_completion_uuids()

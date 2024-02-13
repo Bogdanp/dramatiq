@@ -37,7 +37,7 @@ def test_pipelines_flatten_child_pipelines(stub_broker):
     pipe = pipeline([add.message(1, 2), add.message(3) | add.message(4), add.message(5)])
 
     # Then the inner pipeline should be flattened into the outer pipeline
-    assert len(pipe) == 4
+    assert len(pipe) == 3
     assert pipe._messages[0][0].args == (1, 2)
     assert pipe._messages[1][0].args == (3,)
     assert pipe._messages[2][0].args == (4,)
@@ -196,21 +196,22 @@ def test_groups_execute_inner_groups(stub_broker, stub_worker, stub_result_backe
     # Given that I have a result backend
     stub_broker.add_middleware(Results(backend=stub_result_backend))
 
+    completed_cnt = []
     # And I have an actor that sleeps for 100ms
     @dramatiq.actor(store_results=True)
-    def wait():
-        time.sleep(0.1)
+    def wait(*args):
+        completed_cnt.append(args)
+
 
     # When I group multiple groups inside one group and run it
     t = time.monotonic()
-    g = group(group(wait.message() for _ in range(2)) for _ in range(3))
+    g = group(group(wait.message(inner, outer) for inner in range(2)) for outer in range(3))
     g.run()
 
     # And wait on the group to complete
     results = list(g.get_results(block=True))
 
-    # Then the total elapsed time should be less than 500ms
-    assert time.monotonic() - t <= 0.5
+    assert len(completed_cnt) == 6
 
     # And I should get back 3 results each with 2 results inside it
     assert results == [[None, None]] * 3
@@ -385,42 +386,119 @@ def test_pipeline_respects_bigger_of_first_messages_and_pipelines_delay(stub_bro
             pass
 
 
-def test_pipeline_with_group(stub_broker, stub_worker, stub_rate_limiter_backend):
-
+def test_group_at_beginning_of_pipeline(stub_broker, stub_worker, stub_rate_limiter_backend, stub_result_backend):
     stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+    stub_broker.add_middleware(Results(backend=stub_result_backend))
+
     completed_count = []
 
-    @dramatiq.actor()
+    @dramatiq.actor(store_results=True)
+    def increment_completed(*args):
+        completed_count.append(args)
+        return args
+
+    g = dramatiq.group([increment_completed.message(1), increment_completed.message(2)])
+    pipe = g | increment_completed.message(3)
+    breakpoint()
+    pipe.run()
+
+    stub_broker.join(increment_completed.queue_name, timeout=5 * 1000)
+    stub_worker.join()
+
+    assert pipe.get_result() == [3]
+    assert len(completed_count) == 3
+
+def test_existing_group_callbacks_still_get_run(stub_broker, stub_worker, stub_rate_limiter_backend):
+    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+
+    completed_count = []
+    other_completions = []
+
+    @dramatiq.actor
     def increment_completed(*args):
         completed_count.append(args)
 
-    group = dramatiq.group([increment_completed.message(2)] * 3)
-    pipe = increment_completed.message(1) | group | increment_completed.message(3)
-    pipe.run()
-    breakpoint()
-    assert completed_count == 5
+    @dramatiq.actor
+    def other_completed(*args):
+        other_completions.append(args)
 
-def test_sub_pipeline_that_ends_with_group(stub_broker, stub_worker, stub_rate_limiter_backend):
-
-    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
-    completed_count = []
-    @dramatiq.actor()
-    def increment_completed(*args):
-        completed_count.append(time.monotonic())
-
-    group = dramatiq.group([increment_completed.message()] * 3)
-    sub_pipe = increment_completed.message() | group
-    pipe = sub_pipe | increment_completed.message()
-
+    group = dramatiq.group([increment_completed.message(1), increment_completed.message(2)])
+    callback = other_completed.message(42)
+    group.add_completion_callback(callback)
+    pipe = dramatiq.pipeline([increment_completed.message(3), group | increment_completed.message(4)])
     pipe.run()
 
-    stub_broker.join(increment_completed.queue_name, timeout=10 * 1000)
+    stub_broker.join(increment_completed.queue_name, timeout=100 * 1000)
     stub_worker.join()
 
-    breakpoint()
+    assert len(completed_count) == 4
+    # existing group callbacks still get run
+    assert len(other_completions) == 1
+    assert other_completions[0] == (42,)
 
-    assert completed_count == 5
+
+def test_complex_pipeline(stub_broker, stub_worker, stub_rate_limiter_backend):
+
+    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+
+    completed_count = []
+    other_completions = []
+
+    @dramatiq.actor
+    def increment_completed(*args):
+        completed_count.append(args)
+
+    @dramatiq.actor
+    def other_completed(*args):
+        other_completions.append(args)
+
+    inner_group = dramatiq.group(
+        [increment_completed.message(2) | increment_completed.message(3), increment_completed.message(4)]
+    )
+    callback = other_completed.message(42)
+    inner_group.add_completion_callback(callback)
+    outer_group = dramatiq.group([inner_group, increment_completed.message(5)])
+    breakpoint()
+    sub_pipe = outer_group | increment_completed.message(6)
+    pipe = increment_completed.message(1) | sub_pipe
+    pipe.run()
+
+    stub_broker.join(increment_completed.queue_name, timeout=100 * 1000)
+    stub_worker.join()
+
+
+    assert len(completed_count) == 6
+    # existing group callbacks still get run
+    assert len(other_completions) == 1
+    assert other_completions[0] == (42,)
+
+def test_pipeline_that_ends_with_group(
+        stub_broker, stub_worker, stub_rate_limiter_backend, stub_result_backend
+):
+    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+    stub_broker.add_middleware(Results(backend=stub_result_backend))
+
+    @dramatiq.actor(store_results=True)
+    def return_args(*args):
+        return args
+
+    group = dramatiq.group([return_args.message(1)] * 3)
+    pipe = return_args.message(2) | group
+    pipe.run()
+
+    stub_broker.join(return_args.queue_name, timeout=10 * 1000)
+    stub_worker.join()
+
     assert pipe.completed
+    with pytest.raises(RuntimeError):
+        pipe.get_result()
+
+    group_results = list(group.get_results())
+    pipe_results = list(pipe.get_results())
+    assert len(group_results) == 3
+    assert len(pipe_results) == 4
+    assert group_results == pipe_results[1:]
+
 
 def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, stub_rate_limiter_backend):
     # Given that I have a rate limiter backend
@@ -447,7 +525,7 @@ def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, stub_rat
     g.run()
 
     # And wait for the callback to be called
-    finalized.wait(timeout=30)
+    finalized.wait(timeout=5)
 
     # Then all the messages in the group should run
     assert len(do_nothing_times) == 5
@@ -485,7 +563,7 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
     finalized = Event()
 
     @dramatiq.actor
-    def do_nothing(_):
+    def do_nothing(*args):
         do_nothing_times.append(time.monotonic())
 
     @dramatiq.actor
@@ -496,18 +574,17 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
 
     # When I group together some messages with a completion callback
     g = group([
-        do_nothing.message(1) | do_nothing.message(),
-        do_nothing.message(1)
+        do_nothing.message(1) | do_nothing.message(2),
+        do_nothing.message(3)
     ])
     g.add_completion_callback(finalize.message(42))
     g.run()
 
     # And wait for the callback to be callled
-    finalized.wait(timeout=30)
+    finalized.wait(timeout=5)
 
     # Then all the messages in the group should run
     assert len(do_nothing_times) == 3
-    breakpoint()
 
     # And the callback
     assert len(finalize_times) == 1
