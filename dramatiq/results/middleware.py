@@ -83,8 +83,8 @@ class Results(Middleware):
     def _lookup_options(self, broker, message):
         try:
             actor = broker.get_actor(message.actor_name)
-            store_results = actor.options.get("store_results", self.store_results)
-            result_ttl = actor.options.get("result_ttl", self.result_ttl)
+            store_results = message.options.get("store_results", actor.options.get("store_results", self.store_results))
+            result_ttl = message.options.get("result_ttl", actor.options.get("result_ttl", self.result_ttl))
             return store_results, result_ttl
         except ActorNotFound:
             return False, 0
