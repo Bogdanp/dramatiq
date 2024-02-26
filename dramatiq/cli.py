@@ -156,7 +156,7 @@ def make_argument_parser():
     )
     parser.add_argument(
         "--processes", "-p", default=CPUS, type=int,
-        help="the number of worker processes to run (default: %s)" % CPUS,
+        help="the number of worker processes to run (default: the number of CPUs in your system, in this case: %s)" % CPUS,
     )
     parser.add_argument(
         "--threads", "-t", default=8, type=int,
