@@ -39,6 +39,7 @@ class pipeline:
       broker(Broker): The broker to run the pipeline on.  Defaults to
         the current global broker.
     """
+
     messages: list[Message]
 
     def __init__(self, children: Iterable[Message | pipeline], *, broker=None):
@@ -56,13 +57,11 @@ class pipeline:
             message.options["pipe_target"] = next_message.asdict()
 
     def __len__(self):
-        """Returns the length of the pipeline.
-        """
+        """Returns the length of the pipeline."""
         return len(self.messages)
 
     def __or__(self, other):
-        """Returns a new pipeline with "other" added to the end.
-        """
+        """Returns a new pipeline with "other" added to the end."""
         return type(self)(self.messages + [other])
 
     def __str__(self):  # pragma: no cover
@@ -71,12 +70,12 @@ class pipeline:
     @property
     def completed(self):
         """Returns True when all the jobs in the pipeline have been
-        completed.  This will always return False if the last actor in
-        the pipeline doesn't store results.
+         completed.  This will always return False if the last actor in
+         the pipeline doesn't store results.
 
-       Raises:
-          RuntimeError: If your broker doesn't have a result backend
-            set up.
+        Raises:
+           RuntimeError: If your broker doesn't have a result backend
+             set up.
         """
         try:
             self.messages[-1].get_result()
@@ -195,8 +194,7 @@ class group:
         self.completion_callbacks = []
 
     def __len__(self):
-        """Returns the size of the group.
-        """
+        """Returns the size of the group."""
         return len(self.children)
 
     def __str__(self):  # pragma: no cover
@@ -294,18 +292,24 @@ class group:
 
                 elif isinstance(child, pipeline):
                     pipeline_children = child.messages[:]
-                    pipeline_children[-1] = pipeline_children[-1].copy(options={
-                        "group_completion_uuid": completion_uuid,
-                        "group_completion_callbacks": self.completion_callbacks,
-                    })
+                    pipeline_children[-1] = pipeline_children[-1].copy(
+                        options={
+                            "group_completion_uuid": completion_uuid,
+                            "group_completion_callbacks": self.completion_callbacks,
+                        }
+                    )
 
                     children.append(pipeline(pipeline_children, broker=child.broker))
 
                 else:
-                    children.append(child.copy(options={
-                        "group_completion_uuid": completion_uuid,
-                        "group_completion_callbacks": self.completion_callbacks,
-                    }))
+                    children.append(
+                        child.copy(
+                            options={
+                                "group_completion_uuid": completion_uuid,
+                                "group_completion_callbacks": self.completion_callbacks,
+                            }
+                        )
+                    )
         else:
             children = self.children
 

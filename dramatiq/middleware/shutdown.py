@@ -88,7 +88,6 @@ class ShutdownNotifications(Middleware):
 
 
 class _ShutdownManager:
-
     def __init__(self, logger=None) -> None:  # pragma: no cover
         raise NotImplementedError
 
@@ -103,7 +102,6 @@ class _ShutdownManager:
 
 
 class _CtypesShutdownManager(_ShutdownManager):
-
     def __init__(self, logger=None):
         self.logger = logger or get_logger(__name__, type(self))
         self.notifications = set()
@@ -125,7 +123,6 @@ if is_gevent_active():
     from gevent import getcurrent
 
     class __GeventShutdownManager(_ShutdownManager):
-
         def __init__(self, logger=None):
             self.logger = logger or get_logger(__name__, type(self))
             self.notification_greenlets = set()

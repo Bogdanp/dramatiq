@@ -1,9 +1,8 @@
 import time
 from unittest.mock import Mock
 
-import pytest
-
 import dramatiq
+import pytest
 from dramatiq import QueueJoinTimeout, QueueNotFound
 
 

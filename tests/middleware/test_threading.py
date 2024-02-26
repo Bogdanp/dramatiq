@@ -3,7 +3,6 @@ import time
 from threading import Thread
 
 import pytest
-
 from dramatiq import threading
 
 not_supported = threading.current_platform not in threading.supported_platforms
@@ -19,14 +18,14 @@ def test_raise_thread_exception():
     def work():
         try:
             for _ in range(10):
-                time.sleep(.1)
+                time.sleep(0.1)
         except threading.Interrupt:
             caught.append(1)
 
     # When I start the thread
     t = Thread(target=work)
     t.start()
-    time.sleep(.1)
+    time.sleep(0.1)
 
     # And raise the interrupt and join on the thread
     threading.raise_thread_exception(t.ident, threading.Interrupt)
@@ -40,7 +39,7 @@ def test_raise_thread_exception():
 @pytest.mark.skipif(threading.is_gevent_active(), reason="Thread exceptions not supported with gevent.")
 def test_raise_thread_exception_on_nonexistent_thread(caplog):
     # When an interrupt is raised on a nonexistent thread
-    thread_id = 2 ** 31 - 1
+    thread_id = 2**31 - 1
     threading.raise_thread_exception(thread_id, threading.Interrupt)
 
     # I expect a 'failed to set exception' critical message to be logged
@@ -59,8 +58,9 @@ def test_raise_thread_exception_unsupported_platform(caplog, monkeypatch):
 
     # I expect a 'platform not supported' critical message to be logged
     assert caplog.record_tuples == [
-        ("dramatiq.threading", logging.CRITICAL, (
-            "Setting thread exceptions (Interrupt) is not supported "
-            "for your current platform ('not supported')."
-        )),
+        (
+            "dramatiq.threading",
+            logging.CRITICAL,
+            ("Setting thread exceptions (Interrupt) is not supported " "for your current platform ('not supported')."),
+        ),
     ]

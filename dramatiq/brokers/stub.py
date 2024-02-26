@@ -26,8 +26,7 @@ from ..message import Message
 
 
 class StubBroker(Broker):
-    """A broker that can be used within unit tests.
-    """
+    """A broker that can be used within unit tests."""
 
     def __init__(self, middleware=None):
         super().__init__(middleware)
@@ -36,8 +35,7 @@ class StubBroker(Broker):
 
     @property
     def dead_letters(self):
-        """The dead-lettered messages for all defined queues.
-        """
+        """The dead-lettered messages for all defined queues."""
         return [message for messages in self.dead_letters_by_queue.values() for message in messages]
 
     def consume(self, queue_name, prefetch=1, timeout=100):
@@ -123,8 +121,7 @@ class StubBroker(Broker):
             self.queues[queue_name].task_done()
 
     def flush_all(self):
-        """Drop all messages from all declared queues.
-        """
+        """Drop all messages from all declared queues."""
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
 

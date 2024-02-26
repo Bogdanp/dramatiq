@@ -23,8 +23,7 @@ from .middleware import Middleware
 
 
 class AsyncIO(Middleware):
-    """This middleware manages the event loop thread for async actors.
-    """
+    """This middleware manages the event loop thread for async actors."""
 
     def __init__(self):
         self.logger = get_logger(__name__, type(self))

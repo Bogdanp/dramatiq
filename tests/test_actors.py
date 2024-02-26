@@ -2,9 +2,8 @@ import time
 from datetime import timedelta
 from unittest.mock import patch
 
-import pytest
-
 import dramatiq
+import pytest
 from dramatiq import Message, Middleware
 from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import CurrentMessage, SkipMessage
@@ -52,6 +51,7 @@ def test_actors_cannot_be_assigned_arbitrary_options(stub_broker):
     # If I define an actor with a nonexistent option
     # I expect it to raise a ValueError
     with pytest.raises(ValueError):
+
         @dramatiq.actor(invalid_option=32)
         def add(x, y):
             return x + y
@@ -81,6 +81,7 @@ def test_actors_fail_given_invalid_queue_names(stub_broker):
     # If I define an actor with an invalid queue name
     # I expect a ValueError to be raised
     with pytest.raises(ValueError):
+
         @dramatiq.actor(queue_name="$2@!@#")
         def foo():
             pass
@@ -276,7 +277,8 @@ def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_wor
     message = Message(
         queue_name="some-queue",
         actor_name="some-actor",
-        args=(), kwargs={},
+        args=(),
+        kwargs={},
         options={},
     )
     stub_broker.declare_queue("some-queue")
@@ -434,7 +436,7 @@ def test_can_call_repr_on_actors():
 
     # When I call repr on it
     # Then I should get back its representation
-    assert repr(test) == "Actor(%(fn)r, queue_name='default', actor_name='test')" % vars(test)
+    assert repr(test) == "Actor({fn!r}, queue_name='default', actor_name='test')".format(**vars(test))
 
 
 def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_worker):

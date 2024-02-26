@@ -43,13 +43,15 @@ def get_broker() -> "Broker":
         try:
             from .brokers.rabbitmq import RabbitmqBroker
 
-            set_broker(RabbitmqBroker(
-                host="127.0.0.1",
-                port=5672,
-                heartbeat=5,
-                connection_attempts=5,
-                blocked_connection_timeout=30,
-            ))
+            set_broker(
+                RabbitmqBroker(
+                    host="127.0.0.1",
+                    port=5672,
+                    heartbeat=5,
+                    connection_attempts=5,
+                    blocked_connection_timeout=30,
+                )
+            )
         except ImportError:
             # Fall back to the Redis broker.
             from .brokers.redis import RedisBroker
@@ -132,8 +134,7 @@ class Broker:
           ValueError: When either ``before`` or ``after`` refer to a
             middleware that hasn't been registered yet.
         """
-        assert not (before and after), \
-            "provide either 'before' or 'after', but not both"
+        assert not (before and after), "provide either 'before' or 'after', but not both"
 
         if before or after:
             for i, m in enumerate(self.middleware):  # noqa
@@ -161,8 +162,7 @@ class Broker:
             middleware.after_declare_delay_queue(self, queue_name)
 
     def close(self):
-        """Close this broker and perform any necessary cleanup actions.
-        """
+        """Close this broker and perform any necessary cleanup actions."""
 
     def consume(self, queue_name, prefetch=1, timeout=30000):  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
@@ -281,8 +281,7 @@ class Broker:
         raise NotImplementedError()
 
     def flush_all(self):  # pragma: no cover
-        """Drop all messages from all declared queues.
-        """
+        """Drop all messages from all declared queues."""
         raise NotImplementedError()
 
     def join(self, queue_name, *, timeout=None):  # pragma: no cover
@@ -307,8 +306,7 @@ class Consumer:
     """
 
     def __iter__(self):  # pragma: no cover
-        """Returns this instance as a Message iterator.
-        """
+        """Returns this instance as a Message iterator."""
         return self
 
     def ack(self, message):  # pragma: no cover
@@ -349,13 +347,11 @@ class Consumer:
         raise NotImplementedError
 
     def close(self):
-        """Close this consumer and perform any necessary cleanup actions.
-        """
+        """Close this consumer and perform any necessary cleanup actions."""
 
 
 class MessageProxy:
-    """Base class for messages returned by :meth:`Broker.consume`.
-    """
+    """Base class for messages returned by :meth:`Broker.consume`."""
 
     def __init__(self, message):
         self.failed = False
@@ -363,18 +359,15 @@ class MessageProxy:
         self._exception = None
 
     def stuff_exception(self, exception):
-        """Stuff an exception into this message.
-        """
+        """Stuff an exception into this message."""
         self._exception = exception
 
     def clear_exception(self):
-        """Remove the exception from this message.
-        """
+        """Remove the exception from this message."""
         del self._exception
 
     def fail(self):
-        """Mark this message for rejection.
-        """
+        """Mark this message for rejection."""
         self.failed = True
 
     def __getattr__(self, name):

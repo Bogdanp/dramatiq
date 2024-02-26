@@ -143,17 +143,22 @@ def test_cli_can_be_reloaded_on_sighup(start_cli):
     filename = "/tmp/dramatiq-cli-loaded-at"
 
     # When I start my workers
-    proc = start_cli("tests.test_cli:broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-    ])
+    proc = start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+        ],
+    )
 
     # And enqueue a task to write the loaded timestamp
     write_loaded_at.send(filename)
     broker.join(write_loaded_at.queue_name)
 
     # Then I expect a timestamp to have been written to the file
-    with open(filename, "r") as f:
+    with open(filename) as f:
         timestamp_1 = int(f.read())
 
     # When I send a SIGHUP signal
@@ -167,7 +172,7 @@ def test_cli_can_be_reloaded_on_sighup(start_cli):
     broker.join(write_loaded_at.queue_name)
 
     # Then I expect another timestamp to have been written to the file
-    with open(filename, "r") as f:
+    with open(filename) as f:
         timestamp_2 = int(f.read())
 
     # And the second time to be at least a second apart from the first
@@ -180,17 +185,22 @@ def test_worker_threads_have_no_blocked_signals(start_cli):
     filename = "/tmp/dramatiq-cli-worker-blocked-signals"
 
     # When I start my workers
-    start_cli("tests.test_cli:broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-    ])
+    start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+        ],
+    )
 
     # And enqueue a task to write the blocked signals
     write_masked_signals.send(filename)
     broker.join(write_masked_signals.queue_name)
 
     # And then read the blocked signals to written to the file by the worker
-    with open(filename, "r") as f:
+    with open(filename) as f:
         blocked_signals = f.read()
 
     # Then I expect that no signals are blocked
@@ -203,17 +213,22 @@ def test_consumer_threads_have_no_blocked_signals(start_cli):
     filename = consumer_signal_mask_write_path
 
     # When I start workers on a custom broker with middleware to cause consumer threads to write masked signals
-    start_cli("tests.test_cli:consumer_mask_writing_broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-    ])
+    start_cli(
+        "tests.test_cli:consumer_mask_writing_broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+        ],
+    )
 
     # And enqueue a task for a worker
     consumer_write_masked_signals.send()
     consumer_mask_writing_broker.join(consumer_write_masked_signals.queue_name)
 
     # And then read the blocked signals written to the file by the consumer thread
-    with open(filename, "r") as f:
+    with open(filename) as f:
         blocked_signals = f.read()
 
     # Then I expect that no signals are blocked
@@ -226,10 +241,15 @@ def test_middleware_fork_functions_have_no_blocked_signals(start_cli):
     filename = middleware_fork_signal_mask_write_path
 
     # When I start workers on a custom broker with middleware with a fork function that writes masked signals
-    start_cli("tests.test_cli:middleware_fork_mask_writing_broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-    ])
+    start_cli(
+        "tests.test_cli:middleware_fork_mask_writing_broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+        ],
+    )
 
     # And enqueue a task for a worker, to wait for worker processes to finish setting up
     middleware_fork_actor.send()
@@ -239,7 +259,7 @@ def test_middleware_fork_functions_have_no_blocked_signals(start_cli):
     time.sleep(2)
 
     # And then read the blocked signals written to the file by the fork process
-    with open(filename, "r") as f:
+    with open(filename) as f:
         blocked_signals = f.read()
 
     # Then I expect that no signals are blocked
@@ -252,11 +272,17 @@ def test_cli_fork_functions_have_no_blocked_signals(start_cli):
     filename = fork_function_signal_mask_write_path
 
     # When I start workers and a fork function
-    start_cli("tests.test_cli:broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-        "--fork", "tests.test_cli:fork_function_write_masked_signals"
-    ])
+    start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+            "--fork",
+            "tests.test_cli:fork_function_write_masked_signals",
+        ],
+    )
 
     # And enqueue a task for a worker, to wait for worker processes to finish setting up
     write_masked_signals.send("/tmp/dramatiq-dummy-not-used")
@@ -266,7 +292,7 @@ def test_cli_fork_functions_have_no_blocked_signals(start_cli):
     time.sleep(2)
 
     # And then read the blocked signals written to the file by the fork process
-    with open(filename, "r") as f:
+    with open(filename) as f:
         blocked_signals = f.read()
 
     # Then I expect that no signals are blocked
@@ -280,17 +306,22 @@ def test_after_process_boot_call_has_no_blocked_signals(start_cli):
 
     # When I start workers on a custom broker with middleware with an after_process_boot
     # method that writes masked signals
-    start_cli("tests.test_cli:after_process_boot_mask_writing_broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-    ])
+    start_cli(
+        "tests.test_cli:after_process_boot_mask_writing_broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+        ],
+    )
 
     # And enqueue a task for a worker
     after_process_boot_actor.send()
     after_process_boot_mask_writing_broker.join(after_process_boot_actor.queue_name)
 
     # And then read the blocked signals written to the file in the after_process_boot call
-    with open(filename, "r") as f:
+    with open(filename) as f:
         blocked_signals = f.read()
 
     # Then I expect that no signals are blocked

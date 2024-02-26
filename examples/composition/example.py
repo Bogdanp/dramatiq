@@ -1,9 +1,8 @@
 import argparse
 import sys
 
-import requests
-
 import dramatiq
+import requests
 from dramatiq import group
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.encoder import PickleEncoder

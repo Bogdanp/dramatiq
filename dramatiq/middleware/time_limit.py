@@ -163,8 +163,7 @@ if is_gevent_active():
             self.after_expiration = after_expiration
 
         def _on_expiration(self, prev_greenlet, ex):
-            self.logger.warning(
-                "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
+            self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
             res = super()._on_expiration(prev_greenlet, ex)
             if self.after_expiration is not None:
                 self.after_expiration()

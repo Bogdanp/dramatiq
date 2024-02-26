@@ -2,9 +2,8 @@ import itertools
 import time
 from unittest.mock import patch
 
-import pytest
-
 import dramatiq
+import pytest
 from dramatiq.errors import Retry
 
 
@@ -280,11 +279,14 @@ class CustomException2(Exception):
     pass
 
 
-@pytest.mark.parametrize("exn,throws", [
-    [CustomException1, CustomException1],
-    [CustomException1, (CustomException1,)],
-    [CustomException2, (CustomException1, CustomException2)],
-])
+@pytest.mark.parametrize(
+    "exn,throws",
+    [
+        [CustomException1, CustomException1],
+        [CustomException1, (CustomException1,)],
+        [CustomException2, (CustomException1, CustomException2)],
+    ],
+)
 def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker, exn, throws):
     # Given that I have a database
     attempts = []
@@ -297,9 +299,9 @@ def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker
             raise exn("Expected Failure")
 
     # And that I've mocked the logging classes
-    with patch("logging.Logger.error") as error_mock, \
-         patch("logging.Logger.warning") as warning_mock, \
-         patch("logging.Logger.info") as info_mock:
+    with patch("logging.Logger.error") as error_mock, patch("logging.Logger.warning") as warning_mock, patch(
+        "logging.Logger.info"
+    ) as info_mock:
         # When I send that actor a message
         do_work.send()
 

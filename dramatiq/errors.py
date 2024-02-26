@@ -17,8 +17,7 @@
 
 
 class DramatiqError(Exception):  # pragma: no cover
-    """Base class for all dramatiq errors.
-    """
+    """Base class for all dramatiq errors."""
 
     def __init__(self, message):
         self.message = message
@@ -28,8 +27,7 @@ class DramatiqError(Exception):  # pragma: no cover
 
 
 class DecodeError(DramatiqError):
-    """Raised when a message fails to decode.
-    """
+    """Raised when a message fails to decode."""
 
     def __init__(self, message, data, error):
         super().__init__(message)
@@ -38,18 +36,15 @@ class DecodeError(DramatiqError):
 
 
 class BrokerError(DramatiqError):
-    """Base class for broker-related errors.
-    """
+    """Base class for broker-related errors."""
 
 
 class ActorNotFound(BrokerError):
-    """Raised when a message is sent to an actor that hasn't been declared.
-    """
+    """Raised when a message is sent to an actor that hasn't been declared."""
 
 
 class QueueNotFound(BrokerError):
-    """Raised when a message is sent to an queue that hasn't been declared.
-    """
+    """Raised when a message is sent to an queue that hasn't been declared."""
 
 
 class QueueJoinTimeout(DramatiqError):
@@ -59,23 +54,19 @@ class QueueJoinTimeout(DramatiqError):
 
 
 class ConnectionError(BrokerError):
-    """Base class for broker connection-related errors.
-    """
+    """Base class for broker connection-related errors."""
 
 
 class ConnectionFailed(ConnectionError):
-    """Raised when a broker connection could not be opened.
-    """
+    """Raised when a broker connection could not be opened."""
 
 
 class ConnectionClosed(ConnectionError):
-    """Raised when a broker connection is suddenly closed.
-    """
+    """Raised when a broker connection is suddenly closed."""
 
 
 class RateLimitExceeded(DramatiqError):
-    """Raised when a rate limit has been exceeded.
-    """
+    """Raised when a rate limit has been exceeded."""
 
 
 class Retry(DramatiqError):

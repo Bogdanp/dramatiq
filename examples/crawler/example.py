@@ -7,10 +7,9 @@ import sys
 from contextlib import closing
 from threading import local
 
+import dramatiq
 import pylibmc
 import requests
-
-import dramatiq
 
 logger = logging.getLogger("example")
 memcache_client = pylibmc.Client(["localhost"], binary=True)
@@ -20,6 +19,7 @@ state = local()
 
 if os.getenv("REDIS") == "1":
     from dramatiq.brokers.redis import RedisBroker
+
     broker = RedisBroker()
     dramatiq.set_broker(broker)
 

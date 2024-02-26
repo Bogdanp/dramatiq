@@ -20,7 +20,7 @@ import re
 import time
 from datetime import timedelta
 from inspect import iscoroutinefunction
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Generic, TypeVar, overload
 
 from .asyncio import async_to_sync
 from .broker import Broker, get_broker
@@ -54,15 +54,16 @@ class Actor(Generic[P, R]):
       options(dict): Arbitrary options that are passed to the broker
         and middleware.
     """
+
     def __init__(
         self,
-        fn: Callable[P, Union[R, Awaitable[R]]],
+        fn: Callable[P, R | Awaitable[R]],
         *,
         broker: Broker,
         actor_name: str,
         queue_name: str,
         priority: int,
-        options: Dict[str, Any],
+        options: dict[str, Any],
     ) -> None:
         self.logger = get_logger(fn.__module__, actor_name)
         self.fn = async_to_sync(fn) if iscoroutinefunction(fn) else fn
@@ -92,9 +93,10 @@ class Actor(Generic[P, R]):
         return self.message_with_options(args=args, kwargs=kwargs)
 
     def message_with_options(
-        self, *,
+        self,
+        *,
         args: tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
         **options,
     ) -> Message[R]:
         """Build a message with an arbitrary set of processing options.
@@ -139,10 +141,11 @@ class Actor(Generic[P, R]):
         return self.send_with_options(args=args, kwargs=kwargs)
 
     def send_with_options(
-        self, *,
+        self,
+        *,
         args: tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
-        delay: Optional[timedelta | int] = None,
+        kwargs: dict[str, Any] | None = None,
+        delay: timedelta | int | None = None,
         **options,
     ) -> Message[R]:
         """Asynchronously send a message to this actor, along with an
@@ -185,10 +188,10 @@ class Actor(Generic[P, R]):
             self.logger.debug("Completed after %.02fms.", delta * 1000)
 
     def __repr__(self) -> str:
-        return "Actor(%(fn)r, queue_name=%(queue_name)r, actor_name=%(actor_name)r)" % vars(self)
+        return "Actor({fn!r}, queue_name={queue_name!r}, actor_name={actor_name!r})".format(**vars(self))
 
     def __str__(self) -> str:
-        return "Actor(%(actor_name)s)" % vars(self)
+        return "Actor({actor_name})".format(**vars(self))
 
 
 @overload
@@ -202,15 +205,15 @@ def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, R]], Actor[P, R]]:
 
 
 def actor(
-    fn: Optional[Callable[P, R]] = None,
+    fn: Callable[P, R] | None = None,
     *,
     actor_class: Callable[..., Actor[P, R]] = Actor,  # type: ignore[assignment]
-    actor_name: Optional[str] = None,
+    actor_name: str | None = None,
     queue_name: str = "default",
     priority: int = 0,
-    broker: Optional[Broker] = None,
+    broker: Broker | None = None,
     **options,
-) -> Union[Actor[P, R], Callable]:
+) -> Actor[P, R] | Callable:
     """Declare an actor.
 
     Examples:
@@ -253,6 +256,7 @@ def actor(
     Returns:
       Actor: The decorated function.
     """
+
     def decorator(fn: Callable[..., R]) -> Actor[P, R]:
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
@@ -266,14 +270,18 @@ def actor(
         invalid_options = set(options) - broker.actor_options
         if invalid_options:
             invalid_options_list = ", ".join(invalid_options)
-            raise ValueError((
-                "The following actor options are undefined: %s. "
-                "Did you forget to add a middleware to your Broker?"
-            ) % invalid_options_list)
+            raise ValueError(
+                ("The following actor options are undefined: %s. " "Did you forget to add a middleware to your Broker?")
+                % invalid_options_list
+            )
 
         return actor_class(
-            fn, actor_name=actor_name, queue_name=queue_name,
-            priority=priority, broker=broker, options=options,
+            fn,
+            actor_name=actor_name,
+            queue_name=queue_name,
+            priority=priority,
+            broker=broker,
+            options=options,
         )
 
     if fn is None:
