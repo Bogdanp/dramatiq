@@ -143,13 +143,16 @@ class ResultBackend:
         Returns:
           str
         """
-        message_key = "%(namespace)s:%(queue_name)s:%(actor_name)s:%(message_id)s" % {
-            "namespace": self.namespace,
+        message_key = "%(queue_name)s:%(actor_name)s:%(message_id)s" % {
             "queue_name": q_name(message.queue_name),
             "actor_name": message.actor_name,
             "message_id": message.message_id,
         }
-        return hashlib.md5(message_key.encode("utf-8")).hexdigest()
+
+        if self.namespace is None:
+            return message_key
+        else:
+            return f"{self.namespace}:{message_key}"
 
     def _get(self, message_key: str) -> MResult:  # pragma: no cover
         """Get a result from the backend.  Subclasses may implement
