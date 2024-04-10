@@ -69,6 +69,8 @@ local queue_full_name = namespace .. ":" .. queue_name
 local queue_messages = queue_full_name .. ".msgs"
 local xqueue_full_name = namespace .. ":" .. queue_canonical_name .. ".XQ"
 local xqueue_messages = xqueue_full_name .. ".msgs"
+local squeue_full_name = namespace .. ":" .. queue_canonical_name
+local squeue_messages = squeue_full_name .. ".msgs"
 
 -- Command-specific arguments.
 local ARGS = {}
@@ -139,6 +141,14 @@ if do_maintenance == "1" then
         end
     end
 
+    local success_message_ids = redis.call("zrangebyscore", squeue_full_name, 0, timestamp - dead_message_ttl)
+    if next(success_message_ids) then
+        for success_message_ids_batch in iter_chunks(success_message_ids) do
+            redis.call("zrem", squeue_full_name, unpack(success_message_ids_batch))
+            redis.call("hdel", squeue_messages, unpack(success_message_ids_batch))
+        end
+    end
+
     -- The following code is required for backwards-compatibility with
     -- the old way acks used to be implemented.  It hoists any
     -- existing acks zsets into the per-worker sets.
@@ -204,6 +214,11 @@ elseif command == "ack" then
     local message_id = ARGS[1]
 
     if redis.call("srem", queue_acks, message_id) > 0 then
+        local message = redis.call("hget", queue_messages, message_id)
+        if message then
+            redis.call("zadd", squeue_full_name, timestamp, message_id)
+            redis.call("hset", squeue_messages, message_id, message)
+        end
         redis.call("hdel", queue_messages, message_id)
     end
 
