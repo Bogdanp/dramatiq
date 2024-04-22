@@ -192,17 +192,17 @@ class Actor(Generic[P, R]):
 
 
 @overload
-def actor(fn: Callable[P, R], **kwargs) -> Actor[P, R]:
+def actor(fn: Callable[P, Union[Awaitable[R], R]], **kwargs) -> Actor[P, R]:
     pass
 
 
 @overload
-def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, R]], Actor[P, R]]:
+def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, Union[Awaitable[R], R]]], Actor[P, R]]:
     pass
 
 
 def actor(
-    fn: Optional[Callable[P, R]] = None,
+    fn: Optional[Callable[P, Union[Awaitable[R], R]]] = None,
     *,
     actor_class: Callable[..., Actor[P, R]] = Actor,  # type: ignore[assignment]
     actor_name: Optional[str] = None,
@@ -253,7 +253,7 @@ def actor(
     Returns:
       Actor: The decorated function.
     """
-    def decorator(fn: Callable[..., R]) -> Actor[P, R]:
+    def decorator(fn: Callable[..., Union[Awaitable[R], R]]) -> Actor[P, R]:
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
         if not _queue_name_re.fullmatch(queue_name):
