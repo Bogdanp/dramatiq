@@ -247,6 +247,7 @@ class _ConsumerThread(Thread):
     def run(self):
         self.logger.debug("Running consumer thread...")
         self.running = True
+        self.broker.emit_after("consumer_thread_boot", self)
         while self.running:
             if self.paused:
                 self.logger.debug("Consumer is paused. Sleeping for %.02fms...", self.worker_timeout)
@@ -448,6 +449,7 @@ class _WorkerThread(Thread):
     def run(self):
         self.logger.debug("Running worker thread...")
         self.running = True
+        self.broker.emit_after("worker_thread_boot", self)
         while self.running:
             if self.paused:
                 self.logger.debug("Worker is paused. Sleeping for %.02f...", self.timeout)

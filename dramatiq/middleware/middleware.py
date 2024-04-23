@@ -138,18 +138,22 @@ class Middleware:
         """Called after the worker process shuts down.
         """
 
+    def after_consumer_thread_boot(self, broker, thread):
+        """Called from a consumer thread after it starts but before it starts its run loop.
+        """
+
     def before_consumer_thread_shutdown(self, broker, thread):
         """Called before a consumer thread shuts down.  This may be
         used to clean up thread-local resources (such as Django
         database connections).
+        """
 
-        There is no ``after_consumer_thread_boot``.
+    def after_worker_thread_boot(self, broker, thread):
+        """Called from a worker thread after it starts but before it starts its run loop.
         """
 
     def before_worker_thread_shutdown(self, broker, thread):
         """Called before a worker thread shuts down.  This may be used
         to clean up thread-local resources (such as Django database
         connections).
-
-        There is no ``after_worker_thread_boot``.
         """
