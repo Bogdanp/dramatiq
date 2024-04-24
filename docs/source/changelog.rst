@@ -8,13 +8,30 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Middleware hooks for after consumer & worker thread boot. (`#619`_,
+  `@kamalmarhubi`_)
+* Type hints for awaitable actors. (`#621`_, `@DABND19`_)
+
+.. _#619: https://github.com/Bogdanp/dramatiq/pull/619
+.. _#621: https://github.com/Bogdanp/dramatiq/pull/621
+.. _@DABND19: https://github.com/DABND19
+.. _@kamalmarhubi: https://github.com/kamalmarhubi
+
 Fixed
 ^^^^^
 
-* The ``python_requires`` version in ``setup.py``. (`#606`_, `@niccodemus`_)
+* The ``python_requires`` version in ``setup.py``. (`#606`_,
+  `@niccodemus`_)
+* The result middleware now takes message options into
+  account. (`#612`_, `@huwylphimet`_)
 
 .. _#606: https://github.com/Bogdanp/dramatiq/pull/606
+.. _#612: https://github.com/Bogdanp/dramatiq/pull/612
 .. _@niccodemus: https://github.com/nicoddemus
+.. _@huwylphimet: https://github.com/huwylphimet
 
 `1.16.0`_ -- 2024-01-25
 -----------------------
