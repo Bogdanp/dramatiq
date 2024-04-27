@@ -1,15 +1,15 @@
 import os
+import random
+import string
 import time
 from threading import Event
 from unittest.mock import Mock, patch
-import string
-import random
 
 import pika.exceptions
 import pytest
 
 import dramatiq
-from dramatiq import Message, QueueJoinTimeout, Worker
+from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
@@ -52,8 +52,7 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
     # When I try to give it both a connection URL and a list of connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(url="amqp://127.0.0.1:5672",
-                       parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
+        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
 
     # When I try to give it both a connection URL and pika connection parameters
     # Then a RuntimeError should be raised
@@ -467,25 +466,34 @@ def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors
             worker.stop()
 
 
-def test_rabbitmq_broker_retries_declaring_queues_when_declared_queues_is_gone(rabbitmq_broker):
+def test_rabbitmq_broker_retries_declaring_queues_when_declared_queue_disappears(rabbitmq_broker):
     executed = False
 
-    # I declare an actor
-    characters = string.ascii_letters + string.digits
-    suffix = "".join(random.choice(characters) for _ in range(2))
+    # Given that I have an actor on a flaky queue
+    flaky_queue_name = "flaky_queue"
+    rabbitmq_broker.channel.queue_delete(flaky_queue_name)
 
-    @dramatiq.actor(queue_name=f"flaky_queue_{suffix}")
+    @dramatiq.actor(queue_name=flaky_queue_name)
     def do_work():
         nonlocal executed
         executed = True
 
-    # Let worker to ensure_queue and consume message
+    # When I start a server
     worker = Worker(rabbitmq_broker, worker_threads=1)
     worker.start()
 
-    # Check the queue is declared
-    rabbitmq_broker.channel.queue_declare(do_work.queue_name)
-    # Let the queue go unexpectedly
+    declared_ev = Event()
+
+    class DeclaredMiddleware(Middleware):
+        def after_declare_queue(self, broker, queue_name):
+            if queue_name == flaky_queue_name:
+                declared_ev.set()
+
+    # I expect that queue to be declared
+    rabbitmq_broker.add_middleware(DeclaredMiddleware())
+    assert declared_ev.wait(timeout=5)
+
+    # If I delete the queue
     rabbitmq_broker.channel.queue_delete(do_work.queue_name)
     with pytest.raises(pika.exceptions.ChannelClosedByBroker):
         rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
@@ -498,7 +506,7 @@ def test_rabbitmq_broker_retries_declaring_queues_when_declared_queues_is_gone(r
     finally:
         worker.stop()
 
-    # Then the queue should eventually be declared and the message executed
+    # Then the queue should be declared and the message executed
     assert executed
 
 
