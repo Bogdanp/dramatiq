@@ -1,6 +1,4 @@
 import os
-import random
-import string
 import time
 from threading import Event
 from unittest.mock import Mock, patch
