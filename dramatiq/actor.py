@@ -161,7 +161,7 @@ class Actor(Generic[P, R]):
           Message: The enqueued message.
         """
         if isinstance(delay, timedelta):
-            delay = delay.total_seconds() * 1000
+            delay = int(delay.total_seconds() * 1000)
 
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
