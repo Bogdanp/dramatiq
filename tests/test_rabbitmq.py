@@ -7,7 +7,7 @@ import pika.exceptions
 import pytest
 
 import dramatiq
-from dramatiq import Message, QueueJoinTimeout, Worker
+from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
@@ -462,6 +462,50 @@ def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors
             assert executed
         finally:
             worker.stop()
+
+
+def test_rabbitmq_broker_retries_declaring_queues_when_declared_queue_disappears(rabbitmq_broker):
+    executed = False
+
+    # Given that I have an actor on a flaky queue
+    flaky_queue_name = "flaky_queue"
+    rabbitmq_broker.channel.queue_delete(flaky_queue_name)
+
+    @dramatiq.actor(queue_name=flaky_queue_name)
+    def do_work():
+        nonlocal executed
+        executed = True
+
+    # When I start a server
+    worker = Worker(rabbitmq_broker, worker_threads=1)
+    worker.start()
+
+    declared_ev = Event()
+
+    class DeclaredMiddleware(Middleware):
+        def after_declare_queue(self, broker, queue_name):
+            if queue_name == flaky_queue_name:
+                declared_ev.set()
+
+    # I expect that queue to be declared
+    rabbitmq_broker.add_middleware(DeclaredMiddleware())
+    assert declared_ev.wait(timeout=5)
+
+    # If I delete the queue
+    rabbitmq_broker.channel.queue_delete(do_work.queue_name)
+    with pytest.raises(pika.exceptions.ChannelClosedByBroker):
+        rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
+
+    # And I send that actor a message
+    do_work.send()
+    try:
+        rabbitmq_broker.join(do_work.queue_name, timeout=20000)
+        worker.join()
+    finally:
+        worker.stop()
+
+    # Then the queue should be declared and the message executed
+    assert executed
 
 
 def test_rabbitmq_messages_that_failed_to_decode_are_rejected(rabbitmq_broker, rabbitmq_worker):

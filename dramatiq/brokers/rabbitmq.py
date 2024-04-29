@@ -225,8 +225,8 @@ class RabbitmqBroker(Broker):
 
         Parameters:
           queue_name(str): The name of the new queue.
-          ensure(bool): When True, the queue is created immediately on
-            the server.
+          ensure(bool): When True, the queue is created on the server,
+            if necessary.
 
         Raises:
           ConnectionClosed: When ensure=True if the underlying channel
@@ -308,8 +308,8 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: If the underlying channel or connection
             has been closed.
         """
-        queue_name = message.queue_name
-        self.declare_queue(queue_name, ensure=True)
+        canonical_queue_name = message.queue_name
+        queue_name = canonical_queue_name
 
         if delay is not None:
             queue_name = dq_name(queue_name)
@@ -324,6 +324,7 @@ class RabbitmqBroker(Broker):
         attempts = 1
         while True:
             try:
+                self.declare_queue(canonical_queue_name, ensure=True)
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
                 self.emit_before("enqueue", message, delay)
                 self.channel.basic_publish(
@@ -343,6 +344,12 @@ class RabbitmqBroker(Broker):
                 # Delete the channel and the connection so that the
                 # next caller/attempt may initiate new ones of each.
                 del self.connection
+
+                # If the queue disappears, remove it from the known set
+                # so that it can be redeclared on retry or the next time
+                # a message is enqueued.
+                if getattr(e, "reply_code", None) == 404:
+                    self.queues.remove(q_name(queue_name))
 
                 attempts += 1
                 if attempts > MAX_ENQUEUE_ATTEMPTS:
