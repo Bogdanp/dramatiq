@@ -20,6 +20,11 @@ Added
 .. _@DABND19: https://github.com/DABND19
 .. _@kamalmarhubi: https://github.com/kamalmarhubi
 
+Changed
+^^^^^^^
+
+* The =watch= extras now require Watchdog version 4.0+.
+
 Fixed
 ^^^^^
 
