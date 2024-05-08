@@ -16,9 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextvars
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from .middleware import Middleware
+
+if TYPE_CHECKING:
+    from ..message import Message
 
 
 class CurrentMessage(Middleware):
@@ -38,11 +41,11 @@ class CurrentMessage(Middleware):
     """
 
     _MESSAGE: contextvars.ContextVar[
-        Optional[dict]
+        "Optional[Message[Any]]"
     ] = contextvars.ContextVar("_MESSAGE", default=None)
 
     @classmethod
-    def get_current_message(cls):
+    def get_current_message(cls) -> "Optional[Message[Any]]":
         """Get the message that triggered the current actor.  Messages
         are thread local so this returns ``None`` when called outside
         of actor code.
