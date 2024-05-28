@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import multiprocessing
 import os
 import shutil
 import signal
@@ -25,16 +25,6 @@ from ..common import current_millis, q_name
 from ..logging import get_logger
 from .middleware import Middleware
 
-#: The path to store the prometheus database files. This path should
-#: be unique for every parent process instance. Dramatiq would try to clean-up
-#: this directory upon shutdown.
-DB_PATH = f"{tempfile.gettempdir()}/dramatiq-prometheus-{os.getpid()}"
-
-#: The path to store the prometheus database files, as configured
-#: via default Prometheus environment variables. If present, this
-#: directory is used by Dramatiq, but not cleaned-up.
-STANDARD_DB_PATH = os.getenv("PROMETHEUS_MULTIPROC_DIR", os.getenv("prometheus_multiproc_dir"))
-
 #: The HTTP host the exposition server should bind to.
 HTTP_HOST = os.getenv("dramatiq_prom_host", "0.0.0.0")
 
@@ -42,14 +32,25 @@ HTTP_HOST = os.getenv("dramatiq_prom_host", "0.0.0.0")
 HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
 
 
-def _setup_prometheus_env():
-    # leaving the standard prometheus envs as is
-    # whoever set it should know what they are doing
-    if STANDARD_DB_PATH:
-        return
-    # otherwise use the generated path for prometheus multiproc db
-    os.makedirs(DB_PATH, exist_ok=True)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
+def _prom_db_path():
+    """Determines Prometheus multiproc database path.
+
+    Returns:
+        tuple[str, bool]: (db_path, is_external)
+            db_path     - path to DB directory
+            is_external - True if DB path set externally via standard env variable
+    """
+    ext_path = os.getenv("DRAMATIQ_PROM_DB")
+    if ext_path:
+        return ext_path, True
+
+    parent_proc = multiprocessing.parent_process()
+    # un-possible: parent_proc is None if current process isn't a subprocess
+    # this is supposed to be called only from subprocesses
+    if not parent_proc:
+        raise RuntimeError("No parent process found")
+    db_path = f"{tempfile.gettempdir()}/dramatiq-prometheus-{parent_proc.pid}"
+    return db_path, False
 
 
 class Prometheus(Middleware):
@@ -68,7 +69,11 @@ class Prometheus(Middleware):
         return [_run_exposition_server, _cleanup_on_shutdown]
 
     def after_process_boot(self, broker):
-        _setup_prometheus_env()
+        # setting up Prometheus multi-process environment
+        db_path, _ = _prom_db_path()
+        os.makedirs(db_path, exist_ok=True)
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = db_path
+        self.logger.debug("prometheus DB path: %s", db_path)
 
         # This import MUST happen at runtime, after process boot and
         # after the env variable has been set up.
@@ -128,15 +133,10 @@ class Prometheus(Middleware):
         return q_name(message.queue_name), message.actor_name
 
     def after_worker_shutdown(self, broker, worker):
-        # if we used a generated dir (DB_PATH), mark dead is not required
-        # DB_PATH would be deleted upon shutdown
-        if not STANDARD_DB_PATH:
-            return
-
         from prometheus_client import multiprocess
 
         self.logger.debug("Marking process dead...")
-        multiprocess.mark_process_dead(os.getpid(), STANDARD_DB_PATH)
+        multiprocess.mark_process_dead(os.getpid())
 
     def after_nack(self, broker, message):
         labels = self._standard_labels(message)
@@ -174,10 +174,8 @@ class Prometheus(Middleware):
     after_skip_message = after_process_message
 
 
-class _metrics_handler(BaseHTTPRequestHandler):
+class _MetricsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        _setup_prometheus_env()
-
         # These imports must happen at runtime.  See above.
         import prometheus_client as prom
         from prometheus_client import multiprocess as prom_mp
@@ -204,9 +202,12 @@ def _run_exposition_server():
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, sig_handler)
 
+    db_path, _ = _prom_db_path()
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = db_path
+
     try:
         address = (HTTP_HOST, HTTP_PORT)
-        httpd = HTTPServer(address, _metrics_handler)
+        httpd = HTTPServer(address, _MetricsHandler)
         httpd.serve_forever()
     except KeyboardInterrupt:
         logger.debug("Stopping exposition server...")
@@ -216,19 +217,21 @@ def _run_exposition_server():
 
 
 def _cleanup_on_shutdown():
+    """Main process fork. Waits for SIGTERM (graceful shutdown) and cleans up Prometheus database
+    directory, if using unique path based on parent PID.
     """
-    Main process fork. Waits for SIGTERM (graceful shutdown) and cleans up DB_PATH dir, if used.
-    """
+    db_path, is_external = _prom_db_path()
     logger = get_logger(__name__, "_cleanup_on_shutdown")
-    logger.debug("Starting cleanup waiter...")
-    if not STANDARD_DB_PATH:
+    logger.debug("Starting cleanup waiter; using DB path: %s", db_path)
+
+    if not is_external:
         signal.sigwaitinfo([signal.SIGTERM])
-        logger.debug("Caught SIGTERM, cleaning up db directory...")
+        logger.debug("Caught SIGTERM, cleaning up DB directory: %s", db_path)
         try:
-            shutil.rmtree(DB_PATH)
+            shutil.rmtree(db_path)
         except OSError:
-            logger.exception("error during db directory cleanup")
+            logger.exception("error during DB directory cleanup")
     else:
-        logger.debug("Cleanup waiter skipped, not using DB_PATH")
+        logger.debug("Cleanup waiter skipped, DB path is overridden via ENV var")
 
     return 0
