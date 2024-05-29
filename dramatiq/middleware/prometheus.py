@@ -117,6 +117,7 @@ class Prometheus(Middleware):
             "The number of delayed messages in memory.",
             ["queue_name", "actor_name"],
             registry=registry,
+            multiprocess_mode="livesum",
         )
         self.message_durations = prom.Histogram(
             "dramatiq_message_duration_milliseconds",
