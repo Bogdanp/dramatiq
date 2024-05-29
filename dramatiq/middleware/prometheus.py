@@ -14,30 +14,47 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import multiprocessing
 import os
+import shutil
+import signal
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from ..common import current_millis
+from ..common import current_millis, q_name
 from ..logging import get_logger
 from .middleware import Middleware
-
-#: The path to the file to use to race Exposition servers against one another.
-LOCK_PATH = os.getenv("dramatiq_prom_lock", "%s/dramatiq-prometheus.lock" % tempfile.gettempdir())
-
-#: The path to store the prometheus database files.  This path is
-#: cleared before every run.
-DB_PATH = os.getenv("dramatiq_prom_db", "%s/dramatiq-prometheus" % tempfile.gettempdir())
-
-# Ensure the DB_PATH exists.
-os.makedirs(DB_PATH, exist_ok=True)
 
 #: The HTTP host the exposition server should bind to.
 HTTP_HOST = os.getenv("dramatiq_prom_host", "0.0.0.0")
 
 #: The HTTP port the exposition server should listen on.
 HTTP_PORT = int(os.getenv("dramatiq_prom_port", "9191"))
+
+
+def _prom_db_path():
+    """Determines Prometheus multiproc database path.
+
+    Returns:
+        tuple[str, bool]: (db_path, is_external)
+            db_path     - path to DB directory
+            is_external - True if DB path set externally via standard env variable
+    """
+    ext_path = os.getenv("DRAMATIQ_PROM_DB")
+    if ext_path:
+        return ext_path, True
+
+    parent_proc = multiprocessing.parent_process()
+    # parent_proc is None if current process isn't a subprocess
+    if parent_proc:
+        pid = parent_proc.pid
+    else:
+        pid = os.getpid()
+        get_logger(__name__, "_prom_db_path").warning(
+            "no parent process, using current PID for DB path"
+        )
+    db_path = f"{tempfile.gettempdir()}/dramatiq-prometheus-{pid}"
+    return db_path, False
 
 
 class Prometheus(Middleware):
@@ -53,11 +70,14 @@ class Prometheus(Middleware):
 
     @property
     def forks(self):
-        return [_run_exposition_server]
+        return [_run_exposition_server, _cleanup_on_shutdown]
 
     def after_process_boot(self, broker):
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
-        os.environ["prometheus_multiproc_dir"] = DB_PATH
+        # setting up Prometheus multi-process environment
+        db_path, _ = _prom_db_path()
+        os.makedirs(db_path, exist_ok=True)
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = db_path
+        self.logger.debug("prometheus DB path: %s", db_path)
 
         # This import MUST happen at runtime, after process boot and
         # after the env variable has been set up.
@@ -101,6 +121,7 @@ class Prometheus(Middleware):
             "The number of delayed messages in memory.",
             ["queue_name", "actor_name"],
             registry=registry,
+            multiprocess_mode="livesum",
         )
         self.message_durations = prom.Histogram(
             "dramatiq_message_duration_milliseconds",
@@ -111,28 +132,33 @@ class Prometheus(Middleware):
             registry=registry,
         )
 
+    @staticmethod
+    def _standard_labels(message):
+        # use canonical queue names in metrics
+        return q_name(message.queue_name), message.actor_name
+
     def after_worker_shutdown(self, broker, worker):
         from prometheus_client import multiprocess
 
         self.logger.debug("Marking process dead...")
-        multiprocess.mark_process_dead(os.getpid(), DB_PATH)
+        multiprocess.mark_process_dead(os.getpid())
 
     def after_nack(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         self.total_rejected_messages.labels(*labels).inc()
 
     def after_enqueue(self, broker, message, delay):
         if "retries" in message.options:
-            labels = (message.queue_name, message.actor_name)
+            labels = self._standard_labels(message)
             self.total_retried_messages.labels(*labels).inc()
 
     def before_delay_message(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         self.delayed_messages.add(message.message_id)
         self.inprogress_delayed_messages.labels(*labels).inc()
 
     def before_process_message(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         if message.message_id in self.delayed_messages:
             self.delayed_messages.remove(message.message_id)
             self.inprogress_delayed_messages.labels(*labels).dec()
@@ -141,7 +167,7 @@ class Prometheus(Middleware):
         self.message_start_times[message.message_id] = current_millis()
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
-        labels = (message.queue_name, message.actor_name)
+        labels = self._standard_labels(message)
         message_start_time = self.message_start_times.pop(message.message_id, current_millis())
         message_duration = current_millis() - message_start_time
         self.message_durations.labels(*labels).observe(message_duration)
@@ -153,11 +179,8 @@ class Prometheus(Middleware):
     after_skip_message = after_process_message
 
 
-class _metrics_handler(BaseHTTPRequestHandler):
+class _MetricsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        os.environ["PROMETHEUS_MULTIPROC_DIR"] = DB_PATH
-        os.environ["prometheus_multiproc_dir"] = DB_PATH
-
         # These imports must happen at runtime.  See above.
         import prometheus_client as prom
         from prometheus_client import multiprocess as prom_mp
@@ -179,12 +202,46 @@ def _run_exposition_server():
     logger = get_logger(__name__, "_run_exposition_server")
     logger.debug("Starting exposition server...")
 
+    def sig_handler(_signum, _frame):
+        logger.debug("Caught SIGTERM")
+        raise KeyboardInterrupt
+
+    try:
+        signal.signal(signal.SIGTERM, sig_handler)
+    # may raise ValueError: "signal only works in main thread of the main interpreter" (tests)
+    except ValueError:
+        logger.exception("unable to register signal handler")
+
+    db_path, _ = _prom_db_path()
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = db_path
+
     try:
         address = (HTTP_HOST, HTTP_PORT)
-        httpd = HTTPServer(address, _metrics_handler)
+        httpd = HTTPServer(address, _MetricsHandler)
         httpd.serve_forever()
     except KeyboardInterrupt:
         logger.debug("Stopping exposition server...")
         httpd.shutdown()
+
+    return 0
+
+
+def _cleanup_on_shutdown():
+    """Main process fork. Waits for SIGTERM (graceful shutdown) and cleans up Prometheus database
+    directory, if using unique path based on parent PID.
+    """
+    db_path, is_external = _prom_db_path()
+    logger = get_logger(__name__, "_cleanup_on_shutdown")
+    logger.debug("Starting cleanup waiter; using DB path: %s", db_path)
+
+    if not is_external:
+        signal.sigwaitinfo([signal.SIGTERM])
+        logger.debug("Caught SIGTERM, cleaning up DB directory: %s", db_path)
+        try:
+            shutil.rmtree(db_path)
+        except OSError:
+            logger.exception("error during DB directory cleanup")
+    else:
+        logger.debug("Cleanup waiter skipped, DB path is overridden via ENV var")
 
     return 0
