@@ -64,3 +64,4 @@ of those changes to CLEARTYPE SRL.
 | [@pahrohfit](https://github.com/pahrohfit/)            | Robert Dailey          |
 | [@nhairs](https://github.com/nhairs)                   | Nicholas Hairs         |
 | [@5tefan](https://github.com/5tefan/)                  | Stefan Codrescu        |
+| [@stat1c-void](https://github.com/stat1c-void)         | Sergei                 |

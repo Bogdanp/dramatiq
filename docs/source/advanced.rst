@@ -339,16 +339,23 @@ Gotchas with Prometheus
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The Prometheus client for Python is a bit finicky when it comes to
-exporting metrics from a multi-process configuration.  If your own app
-uses Prometheus, then you should export ``prometheus_multiproc_dir``
-and ``dramatiq_prom_db`` environment variables -- both pointing to an
-existing folder -- and remove any files in that folder before running
-Dramatiq.  For example::
+exporting metrics from a multi-process configuration.
+
+By default, Dramatiq manages ``PROMETHEUS_MULTIPROC_DIR`` environment
+variable, making sure the directory is unique per top-level Dramatiq
+process, and cleans it up during a graceful shutdown.
+
+But if your own app uses Prometheus and incorporates Dramatiq, then
+you should export ``PROMETHEUS_MULTIPROC_DIR`` and ``DRAMATIQ_PROM_DB``
+environment variables, both pointing to an existing directory. In this
+case, Dramatiq does not manage the directory, so it is your
+responsibility to do so -- e.g. to remove any files there before
+running Dramatiq. For example::
 
   mkdir -p /tmp/dramatiq-prometheus \
     && rm -r /tmp/dramatiq-prometheus/* \
-    && env prometheus_multiproc_dir=/tmp/dramatiq-prometheus \
-           dramatiq_prom_db=/tmp/dramatiq-prometheus \
+    && env PROMETHEUS_MULTIPROC_DIR=/tmp/dramatiq-prometheus \
+           DRAMATIQ_PROM_DB=/tmp/dramatiq-prometheus \
            dramatiq app
 
 If you don't do this, then metrics will likely fail to export properly.
