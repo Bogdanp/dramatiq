@@ -45,11 +45,15 @@ def _prom_db_path():
         return ext_path, True
 
     parent_proc = multiprocessing.parent_process()
-    # un-possible: parent_proc is None if current process isn't a subprocess
-    # this is supposed to be called only from subprocesses
-    if not parent_proc:
-        raise RuntimeError("No parent process found")
-    db_path = f"{tempfile.gettempdir()}/dramatiq-prometheus-{parent_proc.pid}"
+    # parent_proc is None if current process isn't a subprocess
+    if parent_proc:
+        pid = parent_proc.pid
+    else:
+        pid = os.getpid()
+        get_logger(__name__, "_prom_db_path").warning(
+            "no parent process, using current PID for DB path"
+        )
+    db_path = f"{tempfile.gettempdir()}/dramatiq-prometheus-{pid}"
     return db_path, False
 
 
@@ -201,7 +205,12 @@ def _run_exposition_server():
     def sig_handler(_signum, _frame):
         logger.debug("Caught SIGTERM")
         raise KeyboardInterrupt
-    signal.signal(signal.SIGTERM, sig_handler)
+
+    try:
+        signal.signal(signal.SIGTERM, sig_handler)
+    # may raise ValueError: "signal only works in main thread of the main interpreter" (tests)
+    except ValueError:
+        logger.exception("unable to register signal handler")
 
     db_path, _ = _prom_db_path()
     os.environ["PROMETHEUS_MULTIPROC_DIR"] = db_path
