@@ -97,6 +97,9 @@ class Retries(Middleware):
         message.options["retries"] += 1
         message.options["traceback"] = traceback.format_exc(limit=30)
 
+        # Record in message options time at which it is requeued
+        message.options["requeue_timestamp"] = int(time.time() * 1000)
+
         max_retries = message.options.get("max_retries") or actor.options.get("max_retries", self.max_retries)
         retry_when = actor.options.get("retry_when", self.retry_when)
         if retry_when is not None and not retry_when(retries, exception) or \
@@ -115,9 +118,3 @@ class Retries(Middleware):
 
         self.logger.info("Retrying message %r in %d milliseconds.", message.message_id, delay)
         broker.enqueue(message, delay=delay)
-
-    def before_enqueue(self, broker, message, delay):
-
-        # If message will be retried, record in its options time at which it is requeued
-        if "retries" in message.options:
-            message.options["requeue_timestamp"] = int(time.time() * 1000)
