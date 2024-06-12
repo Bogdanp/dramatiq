@@ -321,9 +321,21 @@ def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker
 
 def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
 
-    # Given I have an actor that raises an exception and will be retried
-    @dramatiq.actor(max_retries=2, min_backoff=100, max_backoff=100)
+    # Given that I have a database
+    requeue_timestamps = []
+
+    stub_broker.add_middleware(dramatiq.middleware.CurrentMessage())
+    max_retries = 2
+
+    # And an actor that raises an exception and should be retried
+    @dramatiq.actor(max_retries=max_retries, min_backoff=100, max_backoff=100)
     def do_work():
+
+        current_message = dramatiq.middleware.CurrentMessage.get_current_message()
+
+        if "requeue_timestamp" in current_message.options:
+            requeue_timestamps.append(current_message.options["requeue_timestamp"])
+
         raise RuntimeError()
 
     message = do_work.send()
@@ -332,16 +344,11 @@ def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
     stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
-    dead_letters = stub_broker.dead_letters_by_queue[do_work.queue_name]
+    # Then I expect correct number of requeue timestamps recorded
+    assert len(requeue_timestamps) == max_retries
 
-    # Then I expect the message to be dead-lettered
-    assert len(dead_letters) == 1
+    # And that requeue timestamps are in increasing order
+    assert all(requeue_timestamps[i] < requeue_timestamps[i + 1] for i in range(len(requeue_timestamps) - 1))
 
-    dead_letter_message = dead_letters[0]._message
-
-    # And the dead-lettered message to have same id as actor's message
-    assert dead_letter_message.message_id == message.message_id
-
-    # And the dead-lettered message to have a requeue timestamp larger than message timestamp
-    assert "requeue_timestamp" in dead_letter_message.options.keys()
-    assert dead_letter_message.options["requeue_timestamp"] > message.message_timestamp
+    # And that all requeue timestamps are larger than message timestamp
+    assert all(requeue_time > message.message_timestamp for requeue_time in requeue_timestamps)
