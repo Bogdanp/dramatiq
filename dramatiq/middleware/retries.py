@@ -96,8 +96,6 @@ class Retries(Middleware):
 
         message.options["retries"] += 1
         message.options["traceback"] = traceback.format_exc(limit=30)
-
-        # Record in message options time at which it is requeued
         message.options["requeue_timestamp"] = int(time.time() * 1000)
 
         max_retries = message.options.get("max_retries") or actor.options.get("max_retries", self.max_retries)
