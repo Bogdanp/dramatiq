@@ -317,3 +317,38 @@ def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker
 
         # And the message should not be retried
         assert sum(attempts) == 1
+
+
+def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
+
+    # Given that I have a database
+    requeue_timestamps = []
+
+    stub_broker.add_middleware(dramatiq.middleware.CurrentMessage())
+    max_retries = 2
+
+    # And an actor that raises an exception and should be retried
+    @dramatiq.actor(max_retries=max_retries, min_backoff=100, max_backoff=100)
+    def do_work():
+
+        current_message = dramatiq.middleware.CurrentMessage.get_current_message()
+
+        if "requeue_timestamp" in current_message.options:
+            requeue_timestamps.append(current_message.options["requeue_timestamp"])
+
+        raise RuntimeError()
+
+    message = do_work.send()
+
+    # When I join on the queue and run the actor
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    # Then I expect correct number of requeue timestamps recorded
+    assert len(requeue_timestamps) == max_retries
+
+    # And that requeue timestamps are in increasing order
+    assert all(requeue_timestamps[i] < requeue_timestamps[i + 1] for i in range(len(requeue_timestamps) - 1))
+
+    # And that all requeue timestamps are larger than message timestamp
+    assert all(requeue_time > message.message_timestamp for requeue_time in requeue_timestamps)
