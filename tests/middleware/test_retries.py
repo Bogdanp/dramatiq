@@ -317,3 +317,31 @@ def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker
 
         # And the message should not be retried
         assert sum(attempts) == 1
+
+
+def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
+
+    # Given I have an actor that raises an exception and will be retried
+    @dramatiq.actor(max_retries=2, min_backoff=100, max_backoff=100)
+    def do_work():
+        raise RuntimeError()
+
+    message = do_work.send()
+
+    # When I join on the queue and run the actor
+    stub_broker.join(do_work.queue_name)
+    stub_worker.join()
+
+    dead_letters = stub_broker.dead_letters_by_queue[do_work.queue_name]
+
+    # Then I expect the message to be dead-lettered
+    assert len(dead_letters) == 1
+
+    dead_letter_message = dead_letters[0]._message
+
+    # And the dead-lettered message to have same id as actor's message
+    assert dead_letter_message.message_id == message.message_id
+
+    # And the dead-lettered message to have a requeue timestamp larger than message timestamp
+    assert "requeue_timestamp" in dead_letter_message.options.keys()
+    assert dead_letter_message.options["requeue_timestamp"] > message.message_timestamp

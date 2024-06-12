@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import traceback
 
 from ..common import compute_backoff
@@ -114,3 +115,9 @@ class Retries(Middleware):
 
         self.logger.info("Retrying message %r in %d milliseconds.", message.message_id, delay)
         broker.enqueue(message, delay=delay)
+
+    def before_enqueue(self, broker, message, delay):
+
+        # If message will be retried, record in its options time at which it is requeued
+        if "retries" in message.options:
+            message.options["requeue_timestamp"] = int(time.time() * 1000)
