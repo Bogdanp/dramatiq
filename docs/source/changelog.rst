@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* The `Retries` middleware now tracks when a message was last requeued
+  on retry. (`#629`_, `@kuba-lilz`_)
+
+.. _#629: https://github.com/Bogdanp/dramatiq/pull/629
+.. _@kuba-lilz: https://github.com/kuba-lilz
+
 `1.17.0`_ -- 2024-05-09
 -----------------------
 
