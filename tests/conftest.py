@@ -134,6 +134,8 @@ def start_cli():
     if proc is not None:
         proc.terminate()
         proc.wait()
+        if proc.stdout is not None:
+            proc.stdout.close()
 
 
 @pytest.fixture
