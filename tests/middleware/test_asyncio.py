@@ -131,8 +131,11 @@ def test_async_to_sync(get_event_loop_thread_mocked):
     set_event_loop_thread(thread)
     fn = async_to_sync(async_fn)
     actual = fn(2)
-    thread.run_coroutine.assert_called_once()
-    assert actual is thread.run_coroutine()
+    try:
+        thread.run_coroutine.assert_called_once()
+        assert actual is thread.run_coroutine.return_value
+    finally:
+        set_event_loop_thread(None)
 
 
 def test_async_to_sync_with_actual_thread(started_thread):
