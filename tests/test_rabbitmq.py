@@ -19,7 +19,8 @@ def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     url = "amqp://%s:%s@127.0.0.1:5672" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
 
     # When I pass that to URLRabbitmqBroker
-    broker = URLRabbitmqBroker(url)
+    with pytest.warns(DeprecationWarning):
+        broker = URLRabbitmqBroker(url)
 
     # Then I should get back a RabbitmqBroker
     assert isinstance(broker, RabbitmqBroker)
