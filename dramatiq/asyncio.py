@@ -112,6 +112,8 @@ class EventLoopThread(threading.Thread):
         if self.loop.is_running():
             self.logger.info("Stopping event loop...")
             self.loop.call_soon_threadsafe(self.loop.stop)
+            self.join()
+            self.loop.close()
 
     def run_coroutine(self, coro: Awaitable[R]) -> R:
         """Runs the given coroutine on the event loop.

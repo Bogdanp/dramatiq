@@ -24,7 +24,6 @@ def started_thread():
     set_event_loop_thread(thread)
     yield thread
     thread.stop()
-    thread.join()
     set_event_loop_thread(None)
 
 
