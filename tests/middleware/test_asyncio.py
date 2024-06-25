@@ -40,10 +40,14 @@ def test_event_loop_thread_start():
 
 def test_event_loop_thread_start_timeout():
     thread = EventLoopThread(logger=get_logger(__name__))
-    thread.loop = mock.Mock()
-    thread.loop.run_forever.side_effect = RuntimeError("fail")
-    with pytest.raises(RuntimeError):
+    loop_mock = mock.Mock()
+    # Store the original thread loop and replace it with a mock.
+    original_loop = thread.loop
+    thread.loop = loop_mock
+    with pytest.raises(RuntimeError, match="Event loop failed to start"):
         thread.start(timeout=0.1)
+    # Close the original event loop to prevent a ResourceWarning.
+    original_loop.close()
 
 
 def test_event_loop_thread_run_coroutine(started_thread: EventLoopThread):
