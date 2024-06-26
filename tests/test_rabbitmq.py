@@ -11,7 +11,7 @@ from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
 
-from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME
+from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME, skip_unless_rabbit_mq
 
 
 def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
@@ -26,6 +26,7 @@ def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
     assert isinstance(broker, RabbitmqBroker)
 
 
+@skip_unless_rabbit_mq
 def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a ;-separated string
@@ -36,6 +37,7 @@ def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     assert broker.connection
 
 
+@skip_unless_rabbit_mq
 def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a list
@@ -64,6 +66,7 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
         RabbitmqBroker(host="127.0.0.1", parameters=[dict(host="127.0.0.1")])
 
 
+@skip_unless_rabbit_mq
 def test_rabbitmq_broker_can_be_passed_a_list_of_parameters_for_failover():
     # Given a list of pika connection parameters including an invalid one
     parameters = [
@@ -217,6 +220,7 @@ def test_rabbitmq_actors_can_have_retry_limits(rabbitmq_broker, rabbitmq_worker)
     assert xq_count == 1
 
 
+@skip_unless_rabbit_mq
 def test_rabbitmq_broker_connections_are_lazy():
     # When I create an RMQ broker
     broker = RabbitmqBroker(
