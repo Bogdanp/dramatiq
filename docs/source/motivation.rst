@@ -34,57 +34,57 @@ I've used Celery_ professionally for years and my growing frustration
 with it is one of the reasons why I developed dramatiq.  Here are some
 of the main differences between Dramatiq, Celery, Huey and RQ:
 
-+------------------------------+----------+---------------+--------------+--------------+
-|                              | Dramatiq | Celery_       | Huey_        | RQ_          |
-+------------------------------+----------+---------------+--------------+--------------+
-| Python 2 support             | No       | Yes           | Yes          | Yes          |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Windows support              | Yes      | No            | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Simple implementation        | Yes      | No [#sim]_    | Yes          | Yes          |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Automatic retries            | Yes      | No            | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Reliable delivery            | Yes      | Optional [#]_ | No           | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Locks and rate limiting      | Yes      | No            | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Task prioritization          | Yes      | No [#prio]_   | Yes          | Yes          |
-|                              | [#prio]_ |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Delayed tasks                | Yes      | Yes [#]_      | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Cronlike scheduling          | No       | Yes           | Yes          | No           |
-|                              | [#cron]_ |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Chaining / Pipelining        | Yes      | Yes           | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Result storage               | Yes      | Yes           | Yes          | Yes          |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Code auto-reload             | Yes      | No            | No           | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| RabbitMQ support             | Yes      | Yes           | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Redis support                | Yes      | Yes           | Yes          | Yes          |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| In-memory broker support     | Yes      | No            | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
-| Greenlet support             | Yes      | Yes           | Yes          | No           |
-|                              |          |               |              |              |
-+------------------------------+----------+---------------+--------------+--------------+
++------------------------------+----------+-----------------+--------------+--------------+
+|                              | Dramatiq | Celery_         | Huey_        | RQ_          |
++------------------------------+----------+-----------------+--------------+--------------+
+| Python 2 support             | No       | Yes [#py2_cel]_ | Yes          | Yes          |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Windows support              | Yes      | Maybe [#win]_   | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Simple implementation        | Yes      | No [#sim]_      | Yes          | Yes          |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Automatic retries            | Yes      | No              | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Reliable delivery            | Yes      | Optional [#]_   | No           | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Locks and rate limiting      | Yes      | No [#cel_rate]_ | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Task prioritization          | Yes      | No [#prio]_     | Yes          | Yes          |
+|                              | [#prio]_ |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Delayed tasks                | Yes      | Yes [#]_        | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Cronlike scheduling          | No       | Yes             | Yes          | No           |
+|                              | [#cron]_ |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Chaining / Pipelining        | Yes      | Yes             | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Result storage               | Yes      | Yes             | Yes          | Yes          |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Code auto-reload             | Yes      | No              | No           | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| RabbitMQ support             | Yes      | Yes             | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Redis support                | Yes      | Yes             | Yes          | Yes          |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| In-memory broker support     | Yes      | No              | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
+| Greenlet support             | Yes      | Yes             | Yes          | No           |
+|                              |          |                 |              |              |
++------------------------------+----------+-----------------+--------------+--------------+
 
 .. [#] Celery acks tasks as soon as they’re pulled by a worker by
        default.  This is easy to change, but a bad default.  Dramatiq
@@ -112,6 +112,16 @@ of the main differences between Dramatiq, Celery, Huey and RQ:
            Dramatiq with APScheduler_ or Periodiq_. 3rd-party packages
            exist which implement this approach for various frameworks,
            like: Dramatiq-Crontab_
+
+.. [#win] Celery, in their FAQ state that Windows support was dropped since
+          version 4.x, but doesn't claim that Celery will not work there either.
+
+.. [#py2_cel] Celery has dropped support for Python 2.* in 2020 with release of
+              Celery 5.0.0. Though, according to the documentation, it's possible,
+              however unlikely that Celery 4.5.0 or 4.4.8 may be released.
+
+.. [#cel_rate] Celery has support for rate limiting with Kombu, as described
+               in Extensions and Bootsteps.
 
 
 .. _Celery: http://celeryproject.org
