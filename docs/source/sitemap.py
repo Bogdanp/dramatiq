@@ -9,7 +9,7 @@ def setup(app):
 
 
 def collect_pages(basedir):
-    for root, dirs, files in os.walk(basedir):
+    for root, _dirs, files in os.walk(basedir):
         for filename in files:
             if not filename.endswith(".html"):
                 continue
