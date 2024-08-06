@@ -483,3 +483,20 @@ def test_currrent_message_middleware_exposes_the_current_message(stub_broker, st
     # When I try to access the current message from a non-worker thread
     # Then I should get back None
     assert CurrentMessage.get_current_message() is None
+
+
+def test_decorator_raises_error_on_duplicate_name(stub_broker):
+    # Given that I have an actor named 'foo'
+    @dramatiq.actor(actor_name="foo")
+    def f1():
+        pass
+
+    # When I try to declare another actor with that name
+    with pytest.raises(ValueError) as exc_info:
+        @dramatiq.actor(actor_name="foo")
+        def f2():
+            pass
+
+    # Then a ValueError should be raised
+    assert exc_info.type is ValueError
+    assert str(exc_info.value) == "An actor named 'foo' is already registered."
