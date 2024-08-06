@@ -258,7 +258,7 @@ def actor(
     """
     def decorator(fn: Callable[..., Union[Awaitable[R], R]]) -> Actor[P, R]:
         nonlocal actor_name, broker
-        actor_name = actor_name or fn.__qualname__
+        actor_name = actor_name or fn.__name__
         if not _queue_name_re.fullmatch(queue_name):
             raise ValueError(
                 "Queue names must start with a letter or an underscore followed "
