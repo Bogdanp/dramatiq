@@ -415,7 +415,7 @@ def test_actors_can_prioritize_work(stub_broker):
         assert calls == ["hi"] * 10 + ["lo"] * 10
 
 
-def test_can_call_str_on_actors():
+def test_can_call_str_on_actors(stub_broker):
     # Given that I have an actor
     @dramatiq.actor
     def test():
@@ -426,7 +426,7 @@ def test_can_call_str_on_actors():
     assert str(test) == "Actor(test)"
 
 
-def test_can_call_repr_on_actors():
+def test_can_call_repr_on_actors(stub_broker):
     # Given that I have an actor
     @dramatiq.actor
     def test():
