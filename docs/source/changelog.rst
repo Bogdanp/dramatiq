@@ -11,11 +11,16 @@ All notable changes to this project will be documented in this file.
 Changed
 ^^^^^^^
 
+* The `actor` decorator now checks for duplicate actor names.
+  (`#640`_, `#641`_, `@z0z0r4`_)
 * The `Retries` middleware now tracks when a message was last requeued
   on retry. (`#629`_, `@kuba-lilz`_)
 
 .. _#629: https://github.com/Bogdanp/dramatiq/pull/629
+.. _#640: https://github.com/Bogdanp/dramatiq/issues/640
+.. _#641: https://github.com/Bogdanp/dramatiq/pull/641
 .. _@kuba-lilz: https://github.com/kuba-lilz
+.. _@z0z0r4: https://github.com/z0z0r4
 
 `1.17.0`_ -- 2024-05-09
 -----------------------
