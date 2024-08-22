@@ -214,7 +214,8 @@ def test_actor_messages_can_be_assigned_zero_max_backoff(stub_broker, stub_worke
     assert timestamps[-1] - timestamps[0] < 0.2
 
 
-def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker):
+@pytest.mark.parametrize("max_retries_message_option", (0, 4))
+def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker, max_retries_message_option):
     # Given that I have a database
     attempts = []
 
@@ -225,14 +226,14 @@ def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker):
         raise RuntimeError("failure")
 
     # When I send it a message with tight backoff and custom max retries
-    do_work.send_with_options(max_retries=4, min_backoff=50, max_backoff=500)
+    do_work.send_with_options(max_retries=max_retries_message_option, min_backoff=50, max_backoff=500)
 
     # And join on the queue
     stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # Then I expect it to be retried as specified in the message options
-    assert sum(attempts) == 5
+    assert sum(attempts) == 1 + max_retries_message_option
 
 
 def test_actors_can_conditionally_retry(stub_broker, stub_worker):
