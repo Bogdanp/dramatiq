@@ -117,3 +117,8 @@ def test_generic_actors_can_accept_custom_actor_registry(stub_broker):
 
     # And the actor registry should be called with CustomActor
     actor_registry.assert_called_once_with(CustomActor)
+
+
+def test_getattr_generic_actor():
+    with pytest.raises(AttributeError):
+        dramatiq.GenericActor.missing_property
