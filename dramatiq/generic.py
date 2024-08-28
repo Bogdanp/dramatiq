@@ -40,6 +40,9 @@ class generic_actor(type):
         return clazz
 
     def __getattr__(cls, name):
+        if "__actor__" not in cls.__dict__:
+            # avoid infinite recursion on GenericActor
+            raise AttributeError(f"type object {cls.__name__!r} has no attribute {name!r}")
         return getattr(cls.__actor__, name)
 
 
