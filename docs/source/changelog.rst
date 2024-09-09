@@ -15,10 +15,15 @@ Changed
   (`#640`_, `#641`_, `@z0z0r4`_)
 * The `Retries` middleware now tracks when a message was last requeued
   on retry. (`#629`_, `@kuba-lilz`_)
+* The `Retries` middleware now supports an ``on_retries_exhausted``
+  target actor to execute when retries on a message have been
+  exhausted. (`#630`_, `@dbowring`_)
 
 .. _#629: https://github.com/Bogdanp/dramatiq/pull/629
+.. _#630: https://github.com/Bogdanp/dramatiq/pull/630
 .. _#640: https://github.com/Bogdanp/dramatiq/issues/640
 .. _#641: https://github.com/Bogdanp/dramatiq/pull/641
+.. _@dbowring: https://github.com/dbowring
 .. _@kuba-lilz: https://github.com/kuba-lilz
 .. _@z0z0r4: https://github.com/z0z0r4
 
