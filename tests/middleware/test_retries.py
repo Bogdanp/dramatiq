@@ -381,6 +381,7 @@ def test_on_retry_exhausted_is_sent(stub_broker, stub_worker):
     # And the exhausted handler should have been called.
     assert len(called_at) == 1
 
+
 def test_on_retry_exhausted_is_not_sent_for_success(stub_broker, stub_worker):
     attempted_at = []
     called_at = []
@@ -404,6 +405,7 @@ def test_on_retry_exhausted_is_not_sent_for_success(stub_broker, stub_worker):
     assert len(attempted_at) == 1
     # And the exhausted callback should have never been called
     assert len(called_at) == 0
+
 
 def test_on_retry_exhausted_is_not_sent_for_eventual_success(stub_broker, stub_worker):
     attempted_at = []
