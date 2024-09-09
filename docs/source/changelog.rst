@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* The `Retries` middleware now supports an ``on_retries_exhausted``
+  target actor to execute when retries on a message have been
+  exhausted. (`#630`_, `@dbowring`_)
+
+.. _#630: https://github.com/Bogdanp/dramatiq/pull/630
+.. _@dbowring: https://github.com/dbowring
+
 Changed
 ^^^^^^^
 
@@ -15,17 +25,13 @@ Changed
   (`#640`_, `#641`_, `@z0z0r4`_)
 * The `Retries` middleware now tracks when a message was last requeued
   on retry. (`#629`_, `@kuba-lilz`_)
-* The `Retries` middleware now supports an ``on_retries_exhausted``
-  target actor to execute when retries on a message have been
-  exhausted. (`#630`_, `@dbowring`_)
 
 .. _#629: https://github.com/Bogdanp/dramatiq/pull/629
-.. _#630: https://github.com/Bogdanp/dramatiq/pull/630
 .. _#640: https://github.com/Bogdanp/dramatiq/issues/640
 .. _#641: https://github.com/Bogdanp/dramatiq/pull/641
-.. _@dbowring: https://github.com/dbowring
 .. _@kuba-lilz: https://github.com/kuba-lilz
 .. _@z0z0r4: https://github.com/z0z0r4
+
 
 `1.17.0`_ -- 2024-05-09
 -----------------------
@@ -60,6 +66,7 @@ Fixed
 .. _@niccodemus: https://github.com/nicoddemus
 .. _@huwylphimet: https://github.com/huwylphimet
 
+
 `1.16.0`_ -- 2024-01-25
 -----------------------
 
@@ -85,6 +92,7 @@ Added
 
 .. _#594: https://github.com/Bogdanp/dramatiq/issues/594
 .. _@nhairs: https://github.com/nhairs
+
 
 `1.15.0`_ -- 2023-10-23
 -----------------------
