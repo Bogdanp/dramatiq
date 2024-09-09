@@ -353,3 +353,80 @@ def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
 
     # And that all requeue timestamps are larger than message timestamp
     assert all(requeue_time > message.message_timestamp for requeue_time in requeue_timestamps)
+
+
+def test_on_retry_exhausted_is_sent(stub_broker, stub_worker):
+    attempted_at = []
+    called_at = []
+    max_retries = 2
+
+    @dramatiq.actor
+    def handle_retries_exhausted(message_data, retry_info):
+        called_at.append(time.monotonic())
+
+    @dramatiq.actor(max_retries=max_retries, on_retry_exhausted=handle_retries_exhausted.actor_name)
+    def do_work():
+        attempted_at.append(time.monotonic())
+        # Always request a retry
+        raise Retry(delay=1)
+
+    do_work.send()
+
+    stub_broker.join(do_work.queue_name)
+    stub_broker.join(handle_retries_exhausted.queue_name)
+    stub_worker.join()
+
+    # We should have the initial attempt + max_retries
+    assert len(attempted_at) == max_retries + 1
+    # And the exhausted handler should have been called.
+    assert len(called_at) == 1
+
+def test_on_retry_exhausted_is_not_sent_for_success(stub_broker, stub_worker):
+    attempted_at = []
+    called_at = []
+    max_retries = 2
+
+    @dramatiq.actor
+    def handle_retries_exhausted(message_data, retry_info):
+        called_at.append(time.monotonic())
+
+    @dramatiq.actor(max_retries=max_retries, on_retry_exhausted=handle_retries_exhausted.actor_name)
+    def do_work():
+        attempted_at.append(time.monotonic())
+
+    do_work.send()
+
+    stub_broker.join(do_work.queue_name)
+    stub_broker.join(handle_retries_exhausted.queue_name)
+    stub_worker.join()
+
+    # No retry should be required
+    assert len(attempted_at) == 1
+    # And the exhausted callback should have never been called
+    assert len(called_at) == 0
+
+def test_on_retry_exhausted_is_not_sent_for_eventual_success(stub_broker, stub_worker):
+    attempted_at = []
+    called_at = []
+    max_retries = 2
+
+    @dramatiq.actor
+    def handle_retries_exhausted(message_data, retry_info):
+        called_at.append(time.monotonic())
+
+    @dramatiq.actor(max_retries=max_retries, on_retry_exhausted=handle_retries_exhausted.actor_name)
+    def do_work():
+        attempted_at.append(time.monotonic())
+        if len(attempted_at) < 2:
+            raise Retry(delay=1)
+
+    do_work.send()
+
+    stub_broker.join(do_work.queue_name)
+    stub_broker.join(handle_retries_exhausted.queue_name)
+    stub_worker.join()
+
+    # The first retry should have succeeded
+    assert len(attempted_at) == 2
+    # So the exhausted callback should have never been called
+    assert len(called_at) == 0
