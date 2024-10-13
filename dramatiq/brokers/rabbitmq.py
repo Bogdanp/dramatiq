@@ -219,7 +219,7 @@ class RabbitmqBroker(Broker):
         self.declare_queue(queue_name, ensure=True)
         return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
-    def declare_queue(self, queue_name, *, ensure=False, arguments=None):
+    def declare_queue(self, queue_name, *, ensure=False, dq_arguments=None):
         """Declare a queue.  Has no effect if a queue with the given
         name already exists.
 
@@ -227,7 +227,7 @@ class RabbitmqBroker(Broker):
           queue_name(str): The name of the new queue.
           ensure(bool): When True, the queue is created on the server,
             if necessary.
-          arguments(dict): queue custom parameters
+          dq_arguments(dict): queue custom parameters
 
         Raises:
           ConnectionClosed: When ensure=True if the underlying channel
@@ -244,7 +244,7 @@ class RabbitmqBroker(Broker):
             self.emit_after("declare_delay_queue", delayed_name)
 
         if ensure:
-            self._ensure_queue(queue_name, dq_arguments=arguments)
+            self._ensure_queue(queue_name, dq_arguments=dq_arguments)
 
     def _ensure_queue(self, queue_name, dq_arguments=None):
         attempts = 1
