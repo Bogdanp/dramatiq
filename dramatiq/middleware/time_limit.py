@@ -94,7 +94,7 @@ class _CtypesTimeoutManager(Thread):
         self.logger = logger or get_logger(__name__, type(self))
         self.mu = threading.RLock()
 
-    def _handle(self):
+    def _handle_deadlines(self):
         current_time = monotonic()
         threads_to_kill = []
         with self.mu:
@@ -110,7 +110,7 @@ class _CtypesTimeoutManager(Thread):
     def run(self):
         while True:
             try:
-                self._handle()
+                self._handle_deadlines()
             except Exception:  # pragma: no cover
                 self.logger.exception("Unhandled error while running the time limit handler.")
 
