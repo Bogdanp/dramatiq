@@ -169,7 +169,7 @@ class Actor(Generic[P, R]):
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Any | R | Awaitable[R]:
         """Synchronously call this actor.
 
         Parameters:
