@@ -8,6 +8,19 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.17.1`_ -- 2024-10-26
+-----------------------
+
+Fixed
+^^^^^
+
+* `TimeLimit` middleware support for Python 3.13. (`#656`_, `#659`_,
+  `@amureki`_)
+
+.. _#656: https://github.com/Bogdanp/dramatiq/issues/656
+.. _#659: https://github.com/Bogdanp/dramatiq/pull/659
+.. _@amureki: https://github.com/amureki
+
 Added
 ^^^^^
 
@@ -1243,7 +1256,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.17.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...HEAD
+.. _1.17.1: https://github.com/Bogdanp/dramatiq/compare/v1.17.0...v1.17.1
 .. _1.17.0: https://github.com/Bogdanp/dramatiq/compare/v1.16.0...v1.17.0
 .. _1.16.0: https://github.com/Bogdanp/dramatiq/compare/v1.15.0...v1.16.0
 .. _1.15.0: https://github.com/Bogdanp/dramatiq/compare/v1.14.2...v1.15.0
