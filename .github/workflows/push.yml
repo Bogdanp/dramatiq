@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - run: |
           sudo apt-get update
           sudo apt-get remove libhashkit2 libmemcached11 || true
@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-20.04"]
-        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}

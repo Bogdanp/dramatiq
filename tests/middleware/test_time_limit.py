@@ -46,7 +46,7 @@ def test_time_limit_exceeded_worker_messages(raise_thread_exception, caplog):
         1: current_time - 2, 2: current_time - 1, 3: current_time + 50000}
 
     # When the time limit handler is triggered
-    middleware.manager._handle()
+    middleware.manager._handle_deadlines()
 
     # TimeLimitExceeded interrupts are raised in two of the threads
     raise_thread_exception.assert_has_calls([
