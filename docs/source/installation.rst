@@ -3,7 +3,7 @@
 Installation
 ============
 
-Dramatiq supports Python versions 3.8 and up and is installable via
+Dramatiq supports Python versions 3.9 and up and is installable via
 `pip`_ or from source.
 
 
