@@ -6,6 +6,7 @@
 [![PyPI version](https://badge.fury.io/py/dramatiq.svg)](https://badge.fury.io/py/dramatiq)
 [![Documentation](https://img.shields.io/badge/doc-latest-brightgreen.svg)](http://dramatiq.io)
 [![Discuss](https://img.shields.io/badge/discuss-online-orange.svg)](https://groups.io/g/dramatiq-users)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20dramatiq%20Guru-006BFF)](https://gurubase.io/g/dramatiq)
 
 *A fast and reliable distributed task processing library for Python 3.*
 
