@@ -29,9 +29,9 @@ import random
 import signal
 import sys
 import time
+import types
 from itertools import chain
 from threading import Event, Thread
-import types
 from typing import Optional
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
