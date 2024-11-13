@@ -29,8 +29,10 @@ import random
 import signal
 import sys
 import time
+import types
 from itertools import chain
 from threading import Event, Thread
+from typing import Optional
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
 from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
@@ -559,24 +561,26 @@ def main(args=None):  # noqa
     )
     log_watcher.start()
 
-    def stop_subprocesses(signum):
+    def stop_subprocesses(signum: signal.Signals):
         nonlocal running
         running = False
 
         for proc in chain(worker_processes, fork_processes):
             try:
-                os.kill(proc.pid, signum)
+                os.kill(proc.pid, signum.value)
             except OSError:  # pragma: no cover
                 if proc.exitcode is None:
                     logger.warning("Failed to send %r to PID %d.", signum.name, proc.pid)
 
-    def sighandler(signum, frame):
+    def sighandler(signum: int, frame: Optional[types.FrameType]):
         nonlocal reload_process
+        signum = signal.Signals(signum)
+
         reload_process = signum == getattr(signal, "SIGHUP", None)
         if signum == signal.SIGINT:
             signum = signal.SIGTERM
 
-        logger.info("Sending signal %r to subprocesses...", getattr(signum, "name", signum))
+        logger.info("Sending signal %r to subprocesses...", signum.name)
         stop_subprocesses(signum)
 
     retcode = RET_OK
