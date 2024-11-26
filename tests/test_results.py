@@ -1,3 +1,4 @@
+import asyncio
 import time
 from unittest.mock import patch
 
@@ -374,3 +375,28 @@ def test_custom_skipped_messages_with_no_fail_stores_none(stub_broker, stub_work
 
     # Then the result should still be None.
     assert result_backend.get_result(sent_message) is None
+
+
+async def test_async_get_result_works(result_backend):
+    @dramatiq.actor(store_results=True)
+    async def do_work():
+        await asyncio.sleep(0.1)
+        return 42
+
+    sent_message = do_work.send()
+
+    # Await a result
+    assert (await result_backend.get_result_async(sent_message)) == 42
+
+
+async def test_async_get_result_timeouts(result_backend):
+    @dramatiq.actor(store_results=True)
+    async def do_work():
+        await asyncio.sleep(0.2)
+        return 42
+
+    sent_message = do_work.send()
+
+    # Await a result
+    with pytest.raises(ResultTimeout):
+        await result_backend.get_result_async(sent_message, timeout=100)

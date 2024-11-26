@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import asyncio
 import hashlib
 import time
 import typing
@@ -109,6 +109,53 @@ class ResultBackend:
 
             else:
                 return self.unwrap_result(result)
+
+    async def get_result_async(self, message, *, timeout: typing.Optional[int] = None) -> Result:
+        """Get a result from the backend asynchronously.
+        This code is non-blocking and will return the result when it is available.
+
+        Parameters:
+          message(Message)
+          timeout(int): The maximum amount of time, in ms, to wait for
+            a result when block is True.  Defaults to 10 seconds.
+
+        Raises:
+          ResultTimeout: When waiting for a result times out.
+
+        Returns:
+          object: The result.
+        """
+        message_key = self.build_message_key(message)
+
+        result = self._get(message_key)
+        if result is not Missing:
+            return self.unwrap_result(result)
+
+        attempts = 1
+        timeout_triggered = asyncio.Event()
+
+        async def timeout_setter(sleep_time):
+            if sleep_time is None:
+                sleep_time = DEFAULT_TIMEOUT
+            await asyncio.sleep(sleep_time / 1000)
+            timeout_triggered.set()
+
+        to_setter = asyncio.create_task(timeout_setter(timeout))
+        while not timeout_triggered.is_set():
+            try:
+                attempts, delay = compute_backoff(attempts, factor=BACKOFF_FACTOR)
+                delay /= 1000
+                await asyncio.wait_for(timeout_triggered.wait(), delay)
+            except asyncio.TimeoutError:
+                result = self._get(message_key)
+                if result is not Missing:
+                    return self.unwrap_result(result)
+                continue
+            finally:
+                if not to_setter.done():
+                    to_setter.cancel()
+
+        raise ResultTimeout(message)
 
     def store_result(self, message, result: Result, ttl: int) -> None:
         """Store a result in the backend.
