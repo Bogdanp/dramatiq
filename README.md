@@ -19,11 +19,12 @@
 
 <h3 align="center">Sponsors</h3>
 
-<p align="center">
+<p align="center" dir="auto">
   <a href="https://franz.defn.io" target="_blank">
-    <img width="64px" src="docs/source/_static/franz-logo.png">
-    <br/>
-    Franz: Desktop Client for Apache Kafka
+    <img width="64px" src="docs/source/_static/franz-logo.png" />
+  </a>
+  <a href="https://podcatcher.defn.io" target="_blank">
+    <img width="64px" src="docs/source/_static/podcatcher-logo.png" />
   </a>
 </p>
 
