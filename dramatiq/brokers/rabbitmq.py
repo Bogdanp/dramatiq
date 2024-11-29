@@ -219,7 +219,7 @@ class RabbitmqBroker(Broker):
         self.declare_queue(queue_name, ensure=True)
         return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
-    def declare_queue(self, queue_name, *, ensure=False):
+    def declare_queue(self, queue_name, *, ensure=False, dq_arguments=None):
         """Declare a queue.  Has no effect if a queue with the given
         name already exists.
 
@@ -227,6 +227,7 @@ class RabbitmqBroker(Broker):
           queue_name(str): The name of the new queue.
           ensure(bool): When True, the queue is created on the server,
             if necessary.
+          dq_arguments(dict): queue custom parameters
 
         Raises:
           ConnectionClosed: When ensure=True if the underlying channel
@@ -243,15 +244,15 @@ class RabbitmqBroker(Broker):
             self.emit_after("declare_delay_queue", delayed_name)
 
         if ensure:
-            self._ensure_queue(queue_name)
+            self._ensure_queue(queue_name, dq_arguments=dq_arguments)
 
-    def _ensure_queue(self, queue_name):
+    def _ensure_queue(self, queue_name, dq_arguments=None):
         attempts = 1
         while True:
             try:
                 if queue_name in self.queues_pending:
                     self._declare_queue(queue_name)
-                    self._declare_dq_queue(queue_name)
+                    self._declare_dq_queue(queue_name, custom_arguments=dq_arguments)
                     self._declare_xq_queue(queue_name)
                     self.queues_pending.discard(queue_name)
 
@@ -271,18 +272,20 @@ class RabbitmqBroker(Broker):
                     attempts, MAX_DECLARE_ATTEMPTS,
                 )
 
-    def _build_queue_arguments(self, queue_name):
+    def _build_queue_arguments(self, queue_name, custom_arguments=None):
         arguments = {
             "x-dead-letter-exchange": "",
             "x-dead-letter-routing-key": xq_name(queue_name),
         }
         if self.max_priority:
             arguments["x-max-priority"] = self.max_priority
+        if custom_arguments is not None and isinstance({}, dict):
+            arguments.update(**custom_arguments)
 
         return arguments
 
-    def _declare_queue(self, queue_name):
-        arguments = self._build_queue_arguments(queue_name)
+    def _declare_queue(self, queue_name, custom_arguments=None):
+        arguments = self._build_queue_arguments(queue_name, custom_arguments=custom_arguments)
         return self.channel.queue_declare(queue=queue_name, durable=True, arguments=arguments)
 
     def _declare_dq_queue(self, queue_name):
