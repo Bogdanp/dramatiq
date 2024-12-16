@@ -352,3 +352,18 @@ Dramatiq.  For example::
            dramatiq app
 
 If you don't do this, then metrics will likely fail to export properly.
+
+Workflows
+---------
+
+Nested Pipelines and Groups
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Dramatiq supports running tasks in parallel via |group| and in
+sequence via |pipeline|, but it does not provide a built-in way to run
+a pipeline of groups out of the box. If you need more advanced
+orchestration capabilities, such as nesting chains and groups of tasks
+at arbitrary depth, you may find the dramatiq-workflow_ package
+useful.
+
+.. _dramatiq-workflow: https://github.com/Outset-AI/dramatiq-workflow
