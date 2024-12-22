@@ -246,7 +246,7 @@ class RabbitmqBroker(Broker):
             self._ensure_queue(queue_name)
 
     def _ensure_queue(self, queue_name):
-        attempts = 1
+        attempts = 0
         while True:
             try:
                 if queue_name in self.queues_pending:
@@ -321,7 +321,7 @@ class RabbitmqBroker(Broker):
                 },
             )
 
-        attempts = 1
+        attempts = 0
         while True:
             try:
                 self.declare_queue(canonical_queue_name, ensure=True)
