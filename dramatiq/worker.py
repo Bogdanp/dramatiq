@@ -219,13 +219,15 @@ class _WorkerMiddleware(Middleware):
         self.logger = get_logger(__name__, type(self))
         self.worker = worker
 
-    def after_declare_queue(self, broker, queue_name):
-        self.logger.debug("Adding consumer for queue %r.", queue_name)
-        self.worker._add_consumer(queue_name)
+    def after_declare_queue(self, broker, queue_name, ensure_consumer=True):
+        if ensure_consumer:
+            self.logger.debug("Adding consumer for queue %r.", queue_name)
+            self.worker._add_consumer(queue_name)
 
-    def after_declare_delay_queue(self, broker, queue_name):
-        self.logger.debug("Adding consumer for delay queue %r.", queue_name)
-        self.worker._add_consumer(queue_name, delay=True)
+    def after_declare_delay_queue(self, broker, queue_name, ensure_consumer=True):
+        if ensure_consumer:
+            self.logger.debug("Adding consumer for delay queue %r.", queue_name)
+            self.worker._add_consumer(queue_name, delay=True)
 
 
 class _ConsumerThread(Thread):
