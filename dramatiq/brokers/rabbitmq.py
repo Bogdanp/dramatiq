@@ -332,8 +332,8 @@ class RabbitmqBroker(Broker):
                     self.emit_before("enqueue", message, delay)
                 except SkipMessage:
                     self.logger.warning("Message %s was skipped during enqueue.", message)
-                    proxy = MessageProxy(message)
-                    proxy.fail()  # Mark it as failed
+                    proxy = _RabbitmqMessage(False, None, message)  # redelivered=False, tag=None
+                    proxy.fail()
                     self.emit_after("skip_message", proxy)
                     return None
 
