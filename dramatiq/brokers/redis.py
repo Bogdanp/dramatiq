@@ -188,7 +188,9 @@ class RedisBroker(Broker):
             self.emit_before("enqueue", message, delay)
         except SkipMessage:
             self.logger.warning("Message %s was skipped during enqueue.", message)
-            self.emit_after("skip_message", message)
+            proxy = MessageProxy(message)
+            proxy.fail()  # Mark it as failed
+            self.emit_after("skip_message", proxy)
             return None
 
         self.do_enqueue(queue_name, message.options["redis_message_id"], message.encode())

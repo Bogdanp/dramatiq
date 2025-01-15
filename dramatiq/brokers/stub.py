@@ -113,7 +113,9 @@ class StubBroker(Broker):
             self.emit_before("enqueue", message, delay)
         except SkipMessage:
             self.logger.warning("Message %s was skipped during enqueue.", message)
-            self.emit_after("skip_message", message)
+            proxy = _StubMessageProxy(message)
+            proxy.fail()
+            self.emit_after("skip_message", proxy)
             return None
 
         self.queues[queue_name].put(message.encode())
