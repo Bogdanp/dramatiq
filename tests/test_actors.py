@@ -356,6 +356,37 @@ def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
     assert sum(skipped_messages) == 1
 
 
+def test_messages_can_be_skipped_during_enqueue(stub_broker):
+    # Given that I have a middleware that skips messages during enqueue
+    skipped_messages = []
+
+    class SkipEnqueueMiddleware(Middleware):
+        def before_enqueue(self, broker, message, delay):
+            raise SkipMessage()
+
+        def after_skip_message(self, broker, message):
+            skipped_messages.append(message)
+
+    stub_broker.add_middleware(SkipEnqueueMiddleware())
+
+    # And an actor that keeps track of its calls
+    calls = []
+
+    @dramatiq.actor
+    def track_call():
+        calls.append(1)
+
+    # When I send that actor a message
+    result = track_call.send()
+
+    # Then I expect the message to have been skipped
+    assert result is None
+    assert len(skipped_messages) == 1
+
+    # And the message should not be in the queue
+    assert stub_broker.queues["default"].qsize() == 0
+
+
 def test_workers_can_be_paused(stub_broker, stub_worker):
     # Given a paused worker
     stub_worker.pause()

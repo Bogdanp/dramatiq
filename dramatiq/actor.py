@@ -147,7 +147,7 @@ class Actor(Generic[P, R]):
         kwargs: Optional[Dict[str, Any]] = None,
         delay: Optional[timedelta | int] = None,
         **options,
-    ) -> Message[R]:
+    ) -> Optional[Message[R]]:
         """Asynchronously send a message to this actor, along with an
         arbitrary set of processing options for the broker and
         middleware.
