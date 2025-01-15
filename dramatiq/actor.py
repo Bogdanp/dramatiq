@@ -129,7 +129,7 @@ class Actor(Generic[P, R]):
             options=options,
         )
 
-    def send(self, *args: P.args, **kwargs: P.kwargs) -> Message[R]:
+    def send(self, *args: P.args, **kwargs: P.kwargs) -> Optional[Message[R]]:
         """Asynchronously send a message to this actor.
 
         Parameters:
