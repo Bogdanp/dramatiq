@@ -181,9 +181,10 @@ Finally, instantiate and add it to your broker:
 Reporting errors with Sentry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use `sentry-dramatiq`_.
+Use `sentry-sdk`_ and follow the `Dramatiq integration docs`_.
 
-.. _sentry-dramatiq: https://pypi.org/project/sentry-dramatiq/
+.. _sentry-sdk: https://pypi.org/project/sentry-sdk/
+.. _Dramatiq integration docs: https://docs.sentry.io/platforms/python/integrations/dramatiq/
 
 
 Frameworks
