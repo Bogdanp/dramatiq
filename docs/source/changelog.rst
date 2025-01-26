@@ -575,7 +575,7 @@ Added
 ^^^^^
 
 * `dramatiq_queue_prefetch` environment variable to control the number
-  of messages to prefetch per worker thread.  (`#183`_, `#184`_, `@xelhark`_)
+  of messages to prefetch per worker process.  (`#183`_, `#184`_, `@xelhark`_)
 * The RabbitMQ broker now retries the queue declaration process if an
   error occurs.  (`#179`_, `@davidt99`_)
 * Support for accessing nested broker instances from the CLI.
