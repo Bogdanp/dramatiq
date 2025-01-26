@@ -66,3 +66,4 @@ of those changes to CLEARTYPE SRL.
 | [@5tefan](https://github.com/5tefan/)                  | Stefan Codrescu        |
 | [@kuba-lilz](https://github.com/kuba-lilz/)            | Jakub Kolodziejczyk    |
 | [@dbowring](https://github.com/dbowring/)              | Daniel Bowring         |
+| [@bagowix](https://github.com/bagowix/)                | Bogdan Galushko        |
