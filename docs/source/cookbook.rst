@@ -144,6 +144,16 @@ call |pipeline_get_results|::
   for res in pipe.get_results(block=True):
       ...
 
+If you want the actors in the pipeline to keep executing even if
+a actor in it errors out, use the ``pipe_errorok`` option::
+
+  (
+      may_fail.mmessage(pipe_errorok=True) | 
+      will_still_run.message()
+  )
+
+Note that if the ``may_fail`` actor fails, the ``will_still_run`` actor
+will receive ``None`` as input.
 
 Error Reporting
 ---------------
