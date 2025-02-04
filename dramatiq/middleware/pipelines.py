@@ -25,6 +25,8 @@ class Pipelines(Middleware):
     Parameters:
       pipe_ignore(bool): When True, ignores the result of the previous
         actor in the pipeline.
+      pipe_errorok(bool): When True, ignores the fact that the previous
+        actor in the pipeline failed and runs anyway.
       pipe_target(dict): A message representing the actor the current
         result should be fed into.
     """
@@ -33,6 +35,7 @@ class Pipelines(Middleware):
     def actor_options(self):
         return {
             "pipe_ignore",
+            "pipe_errorok",
             "pipe_target",
         }
 
@@ -42,10 +45,12 @@ class Pipelines(Middleware):
         # from broker -> pipelines -> messages -> broker.
         from ..message import Message
 
-        if exception is not None or message.failed:
+        actor = broker.get_actor(message.actor_name)
+
+        errorok = message.options.get("pipe_errorok") or actor.options.get("pipe_errorok")
+        if (exception is not None or message.failed) and not errorok:
             return
 
-        actor = broker.get_actor(message.actor_name)
         message_data = message.options.get("pipe_target")
         if message_data is not None:
             next_message = Message(**message_data)
