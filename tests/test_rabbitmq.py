@@ -10,6 +10,7 @@ import dramatiq
 from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
 from dramatiq.common import current_millis
+from dramatiq.middleware import SkipMessage
 
 from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME, skip_unless_rabbit_mq
 
@@ -556,3 +557,35 @@ def test_rabbitmq_queues_only_contains_canonical_name(rabbitmq_broker, rabbitmq_
 
     assert len(rabbitmq_broker.queues) == 1
     assert put.queue_name in rabbitmq_broker.queues
+
+
+def test_rabbitmq_messages_can_be_skipped_during_enqueue(rabbitmq_broker):
+    # Given that I have a middleware that skips messages during enqueue
+    skipped_messages = []
+
+    class SkipEnqueueMiddleware(Middleware):
+        def before_enqueue(self, broker, message, delay):
+            raise SkipMessage()
+
+        def after_skip_message(self, broker, message):
+            skipped_messages.append(message)
+
+    rabbitmq_broker.add_middleware(SkipEnqueueMiddleware())
+
+    # And an actor that keeps track of its calls
+    calls = []
+
+    @dramatiq.actor
+    def track_call():
+        calls.append(1)
+
+    # When I send that actor a message
+    result = track_call.send()
+
+    # Then I expect the message to have been skipped
+    assert result is None
+    assert len(skipped_messages) == 1
+
+    # And no messages should be in the queue
+    queue_count, _, _ = rabbitmq_broker.get_queue_message_counts(track_call.queue_name)
+    assert queue_count == 0
