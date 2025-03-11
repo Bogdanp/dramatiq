@@ -29,7 +29,7 @@ from .results import ResultBackend
 #: The global encoder instance.
 global_encoder: Encoder = JSONEncoder()
 
-R = TypeVar("R")
+R = TypeVar("R", covariant=True)
 
 
 def get_encoder() -> Encoder:
