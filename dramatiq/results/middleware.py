@@ -107,7 +107,7 @@ class Results(Middleware):
         Let after_nack handle the case where the message was skipped and failed.
         """
         store_results, result_ttl = self._lookup_options(broker, message)
-        if store_results and not message.failed:
+        if store_results and (not message or not message.failed):
             self.backend.store_result(message, None, result_ttl)
 
     def after_nack(self, broker, message):
