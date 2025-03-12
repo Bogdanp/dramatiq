@@ -24,6 +24,7 @@ from ..common import current_millis, dq_name, iter_queue, join_queue
 from ..errors import QueueNotFound
 from ..message import Message
 from ..middleware import SkipMessage
+from ..middleware.middleware import AbortMessage
 
 
 class StubBroker(Broker):
@@ -111,8 +112,8 @@ class StubBroker(Broker):
 
         try:
             self.emit_before("enqueue", message, delay)
-        except SkipMessage:
-            self.logger.warning("Message %s was skipped during enqueue.", message)
+        except AbortMessage:
+            self.logger.warning("Message %s was aborted during enqueue.", message)
             proxy = _StubMessageProxy(message)
             proxy.fail()
             self.emit_after("skip_message", proxy)

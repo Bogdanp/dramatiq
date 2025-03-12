@@ -27,6 +27,12 @@ class SkipMessage(MiddlewareError):
     """
 
 
+class AbortMessage(MiddlewareError):
+    """An exception that may be raised by Middleware inside the
+    ``before_enqueue`` hook in order to abort a message.
+    """
+
+
 class Middleware:
     """Base class for broker middleware.  The default implementations
     for all hooks are no-ops and subclasses may implement whatever
@@ -90,6 +96,11 @@ class Middleware:
 
     def before_enqueue(self, broker, message, delay):
         """Called before a message is enqueued.
+
+        Raises:
+          AbortMessage: If the current message should be aborted.  When
+            this is raised, ``after_abort_message`` is emitted instead
+            of ``after_process_message``.
         """
 
     def after_enqueue(self, broker, message, delay):
@@ -116,6 +127,10 @@ class Middleware:
     def after_skip_message(self, broker, message):
         """Called instead of ``after_process_message`` after a message
         has been skipped.
+        """
+
+    def after_abort_message(self, broker, message):
+        """Called instead of ``after_process_message`` if a message is aborted before it is enqueued.
         """
 
     def after_process_boot(self, broker):

@@ -9,7 +9,7 @@ from dramatiq import Message, QueueJoinTimeout, Middleware
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
 from dramatiq.errors import ConnectionError
-from dramatiq.middleware import SkipMessage
+from dramatiq.middleware import AbortMessage
 
 from .common import worker
 
@@ -525,16 +525,16 @@ def test_redis_join_race_condition(redis_broker):
     assert size == [4, 4, 2, 2]
 
 
-def test_redis_messages_can_be_skipped_during_enqueue(redis_broker, redis_worker):
+def test_redis_messages_can_be_aborted_during_enqueue(redis_broker, redis_worker):
     # Given that I have a middleware that skips messages during enqueue
-    skipped_messages = []
+    aborted_messages = []
 
     class SkipEnqueueMiddleware(Middleware):
         def before_enqueue(self, broker, message, delay):
-            raise SkipMessage()
+            raise AbortMessage()
 
-        def after_skip_message(self, broker, message):
-            skipped_messages.append(message)
+        def after_abort_message(self, broker, message):
+            aborted_messages.append(message)
 
     redis_broker.add_middleware(SkipEnqueueMiddleware())
 
@@ -550,7 +550,7 @@ def test_redis_messages_can_be_skipped_during_enqueue(redis_broker, redis_worker
 
     # Then I expect the message to have been skipped
     assert result is None
-    assert len(skipped_messages) == 1
+    assert len(aborted_messages) == 1
 
     # And no messages should be in the queue
     assert redis_broker.client.llen("dramatiq:%s" % track_call.queue_name) == 0

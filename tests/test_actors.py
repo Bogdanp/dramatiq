@@ -8,6 +8,7 @@ import dramatiq
 from dramatiq import Message, Middleware
 from dramatiq.errors import RateLimitExceeded
 from dramatiq.middleware import CurrentMessage, SkipMessage
+from dramatiq.middleware import AbortMessage
 
 from .common import skip_on_pypy, worker
 
@@ -322,16 +323,16 @@ def test_before_and_after_signal_failures_are_ignored(stub_broker, stub_worker):
     assert database == [1]
 
 
-def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
+def test_middleware_can_decide_to_abort_messages(stub_broker, stub_worker):
     # Given a middleware that skips all messages
-    skipped_messages = []
+    aborted_messages = []
 
     class SkipMiddleware(Middleware):
         def before_process_message(self, broker, message):
-            raise SkipMessage()
+            raise AbortMessage()
 
-        def after_skip_message(self, broker, message):
-            skipped_messages.append(1)
+        def after_abort_message(self, broker, message):
+            aborted_messages.append(1)
 
     stub_broker.add_middleware(SkipMiddleware())
 
@@ -352,8 +353,8 @@ def test_middleware_can_decide_to_skip_messages(stub_broker, stub_worker):
     # Then I expect the call list to be empty
     assert sum(calls) == 0
 
-    # And the skipped_messages list to contain one item
-    assert sum(skipped_messages) == 1
+    # And the aborted_messages list to contain one item
+    assert sum(aborted_messages) == 1
 
 
 def test_messages_can_be_skipped_during_enqueue(stub_broker):

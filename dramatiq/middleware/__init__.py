@@ -20,7 +20,7 @@ from .asyncio import AsyncIO
 from .callbacks import Callbacks
 from .current_message import CurrentMessage
 from .group_callbacks import GroupCallbacks
-from .middleware import Middleware, MiddlewareError, SkipMessage
+from .middleware import Middleware, MiddlewareError, SkipMessage, AbortMessage
 from .pipelines import Pipelines
 from .prometheus import Prometheus
 from .retries import Retries
@@ -30,7 +30,7 @@ from .time_limit import TimeLimit, TimeLimitExceeded
 
 __all__ = [
     # Basics
-    "Middleware", "MiddlewareError", "SkipMessage",
+    "Middleware", "MiddlewareError", "SkipMessage", "AbortMessage",
 
     # Threading
     "Interrupt", "raise_thread_exception",
@@ -40,7 +40,6 @@ __all__ = [
     "Pipelines", "Retries", "Shutdown", "ShutdownNotifications", "TimeLimit",
     "TimeLimitExceeded", "Prometheus",
 ]
-
 
 #: The list of middleware that are enabled by default.
 default_middleware = [

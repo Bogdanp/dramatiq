@@ -31,6 +31,7 @@ from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message, get_encoder
 from ..middleware import SkipMessage
+from ..middleware.middleware import AbortMessage
 
 #: The maximum amount of time a message can be in the dead queue.
 DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
@@ -86,7 +87,8 @@ class RabbitmqBroker(Broker):
     .. _ConnectionParameters: https://pika.readthedocs.io/en/stable/modules/parameters.html
     """
 
-    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs):
+    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None,
+                 **kwargs):
         super().__init__(middleware=middleware)
 
         if max_priority is not None and not (0 < max_priority <= 255):
@@ -330,11 +332,11 @@ class RabbitmqBroker(Broker):
 
                 try:
                     self.emit_before("enqueue", message, delay)
-                except SkipMessage:
-                    self.logger.warning("Message %s was skipped during enqueue.", message)
+                except AbortMessage:
+                    self.logger.warning("Message %s was aborted during enqueue.", message)
                     proxy = _RabbitmqMessage(False, None, message)  # redelivered=False, tag=None
                     proxy.fail()
-                    self.emit_after("skip_message", proxy)
+                    self.emit_after("abort_message", proxy)
                     return None
 
                 self.channel.basic_publish(

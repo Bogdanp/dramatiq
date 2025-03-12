@@ -31,6 +31,7 @@ from ..errors import ConnectionClosed, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message
 from ..middleware import SkipMessage
+from ..middleware.middleware import AbortMessage
 
 MAINTENANCE_SCALE = 1000000
 MAINTENANCE_COMMAND_BLACKLIST = {"ack", "nack"}
@@ -186,11 +187,11 @@ class RedisBroker(Broker):
 
         try:
             self.emit_before("enqueue", message, delay)
-        except SkipMessage:
-            self.logger.warning("Message %s was skipped during enqueue.", message)
+        except AbortMessage:
+            self.logger.warning("Message %s was aborted during enqueue.", message)
             proxy = MessageProxy(message)
             proxy.fail()  # Mark it as failed
-            self.emit_after("skip_message", proxy)
+            self.emit_after("abort_message", proxy)
             return None
 
         self.do_enqueue(queue_name, message.options["redis_message_id"], message.encode())
@@ -289,6 +290,7 @@ class RedisBroker(Broker):
                 *args,
             ]
             return dispatch(args=args, keys=keys)
+
         return do_dispatch
 
     def __getattr__(self, name):
