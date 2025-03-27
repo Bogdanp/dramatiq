@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import importlib
+
 from .age_limit import AgeLimit
 from .asyncio import AsyncIO
 from .callbacks import Callbacks
@@ -44,5 +46,12 @@ __all__ = [
 
 #: The list of middleware that are enabled by default.
 default_middleware = [
-    Prometheus, AgeLimit, TimeLimit, ShutdownNotifications, Callbacks, Pipelines, Retries
+    AgeLimit, TimeLimit, ShutdownNotifications, Callbacks, Pipelines, Retries
 ]
+
+try:
+    if importlib.util.find_spec("prometheus_client"):
+        default_middleware.append(Prometheus)
+        __all__.append("Prometheus")
+except ModuleNotFoundError:
+    pass
