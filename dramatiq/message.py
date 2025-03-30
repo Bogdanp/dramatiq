@@ -38,7 +38,6 @@ def get_encoder() -> Encoder:
     Returns:
       Encoder
     """
-    global global_encoder
     return global_encoder
 
 
