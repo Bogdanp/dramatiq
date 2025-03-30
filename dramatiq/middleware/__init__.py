@@ -40,7 +40,7 @@ __all__ = [
     # Middlewares
     "AgeLimit", "AsyncIO", "Callbacks", "CurrentMessage", "GroupCallbacks",
     "Pipelines", "Retries", "Shutdown", "ShutdownNotifications", "TimeLimit",
-    "TimeLimitExceeded", "Prometheus",
+    "TimeLimitExceeded",
 ]
 
 
@@ -51,7 +51,7 @@ default_middleware = [
 
 try:
     if importlib.util.find_spec("prometheus_client"):
-        default_middleware.append(Prometheus)
+        default_middleware.insert(0, Prometheus)
         __all__.append("Prometheus")
 except ModuleNotFoundError:
     pass
