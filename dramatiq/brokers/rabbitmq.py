@@ -402,7 +402,7 @@ class RabbitmqBroker(Broker):
         for name in (queue_name, dq_name(queue_name), xq_name(queue_name)):
             try:
                 self.channel.queue_purge(name)
-            except pika.exceptions.AMQPChannelError as ex:
+            except pika.exceptions.AMQPChannelError:
                 del self.channel
 
     def flush_all(self):
