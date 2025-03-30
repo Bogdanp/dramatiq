@@ -32,7 +32,7 @@ import time
 import types
 from itertools import chain
 from threading import Event, Thread
-from typing import Optional
+from typing import Optional, Set
 
 from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
 from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
@@ -239,7 +239,7 @@ def make_argument_parser():
     return parser
 
 
-HANDLED_SIGNALS = {signal.SIGINT, signal.SIGTERM}
+HANDLED_SIGNALS: Set[signal.Signals] = {signal.SIGINT, signal.SIGTERM}
 if hasattr(signal, "SIGHUP"):
     HANDLED_SIGNALS.add(signal.SIGHUP)
 if hasattr(signal, "SIGBREAK"):
