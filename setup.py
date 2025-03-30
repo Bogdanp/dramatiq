@@ -39,10 +39,6 @@ with open(rel("dramatiq", "__init__.py"), "r") as f:
         raise RuntimeError("Version marker not found.")
 
 
-dependencies = [
-    "prometheus-client>=0.2",
-]
-
 extra_dependencies = {
     "gevent": [
         "gevent>=1.1",
@@ -50,6 +46,10 @@ extra_dependencies = {
 
     "memcached": [
         "pylibmc>=1.5,<2.0",
+    ],
+
+    "prometheus": [
+        "prometheus-client>=0.2",
     ],
 
     "rabbitmq": [
@@ -115,7 +115,6 @@ setup(
         "dramatiq.results.backends",
     ],
     include_package_data=True,
-    install_requires=dependencies,
     python_requires=">=3.9",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
