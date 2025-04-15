@@ -67,3 +67,4 @@ of those changes to CLEARTYPE SRL.
 | [@kuba-lilz](https://github.com/kuba-lilz/)            | Jakub Kolodziejczyk    |
 | [@dbowring](https://github.com/dbowring/)              | Daniel Bowring         |
 | [@olii](https://github.com/olii)                       | Oliver Nemček          |
+| [@bartvanandel](https://github.com/bartvanandel)       | Bart van Andel         |
