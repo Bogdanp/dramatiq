@@ -22,3 +22,25 @@ def test_messages_have_namedtuple_methods(stub_broker):
 
     msg2 = msg1._replace(queue_name="example")
     assert msg2._asdict()["queue_name"] == "example"
+
+
+def test_messageproxy_representation(stub_broker):
+    """Ensure that MessageProxy defines ``__repr__``.
+
+    While Dramatiq logs messages and MessageProxies formatted using the "%s" placeholder, other tools like Sentry-SDK
+    force ``repr`` of any log param that isn't a primitive. This means that MessageProxy has to implement ``__repr__``
+    in order for the captured messages to be more helpful than:
+
+    > Failed to process message <dramatiq.broker.MessageProxy object at 0x74522262a950> with unhandled exception.
+    """
+    @dramatiq.actor
+    def actor(arg):
+        return arg
+
+    message = actor.send("input")
+
+    consumer = stub_broker.consume("default")
+    message_proxy = next(consumer)
+
+    assert repr(message) in repr(message_proxy), "Expecting MessageProxy repr to contain Message repr"
+    assert str(message) == str(message_proxy), "Expecting identical __str__ of MessageProxy and Message"
