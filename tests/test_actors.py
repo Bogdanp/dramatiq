@@ -22,6 +22,33 @@ def test_actors_can_be_defined(stub_broker):
     assert isinstance(add, dramatiq.Actor)
 
 
+def test_actors_get_valid_logger(stub_broker):
+    # Given a function with a __module__ attribute
+    def add(x, y):
+        return x + y
+
+    # When I apply the @actor decorator
+    decorated_add = dramatiq.actor(add)
+
+    # I expect its logger to be named after the function's module and actor name
+    assert decorated_add.logger.name == f"{add.__module__}.{add.__name__}"
+
+
+def test_actors_without_module_get_valid_logger(stub_broker):
+    # Given a function without a __module__ attribute
+    # (e.g., a function defined in an interactive Python shell)
+    def add(x, y):
+        return x + y
+
+    del add.__module__
+
+    # When I apply the @actor decorator
+    decorated_add = dramatiq.actor(add)
+
+    # I expect its logger to be named after '_' and the actor name
+    assert decorated_add.logger.name == f"_.{add.__name__}"
+
+
 def test_actors_can_be_declared_with_actor_class(stub_broker):
     # Given that I have a non-standard Actor class
     class ActorChild(dramatiq.Actor):
