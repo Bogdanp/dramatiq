@@ -2,7 +2,7 @@ name: CI
 on: [push, pull_request]
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     name: lint
     steps:
       - uses: actions/checkout@master
@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-20.04"]
+        os: ["ubuntu-24.04"]
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         concurrency: ["cpython", "gevent"]
 
