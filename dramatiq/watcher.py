@@ -51,6 +51,12 @@ class _SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):  # pra
         if event.event_type == "opened":
             return
 
+        # watchdog >= 5.0.0 added events for when a file is closed without being written.
+        # Also ignore these so they don't cause unnecessay restarts.
+        # See https://github.com/gorakhargosh/watchdog/pull/1059
+        if event.event_type == "closed_no_write":
+            return
+
         logger = logging.getLogger("SourceChangesHandler")
         logger.info("Detected changes to %r.", event.src_path)
         os.kill(os.getpid(), signal.SIGHUP)
