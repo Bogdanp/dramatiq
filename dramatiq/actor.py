@@ -67,7 +67,7 @@ class Actor(Generic[P, R]):
         if actor_name in broker.actors:
             raise ValueError(f"An actor named {actor_name!r} is already registered.")
 
-        self.logger = get_logger(fn.__module__, actor_name)
+        self.logger = get_logger(fn.__module__ or "_", actor_name)
         self.fn = async_to_sync(fn) if iscoroutinefunction(fn) else fn
         self.broker = broker
         self.actor_name = actor_name
