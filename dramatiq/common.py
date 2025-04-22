@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import threading
 from os import getenv
 from queue import Empty
 from random import uniform
@@ -80,20 +81,33 @@ def iter_queue(queue):
 def join_queue(queue, timeout=None):
     """The join() method of standard queues in Python doesn't support
     timeouts.  This implements the same functionality as that method,
-    with optional timeout support, by depending the internals of
-    Queue.
+    with optional timeout support, using only exposed Queue interfaces.
+    This implementation is compatible with gevent.
 
     Raises:
       QueueJoinTimeout: When the timeout is reached.
 
     Parameters:
+      queue(Queue)
       timeout(Optional[float])
     """
-    with queue.all_tasks_done:
-        while queue.unfinished_tasks:
-            finished_in_time = queue.all_tasks_done.wait(timeout=timeout)
-            if not finished_in_time:
-                raise QueueJoinTimeout("timed out after %.02f seconds" % timeout)
+    if timeout is None:
+        queue.join()
+        return
+
+    join_complete = threading.Event()
+
+    def join_and_signal():
+        queue.join()
+        join_complete.set()
+
+    join_thread = threading.Thread(target=join_and_signal)
+    join_thread.daemon = True
+    join_thread.start()
+
+    # Wait for the join to complete or timeout
+    if not join_complete.wait(timeout):
+        raise QueueJoinTimeout("timed out after %.02f seconds" % timeout)
 
 
 def join_all(joinables, timeout):
