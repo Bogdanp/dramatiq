@@ -82,7 +82,6 @@ def join_queue(queue, timeout=None):
     """The join() method of standard queues in Python doesn't support
     timeouts.  This implements the same functionality as that method,
     with optional timeout support, using only exposed Queue interfaces.
-    This implementation is compatible with gevent.
 
     Raises:
       QueueJoinTimeout: When the timeout is reached.
