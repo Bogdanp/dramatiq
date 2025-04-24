@@ -100,7 +100,7 @@ def join_queue(queue, timeout=None):
         queue.join()
         join_complete.set()
 
-    join_thread = threading.Thread(target=join_and_signal)
+    join_thread = threading.Thread(target=join_and_signal, name="join_and_signal_thread")
     join_thread.daemon = True
     join_thread.start()
 
