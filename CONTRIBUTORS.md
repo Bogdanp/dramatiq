@@ -68,3 +68,4 @@ of those changes to CLEARTYPE SRL.
 | [@dbowring](https://github.com/dbowring/)              | Daniel Bowring         |
 | [@olii](https://github.com/olii)                       | Oliver Nemček          |
 | [@bartvanandel](https://github.com/bartvanandel)       | Bart van Andel         |
+| [@LincolnPuzey](https://github.com/LincolnPuzey)       | Lincoln Puzey          |
