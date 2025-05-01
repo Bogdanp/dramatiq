@@ -1,6 +1,11 @@
-# Issues
+---
+name: Bug report
+about: Github issues are primarily for bugs
+title: ''
+labels: ''
+assignees: ''
 
-GitHub issues are for bugs.  If you have questions, please ask them on the [mailing list](https://groups.io/g/dramatiq-users/topics).
+---
 
 ## Checklist
 
@@ -8,6 +13,7 @@ GitHub issues are for bugs.  If you have questions, please ask them on the [mail
 * [ ] Did you include a minimal, reproducible example?
 * [ ] What OS are you using?
 * [ ] What version of Dramatiq are you using?
+* [ ] What version of Python are you using?
 * [ ] What did you do?
 * [ ] What did you expect would happen?
 * [ ] What happened?
@@ -21,6 +27,11 @@ GitHub issues are for bugs.  If you have questions, please ask them on the [mail
 ## What version of Dramatiq are you using?
 
 <!-- run this command to find out: python -c 'import dramatiq; print(dramatiq.__version__)' -->
+
+
+## What version of Python are you using?
+
+<!-- run this command to find out: python --version -->
 
 
 ## What did you do?
