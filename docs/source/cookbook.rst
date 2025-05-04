@@ -144,6 +144,16 @@ call |pipeline_get_results|::
   for res in pipe.get_results(block=True):
       ...
 
+If you want the actors in the pipeline to keep executing even if
+a actor in it errors out, use the ``pipe_ignore_exception`` option::
+
+  (
+      throws_exception.message(pipe_ignore_exception=True) |
+      will_still_run.message()
+  )
+
+Note that if the ``may_fail`` actor throws an exception,
+the ``will_still_run`` actor will receive ``None`` as input.
 
 Error Reporting
 ---------------
