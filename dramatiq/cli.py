@@ -197,6 +197,10 @@ def make_argument_parser():
         "--worker-shutdown-timeout", type=int, default=600000,
         help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
     )
+    parser.add_argument(
+        "--fork-timeout", type=int, default=30,
+        help="timeout for wait all worker processes to come online before starting the fork processes"
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -516,10 +520,10 @@ def main(args=None):  # noqa
 
     # Wait for all worker processes to come online before starting the
     # fork processes.  This is required to avoid race conditions like
-    # in #297.
+    # in #297, #701.
     for event in worker_process_events:
         if proc.is_alive():
-            if not event.wait(timeout=30):
+            if not event.wait(timeout=args.fork_timeout):
                 break
 
     fork_pipes = []
