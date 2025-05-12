@@ -141,6 +141,19 @@ def folder_path(value):
     return os.path.abspath(value)
 
 
+def worker_fork_timeout_type(value: str) -> float:
+    try:
+        ms = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("worker-fork-timeout be a number.")
+
+    if ms < 10:
+        raise argparse.ArgumentTypeError("worker-fork-timeout too small (minimum recommended: 10ms).")
+
+    if ms > 1_800_000:
+        raise argparse.ArgumentTypeError("worker-fork-timeout too large (maximum: 30 minutes).")
+
+
 def make_argument_parser():
     parser = argparse.ArgumentParser(
         prog="dramatiq",
@@ -194,12 +207,15 @@ def make_argument_parser():
         help="fork a subprocess to run the given function"
     )
     parser.add_argument(
-        "--worker-shutdown-timeout", type=int, default=600000,
-        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
+        "--worker-fork-timeout", type=worker_fork_timeout_type, default=30_000,
+        help=(
+            "timeout for wait all worker processes to come online before starting the fork processes."
+            "In milliseconds (default: 30 seconds)"
+        )
     )
     parser.add_argument(
-        "--timeout-fork", type=int, default=30,
-        help="timeout for wait all worker processes to come online before starting the fork processes"
+        "--worker-shutdown-timeout", type=int, default=600000,
+        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
     )
 
     if HAS_WATCHDOG:
@@ -523,7 +539,7 @@ def main(args=None):  # noqa
     # in #297, #701.
     for event in worker_process_events:
         if proc.is_alive():
-            if not event.wait(timeout=args.timeout_fork):
+            if not event.wait(timeout=args.worker_fork_timeout/1000):
                 break
 
     fork_pipes = []
