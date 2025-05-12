@@ -198,7 +198,7 @@ def make_argument_parser():
         help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
     )
     parser.add_argument(
-        "--fork-timeout", type=int, default=30,
+        "--timeout-fork", type=int, default=30,
         help="timeout for wait all worker processes to come online before starting the fork processes"
     )
 
@@ -523,7 +523,7 @@ def main(args=None):  # noqa
     # in #297, #701.
     for event in worker_process_events:
         if proc.is_alive():
-            if not event.wait(timeout=args.fork_timeout):
+            if not event.wait(timeout=args.timeout_fork):
                 break
 
     fork_pipes = []
