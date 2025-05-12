@@ -513,6 +513,7 @@ def main(args=None):  # noqa
         worker_pipes.append(read_pipe)
         worker_processes.append(proc)
         worker_process_events.append(event)
+        write_pipe.close()
 
     # Wait for all worker processes to come online before starting the
     # fork processes.  This is required to avoid race conditions like
@@ -534,6 +535,7 @@ def main(args=None):  # noqa
         proc.start()
         fork_pipes.append(read_pipe)
         fork_processes.append(proc)
+        write_pipe.close()
 
     parent_read_pipe, parent_write_pipe = multiprocessing.Pipe(duplex=False)
     logger = setup_parent_logging(args, stream=StreamablePipe(parent_write_pipe))
