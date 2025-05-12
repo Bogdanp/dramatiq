@@ -295,3 +295,98 @@ def test_after_process_boot_call_has_no_blocked_signals(start_cli):
 
     # Then I expect that no signals are blocked
     assert blocked_signals == "current_sigmask=[]"
+
+
+@skip_on_windows
+def test_cli_worker_fork_timeout_invalid_string(start_cli):
+    proc = start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes", "1",
+            "--threads", "1",
+            "--worker-fork-timeout", "tests",
+        ],
+        stdout=PIPE, stderr=STDOUT)
+    proc.wait(60)
+
+    # The process return code should be 2
+    assert proc.returncode == 2
+
+    # And the output should contain an error
+    assert b"worker-fork-timeout be a number." in proc.stdout.read()
+
+
+@skip_on_windows
+def test_cli_worker_fork_timeout_invalid_str(start_cli):
+    proc = start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes", "1",
+            "--threads", "1",
+            "--worker-fork-timeout", "tests",
+        ],
+        stdout=PIPE, stderr=STDOUT)
+    proc.wait(60)
+
+    # The process return code should be 2
+    assert proc.returncode == 2
+
+    # And the output should contain an error
+    assert b"worker-fork-timeout be a number." in proc.stdout.read()
+
+
+@skip_on_windows
+def test_cli_worker_fork_timeout_invalid_negative(start_cli):
+    proc = start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes", "1",
+            "--threads", "1",
+            "--worker-fork-timeout", "-5",
+        ],
+        stdout=PIPE, stderr=STDOUT)
+    proc.wait(60)
+
+    # The process return code should be 2
+    assert proc.returncode == 2
+
+    # And the output should contain an error
+    assert b"worker-fork-timeout too small (minimum recommended: 10ms)." in proc.stdout.read()
+
+
+@skip_on_windows
+def test_cli_worker_fork_timeout_invalid_below_10(start_cli):
+    proc = start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes", "1",
+            "--threads", "1",
+            "--worker-fork-timeout", "9",
+        ],
+        stdout=PIPE, stderr=STDOUT)
+    proc.wait(60)
+
+    # The process return code should be 2
+    assert proc.returncode == 2
+
+    # And the output should contain an error
+    assert b"worker-fork-timeout too small (minimum recommended: 10ms)." in proc.stdout.read()
+
+
+@skip_on_windows
+def test_cli_worker_fork_timeout_invalid_above_1_800_000(start_cli):
+    proc = start_cli(
+        "tests.test_cli:broker",
+        extra_args=[
+            "--processes", "1",
+            "--threads", "1",
+            "--worker-fork-timeout", "3_600_000",
+        ],
+        stdout=PIPE, stderr=STDOUT)
+    proc.wait(60)
+
+    # The process return code should be 2
+    assert proc.returncode == 2
+
+    # And the output should contain an error
+    assert b"worker-fork-timeout too large (maximum: 30 minutes)." in proc.stdout.read()
