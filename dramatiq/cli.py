@@ -144,14 +144,16 @@ def folder_path(value):
 def worker_fork_timeout_type(value: str) -> float:
     try:
         ms = float(value)
-    except ValueError:
-        raise argparse.ArgumentTypeError("worker-fork-timeout be a number.")
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("worker-fork-timeout be a number.") from e
 
     if ms < 10:
         raise argparse.ArgumentTypeError("worker-fork-timeout too small (minimum recommended: 10ms).")
 
     if ms > 1_800_000:
         raise argparse.ArgumentTypeError("worker-fork-timeout too large (maximum: 30 minutes).")
+
+    return ms
 
 
 def make_argument_parser():
@@ -539,7 +541,7 @@ def main(args=None):  # noqa
     # in #297, #701.
     for event in worker_process_events:
         if proc.is_alive():
-            if not event.wait(timeout=args.worker_fork_timeout/1000):
+            if not event.wait(timeout=args.worker_fork_timeout / 1000):
                 break
 
     fork_pipes = []
