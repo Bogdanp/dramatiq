@@ -99,7 +99,12 @@ class Retries(Middleware):
 
         message.options["retries"] += 1
         message.options["traceback"] = traceback.format_exc(limit=30)
-        message.options["requeue_timestamp"] = int(time.time() * 1000)
+        requeue_timestamp = int(time.time() * 1000)
+
+        # Ensure requeue_timestamp is greater than message_timestamp
+        if requeue_timestamp <= message.message_timestamp:
+            requeue_timestamp = message.message_timestamp + 1
+        message.options["requeue_timestamp"] = requeue_timestamp
 
         max_retries = message.options.get("max_retries", actor.options.get("max_retries", self.max_retries))
         retry_when = actor.options.get("retry_when", self.retry_when)
