@@ -123,8 +123,10 @@ class Broker:
         You can specify another middleware (by class) as a reference
         point for where the new middleware should be added.
 
+        Duplicates of middleware are allowed.
         If there's already a middleware object of the same class
-        added to the broker, it will be replaced.
+        added to the broker, the middleware will be added
+        for the second time.
 
         Parameters:
           middleware(Middleware): The middleware.
