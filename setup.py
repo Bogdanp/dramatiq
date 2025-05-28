@@ -57,7 +57,7 @@ extra_dependencies = {
     ],
 
     "redis": [
-        "redis>=2.0,<6.0",
+        "redis>=2.0,<7.0",
     ],
 
     "watch": [
