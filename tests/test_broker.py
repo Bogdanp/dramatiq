@@ -1,3 +1,4 @@
+import logging
 import pytest
 
 import dramatiq
@@ -81,3 +82,27 @@ def test_can_instantiate_brokers_without_middleware():
 
     # Then I should get back a broker with no middleware
     assert not broker.middleware
+
+
+def test_broker_middleware_logs_warning_when_added_twice(stub_broker, caplog):
+    # Set the log level to capture warnings
+    caplog.set_level(logging.WARNING)
+
+    # Given that I have a custom middleware
+    empty_middleware1 = EmptyMiddleware()
+    empty_middleware2 = EmptyMiddleware()
+
+    # When I add the first middleware
+    stub_broker.add_middleware(empty_middleware1)
+
+    # And I add another middleware of the same type
+    stub_broker.add_middleware(empty_middleware2)
+
+    # Then I expect a warning to be logged
+    assert any("You're adding a middleware of the same type twice" in record.message
+               for record in caplog.records
+               if record.levelname == "WARNING")
+
+    # And I expect both middlewares to be added
+    assert empty_middleware1 in stub_broker.middleware
+    assert empty_middleware2 in stub_broker.middleware

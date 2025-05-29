@@ -123,6 +123,11 @@ class Broker:
         You can specify another middleware (by class) as a reference
         point for where the new middleware should be added.
 
+        Duplicates of middleware are allowed.
+        If there's already a middleware object of the same class
+        added to the broker, the middleware will be added
+        for the second time.
+
         Parameters:
           middleware(Middleware): The middleware.
           before(type): Add this middleware before a specific one.
@@ -134,6 +139,12 @@ class Broker:
         """
         assert not (before and after), \
             "provide either 'before' or 'after', but not both"
+
+        for existing_middleware in self.middleware:
+            if isinstance(existing_middleware, type(middleware)):
+                self.logger.warning("You're adding a middleware "
+                                    "of the same type twice: %r. "
+                                    "It may have unexpected results.", middleware)
 
         if before or after:
             for i, m in enumerate(self.middleware):  # noqa
