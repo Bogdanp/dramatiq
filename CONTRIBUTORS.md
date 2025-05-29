@@ -70,3 +70,4 @@ of those changes to CLEARTYPE SRL.
 | [@bartvanandel](https://github.com/bartvanandel)       | Bart van Andel         |
 | [@LincolnPuzey](https://github.com/LincolnPuzey)       | Lincoln Puzey          |
 | [@guedesfelipe](https://github.com/guedesfelipe)       | Felipe Guedes          |
+| [@karolinepauls](https://karolinepauls.com)            | Karoline Pauls         |
