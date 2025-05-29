@@ -8,6 +8,91 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+`1.18.0`_ -- 2025-05-29
+-----------------------
+
+Fixed
+^^^^^
+
+* Correct typing on signal handler. (`#664`_, `@igor47`_)
+* Make sure RabbitMQ Broker enqueue() attempts the correct number 
+  of preset retries. (`#668`_, `#669`_, `@jenstoeger`_)
+* Fix ``Message`` Result type variable to be covariant. 
+  (`#685`_, `@alecbarber`_)
+* Fix flushing of RabbitMQ queues. (`#687`_, `@olii`_)
+* Fixed unexpected restarts when using ``--watch`` option. 
+  (`#654`_, `#696`_, `@LincolnPuzey`_)
+* Fixed using actor decorator in the interactive shell. 
+  (`#694`_, `#695`_, `@bartvanandel`_)
+* Fix ``join_queue`` (and ``StubBroker``) compatibility with gevent 
+  25.4.1. (`#699`_, `@synweap15`_)
+* Close write_pipe after forking to fix hangs on Worker 
+  shutdown. (`#693`_, `#707`_, `@dansimko`_)
+
+.. _#664: https://github.com/Bogdanp/dramatiq/pull/664
+.. _@igor47: https://github.com/igor47
+.. _#668: https://github.com/Bogdanp/dramatiq/issues/668
+.. _#669: https://github.com/Bogdanp/dramatiq/pull/669
+.. _@jenstoeger: https://github.com/jenstoeger
+.. _#685: https://github.com/Bogdanp/dramatiq/pull/685
+.. _@alecbarber: https://github.com/alecbarber
+.. _#687: https://github.com/Bogdanp/dramatiq/pull/687
+.. _@olii: https://github.com/olii
+.. _#654: https://github.com/Bogdanp/dramatiq/issues/654
+.. _#696: https://github.com/Bogdanp/dramatiq/pull/696
+.. _@LincolnPuzey: https://github.com/LincolnPuzey
+.. _#694: https://github.com/Bogdanp/dramatiq/issues/694
+.. _#695: https://github.com/Bogdanp/dramatiq/pull/695
+.. _@bartvanandel: https://github.com/bartvanandel
+.. _#699: https://github.com/Bogdanp/dramatiq/pull/699
+.. _#707: https://github.com/Bogdanp/dramatiq/pull/707
+.. _#693: https://github.com/Bogdanp/dramatiq/issues/693
+.. _@dansimko: https://github.com/dansimko
+
+Added
+^^^^^
+
+* Add repr to ``MessageProxy`` class. (`#690`_, `@karolinepauls`_)
+* Add ``--worker-fork-timeout`` command-line argument to 
+  condfigure time to wait for the worker processes to come 
+  online after forking. (`#706`_, `@guedesfelipe`_)
+* Log a warning when added a duplicate middleware class, 
+  since this can lead to unexpected behavior. (`#709`_, `@synweap15`_)
+
+.. _#690: https://github.com/Bogdanp/dramatiq/pull/690
+.. _@karolinepauls: https://github.com/karolinepauls
+.. _#706: https://github.com/Bogdanp/dramatiq/pull/706
+.. _@guedesfelipe: https://github.com/guedesfelipe
+.. _#709: https://github.com/Bogdanp/dramatiq/pull/709
+
+Changed
+^^^^^^^
+
+* Extend version limit on ``redis-py`` to version 6.X. 
+  (`#711`_, `@dbowring`_)
+
+.. _#711: https://github.com/Bogdanp/dramatiq/pull/711
+
+Removed
+^^^^^^^
+
+* Remove support for end-of-life Python 3.8. (`#662`_, `@amureki`_)
+
+.. _#662: https://github.com/Bogdanp/dramatiq/pull/662
+
+Documentation
+^^^^^^^^^^^^^
+
+* Add Podcatcher sponsor.
+* Add link to ``dramatatiq-workflow``. (`#667`_, `@pencil`_)
+* Update Sentry docs to reference ``sentry-sdk``. (`#675`_, `@DHUKK`_)
+
+.. _#667: https://github.com/Bogdanp/dramatiq/pull/667
+.. _@pencil: https://github.com/pencil
+.. _#675: https://github.com/Bogdanp/dramatiq/pull/675
+.. _@DHUKK: https://github.com/DHUKK
+
+
 `1.17.1`_ -- 2024-10-26
 -----------------------
 
@@ -1256,7 +1341,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...HEAD
+.. _1.18.0: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...v1.18.0
 .. _1.17.1: https://github.com/Bogdanp/dramatiq/compare/v1.17.0...v1.17.1
 .. _1.17.0: https://github.com/Bogdanp/dramatiq/compare/v1.16.0...v1.17.0
 .. _1.16.0: https://github.com/Bogdanp/dramatiq/compare/v1.15.0...v1.16.0
