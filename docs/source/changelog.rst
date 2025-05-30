@@ -54,7 +54,7 @@ Added
 
 * Add repr to ``MessageProxy`` class. (`#690`_, `@karolinepauls`_)
 * Add ``--worker-fork-timeout`` command-line argument to 
-  condfigure time to wait for the worker processes to come 
+  configure time to wait for the worker processes to come
   online after forking. (`#706`_, `@guedesfelipe`_)
 * Log a warning when added a duplicate middleware class, 
   since this can lead to unexpected behavior. (`#709`_, `@synweap15`_)
@@ -84,7 +84,7 @@ Documentation
 ^^^^^^^^^^^^^
 
 * Add Podcatcher sponsor.
-* Add link to ``dramatatiq-workflow``. (`#667`_, `@pencil`_)
+* Add link to ``dramatiq-workflow``. (`#667`_, `@pencil`_)
 * Update Sentry docs to reference ``sentry-sdk``. (`#675`_, `@DHUKK`_)
 
 .. _#667: https://github.com/Bogdanp/dramatiq/pull/667
