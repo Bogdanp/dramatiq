@@ -123,10 +123,16 @@ Changed
   (`#640`_, `#641`_, `@z0z0r4`_)
 * The `Retries` middleware now tracks when a message was last requeued
   on retry. (`#629`_, `@kuba-lilz`_)
+* The `prometheus-client` dependency is now optional, and the `Prometheus`
+  middleware is no longer in the default list, and should be added manually.
+   (`#345`_, `#688`_, `@azmeuk`_)
 
+.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
 .. _#629: https://github.com/Bogdanp/dramatiq/pull/629
 .. _#640: https://github.com/Bogdanp/dramatiq/issues/640
 .. _#641: https://github.com/Bogdanp/dramatiq/pull/641
+.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
+.. _@azmeuk: https://github.com/azmeuk
 .. _@kuba-lilz: https://github.com/kuba-lilz
 .. _@z0z0r4: https://github.com/z0z0r4
 
