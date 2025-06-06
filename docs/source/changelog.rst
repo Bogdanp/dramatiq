@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Changed
+^^^^^^^
+
+* The `prometheus-client` dependency is now optional, and the `Prometheus`
+  middleware is no longer in the default list, and should be added manually.
+   (`#345`_, `#688`_, `@azmeuk`_)
+
+.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
+.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
+.. _@azmeuk: https://github.com/azmeuk
+
 `1.18.0`_ -- 2025-05-29
 -----------------------
 
@@ -15,18 +26,18 @@ Fixed
 ^^^^^
 
 * Correct typing on signal handler. (`#664`_, `@igor47`_)
-* Make sure RabbitMQ Broker enqueue() attempts the correct number 
+* Make sure RabbitMQ Broker enqueue() attempts the correct number
   of preset retries. (`#668`_, `#669`_, `@jenstoeger`_)
-* Fix ``Message`` Result type variable to be covariant. 
+* Fix ``Message`` Result type variable to be covariant.
   (`#685`_, `@alecbarber`_)
 * Fix flushing of RabbitMQ queues. (`#687`_, `@olii`_)
-* Fixed unexpected restarts when using ``--watch`` option. 
+* Fixed unexpected restarts when using ``--watch`` option.
   (`#654`_, `#696`_, `@LincolnPuzey`_)
-* Fixed using actor decorator in the interactive shell. 
+* Fixed using actor decorator in the interactive shell.
   (`#694`_, `#695`_, `@bartvanandel`_)
-* Fix ``join_queue`` (and ``StubBroker``) compatibility with gevent 
+* Fix ``join_queue`` (and ``StubBroker``) compatibility with gevent
   25.4.1. (`#699`_, `@synweap15`_)
-* Close write_pipe after forking to fix hangs on Worker 
+* Close write_pipe after forking to fix hangs on Worker
   shutdown. (`#693`_, `#707`_, `@dansimko`_)
 
 .. _#664: https://github.com/Bogdanp/dramatiq/pull/664
@@ -53,10 +64,10 @@ Added
 ^^^^^
 
 * Add repr to ``MessageProxy`` class. (`#690`_, `@karolinepauls`_)
-* Add ``--worker-fork-timeout`` command-line argument to 
+* Add ``--worker-fork-timeout`` command-line argument to
   configure time to wait for the worker processes to come
   online after forking. (`#706`_, `@guedesfelipe`_)
-* Log a warning when added a duplicate middleware class, 
+* Log a warning when added a duplicate middleware class,
   since this can lead to unexpected behavior. (`#709`_, `@synweap15`_)
 
 .. _#690: https://github.com/Bogdanp/dramatiq/pull/690
@@ -68,7 +79,7 @@ Added
 Changed
 ^^^^^^^
 
-* Extend version limit on ``redis-py`` to version 6.X. 
+* Extend version limit on ``redis-py`` to version 6.X.
   (`#711`_, `@dbowring`_)
 
 .. _#711: https://github.com/Bogdanp/dramatiq/pull/711
@@ -123,16 +134,10 @@ Changed
   (`#640`_, `#641`_, `@z0z0r4`_)
 * The `Retries` middleware now tracks when a message was last requeued
   on retry. (`#629`_, `@kuba-lilz`_)
-* The `prometheus-client` dependency is now optional, and the `Prometheus`
-  middleware is no longer in the default list, and should be added manually.
-   (`#345`_, `#688`_, `@azmeuk`_)
 
-.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
 .. _#629: https://github.com/Bogdanp/dramatiq/pull/629
 .. _#640: https://github.com/Bogdanp/dramatiq/issues/640
 .. _#641: https://github.com/Bogdanp/dramatiq/pull/641
-.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
-.. _@azmeuk: https://github.com/azmeuk
 .. _@kuba-lilz: https://github.com/kuba-lilz
 .. _@z0z0r4: https://github.com/z0z0r4
 
