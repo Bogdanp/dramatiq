@@ -329,7 +329,7 @@ def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
     max_retries = 2
 
     # And an actor that raises an exception and should be retried
-    @dramatiq.actor(max_retries=max_retries, min_backoff=500, max_backoff=500)
+    @dramatiq.actor(max_retries=max_retries, min_backoff=100, max_backoff=100)
     def do_work():
 
         current_message = dramatiq.middleware.CurrentMessage.get_current_message()
@@ -339,7 +339,8 @@ def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
 
         raise RuntimeError()
 
-    message = do_work.send()
+    # Send message for the actor (use delay so first requeue_timestamp is after message_timestamp)
+    message = do_work.send_with_options(delay=100)
 
     # When I join on the queue and run the actor
     stub_broker.join(do_work.queue_name)
