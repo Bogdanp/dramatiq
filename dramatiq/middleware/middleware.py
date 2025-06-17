@@ -70,11 +70,11 @@ class Middleware:
         """Called after an actor has been declared.
         """
 
-    def before_declare_queue(self, broker, queue_name):
+    def before_declare_queue(self, broker, queue_name, ensure_consumer=True):
         """Called before a queue is declared.
         """
 
-    def after_declare_queue(self, broker, queue_name):
+    def after_declare_queue(self, broker, queue_name, ensure_consumer=True):
         """Called after a queue has been declared.
 
         This signals that the queue has been registered with the
@@ -84,7 +84,7 @@ class Middleware:
         them until messages are enqueued or consumed.
         """
 
-    def after_declare_delay_queue(self, broker, queue_name):
+    def after_declare_delay_queue(self, broker, queue_name, ensure_consumer=True):
         """Called after a delay queue has been declared.
         """
 

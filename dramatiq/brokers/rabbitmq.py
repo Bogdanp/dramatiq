@@ -219,7 +219,7 @@ class RabbitmqBroker(Broker):
         self.declare_queue(queue_name, ensure=True)
         return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
-    def declare_queue(self, queue_name, *, ensure=False):
+    def declare_queue(self, queue_name, *, ensure=False, ensure_consumer=True):
         """Declare a queue.  Has no effect if a queue with the given
         name already exists.
 
@@ -233,14 +233,14 @@ class RabbitmqBroker(Broker):
             or connection fails.
         """
         if q_name(queue_name) not in self.queues:
-            self.emit_before("declare_queue", queue_name)
+            self.emit_before("declare_queue", queue_name, ensure_consumer=ensure_consumer)
             self.queues.add(queue_name)
             self.queues_pending.add(queue_name)
-            self.emit_after("declare_queue", queue_name)
+            self.emit_after("declare_queue", queue_name, ensure_consumer=ensure_consumer)
 
             delayed_name = dq_name(queue_name)
             self.delay_queues.add(delayed_name)
-            self.emit_after("declare_delay_queue", delayed_name)
+            self.emit_after("declare_delay_queue", delayed_name, ensure_consumer=ensure_consumer)
 
         if ensure:
             self._ensure_queue(queue_name)
@@ -324,7 +324,7 @@ class RabbitmqBroker(Broker):
         attempts = 0
         while True:
             try:
-                self.declare_queue(canonical_queue_name, ensure=True)
+                self.declare_queue(canonical_queue_name, ensure=True, ensure_consumer=False)
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
                 self.emit_before("enqueue", message, delay)
                 self.channel.basic_publish(
