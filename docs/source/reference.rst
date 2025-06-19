@@ -82,7 +82,7 @@ The following middleware are all enabled by default.
    :members:
    :member-order: bysource
 .. autoclass:: dramatiq.middleware.Pipelines
-.. autoclass:: dramatiq.middleware.Prometheus
+.. autoclass:: dramatiq.middleware.prometheus.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
 .. autoclass:: dramatiq.middleware.ShutdownNotifications
 .. autoclass:: dramatiq.middleware.TimeLimit
