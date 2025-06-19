@@ -49,9 +49,11 @@ class TimeLimit(Middleware):
       time_limit(float): The maximum number of milliseconds actors may
         run for. Use `float("inf")` to avoid setting a timeout for the
         actor.
+        Defaults to 10 minutes (600,000 milliseconds).
       interval(int): The interval (in milliseconds) with which to
         check for actors that have exceeded the limit. This does not take
         effect when using gevent because the timers are managed by gevent.
+        Defaults to 1 second (1,000 milliseconds).
     """
 
     def __init__(self, *, time_limit=600000, interval=1000):

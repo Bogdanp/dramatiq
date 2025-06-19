@@ -70,25 +70,51 @@ Brokers
 Middleware
 ----------
 
-The following middleware are all enabled by default.
+Middleware Base Class
+^^^^^^^^^^^^^^^^^^^^^
+
+This defines the hooks available for middleware to implement,
+and can be subclassed to implement custom middleware.
 
 .. autoclass:: Middleware
    :members:
    :member-order: bysource
+
+.. _default-middleware:
+
+Default Middleware
+^^^^^^^^^^^^^^^^^^
+
+The following middleware classes are all enabled by default, with their default settings.
+
 .. autoclass:: dramatiq.middleware.AgeLimit
-.. autoclass:: dramatiq.middleware.AsyncIO
 .. autoclass:: dramatiq.middleware.Callbacks
-.. autoclass:: dramatiq.middleware.CurrentMessage
-   :members:
-   :member-order: bysource
 .. autoclass:: dramatiq.middleware.Pipelines
-.. autoclass:: dramatiq.middleware.prometheus.Prometheus
 .. autoclass:: dramatiq.middleware.Retries
 .. autoclass:: dramatiq.middleware.ShutdownNotifications
 .. autoclass:: dramatiq.middleware.TimeLimit
 
-Errors
-^^^^^^
+.. _optional-middleware:
+
+Optional Middleware
+^^^^^^^^^^^^^^^^^^^
+
+The following middleware classes are available, but not enabled by default.
+
+.. autoclass:: dramatiq.middleware.AsyncIO
+.. autoclass:: dramatiq.middleware.CurrentMessage
+   :members: get_current_message
+   :member-order: bysource
+.. autoclass:: dramatiq.middleware.prometheus.Prometheus
+
+.. py:class:: dramatiq.results.Results
+   :no-index:
+
+   Middleware that automatically stores actor results.
+   See :class:`dramatiq.results.Results` for details.
+
+Middleware Errors
+^^^^^^^^^^^^^^^^^
 
 The class hierarchy for middleware exceptions:
 
@@ -119,14 +145,15 @@ not enabled by default and you should avoid using them until you have
 a really good use case.  Most of the time you can get by with actors
 simply updating data in your database instead of using results.
 
-Middleware
-^^^^^^^^^^
+Results Middleware
+^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: dramatiq.results.Results
    :members:
+   :exclude-members: actor_options, after_process_message, after_skip_message, after_nack
 
-Backends
-^^^^^^^^
+Results Backends
+^^^^^^^^^^^^^^^^
 
 .. autoclass:: dramatiq.results.ResultBackend
    :members:
@@ -142,8 +169,8 @@ Rate limiters can be used to determine whether or not an operation can
 be run at the current time across many processes and machines by using
 a shared storage backend.
 
-Backends
-^^^^^^^^
+Rate Limiters Backends
+^^^^^^^^^^^^^^^^^^^^^^
 
 Rate limiter backends are used to store metadata about rate limits.
 
