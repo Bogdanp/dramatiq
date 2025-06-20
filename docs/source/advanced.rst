@@ -52,10 +52,11 @@ you can do the following:
 
 .. code-block:: python
 
-   from dramatiq import Broker
+   import dramatiq
    from dramatiq.middleware import AgeLimit, TimeLimit, ShutdownNotifications, Retries, CurrentMessage
 
-   broker = Broker(
+   # Replace `dramatiq.Broker` with a concrete class, e.g. dramatiq.brokers.redis.RedisBroker.
+   broker = dramatiq.Broker(
        middleware=[
            AgeLimit(),
            TimeLimit(),
@@ -68,6 +69,8 @@ you can do the following:
            # They will not be added back by dramatiq.
        ],
    )
+
+   dramatiq.set_broker(broker)
 
 Brokers
 -------
