@@ -41,17 +41,29 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
     Parameters:
       attempts(int): The number of attempts there have been so far.
       factor(int): The number of milliseconds to multiply each backoff by.
+                   This is also effectively the minimum backoff amount.
       max_backoff(int): The max number of milliseconds to backoff by.
       max_exponent(int): The maximum backoff exponent.
 
     Returns:
       tuple: The new number of attempts and the backoff in milliseconds.
     """
+    # Calculate base backoff from number of attempts.
+    # When attempts=0, then backoff=factor, i.e. the minimum backoff.
+    # each extra attempt, doubles this.
     exponent = min(attempts, max_exponent)
-    backoff = min(factor * 2 ** exponent, max_backoff)
+    backoff = factor * (2 ** exponent)
+
     if jitter:
-        backoff /= 2
-        backoff = int(backoff + uniform(0, backoff))
+        # Add jitter to extend backoff up to twice as much.
+        backoff = int(backoff * uniform(1, 2))
+        # If this exceeds max_backoff, bring backoff back to 50%-100% of max_backoff to keep some jitter.
+        if backoff > max_backoff:
+            backoff = int(max_backoff * uniform(0.5, 1))
+    else:
+        # if not jittering, simply apply max_backoff
+        backoff = min(backoff, max_backoff)
+
     return attempts + 1, backoff
 
 

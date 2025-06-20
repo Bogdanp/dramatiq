@@ -125,7 +125,9 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
     succeeded.wait(timeout=30)
 
     # I expect backoff time to have passed between success and failure
-    assert 500 <= success_time - failure_time <= 1500
+    assert 1000 <= success_time - failure_time <= (2000 + 200)
+    # The first backoff time should be 100-200% of min_backoff.
+    # Add an extra 200 milliseconds to account for processing and to prevent flakiness.
 
 
 def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_worker):
