@@ -209,6 +209,7 @@ under that folder or any of its sub-folders change::
    Although this is a handy feature to use when developing your code,
    you should avoid using it in production!
 
+.. _message-retries:
 
 Message Retries
 ---------------

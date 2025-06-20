@@ -45,7 +45,7 @@ or your own custom |Middleware| subclasses.
 For example if you wish to
 
 1. Disable the |Callbacks| and |Pipelines| middleware.
-2. Set a custom default :ref:`time_limit<message-time-limits>` of one minute across your whole application.
+2. Set a custom default :ref:`max_retries<message-retries>` of 5 for the |Retries| middleware.
 3. Add in the non-default |CurrentMessage| middleware.
 
 you can do the following:
@@ -58,10 +58,10 @@ you can do the following:
    broker = Broker(
        middleware=[
            AgeLimit(),
-           # Note: custom default time_limit
-           TimeLimit(time_limit=60 * 1000),
+           TimeLimit(),
            ShutdownNotifications(),
-           Retries(),
+           # Note: custom default max_retries of 5
+           Retries(max_retries=5),
            # Note: non-default middleware class included.
            CurrentMessage(),
            # Note: Callbacks and Pipelines are not included.
