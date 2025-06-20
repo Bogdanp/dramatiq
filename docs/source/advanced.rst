@@ -357,6 +357,7 @@ gevent could provide a significant performance improvement.
 I suggest at least experimenting with it to see if it fits your use
 case.
 
+.. _prometheus-metrics:
 
 Prometheus Metrics
 ^^^^^^^^^^^^^^^^^^
@@ -400,6 +401,8 @@ Grafana Dashboard
 You can find a Grafana dashboard that displays these metrics here_.
 
 .. _here: https://grafana.com/grafana/dashboards/3692-dramatiq/
+
+.. _gotchas-with-prometheus:
 
 Gotchas with Prometheus
 ~~~~~~~~~~~~~~~~~~~~~~~
