@@ -13,7 +13,7 @@ Changed
 
 * The `prometheus-client` dependency is now optional, and the `Prometheus`
   middleware is no longer in the default list, and should be added manually.
-   (`#345`_, `#688`_, `@azmeuk`_)
+  (`#345`_, `#688`_, `@azmeuk`_)
 
 .. _#345: https://github.com/Bogdanp/dramatiq/issues/345
 .. _#688: https://github.com/Bogdanp/dramatiq/pull/688

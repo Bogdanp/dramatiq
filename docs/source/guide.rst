@@ -209,6 +209,7 @@ under that folder or any of its sub-folders change::
    Although this is a handy feature to use when developing your code,
    you should avoid using it in production!
 
+.. _message-retries:
 
 Message Retries
 ---------------
@@ -269,6 +270,7 @@ automatically dropped from the message broker.  From here, you can
 manually inspect the message and decide whether or not it should be
 put back on the queue.
 
+.. _message-time-limits:
 
 Message Time Limits
 -------------------

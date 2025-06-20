@@ -3,6 +3,72 @@
 Advanced Topics
 ===============
 
+Customizing Middleware
+----------------------
+
+Some of Dramatiq's built-in functionality is actually implemented by the :ref:`default-middleware`.
+
+To customise the middleware Dramatiq uses, there are two typical approaches;
+
+1. Adding extra Middleware
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you wish to leave the :ref:`default-middleware` enabled with their default settings,
+and only add extra middleware,
+this is done with the |add_middleware| method of the Broker.
+This can be used with the :ref:`optional-middleware`, or your own custom |Middleware| subclass.
+For example;
+
+.. code-block:: python
+
+   from dramatiq import Broker
+   from dramatiq.middleware import CurrentMessage
+
+   broker = Broker()
+   broker.add_middleware(CurrentMessage())
+
+In this example the default middleware is unchanged, and an instance of the |CurrentMessage| middleware is added.
+
+2. Providing a list of Middleware Classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you wish to have full control over the middleware (so the :ref:`default-middleware` is not used)
+you must pass a list of Middleware when instantiating your |Broker|.
+When you do so, Dramatiq will only use the middleware in the list you pass
+(plus any middleware you add to the broker later with the |add_middleware| method).
+The list can contain any of the :ref:`default-middleware` or :ref:`optional-middleware`,
+or your own custom |Middleware| subclasses.
+
+.. warning::
+   Omitting from the list or changing the settings of default middleware can lead to behavior different to what is documented.
+
+For example if you wish to
+
+1. Disable the |Callbacks| and |Pipelines| middleware.
+2. Set a custom default :ref:`max_retries<message-retries>` of 5 for the |Retries| middleware.
+3. Add in the non-default |CurrentMessage| middleware.
+
+you can do the following:
+
+.. code-block:: python
+
+   from dramatiq import Broker
+   from dramatiq.middleware import AgeLimit, TimeLimit, ShutdownNotifications, Retries, CurrentMessage
+
+   broker = Broker(
+       middleware=[
+           AgeLimit(),
+           TimeLimit(),
+           ShutdownNotifications(),
+           # Note: custom default max_retries of 5
+           Retries(max_retries=5),
+           # Note: non-default middleware class included.
+           CurrentMessage(),
+           # Note: Callbacks and Pipelines are not included.
+           # They will not be added back by dramatiq.
+       ],
+   )
+
 Brokers
 -------
 

@@ -52,7 +52,7 @@ DEFAULT_LUA_MAX_STACK = getenv_int("dramatiq_lua_max_stack")
 
 
 class RedisBroker(Broker):
-    """A broker than can be used with Redis.
+    """A broker than can be used with Redis_.
 
     Examples:
 
@@ -65,7 +65,7 @@ class RedisBroker(Broker):
       >>> RedisBroker(url="redis://127.0.0.1:6379/0")
 
     See also:
-      Redis_ for a list of all the available connection parameters.
+      :class:`redis.Redis` for a list of all the available connection parameters.
 
     Parameters:
       url(str): An optional connection URL.  If both a URL and
@@ -85,7 +85,7 @@ class RedisBroker(Broker):
       **parameters: Connection parameters are passed directly
         to :class:`redis.Redis`.
 
-    .. _Redis: http://redis-py.readthedocs.io/en/latest/#redis.Redis
+    .. _Redis: https://redis.io
     """
 
     def __init__(

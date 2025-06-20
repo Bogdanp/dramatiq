@@ -42,8 +42,9 @@ class ShutdownNotifications(Middleware):
       this means that this middleware can't cancel system calls.
 
     Parameters:
-      notify_shutdown(bool): When true, the actor will be interrupted
+      notify_shutdown(bool): When True, the actor will be interrupted
         if the worker process was terminated.
+        Defaults to False, meaning actors will not be interrupted, and allowed to finish.
     """
 
     def __init__(self, notify_shutdown=False):
