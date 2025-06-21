@@ -235,3 +235,42 @@ Errors
    :members:
 .. autoclass:: dramatiq.results.ResultFailure
    :members:
+
+Environment Variables
+---------------------
+
+These are the environment variables that dramatiq reads
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Default
+     - Description
+   * - ``dramatiq_restart_delay``
+     - 3000 (3 seconds)
+     - The number of milliseconds to wait before restarting consumers after a connection error.
+   * - ``dramatiq_queue_prefetch``
+     - 2 times number of worker threads
+     - The number of messages to prefetch from the queue for each worker process. In-progress messages are included in the count.
+   * - ``dramatiq_delay_queue_prefetch``
+     - 1000 times number of worker threads
+     - The number of messages to prefetch from the delay queue for each worker.
+   * - ``dramatiq_dead_message_ttl``
+     - 604800000 (One week)
+     - The maximum amount of time a message can be in the dead queue for the RabbitMQ Broker (in milliseconds).
+   * - ``dramatiq_group_callback_barrier_ttl``
+     - 86400000 (One day)
+     - 
+   * - ``dramatiq_prom_lock``
+     - tempfile.gettempdir()/dramatiq-prometheus.lock
+     - The path to the file to use to race Exposition servers against one another.
+   * - ``dramatiq_prom_db``
+     - tempfile.gettempdir()/dramatiq-prometheus
+     - The path to store the prometheus database files. See :ref:`gotchas-with-prometheus`.
+   * - ``dramatiq_prom_host``
+     - 0.0.0.0
+     - See :ref:`prometheus-metrics`.
+   * - ``dramatiq_prom_port``
+     - 9191
+     - See :ref:`prometheus-metrics`.
