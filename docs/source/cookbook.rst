@@ -144,6 +144,37 @@ call |pipeline_get_results|::
   for res in pipe.get_results(block=True):
       ...
 
+Asyncio Actors
+--------------
+
+To use asynchronous functions (``async def``) as actors,
+you must enable the optional |AsyncIO| middleware (See :ref:`customizing-middleware`).
+
+.. code-block:: python
+
+   import asyncio
+   import dramatiq
+   import dramatiq.middleware
+
+   broker = dramatiq.Broker()
+   dramatiq.set_broker(broker)
+   broker.add_middleware(dramatiq.middleware.AsyncIO())
+
+   @dramatiq.actor
+   async def waiter():
+       await asyncio.sleep(10)
+
+This middleware will start up 1 thread per worker process to run an event loop,
+where any asynchronous actor functions will be scheduled to run.
+
+You can use a mixture of synchronous actors and asynchronous actors,
+the synchronous ones will be run on the worker threads as normal,
+and the asynchronous ones will be scheduled on the event loop thread.
+
+Note that the maximum number of concurrent messages processed by a worker process,
+is still equal to the number of worker threads (8 threads by default).
+This is because each worker thread waits for the result of an asynchronous actor
+(same as a synchronous actor) before starting the next message.
 
 Error Reporting
 ---------------

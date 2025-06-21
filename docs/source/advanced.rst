@@ -3,6 +3,8 @@
 Advanced Topics
 ===============
 
+.. _customizing-middleware:
+
 Customizing Middleware
 ----------------------
 
