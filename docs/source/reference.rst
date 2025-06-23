@@ -258,7 +258,7 @@ These are the environment variables that dramatiq reads
      - The number of messages to prefetch from the delay queue for each worker.
    * - ``dramatiq_dead_message_ttl``
      - 604800000 (One week)
-     - The maximum amount of time a message can be in the dead queue for the RabbitMQ Broker (in milliseconds).
+     - The maximum amount of time a message can be in the dead letter queue for the RabbitMQ Broker (in milliseconds).
    * - ``dramatiq_group_callback_barrier_ttl``
      - 86400000 (One day)
      - 
