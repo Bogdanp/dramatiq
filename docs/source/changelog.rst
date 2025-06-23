@@ -8,6 +8,19 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Fixed the way that backoff time is calculated for retries so that the
+  first backoff is not less than ``min_backoff``.
+  This means that each retry backoff is now, on average, twice as long.
+  To avoid this effect, you can halve your ``min_backoff``
+  (which should now be correctly observed).
+  (`#651`_, `#721`_, `@LincolnPuzey`_)
+
+.. _#651: https://github.com/Bogdanp/dramatiq/issues/651
+.. _#721: https://github.com/Bogdanp/dramatiq/pull/721
+
 Changed
 ^^^^^^^
 
