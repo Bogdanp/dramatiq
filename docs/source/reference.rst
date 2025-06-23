@@ -261,10 +261,7 @@ These are the environment variables that dramatiq reads
      - The maximum amount of time a message can be in the dead letter queue for the RabbitMQ Broker (in milliseconds).
    * - ``dramatiq_group_callback_barrier_ttl``
      - 86400000 (One day)
-     - 
-   * - ``dramatiq_prom_lock``
-     - tempfile.gettempdir()/dramatiq-prometheus.lock
-     - The path to the file to use to race Exposition servers against one another.
+     -
    * - ``dramatiq_prom_db``
      - tempfile.gettempdir()/dramatiq-prometheus
      - The path to store the prometheus database files. See :ref:`gotchas-with-prometheus`.
