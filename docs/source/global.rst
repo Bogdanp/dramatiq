@@ -1,6 +1,7 @@
 .. References
 
 .. |AgeLimit| replace:: :class:`AgeLimit<dramatiq.middleware.AgeLimit>`
+.. |AsyncIO| replace:: :class:`AsyncIO<dramatiq.middleware.AsyncIO>`
 .. |Barriers| replace:: :class:`Barriers<dramatiq.rate_limits.Barrier>`
 .. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Broker| replace:: :class:`Broker<dramatiq.Broker>`
