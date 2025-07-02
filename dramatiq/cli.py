@@ -34,7 +34,14 @@ from itertools import chain
 from threading import Event, Thread
 from typing import Optional, Set
 
-from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
+from dramatiq import (
+    Broker,
+    ConnectionError,
+    Worker,
+    __version__,
+    get_broker,
+    get_logger,
+)
 from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
 from dramatiq.compat import StreamablePipe, file_or_stderr
 
@@ -168,74 +175,95 @@ def make_argument_parser():
         help="the broker to use (eg: 'module' or 'module:a_broker')",
     )
     parser.add_argument(
-        "modules", metavar="module", nargs="*",
+        "modules",
+        metavar="module",
+        nargs="*",
         help="additional python modules to import",
     )
     parser.add_argument(
-        "--processes", "-p", default=CPUS, type=int,
+        "--processes",
+        "-p",
+        default=CPUS,
+        type=int,
         help="the number of worker processes to run (default: %s)" % CPUS,
     )
     parser.add_argument(
-        "--threads", "-t", default=8, type=int,
+        "--threads",
+        "-t",
+        default=8,
+        type=int,
         help="the number of worker threads per process (default: 8)",
     )
     parser.add_argument(
-        "--path", "-P", default=".", nargs="*", type=str,
-        help="the module import path (default: .)"
+        "--path",
+        "-P",
+        default=".",
+        nargs="*",
+        type=str,
+        help="the module import path (default: .)",
     )
     parser.add_argument(
-        "--queues", "-Q", nargs="*", type=str,
+        "--queues",
+        "-Q",
+        nargs="*",
+        type=str,
         help="listen to a subset of queues (default: all queues)",
     )
     parser.add_argument(
-        "--pid-file", type=str,
+        "--pid-file",
+        type=str,
         help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", type=str,
+        "--log-file",
+        type=str,
         help="write all logs to a file (default: sys.stderr)",
     )
+    parser.add_argument("--skip-logging", action="store_true", help="do not call logging.basicConfig()")
     parser.add_argument(
-        "--skip-logging",
+        "--use-spawn",
         action="store_true",
-        help="do not call logging.basicConfig()"
+        help="start processes by spawning (default: fork on unix, spawn on windows)",
     )
     parser.add_argument(
-        "--use-spawn", action="store_true",
-        help="start processes by spawning (default: fork on unix, spawn on windows)"
+        "--fork-function",
+        "-f",
+        action="append",
+        dest="forks",
+        default=[],
+        help="fork a subprocess to run the given function",
     )
     parser.add_argument(
-        "--fork-function", "-f", action="append", dest="forks", default=[],
-        help="fork a subprocess to run the given function"
-    )
-    parser.add_argument(
-        "--worker-fork-timeout", type=worker_fork_timeout_type, default=30_000,
+        "--worker-fork-timeout",
+        type=worker_fork_timeout_type,
+        default=30_000,
         help=(
-            "timeout for wait all worker processes to come online before starting the fork processes."
+            "timeout for wait all worker processes to come online before starting the fork processes. "
             "In milliseconds (default: 30 seconds)"
-        )
+        ),
     )
     parser.add_argument(
-        "--worker-shutdown-timeout", type=int, default=600000,
-        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
+        "--worker-shutdown-timeout",
+        type=int,
+        default=600000,
+        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)",
     )
 
     if HAS_WATCHDOG:
         parser.add_argument(
-            "--watch", type=folder_path, metavar="DIR",
+            "--watch",
+            type=folder_path,
+            metavar="DIR",
             help=(
                 "watch a directory and reload the workers when any source files "
                 "change (this feature must only be used during development). "
                 "This option is currently only supported on unix systems."
-            )
+            ),
         )
         parser.add_argument(
             "--watch-use-polling",
             action="store_true",
-            help=(
-                "poll the filesystem for changes rather than using a "
-                "system-dependent filesystem event emitter"
-            )
+            help="poll the filesystem for changes rather than using a system-dependent filesystem event emitter",
         )
         parser.add_argument(
             "-i",
@@ -243,10 +271,7 @@ def make_argument_parser():
             action="append",
             dest="include_patterns",
             default=["**.py"],
-            help=(
-                "Patterns to include when watching for changes. "
-                "Always includes all python files (*.py)."
-            ),
+            help="Patterns to include when watching for changes. Always includes all python files (*.py).",
         )
         parser.add_argument(
             "-x",
@@ -574,13 +599,20 @@ def main(args=None):  # noqa
         if not hasattr(signal, "SIGHUP"):
             raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
         file_watcher = setup_file_watcher(
-            args.watch, args.watch_use_polling, args.include_patterns, args.exclude_patterns
+            args.watch,
+            args.watch_use_polling,
+            args.include_patterns,
+            args.exclude_patterns,
         )
 
     log_watcher_stop_event = Event()
     log_watcher = Thread(
         target=watch_logs,
-        args=(args.log_file, [parent_read_pipe, *worker_pipes, *fork_pipes], log_watcher_stop_event),
+        args=(
+            args.log_file,
+            [parent_read_pipe, *worker_pipes, *fork_pipes],
+            log_watcher_stop_event,
+        ),
         daemon=False,
     )
     log_watcher.start()
@@ -630,7 +662,11 @@ def main(args=None):  # noqa
                 continue
 
             if running:  # pragma: no cover
-                logger.critical("Worker with PID %r exited unexpectedly (code %r). Shutting down...", proc.pid, proc.exitcode)
+                logger.critical(
+                    "Worker with PID %r exited unexpectedly (code %r). Shutting down...",
+                    proc.pid,
+                    proc.exitcode,
+                )
                 stop_subprocesses(signal.SIGTERM)
                 retcode = proc.exitcode
                 break

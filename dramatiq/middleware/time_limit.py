@@ -23,7 +23,13 @@ from typing import TYPE_CHECKING, Optional
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
+from .threading import (
+    Interrupt,
+    current_platform,
+    is_gevent_active,
+    raise_thread_exception,
+    supported_platforms,
+)
 
 if TYPE_CHECKING:
     import gevent
@@ -102,7 +108,10 @@ class _CtypesTimeoutManager(Thread):
         with self.mu:
             for thread_id, deadline in self.deadlines.items():
                 if deadline and current_time >= deadline:
-                    self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
+                    self.logger.warning(
+                        "Time limit exceeded. Raising exception in worker thread %r.",
+                        thread_id,
+                    )
                     self.deadlines[thread_id] = None
                     threads_to_kill.append(thread_id)
 
@@ -166,7 +175,9 @@ if is_gevent_active():
 
         def _on_expiration(self, prev_greenlet, ex):
             self.logger.warning(
-                "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
+                "Time limit exceeded. Raising exception in worker thread %r.",
+                self.thread_id,
+            )
             res = super()._on_expiration(prev_greenlet, ex)
             if self.after_expiration is not None:
                 self.after_expiration()

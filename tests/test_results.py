@@ -153,8 +153,11 @@ def test_messages_can_get_results_from_inferred_backend(stub_broker, stub_worker
 
 def test_messages_without_actor_not_crashing_lookup_options(stub_broker, redis_result_backend):
     message = Message(
-        queue_name="default", actor_name="idontexist",
-        args=(), kwargs={}, options={},
+        queue_name="default",
+        actor_name="idontexist",
+        args=(),
+        kwargs={},
+        options={},
     )
     assert Results(backend=redis_result_backend).after_nack(stub_broker, message) is None
 
@@ -355,6 +358,7 @@ def test_custom_skipped_messages_with_no_fail_stores_none(stub_broker, stub_work
     class SkipMiddleware(Middleware):
         def before_process_message(self, broker, message):
             raise SkipMessage("Custom skip")
+
     stub_broker.add_middleware(SkipMiddleware())
 
     # And an actor that stores a result

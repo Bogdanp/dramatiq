@@ -27,8 +27,7 @@ def test_time_limit_platform_not_supported(recwarn, monkeypatch):
 
     # A platform support warning is issued
     assert len(recwarn) == 1
-    assert str(recwarn[0].message) == ("TimeLimit cannot kill threads "
-                                       "on your current platform ('not supported').")
+    assert str(recwarn[0].message) == "TimeLimit cannot kill threads on your current platform ('not supported')."
 
 
 @skip_with_gevent
@@ -43,26 +42,35 @@ def test_time_limit_exceeded_worker_messages(raise_thread_exception, caplog):
     # and one "thread" that has not
     middleware = time_limit.TimeLimit()
     middleware.manager.deadlines = {
-        1: current_time - 2, 2: current_time - 1, 3: current_time + 50000}
+        1: current_time - 2,
+        2: current_time - 1,
+        3: current_time + 50000,
+    }
 
     # When the time limit handler is triggered
     middleware.manager._handle_deadlines()
 
     # TimeLimitExceeded interrupts are raised in two of the threads
-    raise_thread_exception.assert_has_calls([
-        mock.call(1, time_limit.TimeLimitExceeded),
-        mock.call(2, time_limit.TimeLimitExceeded),
-    ])
+    raise_thread_exception.assert_has_calls(
+        [
+            mock.call(1, time_limit.TimeLimitExceeded),
+            mock.call(2, time_limit.TimeLimitExceeded),
+        ]
+    )
 
     # And TimeLimitExceeded warnings are logged for those threads.
     assert len(caplog.record_tuples) == 2
     assert caplog.record_tuples == [
-        ("dramatiq.middleware.time_limit.TimeLimit", logging.WARNING, (
-            "Time limit exceeded. Raising exception in worker thread 1."
-        )),
-        ("dramatiq.middleware.time_limit.TimeLimit", logging.WARNING, (
-            "Time limit exceeded. Raising exception in worker thread 2."
-        )),
+        (
+            "dramatiq.middleware.time_limit.TimeLimit",
+            logging.WARNING,
+            "Time limit exceeded. Raising exception in worker thread 1.",
+        ),
+        (
+            "dramatiq.middleware.time_limit.TimeLimit",
+            logging.WARNING,
+            "Time limit exceeded. Raising exception in worker thread 2.",
+        ),
     ]
 
 
@@ -76,14 +84,23 @@ def test_time_limit_exceeded_gevent_worker_messages(on_expiration, caplog):
     # two short time limits and one long time limit
     middleware = time_limit.TimeLimit()
     timer_1 = time_limit._GeventTimeout(
-        seconds=.01, thread_id=1, logger=middleware.logger,
-        exception=time_limit.TimeLimitExceeded)
+        seconds=0.01,
+        thread_id=1,
+        logger=middleware.logger,
+        exception=time_limit.TimeLimitExceeded,
+    )
     timer_2 = time_limit._GeventTimeout(
-        seconds=.02, thread_id=2, logger=middleware.logger,
-        exception=time_limit.TimeLimitExceeded)
+        seconds=0.02,
+        thread_id=2,
+        logger=middleware.logger,
+        exception=time_limit.TimeLimitExceeded,
+    )
     timer_3 = time_limit._GeventTimeout(
-        seconds=10, thread_id=3, logger=middleware.logger,
-        exception=time_limit.TimeLimitExceeded)
+        seconds=10,
+        thread_id=3,
+        logger=middleware.logger,
+        exception=time_limit.TimeLimitExceeded,
+    )
 
     # When the timers are all started
     timer_1.start()
@@ -91,27 +108,33 @@ def test_time_limit_exceeded_gevent_worker_messages(on_expiration, caplog):
     timer_3.start()
 
     # And enough time passes for two of the time limits to be exceeded
-    time.sleep(.1)
+    time.sleep(0.1)
 
     # I expect TimeLimitExceeded exceptions to be used in the on_expiration
     # callbacks for those timers
     current_greenlet = getcurrent()
     assert on_expiration.assert_has_calls
-    on_expiration.assert_has_calls([
-        mock.call(current_greenlet, time_limit.TimeLimitExceeded),
-        mock.call(current_greenlet, time_limit.TimeLimitExceeded),
-    ])
+    on_expiration.assert_has_calls(
+        [
+            mock.call(current_greenlet, time_limit.TimeLimitExceeded),
+            mock.call(current_greenlet, time_limit.TimeLimitExceeded),
+        ]
+    )
 
     # And I expect TimeLimitExceeded warnings to be logged for the expected
     # threads.
     assert len(caplog.record_tuples) == 2
     assert caplog.record_tuples == [
-        ("dramatiq.middleware.time_limit.TimeLimit", logging.WARNING, (
-            "Time limit exceeded. Raising exception in worker thread 1."
-        )),
-        ("dramatiq.middleware.time_limit.TimeLimit", logging.WARNING, (
-            "Time limit exceeded. Raising exception in worker thread 2."
-        )),
+        (
+            "dramatiq.middleware.time_limit.TimeLimit",
+            logging.WARNING,
+            "Time limit exceeded. Raising exception in worker thread 1.",
+        ),
+        (
+            "dramatiq.middleware.time_limit.TimeLimit",
+            logging.WARNING,
+            "Time limit exceeded. Raising exception in worker thread 2.",
+        ),
     ]
     timer_1.close()
     timer_2.close()
@@ -128,7 +151,7 @@ def test_time_limits_are_handled(stub_broker, stub_worker):
     def do_work():
         try:
             for _ in range(20):
-                time.sleep(.1)
+                time.sleep(0.1)
         except time_limit.TimeLimitExceeded:
             time_limits_exceeded.append(1)
             raise

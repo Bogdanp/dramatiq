@@ -29,19 +29,33 @@ from .time_limit import TimeLimit, TimeLimitExceeded
 
 __all__ = [
     # Basics
-    "Middleware", "MiddlewareError", "SkipMessage",
-
+    "Middleware",
+    "MiddlewareError",
+    "SkipMessage",
     # Threading
-    "Interrupt", "raise_thread_exception",
-
+    "Interrupt",
+    "raise_thread_exception",
     # Middlewares
-    "AgeLimit", "AsyncIO", "Callbacks", "CurrentMessage", "GroupCallbacks",
-    "Pipelines", "Retries", "Shutdown", "ShutdownNotifications", "TimeLimit",
+    "AgeLimit",
+    "AsyncIO",
+    "Callbacks",
+    "CurrentMessage",
+    "GroupCallbacks",
+    "Pipelines",
+    "Retries",
+    "Shutdown",
+    "ShutdownNotifications",
+    "TimeLimit",
     "TimeLimitExceeded",
 ]
 
 
 #: The list of middleware that are enabled by default.
 default_middleware = [
-    AgeLimit, TimeLimit, ShutdownNotifications, Callbacks, Pipelines, Retries
+    AgeLimit,
+    TimeLimit,
+    ShutdownNotifications,
+    Callbacks,
+    Pipelines,
+    Retries,
 ]

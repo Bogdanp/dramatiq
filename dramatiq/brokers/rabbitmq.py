@@ -85,7 +85,9 @@ class RabbitmqBroker(Broker):
     .. _ConnectionParameters: https://pika.readthedocs.io/en/stable/modules/parameters.html
     """
 
-    def __init__(self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs):
+    def __init__(
+        self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs
+    ):
         super().__init__(middleware=middleware)
 
         if max_priority is not None and not (0 < max_priority <= 255):
@@ -132,8 +134,7 @@ class RabbitmqBroker(Broker):
         """
         connection = getattr(self.state, "connection", None)
         if connection is None:
-            connection = self.state.connection = pika.BlockingConnection(
-                parameters=self.parameters)
+            connection = self.state.connection = pika.BlockingConnection(parameters=self.parameters)
             self.connections.add(connection)
         return connection
 
@@ -183,8 +184,7 @@ class RabbitmqBroker(Broker):
                 self.logger.exception("Encountered exception while closing Channel.")
 
     def close(self):
-        """Close all open RabbitMQ connections.
-        """
+        """Close all open RabbitMQ connections."""
         # The main thread may keep connections open for a long time
         # w/o publishing heartbeats, which means that they'll end up
         # being closed by the time the broker is closed.  When that
@@ -202,7 +202,11 @@ class RabbitmqBroker(Broker):
                 pass
 
             except Exception:  # pragma: no cover
-                self.logger.debug("Encountered an error while closing %r.", channel_or_conn, exc_info=True)
+                self.logger.debug(
+                    "Encountered an error while closing %r.",
+                    channel_or_conn,
+                    exc_info=True,
+                )
         self.logger.debug("Channels and connections closed.")
 
     def consume(self, queue_name, prefetch=1, timeout=5000):
@@ -256,8 +260,10 @@ class RabbitmqBroker(Broker):
                     self.queues_pending.discard(queue_name)
 
                 break
-            except (pika.exceptions.AMQPConnectionError,
-                    pika.exceptions.AMQPChannelError) as e:  # pragma: no cover
+            except (
+                pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError,
+            ) as e:  # pragma: no cover
                 # Delete the channel and the connection so that the next
                 # caller may initiate new ones of each.
                 del self.connection
@@ -268,7 +274,8 @@ class RabbitmqBroker(Broker):
 
                 self.logger.debug(
                     "Retrying declare due to closed connection. [%d/%d]",
-                    attempts, MAX_DECLARE_ATTEMPTS,
+                    attempts,
+                    MAX_DECLARE_ATTEMPTS,
                 )
 
     def _build_queue_arguments(self, queue_name):
@@ -290,11 +297,15 @@ class RabbitmqBroker(Broker):
         return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments=arguments)
 
     def _declare_xq_queue(self, queue_name):
-        return self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments={
-            # This HAS to be a static value since messages are expired
-            # in order inside of RabbitMQ (head-first).
-            "x-message-ttl": DEAD_MESSAGE_TTL,
-        })
+        return self.channel.queue_declare(
+            queue=xq_name(queue_name),
+            durable=True,
+            arguments={
+                # This HAS to be a static value since messages are expired
+                # in order inside of RabbitMQ (head-first).
+                "x-message-ttl": DEAD_MESSAGE_TTL,
+            },
+        )
 
     def enqueue(self, message, *, delay=None):
         """Enqueue a message.
@@ -339,8 +350,10 @@ class RabbitmqBroker(Broker):
                 self.emit_after("enqueue", message, delay)
                 return message
 
-            except (pika.exceptions.AMQPConnectionError,
-                    pika.exceptions.AMQPChannelError) as e:
+            except (
+                pika.exceptions.AMQPConnectionError,
+                pika.exceptions.AMQPChannelError,
+            ) as e:
                 # Delete the channel and the connection so that the
                 # next caller/attempt may initiate new ones of each.
                 del self.connection
@@ -357,7 +370,8 @@ class RabbitmqBroker(Broker):
 
                 self.logger.debug(
                     "Retrying enqueue due to closed connection. [%d/%d]",
-                    attempts, MAX_ENQUEUE_ATTEMPTS,
+                    attempts,
+                    MAX_ENQUEUE_ATTEMPTS,
                 )
 
     def get_declared_queues(self):
@@ -406,8 +420,7 @@ class RabbitmqBroker(Broker):
                 del self.channel
 
     def flush_all(self):
-        """Drop all messages from all declared queues.
-        """
+        """Drop all messages from all declared queues."""
         for queue_name in self.queues:
             self.flush(queue_name)
 
@@ -456,7 +469,8 @@ def URLRabbitmqBroker(url, *, middleware=None):
     """
     warnings.warn(
         "Use RabbitmqBroker with the 'url' parameter instead of URLRabbitmqBroker.",
-        DeprecationWarning, stacklevel=2,
+        DeprecationWarning,
+        stacklevel=2,
     )
     return RabbitmqBroker(url=url, middleware=middleware)
 
@@ -480,8 +494,10 @@ class _RabbitmqConsumer(Consumer):
             # we don't attempt to send invalid tags to Rabbit since
             # pika doesn't handle this very well.
             self.known_tags = set()
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:
+        except (
+            pika.exceptions.AMQPConnectionError,
+            pika.exceptions.AMQPChannelError,
+        ) as e:
             raise ConnectionClosed(e) from None
 
     def ack(self, message):
@@ -490,8 +506,10 @@ class _RabbitmqConsumer(Consumer):
             self.connection.add_callback_threadsafe(
                 partial(self.channel.basic_ack, message._tag),
             )
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:
+        except (
+            pika.exceptions.AMQPConnectionError,
+            pika.exceptions.AMQPChannelError,
+        ) as e:
             raise ConnectionClosed(e) from None
         except KeyError:
             self.logger.warning("Failed to ack message: not in known tags.")
@@ -502,8 +520,10 @@ class _RabbitmqConsumer(Consumer):
         try:
             self.known_tags.remove(message._tag)
             self._nack(message._tag)
-        except (pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:
+        except (
+            pika.exceptions.AMQPConnectionError,
+            pika.exceptions.AMQPChannelError,
+        ) as e:
             raise ConnectionClosed(e) from None
         except KeyError:
             self.logger.warning("Failed to nack message: not in known tags.")
@@ -525,9 +545,11 @@ class _RabbitmqConsumer(Consumer):
             method, properties, body = next(self.iterator)
             if method is None:
                 return None
-        except (AssertionError,
-                pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:
+        except (
+            AssertionError,
+            pika.exceptions.AMQPConnectionError,
+            pika.exceptions.AMQPChannelError,
+        ) as e:
             raise ConnectionClosed(e) from None
 
         try:
@@ -565,9 +587,11 @@ class _RabbitmqConsumer(Consumer):
         try:
             self.channel.close()
             self.connection.close()
-        except (AssertionError,
-                pika.exceptions.AMQPConnectionError,
-                pika.exceptions.AMQPChannelError) as e:
+        except (
+            AssertionError,
+            pika.exceptions.AMQPConnectionError,
+            pika.exceptions.AMQPChannelError,
+        ) as e:
             raise ConnectionClosed(e) from None
 
 
