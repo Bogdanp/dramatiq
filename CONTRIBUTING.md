@@ -15,7 +15,7 @@ open an issue and let someone else do that work.
 ### Pull Requests
 
 * Make sure any code changes are covered by tests.
-* Run [isort] on any modified files.
+* Run [isort] and [black] on any modified files.
 * If this is your first contribution, add yourself to the [CONTRIBUTORS] file.
 * If your branch is behind master, [rebase] on top of it.
 
@@ -27,6 +27,7 @@ Run the test suite with `tox`.  The tests require running [RabbitMQ],
 [Redis]: https://redis.io
 [Memcached]: https://memcached.org/
 [isort]: https://github.com/timothycrosley/isort
+[black]: https://github.com/psf/black
 [rebase]: https://github.com/edx/edx-platform/wiki/How-to-Rebase-a-Pull-Request
 
 

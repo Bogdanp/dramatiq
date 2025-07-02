@@ -102,8 +102,7 @@ class Worker:
         self.broker.emit_after("worker_boot", self)
 
     def pause(self):
-        """Pauses all the worker threads.
-        """
+        """Pauses all the worker threads."""
         for child in chain(self.consumers.values(), self.workers):
             child.pause()
 
@@ -111,8 +110,7 @@ class Worker:
             child.paused_event.wait()
 
     def resume(self):
-        """Resumes all the worker threads.
-        """
+        """Resumes all the worker threads."""
         for child in chain(self.consumers.values(), self.workers):
             child.resume()
 
@@ -208,7 +206,7 @@ class Worker:
             broker=self.broker,
             consumers=self.consumers,
             work_queue=self.work_queue,
-            worker_timeout=self.worker_timeout
+            worker_timeout=self.worker_timeout,
         )
         worker.start()
         self.workers.append(worker)
@@ -295,8 +293,7 @@ class _ConsumerThread(Thread):
         self.logger.debug("Consumer thread stopped.")
 
     def handle_delayed_messages(self):
-        """Enqueue any delayed messages whose eta has passed.
-        """
+        """Enqueue any delayed messages whose eta has passed."""
         for eta, message in iter_queue(self.delay_queue):
             if eta > current_millis():
                 self.delay_queue.put((eta, message))
@@ -329,7 +326,8 @@ class _ConsumerThread(Thread):
         except ActorNotFound:
             self.logger.error(
                 "Received message for undefined actor %r. Moving it to the DLQ.",
-                message.actor_name, exc_info=True,
+                message.actor_name,
+                exc_info=True,
             )
             message.fail()
             self.post_process_message(message)
@@ -366,7 +364,9 @@ class _ConsumerThread(Thread):
                     "Failed to post_process_message(%s) due to a connection error: %s\n"
                     "The operation will be retried in %s seconds until the connection recovers.\n"
                     "If you restart this worker before this operation succeeds, the message will be re-processed later.",
-                    message, e, POST_PROCESS_MESSAGE_RETRY_DELAY_SECS
+                    message,
+                    e,
+                    POST_PROCESS_MESSAGE_RETRY_DELAY_SECS,
                 )
 
                 time.sleep(POST_PROCESS_MESSAGE_RETRY_DELAY_SECS)
@@ -392,14 +392,12 @@ class _ConsumerThread(Thread):
         self.consumer.requeue(messages)
 
     def pause(self):
-        """Pause this consumer.
-        """
+        """Pause this consumer."""
         self.paused = True
         self.paused_event.clear()
 
     def resume(self):
-        """Resume this consumer.
-        """
+        """Resume this consumer."""
         self.paused = False
         self.paused_event.clear()
 
@@ -413,8 +411,7 @@ class _ConsumerThread(Thread):
         self.running = False
 
     def close(self):
-        """Close this consumer thread and its underlying connection.
-        """
+        """Close this consumer thread and its underlying connection."""
         try:
             if self.consumer:
                 self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
@@ -485,9 +482,11 @@ class _WorkerThread(Thread):
             if not message.failed:
                 actor = self.broker.get_actor(message.actor_name)
                 res = actor(*message.args, **message.kwargs)
-                if res is not None \
-                   and message.options.get("pipe_target") is None \
-                   and not has_results_middleware(self.broker):
+                if (
+                    res is not None
+                    and message.options.get("pipe_target") is None
+                    and not has_results_middleware(self.broker)
+                ):
                     self.logger.warning(
                         "Actor '%s' returned a value that is not None, and you haven't added the "
                         "Results middleware to the broker, so the value has been discarded. "
@@ -510,9 +509,17 @@ class _WorkerThread(Thread):
             if isinstance(e, RateLimitExceeded):
                 self.logger.debug("Rate limit exceeded in message %s: %s.", message, e)
             elif throws and isinstance(e, throws):
-                self.logger.info("Failed to process message %s with expected exception %s.", message, type(e).__name__)
+                self.logger.info(
+                    "Failed to process message %s with expected exception %s.",
+                    message,
+                    type(e).__name__,
+                )
             elif not isinstance(e, Retry):
-                self.logger.error("Failed to process message %s with unhandled exception.", message, exc_info=True)
+                self.logger.error(
+                    "Failed to process message %s with unhandled exception.",
+                    message,
+                    exc_info=True,
+                )
 
             self.broker.emit_after("process_message", message, exception=e)
 
@@ -530,14 +537,12 @@ class _WorkerThread(Thread):
             message.clear_exception()
 
     def pause(self):
-        """Pause this worker.
-        """
+        """Pause this worker."""
         self.paused = True
         self.paused_event.clear()
 
     def resume(self):
-        """Resume this worker.
-        """
+        """Resume this worker."""
         self.paused = False
         self.paused_event.clear()
 

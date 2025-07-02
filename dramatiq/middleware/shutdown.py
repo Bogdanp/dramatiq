@@ -21,7 +21,13 @@ from typing import Optional, Type
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
+from .threading import (
+    Interrupt,
+    current_platform,
+    is_gevent_active,
+    raise_thread_exception,
+    supported_platforms,
+)
 
 
 class Shutdown(Interrupt):
@@ -117,7 +123,10 @@ class _CtypesShutdownManager(_ShutdownManager):
 
     def shutdown(self):
         for thread_id in self.notifications:
-            self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+            self.logger.info(
+                "Worker shutdown notification. Raising exception in worker thread %r.",
+                thread_id,
+            )
             raise_thread_exception(thread_id, Shutdown)
 
 
@@ -145,7 +154,10 @@ if is_gevent_active():
 
         def shutdown(self):
             for thread_id, greenlet in self.notification_greenlets:
-                self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+                self.logger.info(
+                    "Worker shutdown notification. Raising exception in worker thread %r.",
+                    thread_id,
+                )
                 greenlet.kill(Shutdown, block=False)
 
     _GeventShutdownManager = __GeventShutdownManager

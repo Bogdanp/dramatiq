@@ -81,6 +81,7 @@ extra_dependencies["dev"] = extra_dependencies["all"] + [
     "mypy",
 
     # Misc
+    "black",
     "bumpversion",
     "hiredis",
     "twine",

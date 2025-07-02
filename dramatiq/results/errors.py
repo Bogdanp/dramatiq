@@ -19,23 +19,19 @@ from ..errors import DramatiqError
 
 
 class ResultError(DramatiqError):
-    """Base class for result errors.
-    """
+    """Base class for result errors."""
 
 
 class ResultTimeout(ResultError):
-    """Raised when waiting for a result times out.
-    """
+    """Raised when waiting for a result times out."""
 
 
 class ResultMissing(ResultError):
-    """Raised when a result can't be found.
-    """
+    """Raised when a result can't be found."""
 
 
 class ResultFailure(ResultError):
-    """Raised when getting a result from an actor that failed.
-    """
+    """Raised when getting a result from an actor that failed."""
 
     def __init__(self, message="", orig_exc_type="", orig_exc_msg=""):
         super().__init__(message)

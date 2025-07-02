@@ -99,9 +99,11 @@ def test_broker_middleware_logs_warning_when_added_twice(stub_broker, caplog):
     stub_broker.add_middleware(empty_middleware2)
 
     # Then I expect a warning to be logged
-    assert any("You're adding a middleware of the same type twice" in record.message
-               for record in caplog.records
-               if record.levelname == "WARNING")
+    assert any(
+        "You're adding a middleware of the same type twice" in record.message
+        for record in caplog.records
+        if record.levelname == "WARNING"
+    )
 
     # And I expect both middlewares to be added
     assert empty_middleware1 in stub_broker.middleware

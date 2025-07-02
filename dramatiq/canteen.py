@@ -34,7 +34,7 @@ class Canteen(Structure):
     _fields_ = [
         ("initialized", c_bool),
         ("last_position", c_int),
-        ("paths", Buffer)
+        ("paths", Buffer),
     ]
 
 
@@ -52,7 +52,7 @@ def canteen_get(canteen, timeout=1):
     if not wait(canteen, timeout):
         return []
 
-    data = bytes(canteen.paths[:canteen.last_position])
+    data = bytes(canteen.paths[: canteen.last_position])
     return data.decode("utf-8").split(";")[:-1]
 
 

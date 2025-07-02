@@ -33,6 +33,7 @@ def test_messageproxy_representation(stub_broker):
 
     > Failed to process message <dramatiq.broker.MessageProxy object at 0x74522262a950> with unhandled exception.
     """
+
     @dramatiq.actor
     def actor(arg):
         return arg

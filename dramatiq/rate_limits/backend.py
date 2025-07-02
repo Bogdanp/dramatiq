@@ -17,8 +17,7 @@
 
 
 class RateLimiterBackend:
-    """ABC for rate limiter backends.
-    """
+    """ABC for rate limiter backends."""
 
     def add(self, key, value, ttl):  # pragma: no cover
         """Add a key to the backend iff it doesn't exist.

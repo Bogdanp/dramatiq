@@ -34,7 +34,11 @@ class GroupCallbacks(Middleware):
             group_completion_uuid = message.options.get("group_completion_uuid")
             group_completion_callbacks = message.options.get("group_completion_callbacks")
             if group_completion_uuid and group_completion_callbacks:
-                barrier = Barrier(self.rate_limiter_backend, group_completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
+                barrier = Barrier(
+                    self.rate_limiter_backend,
+                    group_completion_uuid,
+                    ttl=GROUP_CALLBACK_BARRIER_TTL,
+                )
                 if barrier.wait(block=False):
                     for message in group_completion_callbacks:
                         broker.enqueue(Message(**message))

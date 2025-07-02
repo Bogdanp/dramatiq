@@ -24,8 +24,7 @@ from .errors import QueueJoinTimeout
 
 
 def getenv_int(name):
-    """Parse an optional environment variable as an integer.
-    """
+    """Parse an optional environment variable as an integer."""
     v = getenv(name, None)
     if v is None:
         return None
@@ -52,7 +51,7 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
     # When attempts=0, then backoff=factor, i.e. the minimum backoff.
     # each extra attempt, doubles this.
     exponent = min(attempts, max_exponent)
-    backoff = factor * (2 ** exponent)
+    backoff = factor * (2**exponent)
 
     if jitter:
         # Add jitter to extend backoff up to twice as much.
@@ -68,8 +67,7 @@ def compute_backoff(attempts, *, factor=5, jitter=True, max_backoff=2000, max_ex
 
 
 def current_millis():
-    """Returns the current UNIX time in milliseconds.
-    """
+    """Returns the current UNIX time in milliseconds."""
     return int(time() * 1000)
 
 
@@ -137,8 +135,7 @@ def join_all(joinables, timeout):
 
 
 def q_name(queue_name):
-    """Returns the canonical queue name for a given queue.
-    """
+    """Returns the canonical queue name for a given queue."""
     if queue_name.endswith(".DQ") or queue_name.endswith(".XQ"):
         return queue_name[:-3]
     return queue_name

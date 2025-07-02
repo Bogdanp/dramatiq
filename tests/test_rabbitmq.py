@@ -8,10 +8,19 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
+from dramatiq.brokers.rabbitmq import (
+    RabbitmqBroker,
+    URLRabbitmqBroker,
+    _IgnoreScaryLogs,
+)
 from dramatiq.common import current_millis
 
-from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME, skip_unless_rabbit_mq
+from .common import (
+    RABBITMQ_CREDENTIALS,
+    RABBITMQ_PASSWORD,
+    RABBITMQ_USERNAME,
+    skip_unless_rabbit_mq,
+)
 
 
 def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
@@ -31,7 +40,8 @@ def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a ;-separated string
     broker = RabbitmqBroker(
-        url="amqp://127.0.0.1:55672;amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD))
+        url="amqp://127.0.0.1:55672;amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
+    )
 
     # The the broker should connect to the host that is up
     assert broker.connection
@@ -42,7 +52,11 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a list
     broker = RabbitmqBroker(
-        url=["amqp://127.0.0.1:55672", "amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)])
+        url=[
+            "amqp://127.0.0.1:55672",
+            "amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD),
+        ]
+    )
 
     # The the broker should connect to the host that is up
     assert broker.connection
@@ -53,7 +67,10 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
     # When I try to give it both a connection URL and a list of connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
+        RabbitmqBroker(
+            url="amqp://127.0.0.1:5672",
+            parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)],
+        )
 
     # When I try to give it both a connection URL and pika connection parameters
     # Then a RuntimeError should be raised
@@ -252,10 +269,15 @@ def test_rabbitmq_broker_connections_are_lazy():
 
 def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
     # Given that I have a rabbit instance that lost its connection
-    with patch.object(rabbitmq_broker, "_declare_queue", side_effect=pika.exceptions.AMQPConnectionError):
+    with patch.object(
+        rabbitmq_broker,
+        "_declare_queue",
+        side_effect=pika.exceptions.AMQPConnectionError,
+    ):
         # When I declare and use an actor
         # Then a ConnectionClosed error should be raised
         with pytest.raises(dramatiq.errors.ConnectionClosed):
+
             @dramatiq.actor(queue_name="flaky_queue")
             def do_work():
                 pass
@@ -269,7 +291,8 @@ def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_bro
     message = Message(
         queue_name="some-queue",
         actor_name="some-actor",
-        args=(), kwargs={},
+        args=(),
+        kwargs={},
         options={},
     )
     rabbitmq_broker.declare_queue(message.queue_name)

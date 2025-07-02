@@ -55,9 +55,7 @@ def test_pipe_ignore_applies_to_receiving_message(stub_broker, stub_worker, resu
 
     # When I compose pipe of three messages with pipe_ignore option on second message
     pipe = (
-        return_args.message(1) |
-        return_args.message_with_options(pipe_ignore=True, args=(2, )) |
-        return_args.message(3)
+        return_args.message(1) | return_args.message_with_options(pipe_ignore=True, args=(2,)) | return_args.message(3)
     )
 
     # And then run and wait for it to complete
@@ -460,10 +458,7 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
         finalized.set()
 
     # When I group together some messages with a completion callback
-    g = group([
-        do_nothing.message(1) | do_nothing.message(),
-        do_nothing.message(1)
-    ])
+    g = group([do_nothing.message(1) | do_nothing.message(), do_nothing.message(1)])
     g.add_completion_callback(finalize.message(42))
     g.run()
 

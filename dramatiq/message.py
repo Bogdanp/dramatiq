@@ -53,8 +53,7 @@ def set_encoder(encoder: Encoder) -> None:
 
 
 def generate_unique_id() -> str:
-    """Generate a globally-unique message id.
-    """
+    """Generate a globally-unique message id."""
     return str(uuid.uuid4())
 
 
@@ -72,6 +71,7 @@ class Message(Generic[R]):
       message_timestamp(int): The UNIX timestamp in milliseconds
         representing when the message was first enqueued.
     """
+
     queue_name: str
     actor_name: str
     args: tuple
@@ -88,13 +88,11 @@ class Message(Generic[R]):
             object.__setattr__(self, "args", tuple(self.args))
 
     def __or__(self, other) -> pipeline:
-        """Combine this message into a pipeline with "other".
-        """
+        """Combine this message into a pipeline with "other"."""
         return pipeline([self, other])
 
     def asdict(self) -> Dict[str, Any]:
-        """Convert this message to a dictionary.
-        """
+        """Convert this message to a dictionary."""
         # For backward compatibility, we can't use `dataclasses.asdict`
         # because it creates a copy of all values, including `options`.
         result = {}
@@ -118,18 +116,17 @@ class Message(Generic[R]):
             raise DecodeError("Failed to decode message.", data, e) from e
 
     def encode(self) -> bytes:
-        """Convert this message to a bytestring.
-        """
+        """Convert this message to a bytestring."""
         return global_encoder.encode(self.asdict())
 
     def copy(self, **attributes) -> "Message":
-        """Create a copy of this message.
-        """
+        """Create a copy of this message."""
         new_options = attributes.pop("options", {})
         return dataclasses.replace(self, **attributes, options={**self.options, **new_options})
 
     def get_result(
-        self, *,
+        self,
+        *,
         backend: Optional[ResultBackend] = None,
         block: bool = False,
         timeout: Optional[int] = None,

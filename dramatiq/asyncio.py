@@ -61,8 +61,7 @@ def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
         event_loop_thread = get_event_loop_thread()
         if event_loop_thread is None:
             raise RuntimeError(
-                "Global event loop thread not set. "
-                "Have you added the AsyncIO middleware to your middleware stack?"
+                "Global event loop thread not set. Have you added the AsyncIO middleware to your middleware stack?"
             )
         return event_loop_thread.run_coroutine(async_fn(*args, **kwargs))
 

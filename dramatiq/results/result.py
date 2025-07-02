@@ -36,7 +36,7 @@ def wrap_exception(e):
         "exn": {
             "type": type(e).__name__,
             "msg": str(e),
-        }
+        },
     }
 
 

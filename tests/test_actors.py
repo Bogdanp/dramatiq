@@ -79,6 +79,7 @@ def test_actors_cannot_be_assigned_arbitrary_options(stub_broker):
     # If I define an actor with a nonexistent option
     # I expect it to raise a ValueError
     with pytest.raises(ValueError):
+
         @dramatiq.actor(invalid_option=32)
         def add(x, y):
             return x + y
@@ -108,6 +109,7 @@ def test_actors_fail_given_invalid_queue_names(stub_broker):
     # If I define an actor with an invalid queue name
     # I expect a ValueError to be raised
     with pytest.raises(ValueError):
+
         @dramatiq.actor(queue_name="$2@!@#")
         def foo():
             pass
@@ -303,7 +305,8 @@ def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_wor
     message = Message(
         queue_name="some-queue",
         actor_name="some-actor",
-        args=(), kwargs={},
+        args=(),
+        kwargs={},
         options={},
     )
     stub_broker.declare_queue("some-queue")
@@ -520,6 +523,7 @@ def test_decorator_raises_error_on_duplicate_name(stub_broker):
 
     # When I try to declare another actor with that name
     with pytest.raises(ValueError) as exc_info:
+
         @dramatiq.actor(actor_name="foo")
         def f2():
             pass

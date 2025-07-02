@@ -20,7 +20,18 @@ import re
 import time
 from datetime import timedelta
 from inspect import iscoroutinefunction
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from .asyncio import async_to_sync
 from .broker import Broker, get_broker
@@ -54,6 +65,7 @@ class Actor(Generic[P, R]):
       options(dict): Arbitrary options that are passed to the broker
         and middleware.
     """
+
     def __init__(
         self,
         fn: Callable[P, Union[R, Awaitable[R]]],
@@ -95,7 +107,8 @@ class Actor(Generic[P, R]):
         return self.message_with_options(args=args, kwargs=kwargs)
 
     def message_with_options(
-        self, *,
+        self,
+        *,
         args: tuple = (),
         kwargs: Optional[Dict[str, Any]] = None,
         **options,
@@ -142,7 +155,8 @@ class Actor(Generic[P, R]):
         return self.send_with_options(args=args, kwargs=kwargs)
 
     def send_with_options(
-        self, *,
+        self,
+        *,
         args: tuple = (),
         kwargs: Optional[Dict[str, Any]] = None,
         delay: Optional[timedelta | int] = None,
@@ -256,6 +270,7 @@ def actor(
     Returns:
       Actor: The decorated function.
     """
+
     def decorator(fn: Callable[..., Union[Awaitable[R], R]]) -> Actor[P, R]:
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
@@ -269,14 +284,18 @@ def actor(
         invalid_options = set(options) - broker.actor_options
         if invalid_options:
             invalid_options_list = ", ".join(invalid_options)
-            raise ValueError((
-                "The following actor options are undefined: %s. "
-                "Did you forget to add a middleware to your Broker?"
-            ) % invalid_options_list)
+            raise ValueError(
+                "The following actor options are undefined: %s. Did you forget to add a middleware to your Broker?"
+                % invalid_options_list
+            )
 
         return actor_class(
-            fn, actor_name=actor_name, queue_name=queue_name,
-            priority=priority, broker=broker, options=options,
+            fn,
+            actor_name=actor_name,
+            queue_name=queue_name,
+            priority=priority,
+            broker=broker,
+            options=options,
         )
 
     if fn is None:
