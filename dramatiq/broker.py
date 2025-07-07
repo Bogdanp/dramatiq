@@ -15,12 +15,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
 from .results import ResultBackend, Results
+
+if TYPE_CHECKING:
+    from .actor import Actor
 
 #: The global broker instance.
 global_broker: Optional["Broker"] = None
@@ -61,7 +64,7 @@ def get_broker() -> "Broker":
     return global_broker
 
 
-def set_broker(broker: "Broker"):
+def set_broker(broker: "Broker") -> None:
     """Configure the global broker instance.
 
     Parameters:
@@ -192,7 +195,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def declare_actor(self, actor):  # pragma: no cover
+    def declare_actor(self, actor: Actor) -> None:  # pragma: no cover
         """Declare a new actor on this broker.  Declaring an Actor
         twice replaces the first actor with the second by name.
 

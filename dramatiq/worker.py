@@ -22,7 +22,9 @@ from functools import lru_cache
 from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
+from typing import Optional
 
+from .broker import Broker
 from .common import current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
@@ -69,7 +71,14 @@ class Worker:
       worker_threads(int): The number of worker threads to spawn.
     """
 
-    def __init__(self, broker, *, queues=None, worker_timeout=1000, worker_threads=8):
+    def __init__(
+        self,
+        broker: Broker,
+        *,
+        queues: Optional[set[str]] = None,
+        worker_timeout: int = 1000,
+        worker_threads: int = 8,
+    ) -> None:
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
 
@@ -217,17 +226,17 @@ class _WorkerMiddleware(Middleware):
         self.logger = get_logger(__name__, type(self))
         self.worker = worker
 
-    def after_declare_queue(self, broker, queue_name):
+    def after_declare_queue(self, broker: Broker, queue_name: str):
         self.logger.debug("Adding consumer for queue %r.", queue_name)
         self.worker._add_consumer(queue_name)
 
-    def after_declare_delay_queue(self, broker, queue_name):
+    def after_declare_delay_queue(self, broker: Broker, queue_name: str):
         self.logger.debug("Adding consumer for delay queue %r.", queue_name)
         self.worker._add_consumer(queue_name, delay=True)
 
 
 class _ConsumerThread(Thread):
-    def __init__(self, *, broker, queue_name, prefetch, work_queue, worker_timeout):
+    def __init__(self, *, broker: Broker, queue_name: str, prefetch: int, work_queue: str, worker_timeout: int):
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "ConsumerThread(%s)" % queue_name)
@@ -557,5 +566,5 @@ class _WorkerThread(Thread):
 
 
 @lru_cache(maxsize=128)
-def has_results_middleware(broker):
+def has_results_middleware(broker: Broker) -> bool:
     return any(type(m) is Results for m in broker.middleware)
