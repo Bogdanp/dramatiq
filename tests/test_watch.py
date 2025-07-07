@@ -22,21 +22,30 @@ def write_loaded_at(filename):
 @skip_in_ci
 @skip_on_windows
 @skip_on_pypy
-@pytest.mark.parametrize("extra_args", [
-    (),
-    ("--watch-use-polling",),
-])
+@pytest.mark.parametrize(
+    "extra_args",
+    [
+        (),
+        ("--watch-use-polling",),
+    ],
+)
 def test_cli_can_watch_for_source_code_changes(start_cli, extra_args):
     # Given that I have a shared file the processes can use to communicate with
     filename = "/tmp/dramatiq-loaded-at"
 
     # When I start my workers
-    start_cli("tests.test_watch:broker", extra_args=[
-        "--processes", "1",
-        "--threads", "1",
-        "--watch", "tests",
-        *extra_args,
-    ])
+    start_cli(
+        "tests.test_watch:broker",
+        extra_args=[
+            "--processes",
+            "1",
+            "--threads",
+            "1",
+            "--watch",
+            "tests",
+            *extra_args,
+        ],
+    )
 
     # And enqueue a task to write the loaded timestamp
     write_loaded_at.send(filename)

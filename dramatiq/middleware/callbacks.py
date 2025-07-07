@@ -48,7 +48,10 @@ class Callbacks(Middleware):
             target_actor_name = message.options.get("on_failure") or actor.options.get("on_failure")
             if target_actor_name:
                 target_actor = broker.get_actor(target_actor_name)
-                target_actor.send(message.asdict(), {
-                    "type": type(exception).__name__,
-                    "message": str(exception),
-                })
+                target_actor.send(
+                    message.asdict(),
+                    {
+                        "type": type(exception).__name__,
+                        "message": str(exception),
+                    },
+                )

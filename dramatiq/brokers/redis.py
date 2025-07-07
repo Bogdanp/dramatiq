@@ -89,15 +89,18 @@ class RedisBroker(Broker):
     """
 
     def __init__(
-            self, *,
-            url=None, middleware=None, namespace="dramatiq",
-            maintenance_chance=DEFAULT_MAINTENANCE_CHANCE,
-            heartbeat_timeout=DEFAULT_HEARTBEAT_TIMEOUT,
-            dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
-            requeue_deadline=None,
-            requeue_interval=None,
-            client=None,
-            **parameters
+        self,
+        *,
+        url=None,
+        middleware=None,
+        namespace="dramatiq",
+        maintenance_chance=DEFAULT_MAINTENANCE_CHANCE,
+        heartbeat_timeout=DEFAULT_HEARTBEAT_TIMEOUT,
+        dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
+        requeue_deadline=None,
+        requeue_interval=None,
+        client=None,
+        **parameters,
     ):
         super().__init__(middleware=middleware)
 
@@ -167,9 +170,11 @@ class RedisBroker(Broker):
         # Each enqueued message must have a unique id in Redis so
         # using the Message's id isn't safe because messages may be
         # retried.
-        message = message.copy(options={
-            "redis_message_id": str(uuid4()),
-        })
+        message = message.copy(
+            options={
+                "redis_message_id": str(uuid4()),
+            }
+        )
 
         if delay is not None:
             queue_name = dq_name(queue_name)
@@ -206,8 +211,7 @@ class RedisBroker(Broker):
             self.do_purge(name)
 
     def flush_all(self):
-        """Drop all messages from all declared queues.
-        """
+        """Drop all messages from all declared queues."""
         for queue_name in self.queues:
             self.flush(queue_name)
 
@@ -240,8 +244,8 @@ class RedisBroker(Broker):
 
     def _should_do_maintenance(self, command):
         return int(
-            command not in MAINTENANCE_COMMAND_BLACKLIST and
-            random.randint(1, MAINTENANCE_SCALE) <= self.maintenance_chance
+            command not in MAINTENANCE_COMMAND_BLACKLIST
+            and random.randint(1, MAINTENANCE_SCALE) <= self.maintenance_chance
         )
 
     _max_unpack_size_val = None
@@ -279,13 +283,14 @@ class RedisBroker(Broker):
                 *args,
             ]
             return dispatch(args=args, keys=keys)
+
         return do_dispatch
 
     def __getattr__(self, name):
         if not name.startswith("do_"):
             raise AttributeError("attribute %s does not exist" % name)
 
-        command = name[len("do_"):]
+        command = name[len("do_") :]
         return self._dispatch(command)
 
 

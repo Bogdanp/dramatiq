@@ -40,9 +40,7 @@ class CurrentMessage(Middleware):
 
     """
 
-    _MESSAGE: contextvars.ContextVar[
-        "Optional[Message[Any]]"
-    ] = contextvars.ContextVar("_MESSAGE", default=None)
+    _MESSAGE: contextvars.ContextVar["Optional[Message[Any]]"] = contextvars.ContextVar("_MESSAGE", default=None)
 
     @classmethod
     def get_current_message(cls) -> "Optional[Message[Any]]":
