@@ -97,11 +97,11 @@ class ResultBackend:
             result = self._get(message_key)
             if result is Missing and block:
                 attempts, delay = compute_backoff(attempts, factor=BACKOFF_FACTOR)
-                delay /= 1000
-                if time.monotonic() + delay > end_time:
+                delay_ = delay / 1000
+                if time.monotonic() + delay_ > end_time:
                     raise ResultTimeout(message)
 
-                time.sleep(delay)
+                time.sleep(delay_)
                 continue
 
             elif result is Missing:

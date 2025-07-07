@@ -14,10 +14,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import time
 from collections import defaultdict
 from itertools import chain
 from queue import Empty, Queue
+from typing import Optional
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, iter_queue, join_queue
@@ -34,11 +36,11 @@ class StubBroker(Broker):
         self.dead_letters_by_queue = defaultdict(list)
 
     @property
-    def dead_letters(self):
+    def dead_letters(self) -> list[Message]:
         """The dead-lettered messages for all defined queues."""
         return [message for messages in self.dead_letters_by_queue.values() for message in messages]
 
-    def consume(self, queue_name, prefetch=1, timeout=100):
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 100) -> Consumer:
         """Create a new consumer for a queue.
 
         Parameters:
@@ -61,7 +63,7 @@ class StubBroker(Broker):
         except KeyError:
             raise QueueNotFound(queue_name) from None
 
-    def declare_queue(self, queue_name):
+    def declare_queue(self, queue_name: str) -> None:
         """Declare a queue.  Has no effect if a queue with the given
         name has already been declared.
 
@@ -80,7 +82,7 @@ class StubBroker(Broker):
         self.delay_queues.add(delayed_name)
         self.emit_after("declare_delay_queue", delayed_name)
 
-    def enqueue(self, message, *, delay=None):
+    def enqueue(self, message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
 
         Parameters:
@@ -111,7 +113,7 @@ class StubBroker(Broker):
         self.emit_after("enqueue", message, delay)
         return message
 
-    def flush(self, queue_name):
+    def flush(self, queue_name: str) -> None:
         """Drop all the messages from a queue.
 
         Parameters:
@@ -120,7 +122,7 @@ class StubBroker(Broker):
         for _ in iter_queue(self.queues[queue_name]):
             self.queues[queue_name].task_done()
 
-    def flush_all(self):
+    def flush_all(self) -> None:
         """Drop all messages from all declared queues."""
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
@@ -128,7 +130,7 @@ class StubBroker(Broker):
         self.dead_letters_by_queue.clear()
 
     # TODO: Make fail_fast default to True.
-    def join(self, queue_name, *, fail_fast=False, timeout=None):
+    def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: bool = False) -> None:
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests
         to wait for all the messages in a queue to be processed.
@@ -157,8 +159,8 @@ class StubBroker(Broker):
         deadline = timeout and time.monotonic() + timeout / 1000
         while True:
             for queue in queues:
-                timeout = deadline and deadline - time.monotonic()
-                join_queue(queue, timeout=timeout)
+                timeout_ = deadline and deadline - time.monotonic()
+                join_queue(queue, timeout=timeout_)
 
             # We cycle through $queue then $queue.DQ then $queue
             # again in case the messages that were on the DQ got
@@ -197,7 +199,7 @@ class _StubConsumer(Consumer):
 
 
 class _StubMessageProxy(MessageProxy):
-    def clear_exception(self):
+    def clear_exception(self) -> None:
         """Let the GC handle the cycle once the message is no longer
         in use.  This lets us keep showing full stack traces in
         failing tests.  See comment in `Worker' for details.

@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
 from .errors import ActorNotFound
 from .logging import get_logger
 from .middleware import MiddlewareError, default_middleware
-from .results import Results
+from .results import ResultBackend, Results
 
 #: The global broker instance.
 global_broker: Optional["Broker"] = None
@@ -100,7 +100,7 @@ class Broker:
         for m in middleware:
             self.add_middleware(m)
 
-    def emit_before(self, signal, *args, **kwargs):
+    def emit_before(self, signal: str, *args: Any, **kwargs: Any) -> None:
         signal = "before_" + signal
         for middleware in self.middleware:
             try:
@@ -110,7 +110,7 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in %s of %r.", signal, middleware, exc_info=True)
 
-    def emit_after(self, signal, *args, **kwargs):
+    def emit_after(self, signal: str, *args: Any, **kwargs: Any) -> None:
         signal = "after_" + signal
         for middleware in reversed(self.middleware):
             try:
@@ -173,10 +173,10 @@ class Broker:
         for queue_name in self.get_declared_delay_queues():
             middleware.after_declare_delay_queue(self, queue_name)
 
-    def close(self):
+    def close(self) -> None:
         """Close this broker and perform any necessary cleanup actions."""
 
-    def consume(self, queue_name, prefetch=1, timeout=30000):  # pragma: no cover
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 30000) -> "Consumer":  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
 
         Raises:
@@ -204,7 +204,7 @@ class Broker:
         self.actors[actor.actor_name] = actor
         self.emit_after("declare_actor", actor)
 
-    def declare_queue(self, queue_name):  # pragma: no cover
+    def declare_queue(self, queue_name: str) -> None:  # pragma: no cover
         """Declare a queue on this broker.  This method must be
         idempotent.
 
@@ -213,7 +213,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def enqueue(self, message, *, delay=None):  # pragma: no cover
+    def enqueue(self, message, *, delay: Optional[int] = None):  # pragma: no cover
         """Enqueue a message on this broker.
 
         Parameters:
@@ -225,7 +225,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def get_actor(self, actor_name):  # pragma: no cover
+    def get_actor(self, actor_name: str):  # pragma: no cover
         """Look up an actor by its name.
 
         Parameters:
@@ -242,7 +242,7 @@ class Broker:
         except KeyError:
             raise ActorNotFound(actor_name) from None
 
-    def get_declared_actors(self):  # pragma: no cover
+    def get_declared_actors(self) -> set[str]:  # pragma: no cover
         """Get all declared actors.
 
         Returns:
@@ -251,7 +251,7 @@ class Broker:
         """
         return set(self.actors.keys())
 
-    def get_declared_queues(self):  # pragma: no cover
+    def get_declared_queues(self) -> set[str]:  # pragma: no cover
         """Get all declared queues.
 
         Returns:
@@ -260,7 +260,7 @@ class Broker:
         """
         return set(self.queues.keys())
 
-    def get_declared_delay_queues(self):  # pragma: no cover
+    def get_declared_delay_queues(self) -> set[str]:  # pragma: no cover
         """Get all declared delay queues.
 
         Returns:
@@ -269,7 +269,7 @@ class Broker:
         """
         return self.delay_queues.copy()
 
-    def get_results_backend(self):
+    def get_results_backend(self) -> ResultBackend:
         """Get the backend of the Results middleware.
 
         Raises:
@@ -284,7 +284,7 @@ class Broker:
         else:
             raise RuntimeError("The broker doesn't have a results backend.")
 
-    def flush(self, queue_name):  # pragma: no cover
+    def flush(self, queue_name: str) -> None:  # pragma: no cover
         """Drop all the messages from a queue.
 
         Parameters:
@@ -292,11 +292,11 @@ class Broker:
         """
         raise NotImplementedError()
 
-    def flush_all(self):  # pragma: no cover
+    def flush_all(self) -> None:  # pragma: no cover
         """Drop all messages from all declared queues."""
         raise NotImplementedError()
 
-    def join(self, queue_name, *, timeout=None):  # pragma: no cover
+    def join(self, queue_name: str, *, timeout: Optional[int] = None) -> None:  # pragma: no cover
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
@@ -317,7 +317,7 @@ class Consumer:
     Consumers and their MessageProxies are *not* thread-safe.
     """
 
-    def __iter__(self):  # pragma: no cover
+    def __iter__(self) -> "Consumer":  # pragma: no cover
         """Returns this instance as a Message iterator."""
         return self
 
@@ -358,7 +358,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def close(self):
+    def close(self) -> None:
         """Close this consumer and perform any necessary cleanup actions."""
 
 
@@ -370,34 +370,34 @@ class MessageProxy:
         self._message = message
         self._exception = None
 
-    def stuff_exception(self, exception):
+    def stuff_exception(self, exception) -> None:
         """Stuff an exception into this message."""
         self._exception = exception
 
-    def clear_exception(self):
+    def clear_exception(self) -> None:
         """Remove the exception from this message."""
         del self._exception
 
-    def fail(self):
+    def fail(self) -> None:
         """Mark this message for rejection."""
         self.failed = True
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self._message, name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self._message)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__qualname__} {self._message!r}>"
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         # This can get called if two messages have the same priority
         # in a queue.  If that's the case, we don't care which runs
         # first.
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, MessageProxy):
             return self._message == other._message
         return self._message == other

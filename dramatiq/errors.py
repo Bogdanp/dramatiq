@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 
 class DramatiqError(Exception):  # pragma: no cover
     """Base class for all dramatiq errors."""
@@ -22,7 +24,7 @@ class DramatiqError(Exception):  # pragma: no cover
     def __init__(self, message):
         self.message = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.message) or repr(self.message)
 
 
@@ -79,6 +81,6 @@ class Retry(DramatiqError):
     retried after at least that amount of time (in milliseconds).
     """
 
-    def __init__(self, message="", delay=None):
+    def __init__(self, message: str = "", delay: Optional[int] = None):
         super().__init__(message)
         self.delay = delay

@@ -61,7 +61,7 @@ class Worker:
 
     Parameters:
       broker(Broker)
-      queues(Set[str]): An optional subset of queues to listen on.  By
+      queues(set[str]): An optional subset of queues to listen on.  By
         default, if this is not provided, the worker will listen on
         all declared queues.
       worker_timeout(int): The number of milliseconds workers should
@@ -88,7 +88,7 @@ class Worker:
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
 
-    def start(self):
+    def start(self) -> None:
         """Initialize the worker boot sequence and start up all the
         worker threads.
         """
@@ -101,7 +101,7 @@ class Worker:
 
         self.broker.emit_after("worker_boot", self)
 
-    def pause(self):
+    def pause(self) -> None:
         """Pauses all the worker threads."""
         for child in chain(self.consumers.values(), self.workers):
             child.pause()
@@ -109,12 +109,12 @@ class Worker:
         for child in chain(self.consumers.values(), self.workers):
             child.paused_event.wait()
 
-    def resume(self):
+    def resume(self) -> None:
         """Resumes all the worker threads."""
         for child in chain(self.consumers.values(), self.workers):
             child.resume()
 
-    def stop(self, timeout=600000):
+    def stop(self, timeout: int = 600000):
         """Gracefully stop the Worker and all of its consumers and
         workers.
 
@@ -161,7 +161,7 @@ class Worker:
         self.broker.emit_after("worker_shutdown", self)
         self.logger.info("Worker has been shut down.")
 
-    def join(self):
+    def join(self) -> None:
         """Wait for this worker to complete its work in progress.
         This method is useful when testing code.
         """
@@ -182,7 +182,7 @@ class Worker:
                     continue
                 return
 
-    def _add_consumer(self, queue_name, *, delay=False):
+    def _add_consumer(self, queue_name: str, *, delay: bool = False) -> None:
         if queue_name in self.consumers:
             self.logger.debug("A consumer for queue %r is already running.", queue_name)
             return
@@ -201,7 +201,7 @@ class Worker:
         )
         consumer.start()
 
-    def _add_worker(self):
+    def _add_worker(self) -> None:
         worker = _WorkerThread(
             broker=self.broker,
             consumers=self.consumers,
@@ -213,7 +213,7 @@ class Worker:
 
 
 class _WorkerMiddleware(Middleware):
-    def __init__(self, worker):
+    def __init__(self, worker: Worker):
         self.logger = get_logger(__name__, type(self))
         self.worker = worker
 
@@ -242,7 +242,7 @@ class _ConsumerThread(Thread):
         self.worker_timeout = worker_timeout
         self.delay_queue = PriorityQueue()
 
-    def run(self):
+    def run(self) -> None:
         self.logger.debug("Running consumer thread...")
         self.running = True
         self.broker.emit_after("consumer_thread_boot", self)
@@ -292,7 +292,7 @@ class _ConsumerThread(Thread):
         self.broker.emit_before("consumer_thread_shutdown", self)
         self.logger.debug("Consumer thread stopped.")
 
-    def handle_delayed_messages(self):
+    def handle_delayed_messages(self) -> None:
         """Enqueue any delayed messages whose eta has passed."""
         for eta, message in iter_queue(self.delay_queue):
             if eta > current_millis():
@@ -391,17 +391,17 @@ class _ConsumerThread(Thread):
         """
         self.consumer.requeue(messages)
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause this consumer."""
         self.paused = True
         self.paused_event.clear()
 
-    def resume(self):
+    def resume(self) -> None:
         """Resume this consumer."""
         self.paused = False
         self.paused_event.clear()
 
-    def stop(self):
+    def stop(self) -> None:
         """Initiate the ConsumerThread shutdown sequence.
 
         Code calling this method should then join on the thread and
@@ -410,7 +410,7 @@ class _ConsumerThread(Thread):
         self.logger.debug("Stopping consumer thread...")
         self.running = False
 
-    def close(self):
+    def close(self) -> None:
         """Close this consumer thread and its underlying connection."""
         try:
             if self.consumer:
@@ -443,7 +443,7 @@ class _WorkerThread(Thread):
         self.work_queue = work_queue
         self.timeout = worker_timeout / 1000
 
-    def run(self):
+    def run(self) -> None:
         self.logger.debug("Running worker thread...")
         self.running = True
         self.broker.emit_after("worker_thread_boot", self)
@@ -536,17 +536,17 @@ class _WorkerThread(Thread):
             # while before a GC triggers.
             message.clear_exception()
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause this worker."""
         self.paused = True
         self.paused_event.clear()
 
-    def resume(self):
+    def resume(self) -> None:
         """Resume this worker."""
         self.paused = False
         self.paused_event.clear()
 
-    def stop(self):
+    def stop(self) -> None:
         """Initiate the WorkerThread shutdown process.
 
         Code calling this method should then join on the thread and
