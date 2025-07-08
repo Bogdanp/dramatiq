@@ -67,7 +67,7 @@ class Results(Middleware):
       run out!
     """
 
-    def __init__(self, *, backend=None, store_results=False, result_ttl=None):
+    def __init__(self, *, backend, store_results=False, result_ttl=None):
         self.logger = get_logger(__name__, type(self))
         self.backend = backend
         self.store_results = store_results
