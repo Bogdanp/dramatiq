@@ -53,15 +53,29 @@ class RabbitmqBroker(Broker):
 
       >>> RabbitmqBroker(url="amqp://guest:guest@127.0.0.1:5672")
 
-      To support message priorities, provide a ``max_priority``...
+      To support queued message priorities, provide a ``max_priority``...
 
-      >>> broker = RabbitmqBroker(url="...", max_priority=255)
+      >>> broker = RabbitmqBroker(url="...", max_priority=5)
 
       ... then enqueue messages with the ``broker_priority`` option:
 
       >>> broker.enqueue(an_actor.message_with_options(
-      ...    broker_priority=255,
+      ...    broker_priority=5,
       ... ))
+
+      ``broker_priority`` can also be provided to ``send_with_options``:
+
+      >>> an_actor.send_with_options(
+      ...    broker_priority=5,
+      ... )
+
+    The ``broker_priority`` provided should have a value between 0 and ``max_priority``, inclusive.
+    Messages without a priority are treated as priority 0.
+    RabbitMQ treats higher numbers as higher priorities.
+
+    Note:
+        This the **opposite** to the Dramatiq actor ``priority`` option.
+        (where lower numbers are higher priorities).
 
     See also:
       ConnectionParameters_ for a list of all the available connection
