@@ -155,7 +155,7 @@ class RedisBroker(Broker):
             self.delay_queues.add(delayed_name)
             self.emit_after("declare_delay_queue", delayed_name)
 
-    def enqueue(self, message, *, delay: Optional[int] = None) -> Message:
+    def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
 
         Parameters:

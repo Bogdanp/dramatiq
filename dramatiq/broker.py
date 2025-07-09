@@ -15,21 +15,26 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import TYPE_CHECKING, Any, Optional, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Iterable, Optional, cast
 
 from .errors import ActorNotFound
 from .logging import get_logger
-from .middleware import MiddlewareError, default_middleware
+from .middleware import Middleware, MiddlewareError, default_middleware
 from .results import ResultBackend, Results
 
 if TYPE_CHECKING:
+    from typing_extensions import Self
+
     from .actor import Actor
+    from .message import Message
 
 #: The global broker instance.
-global_broker: Optional["Broker"] = None
+global_broker: Optional[Broker] = None
 
 
-def get_broker() -> "Broker":
+def get_broker() -> Broker:
     """Get the global broker instance.
 
     If no global broker is set, a RabbitMQ broker will be returned.
@@ -60,11 +65,11 @@ def get_broker() -> "Broker":
             from .brokers.redis import RedisBroker
 
             set_broker(RedisBroker())
-    global_broker = cast("Broker", global_broker)
+    global_broker = cast(Broker, global_broker)
     return global_broker
 
 
-def set_broker(broker: "Broker") -> None:
+def set_broker(broker: Broker) -> None:
     """Configure the global broker instance.
 
     Parameters:
@@ -88,14 +93,14 @@ class Broker:
         overwrite when they are declared.
     """
 
-    def __init__(self, middleware=None):
+    def __init__(self, middleware: Optional[list[Middleware]] = None):
         self.logger = get_logger(__name__, type(self))
-        self.actors = {}
-        self.queues = {}
-        self.delay_queues = set()
+        self.actors: dict[str, Actor] = {}
+        self.queues: Any = {}  # Subclasses make this a set!
+        self.delay_queues: set[str] = set()
 
-        self.actor_options = set()
-        self.middleware = []
+        self.actor_options: set[str] = set()
+        self.middleware: list[Middleware] = []
 
         if middleware is None:
             middleware = [m() for m in default_middleware]
@@ -121,7 +126,13 @@ class Broker:
             except Exception:
                 self.logger.critical("Unexpected failure in %s of %r.", signal, middleware, exc_info=True)
 
-    def add_middleware(self, middleware, *, before=None, after=None):
+    def add_middleware(
+        self,
+        middleware: Middleware,
+        *,
+        before: Optional[type[Middleware]] = None,
+        after: Optional[type[Middleware]] = None,
+    ):
         """Add a middleware object to this broker.  The middleware is
         appended to the end of the middleware list by default.
 
@@ -179,7 +190,7 @@ class Broker:
     def close(self) -> None:
         """Close this broker and perform any necessary cleanup actions."""
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 30000) -> "Consumer":  # pragma: no cover
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 30000) -> Consumer:  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
 
         Raises:
@@ -320,11 +331,11 @@ class Consumer:
     Consumers and their MessageProxies are *not* thread-safe.
     """
 
-    def __iter__(self) -> "Consumer":  # pragma: no cover
+    def __iter__(self) -> Self:  # pragma: no cover
         """Returns this instance as a Message iterator."""
         return self
 
-    def ack(self, message):  # pragma: no cover
+    def ack(self, message: MessageProxy):  # pragma: no cover
         """Acknowledge that a message has been processed, removing it
         from the broker.
 
@@ -333,7 +344,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def nack(self, message):  # pragma: no cover
+    def nack(self, message: MessageProxy):  # pragma: no cover
         """Move a message to the dead-letter queue.
 
         Parameters:
@@ -341,7 +352,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def requeue(self, messages):  # pragma: no cover
+    def requeue(self, messages: Iterable[MessageProxy]):  # pragma: no cover
         """Move unacked messages back to their queues.  This is called
         by consumer threads when they fail or are shut down.  The
         default implementation does nothing.
@@ -368,12 +379,24 @@ class Consumer:
 class MessageProxy:
     """Base class for messages returned by :meth:`Broker.consume`."""
 
-    def __init__(self, message):
+    # For the purpose of static type checking we duplicate the fields
+    # and their respective types of the Message here; at runtime the
+    # message's fields are accessed through the __getattr__ method.
+    if TYPE_CHECKING:
+        queue_name: str
+        actor_name: str
+        args: tuple
+        kwargs: dict[str, Any]
+        options: dict[str, Any]
+        message_id: str
+        message_timestamp: int
+
+    def __init__(self, message: Message):
         self.failed = False
         self._message = message
-        self._exception = None
+        self._exception: Optional[BaseException] = None
 
-    def stuff_exception(self, exception) -> None:
+    def stuff_exception(self, exception: BaseException) -> None:
         """Stuff an exception into this message."""
         self._exception = exception
 

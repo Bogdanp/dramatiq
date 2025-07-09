@@ -82,7 +82,7 @@ class StubBroker(Broker):
         self.delay_queues.add(delayed_name)
         self.emit_after("declare_delay_queue", delayed_name)
 
-    def enqueue(self, message, *, delay: Optional[int] = None) -> Message:
+    def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
 
         Parameters:
@@ -159,8 +159,8 @@ class StubBroker(Broker):
         deadline = timeout and time.monotonic() + timeout / 1000
         while True:
             for queue in queues:
-                timeout_ = deadline and deadline - time.monotonic()
-                join_queue(queue, timeout=timeout_)
+                join_timeout = deadline and deadline - time.monotonic()
+                join_queue(queue, timeout=join_timeout)
 
             # We cycle through $queue then $queue.DQ then $queue
             # again in case the messages that were on the DQ got

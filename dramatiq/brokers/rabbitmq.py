@@ -22,7 +22,7 @@ import warnings
 from functools import partial
 from itertools import chain
 from threading import Event, local
-from typing import Optional
+from typing import Any, Optional
 
 import pika
 
@@ -31,6 +31,7 @@ from ..common import current_millis, dq_name, q_name, xq_name
 from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message, get_encoder
+from ..middleware import Middleware
 
 #: The maximum amount of time a message can be in the dead letter queue.
 DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
@@ -87,7 +88,14 @@ class RabbitmqBroker(Broker):
     """
 
     def __init__(
-        self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs
+        self,
+        *,
+        confirm_delivery: bool = False,
+        url: Optional[str] = None,
+        middleware: Optional[list[Middleware]] = None,
+        max_priority: Optional[int] = None,
+        parameters: Any = None,
+        **kwargs: Any,
     ):
         super().__init__(middleware=middleware)
 
@@ -118,10 +126,10 @@ class RabbitmqBroker(Broker):
 
         self.confirm_delivery = confirm_delivery
         self.max_priority = max_priority
-        self.connections = set()
-        self.channels = set()
-        self.queues = set()
-        self.queues_pending = set()
+        self.connections: set[pika.BlockingConnection] = set()
+        self.channels: set[pika.BlockingChannel] = set()
+        self.queues: set[str] = set()
+        self.queues_pending: set[str] = set()
         self.state = local()
 
     @property
@@ -308,7 +316,7 @@ class RabbitmqBroker(Broker):
             },
         )
 
-    def enqueue(self, message, *, delay: Optional[int] = None) -> Message:
+    def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
 
         Parameters:
@@ -461,7 +469,7 @@ class RabbitmqBroker(Broker):
             self.connection.sleep(idle_time / 1000)
 
 
-def URLRabbitmqBroker(url, *, middleware=None):
+def URLRabbitmqBroker(url: str, *, middleware: Optional[list[Middleware]] = None):
     """Alias for the RabbitMQ broker that takes a connection URL as a
     positional argument.
 
