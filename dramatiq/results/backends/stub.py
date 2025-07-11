@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from ..backend import Missing, ResultBackend
 
@@ -30,7 +30,7 @@ class StubBackend(ResultBackend):
         result data.  Defaults to :class:`.JSONEncoder`.
     """
 
-    results: Dict[str, Tuple[Optional[str], Optional[float]]] = {}
+    results: dict[str, tuple[Optional[str], Optional[float]]] = {}
 
     def _get(self, message_key):
         data, expiration = self.results.get(message_key, (None, None))

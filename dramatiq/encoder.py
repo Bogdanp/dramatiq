@@ -23,7 +23,7 @@ import typing
 from .errors import DecodeError
 
 #: Represents the contents of a Message object as a dict.
-MessageData = typing.Dict[str, typing.Any]
+MessageData = dict[str, typing.Any]
 
 
 class Encoder(abc.ABC):

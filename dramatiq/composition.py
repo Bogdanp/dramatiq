@@ -33,7 +33,7 @@ class pipeline:
     next one in line.
 
     Parameters:
-      children(Iterator[Message|pipeline]): A sequence of messages or
+      children(Iterable[Message|pipeline]): A sequence of messages or
         pipelines.  Child pipelines are flattened into the resulting
         pipeline.
       broker(Broker): The broker to run the pipeline on.  Defaults to

@@ -25,7 +25,6 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Dict,
     Generic,
     Optional,
     TypeVar,
@@ -74,7 +73,7 @@ class Actor(Generic[P, R]):
         actor_name: str,
         queue_name: str,
         priority: int,
-        options: Dict[str, Any],
+        options: dict[str, Any],
     ) -> None:
         if actor_name in broker.actors:
             raise ValueError(f"An actor named {actor_name!r} is already registered.")
@@ -110,7 +109,7 @@ class Actor(Generic[P, R]):
         self,
         *,
         args: tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: Optional[dict[str, Any]] = None,
         **options,
     ) -> Message[R]:
         """Build a message with an arbitrary set of processing options.
@@ -158,7 +157,7 @@ class Actor(Generic[P, R]):
         self,
         *,
         args: tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: Optional[dict[str, Any]] = None,
         delay: Optional[timedelta | int] = None,
         **options,
     ) -> Message[R]:
