@@ -163,8 +163,10 @@ class Broker:
                 )
 
         if before or after:
-            for i, m in enumerate(self.middleware):  # noqa
-                if isinstance(m, before or after):
+            for i, m in enumerate(self.middleware):  # noqa: B007
+                if before and isinstance(m, before):
+                    break
+                if after and isinstance(m, after):
                     break
             else:
                 raise ValueError("Middleware %r not found" % (before or after))
@@ -358,7 +360,7 @@ class Consumer:
         default implementation does nothing.
 
         Parameters:
-          messages(list[MessageProxy]): The messages to requeue.
+          messages(Iterable[MessageProxy]): The messages to requeue.
         """
 
     def __next__(self):  # pragma: no cover
@@ -385,7 +387,7 @@ class MessageProxy:
     if TYPE_CHECKING:
         queue_name: str
         actor_name: str
-        args: tuple
+        args: tuple[Any, ...]
         kwargs: dict[str, Any]
         options: dict[str, Any]
         message_id: str

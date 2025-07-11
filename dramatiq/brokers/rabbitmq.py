@@ -22,7 +22,7 @@ import warnings
 from functools import partial
 from itertools import chain
 from threading import Event, local
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import pika
 
@@ -91,10 +91,10 @@ class RabbitmqBroker(Broker):
         self,
         *,
         confirm_delivery: bool = False,
-        url: Optional[str] = None,
+        url: Optional[Union[str, list[str]]] = None,
         middleware: Optional[list[Middleware]] = None,
         max_priority: Optional[int] = None,
-        parameters: Any = None,
+        parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs: Any,
     ):
         super().__init__(middleware=middleware)

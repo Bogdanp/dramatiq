@@ -21,7 +21,7 @@ from collections import defaultdict
 from functools import lru_cache
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
-from typing import Iterable, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
 from .broker import Broker, Consumer, MessageProxy
 from .common import current_millis, iter_queue, join_all, q_name
@@ -365,7 +365,8 @@ class _ConsumerThread(Thread):
         individual messages, signaling that each message is ready to
         be acked or rejected.
         """
-        assert self.consumer
+        if TYPE_CHECKING:
+            assert self.consumer
         while True:
             try:
                 if message.failed:
@@ -418,7 +419,8 @@ class _ConsumerThread(Thread):
         connection error to move unacked messages back to their
         respective queues asap.
         """
-        assert self.consumer
+        if TYPE_CHECKING:
+            assert self.consumer
         self.consumer.requeue(messages)
 
     def pause(self) -> None:

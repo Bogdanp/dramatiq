@@ -3,7 +3,7 @@ import dramatiq
 
 @dramatiq.actor
 def foo():
-    a = tuple(range(5000000))  # noqa
+    a = tuple(range(5000000))  # noqa: F841
     raise Exception("bar")
 
 

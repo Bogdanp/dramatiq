@@ -520,7 +520,7 @@ def fork_process(args, fork_id, fork_path, logging_pipe):
     return sys.exit(func())
 
 
-def main(args=None):  # noqa
+def main(args=None):  # noqa: C901
     args = args or make_argument_parser().parse_args()
     for path in args.path:
         sys.path.insert(0, path)

@@ -74,7 +74,7 @@ class Message(Generic[R]):
 
     queue_name: str
     actor_name: str
-    args: tuple
+    args: tuple[Any, ...]
     kwargs: dict[str, Any]
     options: dict[str, Any]
     message_id: str = dataclasses.field(default_factory=generate_unique_id)
