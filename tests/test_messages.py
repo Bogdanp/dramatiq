@@ -1,4 +1,5 @@
 import dramatiq
+from datetime import datetime, timezone, timedelta
 
 
 def test_messages_have_namedtuple_methods(stub_broker):
@@ -45,3 +46,21 @@ def test_messageproxy_representation(stub_broker):
 
     assert repr(message) in repr(message_proxy), "Expecting MessageProxy repr to contain Message repr"
     assert str(message) == str(message_proxy), "Expecting identical __str__ of MessageProxy and Message"
+
+
+def test_message_datetime(stub_broker):
+    """Test reading message time as datetime."""
+
+    @dramatiq.actor
+    def actor(arg):
+        return arg
+
+    message = actor.send("input")
+    after = datetime.now(timezone.utc)
+
+    assert message.message_datetime.tzinfo is timezone.utc
+    assert message.message_datetime < after
+    assert message.message_datetime > after - timedelta(seconds=1)
+
+    # no rounding problems here because message_timestamp is an int
+    assert message.message_datetime.timestamp() == message.message_timestamp / 1000
