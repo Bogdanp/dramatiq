@@ -21,7 +21,7 @@ import threading
 import warnings
 from threading import Thread
 from time import monotonic, sleep
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..logging import get_logger
 from .middleware import Middleware
@@ -64,10 +64,11 @@ class TimeLimit(Middleware):
         Defaults to 1 second (1,000 milliseconds).
     """
 
-    def __init__(self, *, time_limit=600000, interval=1000):
+    def __init__(self, *, time_limit: float = 600000, interval: int = 1000) -> None:
         self.logger = get_logger(__name__, type(self))
         self.time_limit = time_limit
 
+        self.manager: Union[_GeventTimeoutManager, _CtypesTimeoutManager]
         if is_gevent_active():
             self.manager = _GeventTimeoutManager(logger=self.logger)
         else:
@@ -162,7 +163,7 @@ class _GeventTimeoutManager:
             timer.close()
 
 
-_GeventTimeout: Optional["gevent.Timeout"] = None
+_GeventTimeout: Optional[gevent.Timeout] = None
 if is_gevent_active():
     from gevent import Timeout
 

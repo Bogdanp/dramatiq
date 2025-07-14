@@ -45,10 +45,10 @@ class Prometheus(Middleware):
     .. _Prometheus: https://prometheus.io
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger(__name__, type(self))
-        self.delayed_messages = set()
-        self.message_start_times = {}
+        self.delayed_messages: set[str] = set()
+        self.message_start_times: dict[str, int] = {}
 
     @property
     def forks(self):

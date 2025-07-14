@@ -19,14 +19,14 @@ from __future__ import annotations
 
 import os
 
-from ..rate_limits import Barrier
+from ..rate_limits import Barrier, RateLimiterBackend
 from .middleware import Middleware
 
 GROUP_CALLBACK_BARRIER_TTL = int(os.getenv("dramatiq_group_callback_barrier_ttl", "86400000"))
 
 
 class GroupCallbacks(Middleware):
-    def __init__(self, rate_limiter_backend):
+    def __init__(self, rate_limiter_backend: RateLimiterBackend) -> None:
         self.rate_limiter_backend = rate_limiter_backend
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
