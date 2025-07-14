@@ -20,6 +20,7 @@ from __future__ import annotations
 import dataclasses
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Generic, Optional, TypeVar
 
 from .broker import get_broker
@@ -189,3 +190,13 @@ class Message(Generic[R]):
 
     def _replace(self, **changes) -> Message[R]:
         return dataclasses.replace(self, **changes)
+
+    @property
+    def message_datetime(self) -> datetime:
+        """Read ``message_timestamp`` as a UTC-aware datetime.
+
+        Datetime precision is limited by the representation of ``Message.message_timestamp``, which is an
+        integer storing milliseconds.
+        """
+        unix_seconds, ms = divmod(self.message_timestamp, 1000)
+        return datetime.fromtimestamp(unix_seconds, tz=timezone.utc).replace(microsecond=ms * 1000)
