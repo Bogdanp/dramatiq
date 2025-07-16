@@ -346,8 +346,14 @@ Prioritizing Messages
 Say your app has some actors that are higher priority than others: for
 example, actors that affect your UI and make users wait, or are
 otherwise user-facing, versus actors that aren't.  When choosing
-between two concurrent messages to run, Dramatiq will run the Message
+between multiple messages to run, Dramatiq will run the message
 that belongs to the actor with the highest priority.
+
+.. warning::
+   Actor priority only takes effect when Dramatiq is choosing which message to run.
+   This only happens *after* messages are consumed from the queues.
+   The actory priority option has **no effect on messages while they are waiting in a queue**.
+   It only applies once messaged are consumed from the queues, and are waiting in-memory to be processed.
 
 You can set an Actor's priority via the ``priority`` keyword argument::
 
@@ -360,23 +366,31 @@ You can set an Actor's priority via the ``priority`` keyword argument::
   def sync_order_to_warehouse(order_id):
       ...
 
-That way if both ``generate_report`` and ``sync_order_to_warehouse``
-are scheduled to run at the same time but there's only capacity to run
+That way if messages for both ``generate_report`` and ``sync_order_to_warehouse``
+have been consumed from the queue at the same time but there's only capacity to run
 one of them, ``generate_report`` will always run *first*.
 
 Although all positive integers represent valid priorities, if you're
 going to use this feature, I'd recommend setting up constants for the
 various priorities you plan to use::
 
-  PRIO_LO = 100
-  PRIO_MED = 50
-  PRIO_HI = 0
+  PRIORITY_LOW = 100
+  PRIORITY_MEDIUM = 50
+  PRIORITY_HIGH = 0
 
 .. important::
    The lower the numeric value, the higher priority!  If you need a
    mnemonic to remember this, think of having a ticket with a number
    on it handed to you while waiting in line, perhaps at a government
    institution or deli counter.
+
+Because actor ``priority`` does not effect messages waiting in the queues,
+it is most useful for making Dramatiq treat certain queues as higher priority than others.
+To make this work best, all the actors for a queue should have the same actor ``priority``.
+
+.. seealso::
+   The |RabbitmqBroker| supports prioritizing messages while they are waiting in the queue
+   with the ``broker_priority`` option.
 
 
 Message Brokers
