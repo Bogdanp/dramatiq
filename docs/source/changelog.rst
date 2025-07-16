@@ -17,9 +17,14 @@ Fixed
   To avoid this effect, you can halve your ``min_backoff``
   (which should now be correctly observed).
   (`#651`_, `#721`_, `@LincolnPuzey`_)
+* Fixed the RabbitMQ broker making 1 more retry than configured when
+  declaring queues or enqueueing messages fail due to connection errors.
+  1 fewer retries are now made.
+  (`#734`_, `@LincolnPuzey`_)
 
 .. _#651: https://github.com/Bogdanp/dramatiq/issues/651
 .. _#721: https://github.com/Bogdanp/dramatiq/pull/721
+.. _#734: https://github.com/Bogdanp/dramatiq/pull/734
 
 Changed
 ^^^^^^^

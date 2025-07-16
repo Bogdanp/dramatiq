@@ -292,11 +292,11 @@ class RabbitmqBroker(Broker):
                 del self.connection
 
                 attempts += 1
-                if attempts > MAX_DECLARE_ATTEMPTS:
+                if attempts >= MAX_DECLARE_ATTEMPTS:
                     raise ConnectionClosed(e) from None
 
                 self.logger.debug(
-                    "Retrying declare due to closed connection. [%d/%d]",
+                    "Retrying declare due to closed connection. [%d/%d] attempts made so far.",
                     attempts,
                     MAX_DECLARE_ATTEMPTS,
                 )
@@ -388,11 +388,11 @@ class RabbitmqBroker(Broker):
                     self.queues.remove(q_name(queue_name))
 
                 attempts += 1
-                if attempts > MAX_ENQUEUE_ATTEMPTS:
+                if attempts >= MAX_ENQUEUE_ATTEMPTS:
                     raise ConnectionClosed(e) from None
 
                 self.logger.debug(
-                    "Retrying enqueue due to closed connection. [%d/%d]",
+                    "Retrying enqueue due to closed connection. [%d/%d] attempts made so far.",
                     attempts,
                     MAX_ENQUEUE_ATTEMPTS,
                 )

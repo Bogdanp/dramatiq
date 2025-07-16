@@ -12,6 +12,7 @@ from dramatiq.brokers.rabbitmq import (
     RabbitmqBroker,
     URLRabbitmqBroker,
     _IgnoreScaryLogs,
+    MAX_DECLARE_ATTEMPTS,
 )
 from dramatiq.common import current_millis
 
@@ -273,7 +274,7 @@ def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reach
         rabbitmq_broker,
         "_declare_queue",
         side_effect=pika.exceptions.AMQPConnectionError,
-    ):
+    ) as mock_declare_queue:
         # When I declare and use an actor
         # Then a ConnectionClosed error should be raised
         with pytest.raises(dramatiq.errors.ConnectionClosed):
@@ -283,6 +284,9 @@ def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reach
                 pass
 
             do_work.send()
+
+    # check declare was attempted the max number of times.
+    assert mock_declare_queue.call_count == MAX_DECLARE_ATTEMPTS
 
 
 def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_broker, rabbitmq_worker):
