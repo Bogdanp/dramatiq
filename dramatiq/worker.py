@@ -19,10 +19,11 @@ import os
 import time
 from collections import defaultdict
 from functools import lru_cache
-from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
+from .broker import Broker, Consumer, MessageProxy
 from .common import current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
@@ -61,7 +62,7 @@ class Worker:
 
     Parameters:
       broker(Broker)
-      queues(Set[str]): An optional subset of queues to listen on.  By
+      queues(set[str]): An optional subset of queues to listen on.  By
         default, if this is not provided, the worker will listen on
         all declared queues.
       worker_timeout(int): The number of milliseconds workers should
@@ -69,11 +70,18 @@ class Worker:
       worker_threads(int): The number of worker threads to spawn.
     """
 
-    def __init__(self, broker, *, queues=None, worker_timeout=1000, worker_threads=8):
+    def __init__(
+        self,
+        broker: Broker,
+        *,
+        queues: Optional[set[str]] = None,
+        worker_timeout: int = 1000,
+        worker_threads: int = 8,
+    ) -> None:
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
 
-        self.consumers = {}
+        self.consumers: dict[str, "_ConsumerThread"] = {}
         self.consumer_whitelist = queues and set(queues)
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
@@ -83,12 +91,12 @@ class Worker:
         # workers as those messages could have far-future etas.
         self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
-        self.workers = []
-        self.work_queue = PriorityQueue()
+        self.workers: list["_WorkerThread"] = []
+        self.work_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
 
-    def start(self):
+    def start(self) -> None:
         """Initialize the worker boot sequence and start up all the
         worker threads.
         """
@@ -101,20 +109,30 @@ class Worker:
 
         self.broker.emit_after("worker_boot", self)
 
-    def pause(self):
+    def pause(self) -> None:
         """Pauses all the worker threads."""
-        for child in chain(self.consumers.values(), self.workers):
+        child: Union["_WorkerThread", "_ConsumerThread"]
+
+        for child in self.consumers.values():
+            child.pause()
+        for child in self.workers:
             child.pause()
 
-        for child in chain(self.consumers.values(), self.workers):
+        for child in self.consumers.values():
+            child.paused_event.wait()
+        for child in self.workers:
             child.paused_event.wait()
 
-    def resume(self):
+    def resume(self) -> None:
         """Resumes all the worker threads."""
-        for child in chain(self.consumers.values(), self.workers):
+        child: Union["_WorkerThread", "_ConsumerThread"]
+
+        for child in self.consumers.values():
+            child.resume()
+        for child in self.workers:
             child.resume()
 
-    def stop(self, timeout=600000):
+    def stop(self, timeout: int = 600000):
         """Gracefully stop the Worker and all of its consumers and
         workers.
 
@@ -124,6 +142,8 @@ class Worker:
         """
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
+
+        thread: Union["_WorkerThread", "_ConsumerThread"]
 
         # Stop workers before consumers.  The consumers are kept alive
         # during this process so that heartbeats keep being sent to
@@ -161,7 +181,7 @@ class Worker:
         self.broker.emit_after("worker_shutdown", self)
         self.logger.info("Worker has been shut down.")
 
-    def join(self):
+    def join(self) -> None:
         """Wait for this worker to complete its work in progress.
         This method is useful when testing code.
         """
@@ -182,7 +202,7 @@ class Worker:
                     continue
                 return
 
-    def _add_consumer(self, queue_name, *, delay=False):
+    def _add_consumer(self, queue_name: str, *, delay: bool = False) -> None:
         if queue_name in self.consumers:
             self.logger.debug("A consumer for queue %r is already running.", queue_name)
             return
@@ -201,7 +221,7 @@ class Worker:
         )
         consumer.start()
 
-    def _add_worker(self):
+    def _add_worker(self) -> None:
         worker = _WorkerThread(
             broker=self.broker,
             consumers=self.consumers,
@@ -213,36 +233,44 @@ class Worker:
 
 
 class _WorkerMiddleware(Middleware):
-    def __init__(self, worker):
+    def __init__(self, worker: Worker):
         self.logger = get_logger(__name__, type(self))
         self.worker = worker
 
-    def after_declare_queue(self, broker, queue_name):
+    def after_declare_queue(self, broker: Broker, queue_name: str):
         self.logger.debug("Adding consumer for queue %r.", queue_name)
         self.worker._add_consumer(queue_name)
 
-    def after_declare_delay_queue(self, broker, queue_name):
+    def after_declare_delay_queue(self, broker: Broker, queue_name: str):
         self.logger.debug("Adding consumer for delay queue %r.", queue_name)
         self.worker._add_consumer(queue_name, delay=True)
 
 
 class _ConsumerThread(Thread):
-    def __init__(self, *, broker, queue_name, prefetch, work_queue, worker_timeout):
+    def __init__(
+        self,
+        *,
+        broker: Broker,
+        queue_name: str,
+        prefetch: int,
+        work_queue: PriorityQueue[tuple[int, MessageProxy]],
+        worker_timeout: int,
+    ):
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "ConsumerThread(%s)" % queue_name)
         self.running = False
         self.paused = False
         self.paused_event = Event()
-        self.consumer = None
+        self.consumer: Optional[Consumer] = None
         self.broker = broker
         self.prefetch = prefetch
         self.queue_name = queue_name
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
-        self.delay_queue = PriorityQueue()
+        self.delay_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
 
-    def run(self):
+    def run(self) -> None:
         self.logger.debug("Running consumer thread...")
         self.running = True
         self.broker.emit_after("consumer_thread_boot", self)
@@ -292,7 +320,7 @@ class _ConsumerThread(Thread):
         self.broker.emit_before("consumer_thread_shutdown", self)
         self.logger.debug("Consumer thread stopped.")
 
-    def handle_delayed_messages(self):
+    def handle_delayed_messages(self) -> None:
         """Enqueue any delayed messages whose eta has passed."""
         for eta, message in iter_queue(self.delay_queue):
             if eta > current_millis():
@@ -308,7 +336,7 @@ class _ConsumerThread(Thread):
             self.post_process_message(message)
             self.delay_queue.task_done()
 
-    def handle_message(self, message):
+    def handle_message(self, message: MessageProxy):
         """Handle a message received off of the underlying consumer.
         If the message has an eta, delay it.  Otherwise, put it on the
         work queue.
@@ -332,11 +360,13 @@ class _ConsumerThread(Thread):
             message.fail()
             self.post_process_message(message)
 
-    def post_process_message(self, message):
+    def post_process_message(self, message: MessageProxy):
         """Called by worker threads whenever they're done processing
         individual messages, signaling that each message is ready to
         be acked or rejected.
         """
+        if TYPE_CHECKING:
+            assert self.consumer
         while True:
             try:
                 if message.failed:
@@ -384,24 +414,26 @@ class _ConsumerThread(Thread):
 
                 return
 
-    def requeue_messages(self, messages):
+    def requeue_messages(self, messages: Iterable[MessageProxy]):
         """Called on worker shutdown and whenever there is a
         connection error to move unacked messages back to their
         respective queues asap.
         """
+        if TYPE_CHECKING:
+            assert self.consumer
         self.consumer.requeue(messages)
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause this consumer."""
         self.paused = True
         self.paused_event.clear()
 
-    def resume(self):
+    def resume(self) -> None:
         """Resume this consumer."""
         self.paused = False
         self.paused_event.clear()
 
-    def stop(self):
+    def stop(self) -> None:
         """Initiate the ConsumerThread shutdown sequence.
 
         Code calling this method should then join on the thread and
@@ -410,7 +442,7 @@ class _ConsumerThread(Thread):
         self.logger.debug("Stopping consumer thread...")
         self.running = False
 
-    def close(self):
+    def close(self) -> None:
         """Close this consumer thread and its underlying connection."""
         try:
             if self.consumer:
@@ -431,7 +463,14 @@ class _WorkerThread(Thread):
       worker_timeout(int)
     """
 
-    def __init__(self, *, broker, consumers, work_queue, worker_timeout):
+    def __init__(
+        self,
+        *,
+        broker: Broker,
+        consumers: dict[str, _ConsumerThread],
+        work_queue: PriorityQueue[tuple[int, MessageProxy]],
+        worker_timeout: int,
+    ):
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "WorkerThread")
@@ -443,7 +482,7 @@ class _WorkerThread(Thread):
         self.work_queue = work_queue
         self.timeout = worker_timeout / 1000
 
-    def run(self):
+    def run(self) -> None:
         self.logger.debug("Running worker thread...")
         self.running = True
         self.broker.emit_after("worker_thread_boot", self)
@@ -463,7 +502,7 @@ class _WorkerThread(Thread):
         self.broker.emit_before("worker_thread_shutdown", self)
         self.logger.debug("Worker thread stopped.")
 
-    def process_message(self, message):
+    def process_message(self, message: MessageProxy):
         """Process a message pulled off of the work queue then push it
         back to its associated consumer for post processing. Stuff any SkipMessage
         exception or BaseException into the message [proxy] so that it may be used
@@ -536,17 +575,17 @@ class _WorkerThread(Thread):
             # while before a GC triggers.
             message.clear_exception()
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause this worker."""
         self.paused = True
         self.paused_event.clear()
 
-    def resume(self):
+    def resume(self) -> None:
         """Resume this worker."""
         self.paused = False
         self.paused_event.clear()
 
-    def stop(self):
+    def stop(self) -> None:
         """Initiate the WorkerThread shutdown process.
 
         Code calling this method should then join on the thread and
@@ -557,5 +596,5 @@ class _WorkerThread(Thread):
 
 
 @lru_cache(maxsize=128)
-def has_results_middleware(broker):
+def has_results_middleware(broker: Broker) -> bool:
     return any(type(m) is Results for m in broker.middleware)

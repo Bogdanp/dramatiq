@@ -22,6 +22,7 @@ import warnings
 from functools import partial
 from itertools import chain
 from threading import Event, local
+from typing import Any, Optional, Union
 
 import pika
 
@@ -30,6 +31,7 @@ from ..common import current_millis, dq_name, q_name, xq_name
 from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message, get_encoder
+from ..middleware import Middleware
 
 #: The maximum amount of time a message can be in the dead letter queue.
 DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
@@ -100,7 +102,14 @@ class RabbitmqBroker(Broker):
     """
 
     def __init__(
-        self, *, confirm_delivery=False, url=None, middleware=None, max_priority=None, parameters=None, **kwargs
+        self,
+        *,
+        confirm_delivery: bool = False,
+        url: Optional[Union[str, list[str]]] = None,
+        middleware: Optional[list[Middleware]] = None,
+        max_priority: Optional[int] = None,
+        parameters: Optional[list[dict[str, Any]]] = None,
+        **kwargs: Any,
     ):
         super().__init__(middleware=middleware)
 
@@ -131,10 +140,10 @@ class RabbitmqBroker(Broker):
 
         self.confirm_delivery = confirm_delivery
         self.max_priority = max_priority
-        self.connections = set()
-        self.channels = set()
-        self.queues = set()
-        self.queues_pending = set()
+        self.connections: set[pika.BlockingConnection] = set()
+        self.channels: set[pika.BlockingChannel] = set()
+        self.queues: set[str] = set()
+        self.queues_pending: set[str] = set()
         self.state = local()
 
     @property
@@ -197,7 +206,7 @@ class RabbitmqBroker(Broker):
             except Exception:
                 self.logger.exception("Encountered exception while closing Channel.")
 
-    def close(self):
+    def close(self) -> None:
         """Close all open RabbitMQ connections."""
         # The main thread may keep connections open for a long time
         # w/o publishing heartbeats, which means that they'll end up
@@ -223,7 +232,7 @@ class RabbitmqBroker(Broker):
                 )
         self.logger.debug("Channels and connections closed.")
 
-    def consume(self, queue_name, prefetch=1, timeout=5000):
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> Consumer:
         """Create a new consumer for a queue.
 
         Parameters:
@@ -237,7 +246,7 @@ class RabbitmqBroker(Broker):
         self.declare_queue(queue_name, ensure=True)
         return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
 
-    def declare_queue(self, queue_name, *, ensure=False):
+    def declare_queue(self, queue_name: str, *, ensure: bool = False) -> None:
         """Declare a queue.  Has no effect if a queue with the given
         name already exists.
 
@@ -321,7 +330,7 @@ class RabbitmqBroker(Broker):
             },
         )
 
-    def enqueue(self, message, *, delay=None):
+    def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
 
         Parameters:
@@ -388,7 +397,7 @@ class RabbitmqBroker(Broker):
                     MAX_ENQUEUE_ATTEMPTS,
                 )
 
-    def get_declared_queues(self):
+    def get_declared_queues(self) -> set[str]:
         """Get all declared queues.
 
         Returns:
@@ -397,7 +406,7 @@ class RabbitmqBroker(Broker):
         """
         return self.queues.copy()
 
-    def get_queue_message_counts(self, queue_name):
+    def get_queue_message_counts(self, queue_name: str) -> tuple[int, int, int]:
         """Get the number of messages in a queue.  This method is only
         meant to be used in unit and integration tests.
 
@@ -417,7 +426,7 @@ class RabbitmqBroker(Broker):
             xq_queue_response.method.message_count,
         )
 
-    def flush(self, queue_name):
+    def flush(self, queue_name: str) -> None:
         """Drop all the messages from a queue.
 
         Parameters:
@@ -433,12 +442,14 @@ class RabbitmqBroker(Broker):
             except pika.exceptions.AMQPChannelError:
                 del self.channel
 
-    def flush_all(self):
+    def flush_all(self) -> None:
         """Drop all messages from all declared queues."""
         for queue_name in self.queues:
             self.flush(queue_name)
 
-    def join(self, queue_name, min_successes=10, idle_time=100, *, timeout=None):
+    def join(
+        self, queue_name: str, min_successes: int = 10, idle_time: int = 100, *, timeout: Optional[int] = None
+    ) -> None:
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
@@ -472,7 +483,7 @@ class RabbitmqBroker(Broker):
             self.connection.sleep(idle_time / 1000)
 
 
-def URLRabbitmqBroker(url, *, middleware=None):
+def URLRabbitmqBroker(url: str, *, middleware: Optional[list[Middleware]] = None):
     """Alias for the RabbitMQ broker that takes a connection URL as a
     positional argument.
 

@@ -18,7 +18,7 @@
 import dataclasses
 import time
 import uuid
-from typing import Any, Dict, Generic, Optional, Tuple, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from .broker import get_broker
 from .composition import pipeline
@@ -74,9 +74,9 @@ class Message(Generic[R]):
 
     queue_name: str
     actor_name: str
-    args: tuple
-    kwargs: Dict[str, Any]
-    options: Dict[str, Any]
+    args: tuple[Any, ...]
+    kwargs: dict[str, Any]
+    options: dict[str, Any]
     message_id: str = dataclasses.field(default_factory=generate_unique_id)
     message_timestamp: int = dataclasses.field(default_factory=lambda: int(time.time() * 1000))
 
@@ -91,7 +91,7 @@ class Message(Generic[R]):
         """Combine this message into a pipeline with "other"."""
         return pipeline([self, other])
 
-    def asdict(self) -> Dict[str, Any]:
+    def asdict(self) -> dict[str, Any]:
         """Convert this message to a dictionary."""
         # For backward compatibility, we can't use `dataclasses.asdict`
         # because it creates a copy of all values, including `options`.
@@ -178,11 +178,11 @@ class Message(Generic[R]):
     _asdict = asdict
 
     @property
-    def _field_defaults(self) -> Dict[str, Any]:
+    def _field_defaults(self) -> dict[str, Any]:
         return {f.name: f.default for f in dataclasses.fields(self) if f.default is not dataclasses.MISSING}
 
     @property
-    def _fields(self) -> Tuple[str, ...]:
+    def _fields(self) -> tuple[str, ...]:
         return tuple(f.name for f in dataclasses.fields(self))
 
     def _replace(self, **changes) -> "Message[R]":
