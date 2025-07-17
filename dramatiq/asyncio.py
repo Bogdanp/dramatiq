@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import concurrent.futures
 import functools
@@ -36,7 +38,7 @@ R = TypeVar("R")
 _event_loop_thread = None
 
 
-def get_event_loop_thread() -> Optional["EventLoopThread"]:
+def get_event_loop_thread() -> Optional[EventLoopThread]:
     """Get the global event loop thread.
 
     Returns:
@@ -45,7 +47,7 @@ def get_event_loop_thread() -> Optional["EventLoopThread"]:
     return _event_loop_thread
 
 
-def set_event_loop_thread(thread: Optional["EventLoopThread"]) -> None:
+def set_event_loop_thread(thread: Optional[EventLoopThread]) -> None:
     """Set the global event loop thread."""
     global _event_loop_thread
     _event_loop_thread = thread

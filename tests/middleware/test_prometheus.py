@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import urllib.request as request
 from threading import Thread

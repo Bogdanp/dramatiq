@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from dramatiq.common import dq_name, q_name, xq_name
