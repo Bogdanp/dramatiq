@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 import time
 from collections import defaultdict
@@ -91,7 +93,7 @@ class Worker:
         # workers as those messages could have far-future etas.
         self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
-        self.workers: list["_WorkerThread"] = []
+        self.workers: list[_WorkerThread] = []
         self.work_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
@@ -111,7 +113,7 @@ class Worker:
 
     def pause(self) -> None:
         """Pauses all the worker threads."""
-        child: Union["_WorkerThread", "_ConsumerThread"]
+        child: Union[_WorkerThread, _ConsumerThread]
 
         for child in self.consumers.values():
             child.pause()
@@ -125,7 +127,7 @@ class Worker:
 
     def resume(self) -> None:
         """Resumes all the worker threads."""
-        child: Union["_WorkerThread", "_ConsumerThread"]
+        child: Union[_WorkerThread, _ConsumerThread]
 
         for child in self.consumers.values():
             child.resume()
@@ -143,7 +145,7 @@ class Worker:
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
 
-        thread: Union["_WorkerThread", "_ConsumerThread"]
+        thread: Union[_WorkerThread, _ConsumerThread]
 
         # Stop workers before consumers.  The consumers are kept alive
         # during this process so that heartbeats keep being sent to

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import dataclasses
 import time
 import uuid
@@ -101,7 +103,7 @@ class Message(Generic[R]):
         return result
 
     @classmethod
-    def decode(cls, data: bytes) -> "Message":
+    def decode(cls, data: bytes) -> Message:
         """Convert a bytestring to a message.
 
         Raises:
@@ -119,7 +121,7 @@ class Message(Generic[R]):
         """Convert this message to a bytestring."""
         return global_encoder.encode(self.asdict())
 
-    def copy(self, **attributes) -> "Message":
+    def copy(self, **attributes) -> Message:
         """Create a copy of this message."""
         new_options = attributes.pop("options", {})
         return dataclasses.replace(self, **attributes, options={**self.options, **new_options})
@@ -171,7 +173,7 @@ class Message(Generic[R]):
 
         return "%s(%s)" % (self.actor_name, params)
 
-    def __lt__(self, other: "Message") -> bool:
+    def __lt__(self, other: Message) -> bool:
         return dataclasses.astuple(self) < dataclasses.astuple(other)
 
     # Backwards-compatibility with namedtuple.
@@ -185,5 +187,5 @@ class Message(Generic[R]):
     def _fields(self) -> tuple[str, ...]:
         return tuple(f.name for f in dataclasses.fields(self))
 
-    def _replace(self, **changes) -> "Message[R]":
+    def _replace(self, **changes) -> Message[R]:
         return dataclasses.replace(self, **changes)

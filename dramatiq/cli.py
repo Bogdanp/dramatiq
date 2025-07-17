@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 # Don't depend on *anything* in this module.  The contents of this
 # module can and *will* change without notice.
-
 import argparse
 import atexit
 import functools

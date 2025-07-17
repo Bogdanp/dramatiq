@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import contextvars
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -40,10 +42,10 @@ class CurrentMessage(Middleware):
 
     """
 
-    _MESSAGE: contextvars.ContextVar["Optional[Message[Any]]"] = contextvars.ContextVar("_MESSAGE", default=None)
+    _MESSAGE: contextvars.ContextVar[Optional[Message[Any]]] = contextvars.ContextVar("_MESSAGE", default=None)
 
     @classmethod
-    def get_current_message(cls) -> "Optional[Message[Any]]":
+    def get_current_message(cls) -> Optional[Message[Any]]:
         """Get the message that triggered the current actor.  Messages
         are thread local so this returns ``None`` when called outside
         of actor code.
