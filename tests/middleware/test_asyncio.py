@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 from threading import get_ident
 from unittest import mock
-from dramatiq import threading, actor
-from dramatiq.middleware import CurrentMessage
+
 import pytest
 
+from dramatiq import actor, threading
 from dramatiq.asyncio import (
     EventLoopThread,
     async_to_sync,
@@ -12,6 +14,7 @@ from dramatiq.asyncio import (
     set_event_loop_thread,
 )
 from dramatiq.logging import get_logger
+from dramatiq.middleware import CurrentMessage
 from dramatiq.middleware.asyncio import AsyncIO
 
 from ..common import worker

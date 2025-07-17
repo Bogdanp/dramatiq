@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import time
 from threading import Event
@@ -9,10 +11,10 @@ import pytest
 import dramatiq
 from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import (
+    MAX_DECLARE_ATTEMPTS,
     RabbitmqBroker,
     URLRabbitmqBroker,
     _IgnoreScaryLogs,
-    MAX_DECLARE_ATTEMPTS,
 )
 from dramatiq.common import current_millis
 
