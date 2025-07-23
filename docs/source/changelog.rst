@@ -38,6 +38,7 @@ Fixed
 * Fixed the RabbitMQ broker making 1 more retry than configured when
   declaring queues or enqueueing messages fail due to connection errors.
   1 fewer retries are now made.
+  This fixes a regression introduced by `#669`_ released in ``1.18.0``.
   (`#734`_, `@LincolnPuzey`_)
 
 .. _#651: https://github.com/Bogdanp/dramatiq/issues/651
