@@ -44,6 +44,27 @@ Fixed
 .. _#721: https://github.com/Bogdanp/dramatiq/pull/721
 .. _#734: https://github.com/Bogdanp/dramatiq/pull/734
 
+Documentation
+^^^^^^^^^^^^^
+
+* Improved documentation relating to middleware.
+  (`#718`_, `@LincolnPuzey`_, `#723`_, `@karolinepauls`_)
+* Add documentation section about asyncio support.
+  (`#595`_, `#719`_, `@LincolnPuzey`_)
+* Improved documentation about prioritizing messages with
+  the ``priority`` argument of an |Actor|.
+  (`#724`_, `#725`_, `@LincolnPuzey`_)
+* Add documentation section about environment variables.
+  (`#720`_, `@LincolnPuzey`_)
+
+.. _#718: https://github.com/Bogdanp/dramatiq/pull/718
+.. _#723: https://github.com/Bogdanp/dramatiq/pull/723
+.. _#595: https://github.com/Bogdanp/dramatiq/issues/595
+.. _#719: https://github.com/Bogdanp/dramatiq/pull/719
+.. _#724: https://github.com/Bogdanp/dramatiq/issues/724
+.. _#725: https://github.com/Bogdanp/dramatiq/pull/725
+.. _#720: https://github.com/Bogdanp/dramatiq/pull/720
+
 
 `1.18.0`_ -- 2025-05-29
 -----------------------
