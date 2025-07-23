@@ -44,6 +44,16 @@ Fixed
 .. _#721: https://github.com/Bogdanp/dramatiq/pull/721
 .. _#734: https://github.com/Bogdanp/dramatiq/pull/734
 
+Added
+^^^^^
+
+* Added type annotations for the external API of the |Worker| and |Broker| classes.
+  (`#727`_, `#731`_, `@jenstroeger`_)
+
+.. _#727: https://github.com/Bogdanp/dramatiq/issues/727
+.. _#731: https://github.com/Bogdanp/dramatiq/pull/731
+
+
 Documentation
 ^^^^^^^^^^^^^
 
