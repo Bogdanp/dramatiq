@@ -8,6 +8,24 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Breaking Changes
+^^^^^^^^^^^^^^^^
+
+* The |Prometheus| middleware is no longer in the default middleware list.
+  To keep exporting the Prometheus stats, you must now install the ``prometheus`` extra
+  (e.g. ``pip install 'dramatiq[prometheus]'``)
+  and add the |Prometheus| middleware (see :ref:`customizing-middleware`).
+  (`#95`_, `#345`_, `#688`_, `@azmeuk`_)
+* The ``backend`` argument to the |Results| middleware is now required.
+  Previously, not supplying this argument would result in a non-functional |Results| middleware.
+  (`#728`_, `@LincolnPuzey`_)
+
+.. _#95: https://github.com/Bogdanp/dramatiq/issues/95
+.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
+.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
+.. _@azmeuk: https://github.com/azmeuk
+.. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+
 Fixed
 ^^^^^
 
@@ -20,25 +38,44 @@ Fixed
 * Fixed the RabbitMQ broker making 1 more retry than configured when
   declaring queues or enqueueing messages fail due to connection errors.
   1 fewer retries are now made.
+  This fixes a regression introduced by `#669`_ released in ``1.18.0``.
   (`#734`_, `@LincolnPuzey`_)
 
 .. _#651: https://github.com/Bogdanp/dramatiq/issues/651
 .. _#721: https://github.com/Bogdanp/dramatiq/pull/721
 .. _#734: https://github.com/Bogdanp/dramatiq/pull/734
 
-Changed
-^^^^^^^
+Added
+^^^^^
 
-* The `prometheus-client` dependency is now optional, and the `Prometheus`
-  middleware is no longer in the default list, and should be added manually.
-  (`#345`_, `#688`_, `@azmeuk`_)
-* The ``backend`` argument to the |Results| middleware is now required.
-  (`#728`_, `@LincolnPuzey`_)
+* Added type annotations for the external API of the |Worker| and |Broker| classes.
+  (`#727`_, `#731`_, `@jenstroeger`_)
 
-.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
-.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
-.. _@azmeuk: https://github.com/azmeuk
-.. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+.. _#727: https://github.com/Bogdanp/dramatiq/issues/727
+.. _#731: https://github.com/Bogdanp/dramatiq/pull/731
+
+
+Documentation
+^^^^^^^^^^^^^
+
+* Improved documentation relating to middleware.
+  (`#718`_, `@LincolnPuzey`_, `#723`_, `@karolinepauls`_)
+* Add documentation section about asyncio support.
+  (`#595`_, `#719`_, `@LincolnPuzey`_)
+* Improved documentation about prioritizing messages with
+  the ``priority`` argument of an |Actor|.
+  (`#724`_, `#725`_, `@LincolnPuzey`_)
+* Add documentation section about environment variables.
+  (`#720`_, `@LincolnPuzey`_)
+
+.. _#718: https://github.com/Bogdanp/dramatiq/pull/718
+.. _#723: https://github.com/Bogdanp/dramatiq/pull/723
+.. _#595: https://github.com/Bogdanp/dramatiq/issues/595
+.. _#719: https://github.com/Bogdanp/dramatiq/pull/719
+.. _#724: https://github.com/Bogdanp/dramatiq/issues/724
+.. _#725: https://github.com/Bogdanp/dramatiq/pull/725
+.. _#720: https://github.com/Bogdanp/dramatiq/pull/720
+
 
 `1.18.0`_ -- 2025-05-29
 -----------------------
