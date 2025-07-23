@@ -8,6 +8,24 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Breaking Changes
+^^^^^^^^^^^^^^^^
+
+* The |Prometheus| middleware is no longer in the default middleware list.
+  To keep exporting the Prometheus stats, you must now install the ``prometheus`` extra
+  (e.g. ``pip install 'dramatiq[prometheus]'``)
+  and add the |Prometheus| middleware (see :ref:`customizing-middleware`).
+  (`#95`_, `#345`_, `#688`_, `@azmeuk`_)
+* The ``backend`` argument to the |Results| middleware is now required.
+  Previously, not supplying this argument would result in a non-functional |Results| middleware.
+  (`#728`_, `@LincolnPuzey`_)
+
+.. _#95: https://github.com/Bogdanp/dramatiq/issues/95
+.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
+.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
+.. _@azmeuk: https://github.com/azmeuk
+.. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+
 Fixed
 ^^^^^
 
@@ -26,19 +44,6 @@ Fixed
 .. _#721: https://github.com/Bogdanp/dramatiq/pull/721
 .. _#734: https://github.com/Bogdanp/dramatiq/pull/734
 
-Changed
-^^^^^^^
-
-* The `prometheus-client` dependency is now optional, and the `Prometheus`
-  middleware is no longer in the default list, and should be added manually.
-  (`#345`_, `#688`_, `@azmeuk`_)
-* The ``backend`` argument to the |Results| middleware is now required.
-  (`#728`_, `@LincolnPuzey`_)
-
-.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
-.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
-.. _@azmeuk: https://github.com/azmeuk
-.. _#728: https://github.com/Bogdanp/dramatiq/pull/728
 
 `1.18.0`_ -- 2025-05-29
 -----------------------
