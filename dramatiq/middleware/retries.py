@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import time
 import traceback
+from typing import Callable, Optional
 
 from ..common import compute_backoff
 from ..errors import Retry
@@ -68,7 +69,14 @@ class Retries(Middleware):
        message is failed due to retries being exceeded.
     """
 
-    def __init__(self, *, max_retries=20, min_backoff=None, max_backoff=None, retry_when=None):
+    def __init__(
+        self,
+        *,
+        max_retries: int = 20,
+        min_backoff: Optional[int] = None,
+        max_backoff: Optional[int] = None,
+        retry_when: Optional[Callable[[int, Exception], bool]] = None,
+    ) -> None:
         self.logger = get_logger(__name__, type(self))
         self.max_retries = max_retries
         self.min_backoff = min_backoff or DEFAULT_MIN_BACKOFF
