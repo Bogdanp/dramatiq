@@ -180,8 +180,8 @@ class Broker:
 
         self.actor_options |= middleware.actor_options
 
-        for actor_name in self.get_declared_actors():
-            middleware.after_declare_actor(self, actor_name)
+        for actor in self.actors.values():
+            middleware.after_declare_actor(self, actor)
 
         for queue_name in self.get_declared_queues():
             middleware.after_declare_queue(self, queue_name)
