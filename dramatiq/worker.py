@@ -134,7 +134,7 @@ class Worker:
         for child in self.workers:
             child.resume()
 
-    def stop(self, timeout: int = 600000):
+    def stop(self, timeout: int = 600000) -> None:
         """Gracefully stop the Worker and all of its consumers and
         workers.
 
@@ -235,15 +235,15 @@ class Worker:
 
 
 class _WorkerMiddleware(Middleware):
-    def __init__(self, worker: Worker):
+    def __init__(self, worker: Worker) -> None:
         self.logger = get_logger(__name__, type(self))
         self.worker = worker
 
-    def after_declare_queue(self, broker: Broker, queue_name: str):
+    def after_declare_queue(self, broker: Broker, queue_name: str) -> None:
         self.logger.debug("Adding consumer for queue %r.", queue_name)
         self.worker._add_consumer(queue_name)
 
-    def after_declare_delay_queue(self, broker: Broker, queue_name: str):
+    def after_declare_delay_queue(self, broker: Broker, queue_name: str) -> None:
         self.logger.debug("Adding consumer for delay queue %r.", queue_name)
         self.worker._add_consumer(queue_name, delay=True)
 
@@ -257,7 +257,7 @@ class _ConsumerThread(Thread):
         prefetch: int,
         work_queue: PriorityQueue[tuple[int, MessageProxy]],
         worker_timeout: int,
-    ):
+    ) -> None:
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "ConsumerThread(%s)" % queue_name)
@@ -338,7 +338,7 @@ class _ConsumerThread(Thread):
             self.post_process_message(message)
             self.delay_queue.task_done()
 
-    def handle_message(self, message: MessageProxy):
+    def handle_message(self, message: MessageProxy) -> None:
         """Handle a message received off of the underlying consumer.
         If the message has an eta, delay it.  Otherwise, put it on the
         work queue.
@@ -362,7 +362,7 @@ class _ConsumerThread(Thread):
             message.fail()
             self.post_process_message(message)
 
-    def post_process_message(self, message: MessageProxy):
+    def post_process_message(self, message: MessageProxy) -> None:
         """Called by worker threads whenever they're done processing
         individual messages, signaling that each message is ready to
         be acked or rejected.
@@ -416,7 +416,7 @@ class _ConsumerThread(Thread):
 
                 return
 
-    def requeue_messages(self, messages: Iterable[MessageProxy]):
+    def requeue_messages(self, messages: Iterable[MessageProxy]) -> None:
         """Called on worker shutdown and whenever there is a
         connection error to move unacked messages back to their
         respective queues asap.
@@ -472,7 +472,7 @@ class _WorkerThread(Thread):
         consumers: dict[str, _ConsumerThread],
         work_queue: PriorityQueue[tuple[int, MessageProxy]],
         worker_timeout: int,
-    ):
+    ) -> None:
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "WorkerThread")
@@ -504,7 +504,7 @@ class _WorkerThread(Thread):
         self.broker.emit_before("worker_thread_shutdown", self)
         self.logger.debug("Worker thread stopped.")
 
-    def process_message(self, message: MessageProxy):
+    def process_message(self, message: MessageProxy) -> None:
         """Process a message pulled off of the work queue then push it
         back to its associated consumer for post processing. Stuff any SkipMessage
         exception or BaseException into the message [proxy] so that it may be used

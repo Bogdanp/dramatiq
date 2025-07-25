@@ -93,7 +93,7 @@ class Broker:
         overwrite when they are declared.
     """
 
-    def __init__(self, middleware: Optional[list[Middleware]] = None):
+    def __init__(self, middleware: Optional[list[Middleware]] = None) -> None:
         self.logger = get_logger(__name__, type(self))
         self.actors: dict[str, Actor] = {}
         self.queues: Any = {}  # Subclasses make this a set!
@@ -132,7 +132,7 @@ class Broker:
         *,
         before: Optional[type[Middleware]] = None,
         after: Optional[type[Middleware]] = None,
-    ):
+    ) -> None:
         """Add a middleware object to this broker.  The middleware is
         appended to the end of the middleware list by default.
 
@@ -229,7 +229,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def enqueue(self, message, *, delay: Optional[int] = None):  # pragma: no cover
+    def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:  # pragma: no cover
         """Enqueue a message on this broker.
 
         Parameters:
@@ -241,7 +241,7 @@ class Broker:
         """
         raise NotImplementedError
 
-    def get_actor(self, actor_name: str):  # pragma: no cover
+    def get_actor(self, actor_name: str) -> Actor:  # pragma: no cover
         """Look up an actor by its name.
 
         Parameters:
@@ -337,7 +337,7 @@ class Consumer:
         """Returns this instance as a Message iterator."""
         return self
 
-    def ack(self, message: MessageProxy):  # pragma: no cover
+    def ack(self, message: MessageProxy) -> None:  # pragma: no cover
         """Acknowledge that a message has been processed, removing it
         from the broker.
 
@@ -346,7 +346,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def nack(self, message: MessageProxy):  # pragma: no cover
+    def nack(self, message: MessageProxy) -> None:  # pragma: no cover
         """Move a message to the dead-letter queue.
 
         Parameters:
@@ -354,7 +354,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def requeue(self, messages: Iterable[MessageProxy]):  # pragma: no cover
+    def requeue(self, messages: Iterable[MessageProxy]) -> None:  # pragma: no cover
         """Move unacked messages back to their queues.  This is called
         by consumer threads when they fail or are shut down.  The
         default implementation does nothing.
@@ -363,7 +363,7 @@ class Consumer:
           messages(Iterable[MessageProxy]): The messages to requeue.
         """
 
-    def __next__(self):  # pragma: no cover
+    def __next__(self) -> MessageProxy:  # pragma: no cover
         """Retrieve the next message off of the queue.  This method
         blocks until a message becomes available.
 
@@ -393,7 +393,7 @@ class MessageProxy:
         message_id: str
         message_timestamp: int
 
-    def __init__(self, message: Message):
+    def __init__(self, message: Message) -> None:
         self.failed = False
         self._message = message
         self._exception: Optional[BaseException] = None
