@@ -40,8 +40,7 @@ class RedisBackend(RateLimiterBackend):
         if url is not None:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
-        # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
 
     def add(self, key, value, ttl):
         return bool(self.client.set(key, value, px=ttl, nx=True))

@@ -120,8 +120,7 @@ class RedisBroker(Broker):
         self.heartbeat_timeout = heartbeat_timeout
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
-        # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
         self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
 
     @property
