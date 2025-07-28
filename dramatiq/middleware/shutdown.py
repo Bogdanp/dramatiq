@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import threading
 import warnings
-from typing import Optional, Type
 
 from ..logging import get_logger
 from .middleware import Middleware
@@ -55,9 +54,11 @@ class ShutdownNotifications(Middleware):
         Defaults to False, meaning actors will not be interrupted, and allowed to finish.
     """
 
-    def __init__(self, notify_shutdown=False):
+    def __init__(self, notify_shutdown: bool = False) -> None:
         self.logger = get_logger(__name__, type(self))
         self.notify_shutdown = notify_shutdown
+
+        self.manager: _ShutdownManager
         if is_gevent_active():
             self.manager = _GeventShutdownManager(self.logger)
         else:
@@ -132,11 +133,10 @@ class _CtypesShutdownManager(_ShutdownManager):
             raise_thread_exception(thread_id, Shutdown)
 
 
-_GeventShutdownManager: Optional[Type[_ShutdownManager]] = None
 if is_gevent_active():
     from gevent import getcurrent
 
-    class __GeventShutdownManager(_ShutdownManager):
+    class _GeventShutdownManager(_ShutdownManager):
 
         def __init__(self, logger=None):
             self.logger = logger or get_logger(__name__, type(self))
@@ -161,5 +161,3 @@ if is_gevent_active():
                     thread_id,
                 )
                 greenlet.kill(Shutdown, block=False)
-
-    _GeventShutdownManager = __GeventShutdownManager
