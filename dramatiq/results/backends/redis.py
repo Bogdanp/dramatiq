@@ -40,14 +40,22 @@ class RedisBackend(ResultBackend):
     .. _redis: https://redis.io
     """
 
-    def __init__(self, *, namespace="dramatiq-results", encoder=None, client=None, url=None, **parameters):
+    def __init__(
+        self,
+        *,
+        namespace="dramatiq-results",
+        encoder=None,
+        client=None,
+        url=None,
+        **parameters,
+    ):
         super().__init__(namespace=namespace, encoder=encoder)
 
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
         # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
 
     def get_result(self, message, *, block=False, timeout=None):
         """Get a result from the backend.
