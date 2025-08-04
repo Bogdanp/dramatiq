@@ -36,7 +36,13 @@ assignees: ''
 
 ## What did you do?
 
-<!-- be descriptive, but succinct -->
+<!-- be descriptive, but succinct.
+     try to include a minimal reproducable example as a single python file.
+     Ideally your file can be used to start a worker,
+     and enqueues messages for the worker when run as a script.
+     e.g. https://github.com/Bogdanp/dramatiq/blob/master/examples/basic/example.py
+     If relevant, include the parameters you use to start Dramatiq.
+-->
 
 
 ## What did you expect would happen?
@@ -46,4 +52,7 @@ assignees: ''
 
 ## What happened?
 
-<!-- be descriptive, but succinct -->
+<!-- be descriptive, but succinct.
+     If an error or exception happend,
+     try to include as much of the error message and/or stack trace as possible.
+-->
