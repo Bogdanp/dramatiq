@@ -90,10 +90,10 @@ class Middleware:
         """Called after a delay queue has been declared."""
 
     def before_enqueue(self, broker: Broker, message: Message, delay: int) -> None:
-        """Called before a message is enqueued."""
+        """Called before a message is enqueued (including retries)."""
 
     def after_enqueue(self, broker: Broker, message: Message, delay: int) -> None:
-        """Called after a message has been enqueued."""
+        """Called after a message has been enqueued (including retries)."""
 
     def before_delay_message(self, broker: Broker, message: MessageProxy) -> None:
         """Called before a message has been delayed in worker memory."""
