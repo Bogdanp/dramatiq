@@ -14,6 +14,7 @@ of those changes to CLEARTYPE SRL.
 | [@jssuzanne](https://github.com/jssuzanne)             | Jean-Sébastien Suzanne |
 | [@chen2aaron](https://github.com/chen2aaron)           | xixijun                |
 | [@aequitas](https://github.com/aequitas)               | Johan Bloemberg        |
+| [@udogri](https://github.com/udogri)                   | Udogri Oruaro          |
 | [@najamansari](https://github.com/najamansari)         | Najam Ahmed Ansari     |
 | [@rpkilby](https://github.com/rpkilby)                 | Ryan P Kilby           |
 | [@2miksyn](https://github.com/2miksyn)                 | Mikhail Smirnov        |
@@ -71,3 +72,4 @@ of those changes to CLEARTYPE SRL.
 | [@LincolnPuzey](https://github.com/LincolnPuzey)       | Lincoln Puzey          |
 | [@guedesfelipe](https://github.com/guedesfelipe)       | Felipe Guedes          |
 | [@karolinepauls](https://karolinepauls.com)            | Karoline Pauls         |
+yy

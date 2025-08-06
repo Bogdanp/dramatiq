@@ -121,14 +121,19 @@ class RedisBroker(Broker):
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
         # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
-        self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
+        self.client = client or redis.Redis(**parameters)
+        self.scripts = {
+            name: self.client.register_script(script)
+            for name, script in _scripts.items()
+        }
 
     @property
     def consumer_class(self):
         return _RedisConsumer
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> Consumer:
+    def consume(
+        self, queue_name: str, prefetch: int = 1, timeout: int = 5000
+    ) -> Consumer:
         """Create a new consumer for a queue.
 
         Parameters:
@@ -189,9 +194,13 @@ class RedisBroker(Broker):
                 },
             )
 
-        self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
+        self.logger.debug(
+            "Enqueueing message %r on queue %r.", message.message_id, queue_name
+        )
         self.emit_before("enqueue", message, delay)
-        self.do_enqueue(queue_name, message.options["redis_message_id"], message.encode())
+        self.do_enqueue(
+            queue_name, message.options["redis_message_id"], message.encode()
+        )
         self.emit_after("enqueue", message, delay)
         return message
 
@@ -218,7 +227,9 @@ class RedisBroker(Broker):
         for queue_name in self.queues:
             self.flush(queue_name)
 
-    def join(self, queue_name: str, *, interval: int = 100, timeout: Optional[int] = None) -> None:
+    def join(
+        self, queue_name: str, *, interval: int = 100, timeout: Optional[int] = None
+    ) -> None:
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
@@ -259,7 +270,9 @@ class RedisBroker(Broker):
         if cls._max_unpack_size_val is None:
             with cls._max_unpack_size_mut:
                 if cls._max_unpack_size_val is None:
-                    cls._max_unpack_size_val = DEFAULT_LUA_MAX_STACK or self.scripts["maxstack"]()
+                    cls._max_unpack_size_val = (
+                        DEFAULT_LUA_MAX_STACK or self.scripts["maxstack"]()
+                    )
                     # We only want to use half of the max LUA stack to unpack values to avoid having
                     # problems with multiple workers + great number of messages
                     # See https://github.com/Bogdanp/dramatiq/issues/433
@@ -376,7 +389,9 @@ class _RedisConsumer(Consumer):
                     # Because we didn't get any messages, we should
                     # progressively long poll up to the idle timeout.
                     if not messages:
-                        self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
+                        self.misses, backoff_ms = compute_backoff(
+                            self.misses, max_backoff=self.timeout
+                        )
                         time.sleep(backoff_ms / 1000)
                         return None
         except redis.ConnectionError as e:
