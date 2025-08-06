@@ -17,9 +17,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import redis
 
 from ..backend import RateLimiterBackend
+
+_SCRIPTS = {
+    path.stem: path.read_text()
+    for path in (Path(__file__).parent / "redis").glob("*.lua")
+}
 
 
 class RedisBackend(RateLimiterBackend):
@@ -41,66 +48,24 @@ class RedisBackend(RateLimiterBackend):
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
         self.client = client or redis.Redis(**parameters)
+        self.scripts = {
+            name: self.client.register_script(text) for name, text in _SCRIPTS.items()
+        }
 
     def add(self, key, value, ttl):
         return bool(self.client.set(key, value, px=ttl, nx=True))
 
     def incr(self, key, amount, maximum, ttl):
-        with self.client.pipeline() as pipe:
-            while True:
-                try:
-                    pipe.watch(key)
-                    value = int(pipe.get(key) or b"0")
-                    value += amount
-                    if value > maximum:
-                        return False
-
-                    pipe.multi()
-                    pipe.set(key, value, px=ttl)
-                    pipe.execute()
-                    return True
-                except redis.WatchError:
-                    continue
+        incr_up_to = self.scripts["incr_up_to"]
+        return incr_up_to([key], [amount, maximum, ttl]) == 1
 
     def decr(self, key, amount, minimum, ttl):
-        with self.client.pipeline() as pipe:
-            while True:
-                try:
-                    pipe.watch(key)
-                    value = int(pipe.get(key) or b"0")
-                    value -= amount
-                    if value < minimum:
-                        return False
-
-                    pipe.multi()
-                    pipe.set(key, value, px=ttl)
-                    pipe.execute()
-                    return True
-                except redis.WatchError:
-                    continue
+        decr_down_to = self.scripts["decr_down_to"]
+        return decr_down_to([key], [amount, minimum, ttl]) == 1
 
     def incr_and_sum(self, key, keys, amount, maximum, ttl):
-        with self.client.pipeline() as pipe:
-            while True:
-                try:
-                    pipe.watch(key, *keys())
-                    value = int(pipe.get(key) or b"0")
-                    value += amount
-                    if value > maximum:
-                        return False
-
-                    # Fetch keys again to account for net/server latency.
-                    values = pipe.mget(keys())
-                    total = amount + sum(int(n) for n in values if n)
-                    if total > maximum:
-                        return False
-
-                    pipe.multi()
-                    pipe.set(key, value, px=ttl)
-                    pipe.execute()
-                    return True
-                except redis.WatchError:
-                    continue
+        incr_up_to_with_sum_check = self.scripts["incr_up_to_with_sum_check"]
+        return incr_up_to_with_sum_check([key, *keys()], [amount, maximum, ttl]) == 1
 
     def wait(self, key, timeout):
         assert timeout is None or timeout >= 1000, "wait timeouts must be >= 1000"
