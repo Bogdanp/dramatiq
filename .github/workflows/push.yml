@@ -6,7 +6,7 @@ jobs:
     name: lint
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - run: |
@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-24.04"]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
         concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}
@@ -49,7 +49,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - run: |
