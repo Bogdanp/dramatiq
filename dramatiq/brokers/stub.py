@@ -131,8 +131,7 @@ class StubBroker(Broker):
 
         self.dead_letters_by_queue.clear()
 
-    # TODO: Make fail_fast default to True.
-    def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: bool = False) -> None:
+    def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: bool = True) -> None:
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests
         to wait for all the messages in a queue to be processed.
@@ -145,10 +144,13 @@ class StubBroker(Broker):
           queue_name(str): The queue to wait on.
           fail_fast(bool): When this is True and any message gets
             dead-lettered during the join, then an exception will be
-            raised.  This will be True by default starting with
-            version 2.0.
+            raised. When False, no exception will be raised.
+            Defaults to True.
           timeout(Optional[int]): The max amount of time, in
             milliseconds, to wait on this queue.
+
+        .. versionchanged:: 2.0.0
+           The ``fail_fast`` parameter now defaults to True.
         """
         try:
             queues = [
