@@ -58,7 +58,12 @@ pytest_, then you can easily do this from the command line using the
 
 You can also pass ``fail_fast=True`` as a parameter to |StubBroker_join|
 in order to make it reraise whatever exception caused the actor to
-fail in the main thread.  Note, however, that the actor is only
+fail in the main thread.
+
+.. versionchanged:: 2.0.0
+   The ``fail_fast`` parameter now defaults to True.
+
+Note, however, that the actor is only
 considered to fail once all of its retries have been used up; meaning
 that unless you specify custom retry limits for the actors or for your
 tests as a whole (by configuring the |Retries| middleware), then each
