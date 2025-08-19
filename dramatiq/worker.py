@@ -600,3 +600,7 @@ class _WorkerThread(Thread):
 @lru_cache(maxsize=128)
 def has_results_middleware(broker: Broker) -> bool:
     return any(type(m) is Results for m in broker.middleware)
+
+
+ConsumerThread = _ConsumerThread
+WorkerThread = _WorkerThread

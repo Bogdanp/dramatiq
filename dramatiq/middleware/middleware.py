@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from ..actor import Actor
     from ..broker import Broker, MessageProxy
     from ..message import Message
-    from ..worker import Worker, _ConsumerThread, _WorkerThread
+    from ..worker import ConsumerThread, Worker, WorkerThread
 
 
 class MiddlewareError(Exception):
@@ -137,19 +137,19 @@ class Middleware:
     def after_worker_shutdown(self, broker: Broker, worker: Worker) -> None:
         """Called after the worker process shuts down."""
 
-    def after_consumer_thread_boot(self, broker: Broker, thread: _ConsumerThread) -> None:
+    def after_consumer_thread_boot(self, broker: Broker, thread: ConsumerThread) -> None:
         """Called from a consumer thread after it starts but before it starts its run loop."""
 
-    def before_consumer_thread_shutdown(self, broker: Broker, thread: _ConsumerThread) -> None:
+    def before_consumer_thread_shutdown(self, broker: Broker, thread: ConsumerThread) -> None:
         """Called before a consumer thread shuts down.  This may be
         used to clean up thread-local resources (such as Django
         database connections).
         """
 
-    def after_worker_thread_boot(self, broker: Broker, thread: _WorkerThread) -> None:
+    def after_worker_thread_boot(self, broker: Broker, thread: WorkerThread) -> None:
         """Called from a worker thread after it starts but before it starts its run loop."""
 
-    def before_worker_thread_shutdown(self, broker: Broker, thread: _WorkerThread) -> None:
+    def before_worker_thread_shutdown(self, broker: Broker, thread: WorkerThread) -> None:
         """Called before a worker thread shuts down.  This may be used
         to clean up thread-local resources (such as Django database
         connections).
