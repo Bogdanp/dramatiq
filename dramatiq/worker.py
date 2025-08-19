@@ -343,6 +343,17 @@ class _ConsumerThread(Thread):
         If the message has an eta, delay it.  Otherwise, put it on the
         work queue.
         """
+        if "eta" in message.options:
+            if message.options["eta"] is None:
+                del message.options["eta"]
+            elif not isinstance(message.options["eta"], (int, float)):
+                self.logger.warning(
+                    "Invalid eta value for message %r: %r. Setting eta to current_millis().",
+                    message.message_id,
+                    message.options["eta"],
+                )
+                message.options["eta"] = current_millis()
+
         try:
             if "eta" in message.options:
                 self.logger.debug("Pushing message %r onto delay queue.", message.message_id)

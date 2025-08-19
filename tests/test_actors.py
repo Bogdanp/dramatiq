@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from datetime import timedelta
 from unittest.mock import patch
@@ -533,3 +534,51 @@ def test_decorator_raises_error_on_duplicate_name(stub_broker):
     # Then a ValueError should be raised
     assert exc_info.type is ValueError
     assert str(exc_info.value) == "An actor named 'foo' is already registered."
+
+
+def test_worker_handles_non_numeric_eta_and_logs_warning(stub_broker, stub_worker, caplog):
+    # Set the log level to capture warnings
+    caplog.set_level(logging.WARNING)
+
+    # Given an actor that records when it runs
+    run = []
+
+    @dramatiq.actor
+    def record():
+        run.append(True)
+
+    # If I send it a message with a non-numeric eta manually from another project or manually from rabbitmq UI (not using dramatiq)
+    message = record.message_with_options(eta="not-a-number")
+    stub_broker.queues[record.queue_name].put(message.encode())
+
+    # Then join on the queue
+    stub_broker.join(record.queue_name)
+    stub_worker.join()
+
+    # I expect the message to have been processed
+    assert run
+
+    # And a warning should have been logged about the invalid eta
+    assert any(
+        "Invalid eta value for message" in record.message for record in caplog.records if record.levelname == "WARNING"
+    )
+
+
+def test_worker_handles_none_eta(stub_broker, stub_worker):
+    # Given an actor that records when it runs
+    run = []
+
+    @dramatiq.actor
+    def record():
+        run.append(True)
+
+    # If I send it a message with a None eta
+    message = record.message_with_options(eta=None)
+    stub_broker.queues[record.queue_name].put(message.encode())
+
+    # Then join on the queue
+    stub_broker.join(record.queue_name)
+    stub_worker.join()
+
+    # I expect the message to have been processed
+    assert run
