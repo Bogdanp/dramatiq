@@ -63,6 +63,13 @@ class RedisBackend(RateLimiterBackend):
         decr_down_to = self.scripts["decr_down_to"]
         return decr_down_to([key], [amount, minimum, ttl]) == 1
 
+    def format_key_variants(self, key, variants):
+        # NOTE the extra { } around the key - this is to make use of Hash tags [0]
+        # to make sure that multi-key commands execute on the keys in same hash slots.
+        # This helps avoid a ClusterCrossSlotError in case this redis is a Redis Cluster.
+        # [0]: https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/#keys-hash-tags
+        return [f"{{{key}}}@{variant}" for variant in variants]
+
     def incr_and_sum(self, key, keys, amount, maximum, ttl):
         incr_up_to_with_sum_check = self.scripts["incr_up_to_with_sum_check"]
         return incr_up_to_with_sum_check([key, *keys()], [amount, maximum, ttl]) == 1
