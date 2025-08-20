@@ -38,7 +38,7 @@ from .generic import GenericActor
 from .logging import get_logger
 from .message import Message, get_encoder, set_encoder
 from .middleware import Middleware
-from .worker import Worker
+from .worker import ConsumerThread, Worker, WorkerThread
 
 __all__ = [
     # Actors
@@ -80,6 +80,8 @@ __all__ = [
     "Middleware",
     # Workers
     "Worker",
+    "ConsumerThread",
+    "WorkerThread",
 ]
 
 __version__ = "1.18.0"

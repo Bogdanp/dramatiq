@@ -83,7 +83,7 @@ class Worker:
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
 
-        self.consumers: dict[str, "_ConsumerThread"] = {}
+        self.consumers: dict[str, "ConsumerThread"] = {}
         self.consumer_whitelist = queues and set(queues)
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
@@ -93,7 +93,7 @@ class Worker:
         # workers as those messages could have far-future etas.
         self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
-        self.workers: list[_WorkerThread] = []
+        self.workers: list[WorkerThread] = []
         self.work_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
@@ -113,7 +113,7 @@ class Worker:
 
     def pause(self) -> None:
         """Pauses all the worker threads."""
-        child: Union[_WorkerThread, _ConsumerThread]
+        child: Union[WorkerThread, ConsumerThread]
 
         for child in self.consumers.values():
             child.pause()
@@ -127,7 +127,7 @@ class Worker:
 
     def resume(self) -> None:
         """Resumes all the worker threads."""
-        child: Union[_WorkerThread, _ConsumerThread]
+        child: Union[WorkerThread, ConsumerThread]
 
         for child in self.consumers.values():
             child.resume()
@@ -145,7 +145,7 @@ class Worker:
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
 
-        thread: Union[_WorkerThread, _ConsumerThread]
+        thread: Union[WorkerThread, ConsumerThread]
 
         # Stop workers before consumers.  The consumers are kept alive
         # during this process so that heartbeats keep being sent to
@@ -214,7 +214,7 @@ class Worker:
             self.logger.debug("Dropping consumer for queue %r: not whitelisted.", queue_name)
             return
 
-        consumer = self.consumers[queue_name] = _ConsumerThread(
+        consumer = self.consumers[queue_name] = ConsumerThread(
             broker=self.broker,
             queue_name=queue_name,
             prefetch=self.delay_prefetch if delay else self.queue_prefetch,
@@ -224,7 +224,7 @@ class Worker:
         consumer.start()
 
     def _add_worker(self) -> None:
-        worker = _WorkerThread(
+        worker = WorkerThread(
             broker=self.broker,
             consumers=self.consumers,
             work_queue=self.work_queue,
@@ -248,7 +248,7 @@ class _WorkerMiddleware(Middleware):
         self.worker._add_consumer(queue_name, delay=True)
 
 
-class _ConsumerThread(Thread):
+class ConsumerThread(Thread):
     def __init__(
         self,
         *,
@@ -454,13 +454,13 @@ class _ConsumerThread(Thread):
             pass
 
 
-class _WorkerThread(Thread):
+class WorkerThread(Thread):
     """WorkerThreads process incoming messages off of the work queue
     on a loop.  By themselves, they don't do any sort of network IO.
 
     Parameters:
       broker(Broker)
-      consumers(dict[str, _ConsumerThread])
+      consumers(dict[str, ConsumerThread])
       work_queue(Queue)
       worker_timeout(int)
     """
@@ -469,7 +469,7 @@ class _WorkerThread(Thread):
         self,
         *,
         broker: Broker,
-        consumers: dict[str, _ConsumerThread],
+        consumers: dict[str, ConsumerThread],
         work_queue: PriorityQueue[tuple[int, MessageProxy]],
         worker_timeout: int,
     ) -> None:
@@ -600,3 +600,7 @@ class _WorkerThread(Thread):
 @lru_cache(maxsize=128)
 def has_results_middleware(broker: Broker) -> bool:
     return any(type(m) is Results for m in broker.middleware)
+
+
+_ConsumerThread = ConsumerThread
+_WorkerThread = WorkerThread
