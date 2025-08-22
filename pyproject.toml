@@ -5,3 +5,27 @@ build-backend = "setuptools.build_meta"
 [tool.black]
 line-length = 120
 target-version = ["py39", "py310", "py311", "py312", "py313"]
+
+[tool.mypy]
+packages = ["dramatiq", "tests"]
+python_version = "3.9"
+pretty = true
+show_column_numbers = true
+show_error_context = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+module = [
+    "gevent",
+    "greenlet",
+    "pika",
+    "pika.exceptions",
+    "prometheus_client",
+    "pylibmc",
+    "redis",
+    "watchdog",
+    "watchdog_gevent",
+]
+ignore_missing_imports = true
