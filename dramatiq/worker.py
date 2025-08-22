@@ -353,13 +353,14 @@ class _ConsumerThread(Thread):
                 actor = self.broker.get_actor(message.actor_name)
                 self.logger.debug("Pushing message %r onto work queue.", message.message_id)
                 self.work_queue.put((actor.priority, message))
-        except ActorNotFound:
+        except ActorNotFound as e:
             self.logger.error(
                 "Received message for undefined actor %r. Moving it to the DLQ.",
                 message.actor_name,
                 exc_info=True,
             )
             message.fail()
+            message.stuff_exception(e)
             self.post_process_message(message)
 
     def post_process_message(self, message: MessageProxy) -> None:

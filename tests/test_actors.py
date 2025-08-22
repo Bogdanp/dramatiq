@@ -8,7 +8,7 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, Middleware
-from dramatiq.errors import RateLimitExceeded
+from dramatiq.errors import ActorNotFound, RateLimitExceeded
 from dramatiq.middleware import CurrentMessage, SkipMessage
 
 from .common import skip_on_pypy, worker
@@ -315,7 +315,8 @@ def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_wor
     stub_broker.enqueue(message)
 
     # Then join on the queue
-    stub_broker.join("some-queue")
+    with pytest.raises(ActorNotFound, match=r"^some-actor$"):
+        stub_broker.join("some-queue", fail_fast=True)
     stub_worker.join()
 
     # I expect the message to end up on the dead letter queue
