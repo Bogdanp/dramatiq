@@ -6,6 +6,17 @@ build-backend = "setuptools.build_meta"
 line-length = 120
 target-version = ["py39", "py310", "py311", "py312", "py313"]
 
+[tool.isort]
+line_length = 120
+known_first_party = ["dramatiq"]
+multi_line_output = 5
+order_by_type = true
+profile = "black"
+add_imports = [
+# Remove annotations import once we only support python 3.14+
+    "from __future__ import annotations",
+]
+
 [tool.mypy]
 packages = ["dramatiq", "tests"]
 python_version = "3.9"
