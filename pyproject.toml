@@ -2,6 +2,10 @@
 requires = ["setuptools >= 80.9.0, < 81"]
 build-backend = "setuptools.build_meta"
 
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = "--cov dramatiq --cov-report html --benchmark-autosave --benchmark-compare"
+
 [tool.black]
 line-length = 120
 target-version = ["py39", "py310", "py311", "py312", "py313"]
