@@ -301,8 +301,8 @@ class ConsumerThread(Thread):
                     if not self.running:
                         break
 
-            except ConnectionError as e:
-                self.logger.critical("Consumer encountered a connection error: %s", e)
+            except ConnectionError:
+                self.logger.critical("Consumer encountered a connection error.", exc_info=True)
                 self.delay_queue = PriorityQueue()
 
             except Exception:
