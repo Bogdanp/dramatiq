@@ -173,7 +173,7 @@ class StubBroker(Broker):
             else:
                 if fail_fast:
                     for message in self.dead_letters_by_queue[queue_name]:
-                        raise message._exception from None
+                        raise (message._exception or Exception("Message failed with unknown error")) from None
 
                 return
 
