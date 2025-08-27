@@ -72,3 +72,4 @@ of those changes to CLEARTYPE SRL.
 | [@LincolnPuzey](https://github.com/LincolnPuzey)       | Lincoln Puzey          |
 | [@guedesfelipe](https://github.com/guedesfelipe)       | Felipe Guedes          |
 | [@karolinepauls](https://karolinepauls.com)            | Karoline Pauls         |
+| [@gurelkaynak](https://gurel.kaynak.link)              | Gurel Kaynak           |
