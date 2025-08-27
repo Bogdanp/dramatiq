@@ -490,17 +490,18 @@ synchronously by calling them as you would normal functions.
 Dealing with Exceptions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, any exceptions raised by an actor are raised in the
+By default, any exceptions raised by an actor are caught by the
 worker, which runs in a separate thread from the one your tests run
 in.  This means that any exceptions your actor throws will not be
-visible to your test code!
+immediately visible to your test code!
 
-You can make the stub broker re-raise exceptions from failed actors in your
-main thread by passing ``fail_fast=True`` to its ``join`` method::
+To help surface actor exceptions, by default,
+the stub broker will re-raise exceptions from failed messages
+in your main thread when you call its |StubBroker_join| method::
 
   def test_count_words(stub_broker, stub_worker):
-      count_words.send("http://example.com")
-      stub_broker.join(count_words.queue_name, fail_fast=True)
+      count_words.send("http://some-invalid-url.invalid")
+      stub_broker.join(count_words.queue_name)  # Exception from actor will be re-raised here.
       stub_worker.join()
 
 This way, whatever exception caused the actor to fail will be raised
