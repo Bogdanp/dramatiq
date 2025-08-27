@@ -291,7 +291,7 @@ HANDLED_SIGNALS: Set[signal.Signals] = {signal.SIGINT, signal.SIGTERM}
 if hasattr(signal, "SIGHUP"):
     HANDLED_SIGNALS.add(signal.SIGHUP)
 if hasattr(signal, "SIGBREAK"):
-    HANDLED_SIGNALS.add(signal.SIGBREAK)  # type: ignore
+    HANDLED_SIGNALS.add(signal.SIGBREAK)
 
 
 def try_block_signals():
