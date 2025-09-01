@@ -64,29 +64,6 @@ extra_dependencies = {
 }
 
 extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
-extra_dependencies["dev"] = extra_dependencies["all"] + [
-    # Docs
-    "alabaster",
-    "sphinx",
-    "sphinxcontrib-napoleon",
-    # Linting
-    "flake8",
-    "flake8-bugbear",
-    "flake8-quotes",
-    "isort",
-    "mypy",
-    # Misc
-    "black",
-    "bumpversion",
-    "hiredis",
-    "twine",
-    "wheel",
-    # Testing
-    "pytest",
-    "pytest-benchmark[histogram]",
-    "pytest-cov",
-    "tox",
-]
 
 setup(
     name="dramatiq",
