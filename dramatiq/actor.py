@@ -220,7 +220,7 @@ def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, Union[Awaitable[R]
 def actor(
     fn: Optional[Callable[P, Union[Awaitable[R], R]]] = None,
     *,
-    actor_class: Callable[..., Actor[P, R]] = Actor,  # type: ignore[assignment]
+    actor_class: Callable[..., Actor[P, R]] = Actor,
     actor_name: Optional[str] = None,
     queue_name: str = "default",
     priority: int = 0,

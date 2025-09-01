@@ -2,6 +2,45 @@
 requires = ["setuptools >= 80.9.0, < 81"]
 build-backend = "setuptools.build_meta"
 
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = "--cov dramatiq --cov-report html --benchmark-autosave --benchmark-compare"
+
 [tool.black]
 line-length = 120
 target-version = ["py39", "py310", "py311", "py312", "py313"]
+
+[tool.isort]
+line_length = 120
+known_first_party = ["dramatiq"]
+multi_line_output = 5
+order_by_type = true
+profile = "black"
+add_imports = [
+# Remove annotations import once we only support python 3.14+
+    "from __future__ import annotations",
+]
+
+[tool.mypy]
+packages = ["dramatiq", "tests"]
+python_version = "3.9"
+pretty = true
+show_column_numbers = true
+show_error_context = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+module = [
+    "gevent",
+    "greenlet",
+    "pika",
+    "pika.exceptions",
+    "prometheus_client",
+    "pylibmc",
+    "redis",
+    "watchdog",
+    "watchdog_gevent",
+]
+ignore_missing_imports = true
