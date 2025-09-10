@@ -19,12 +19,16 @@ Breaking Changes
 * The ``backend`` argument to the |Results| middleware is now required.
   Previously, not supplying this argument would result in a non-functional |Results| middleware.
   (`#728`_, `@LincolnPuzey`_)
+* The long-deprecated ``requeue_{deadline,interval}`` parameters of |RedisBroker|,
+  as well as the obsolete heartbeat compat code, have been removed. (`#771`_, `@mikeroll`_)
 
 .. _#95: https://github.com/Bogdanp/dramatiq/issues/95
 .. _#345: https://github.com/Bogdanp/dramatiq/issues/345
 .. _#688: https://github.com/Bogdanp/dramatiq/pull/688
 .. _@azmeuk: https://github.com/azmeuk
 .. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+.. _#771: https://github.com/Bogdanp/dramatiq/pull/771
+.. _@mikeroll: https://github.com/mikeroll
 
 Fixed
 ^^^^^
