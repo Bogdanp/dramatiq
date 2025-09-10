@@ -332,55 +332,12 @@ def test_redis_broker_can_connect_via_client():
     assert broker.client is client
 
 
-def test_redis_broker_warns_about_deprecated_parameters():
-    # When I pass deprecated params to RedisBroker
-    # Then it should warn me that those params do nothing
-    with pytest.warns(DeprecationWarning) as record:
-        RedisBroker(requeue_deadline=1000)
-
-    assert str(record[0].message) == "requeue_{deadline,interval} have been deprecated and no longer do anything"
-
-
 def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(redis_broker):
     # Given that I have a Redis broker
     # When I try to access an attribute that doesn't exist
     # Then I should get back an attribute error
     with pytest.raises(AttributeError):
         redis_broker.idontexist
-
-
-def test_redis_broker_maintains_backwards_compat_with_old_acks(redis_broker):
-    # Given that I have an actor
-    @dramatiq.actor
-    def do_work(self):
-        pass
-
-    # And that actor has some old-style unacked messages
-    expired_message_ids = set()
-    valid_message_ids = set()
-    for i in range(LUA_MAX_UNPACK_SIZE * 2):
-        expired_message_id = b"expired-old-school-ack-%r" % i
-        valid_message_id = b"valid-old-school-ack-%r" % i
-        expired_message_ids.add(expired_message_id)
-        valid_message_ids.add(valid_message_id)
-        if redis.__version__.startswith("2."):
-            redis_broker.client.zadd("dramatiq:default.acks", 0, expired_message_id)
-            redis_broker.client.zadd("dramatiq:default.acks", current_millis(), valid_message_id)
-        else:
-            redis_broker.client.zadd("dramatiq:default.acks", {expired_message_id: 0})
-            redis_broker.client.zadd("dramatiq:default.acks", {valid_message_id: current_millis()})
-
-    # When maintenance runs for that actor's queue
-    redis_broker.maintenance_chance = MAINTENANCE_SCALE
-    redis_broker.do_qsize(do_work.queue_name)
-
-    # Then maintenance should move the expired message to the new style acks set
-    unacked = redis_broker.client.smembers("dramatiq:__acks__.%s.default" % redis_broker.broker_id)
-    assert set(unacked) == expired_message_ids
-
-    # And the valid message should stay in that set
-    compat_unacked = redis_broker.client.zrangebyscore("dramatiq:default.acks", 0, "+inf")
-    assert set(compat_unacked) == valid_message_ids
 
 
 def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_worker):
