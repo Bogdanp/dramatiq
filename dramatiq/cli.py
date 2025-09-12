@@ -249,6 +249,12 @@ def make_argument_parser():
         default=600000,
         help="timeout for worker shutdown, in milliseconds (default: 10 minutes)",
     )
+    parser.add_argument(
+        "--worker-timeout",
+        type=int,
+        default=1000,
+        help="number of milliseconds workers should wake up after if the queue is idle"
+    )
 
     if HAS_WATCHDOG:
         parser.add_argument(
@@ -456,7 +462,7 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
                         canteen_add(canteen, fork_path)
 
         logger.debug("Starting worker threads...")
-        worker = Worker(broker, queues=args.queues, worker_threads=args.threads)
+        worker = Worker(broker, queues=args.queues, worker_threads=args.threads, worker_timeout=args.worker_timeout)
         worker.start()
     except ImportError:
         logger.exception("Failed to import module.")
