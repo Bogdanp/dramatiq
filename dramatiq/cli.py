@@ -253,7 +253,7 @@ def make_argument_parser():
         "--worker-timeout",
         type=int,
         default=1000,
-        help="number of milliseconds workers should wake up after if the queue is idle"
+        help="number of milliseconds workers should wake up after if the queue is idle",
     )
 
     if HAS_WATCHDOG:
