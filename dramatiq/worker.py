@@ -54,7 +54,7 @@ QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
 DELAY_QUEUE_PREFETCH = int(os.getenv("dramatiq_delay_queue_prefetch", 0))
 
 #: The number of milliseconds workers should wake up after if the queue is idle.
-WORKER_TIMEOUT = int(os.getenv("worker_timeout", 1000))
+WORKER_TIMEOUT = int(os.getenv("dramatiq_worker_timeout", 1000))
 
 
 class Worker:
