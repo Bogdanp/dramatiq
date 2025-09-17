@@ -53,6 +53,8 @@ QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
 #: prefetched.
 DELAY_QUEUE_PREFETCH = int(os.getenv("dramatiq_delay_queue_prefetch", 0))
 
+#: The number of milliseconds workers should wake up after if the queue is idle.
+WORKER_TIMEOUT = int(os.getenv("dramatiq_worker_timeout", 50))
 
 class Worker:
     """Workers consume messages off of all declared queues and
@@ -77,7 +79,7 @@ class Worker:
         broker: Broker,
         *,
         queues: Optional[set[str]] = None,
-        worker_timeout: int = 1000,
+        worker_timeout: int = WORKER_TIMEOUT,
         worker_threads: int = 8,
     ) -> None:
         self.logger = get_logger(__name__, type(self))
