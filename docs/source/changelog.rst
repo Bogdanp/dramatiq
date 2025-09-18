@@ -11,10 +11,16 @@ All notable changes to this project will be documented in this file.
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 
+Major Breaking Changes
+~~~~~~~~~~~~~~~~~~~~~~
+
+These are breaking changes we believe are most likely to effect your project.
+
 * The |Prometheus| middleware is no longer in the default middleware list.
-  To keep exporting the Prometheus stats, you must now install the ``prometheus`` extra
+  To keep exporting the Prometheus statistics, you must now install the ``prometheus`` extra
   (e.g. ``pip install 'dramatiq[prometheus]'``)
   and add the |Prometheus| middleware (see :ref:`customizing-middleware`).
+  If you are not using the Promotheus statistics, no action is needed.
   (`#95`_, `#345`_, `#688`_, `@azmeuk`_)
 * The ``backend`` argument to the |Results| middleware is now required.
   Previously, not supplying this argument would result in a non-functional |Results| middleware.
@@ -25,6 +31,28 @@ Breaking Changes
 .. _#688: https://github.com/Bogdanp/dramatiq/pull/688
 .. _@azmeuk: https://github.com/azmeuk
 .. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+
+Minor Breaking Changes
+~~~~~~~~~~~~~~~~~~~~~~
+
+These are changes that while technically breaking, we believe are unlikely to effect your project.
+
+* Removed the ``dev`` installable extra from the project metadata.
+  Instead the development dependencies are defined in a `PEP-735`_
+  ``[dependency-groups]`` table in ``pyproject.toml``.
+  These can be installed in development environments with ``pip install --group dev``.
+  (`#766`_, `@LincolnPuzey`_)
+* The ``keys`` argument to ``RateLimiterBackend.incr_and_sum`` must now be a callable
+  that returns a list of keys.
+  This is only relevant if you have written custom code (such as a custom Rate Limiter)
+  that uses a ``RateLimiterBackend``.
+  (`#741`_, `#772`_, `@mikeroll`_)
+
+.. _#766: https://github.com/Bogdanp/dramatiq/pull/766
+.. _PEP-735: https://peps.python.org/pep-0735/
+.. _#741: https://github.com/Bogdanp/dramatiq/issues/741
+.. _#772: https://github.com/Bogdanp/dramatiq/pull/772
+.. _@mikeroll: https://github.com/mikeroll
 
 Fixed
 ^^^^^
@@ -40,20 +68,73 @@ Fixed
   1 fewer retries are now made.
   This fixes a regression introduced by `#669`_ released in ``1.18.0``.
   (`#734`_, `@LincolnPuzey`_)
+* When adding middleware to a Broker that already has actors declared,
+  call the ``after_declare_actor`` middleware hook with the correct argument.
+  (`#743`_, `@jenstroeger`_)
+* Made dramatiq robust against non-numeric values for the ``eta`` option.
+  This should only be necessary when manually enqueuing messages.
+  (`#759`_, `#761`_, `@gurelkaynak`_)
+* Fixed edge case where the |StubBroker_join| would try to raise ``None`` as an exception.
+  (`#763`_, `@LincolnPuzey`_)
 
+
+.. _@gurelkaynak: https://github.com/gurelkaynak
 .. _#651: https://github.com/Bogdanp/dramatiq/issues/651
 .. _#721: https://github.com/Bogdanp/dramatiq/pull/721
 .. _#734: https://github.com/Bogdanp/dramatiq/pull/734
+.. _#743: https://github.com/Bogdanp/dramatiq/pull/743
+.. _#759: https://github.com/Bogdanp/dramatiq/issues/759
+.. _#761: https://github.com/Bogdanp/dramatiq/pull/761
+.. _#763: https://github.com/Bogdanp/dramatiq/pull/763
 
 Added
 ^^^^^
 
+* Add Python 3.14 to test matrix and project classifiers.
+  (`#751`_, `@LincolnPuzey`_)
 * Added type annotations for the external API of the |Worker| and |Broker| classes.
-  (`#727`_, `#731`_, `@jenstroeger`_)
+  (`#727`_, `#731`_, `#744`_, `@jenstroeger`_)
+* Added type annotations for the external API of the |Middleware| class and its subclasses.
+  (`#521`_, `#735`_, `@jenstroeger`_)
+* Added ``message_datetime`` property to the ``Message`` class to retrieve ``message_timestamp``
+  as an aware ``datetime.datetime`` instance.
+  (`#736`_, `@karolinepauls`_)
+* Added ``dramatiq_worker_timeout`` environment variable.
+  (`#773`_, `@ksoviero-zengrc`_)
 
+
+.. _#751: https://github.com/Bogdanp/dramatiq/pull/751
 .. _#727: https://github.com/Bogdanp/dramatiq/issues/727
 .. _#731: https://github.com/Bogdanp/dramatiq/pull/731
+.. _#744: https://github.com/Bogdanp/dramatiq/pull/744
+.. _#521: https://github.com/Bogdanp/dramatiq/issues/521
+.. _#735: https://github.com/Bogdanp/dramatiq/pull/735
+.. _#736: https://github.com/Bogdanp/dramatiq/pull/736
+.. _#773: https://github.com/Bogdanp/dramatiq/pull/773
+.. _@ksoviero-zengrc: https://github.com/ksoviero-zengrc
 
+Changed
+^^^^^^^
+
+* Promoted ``ConsumerThread`` and ``WorkerThread`` classes to public names,
+  since they are used in the |Middleware| interface type hints.
+  The previous names ``_ConsumerThread`` and ``_WorkerThread`` are still
+  available for backwards compatibility.
+  (`#760`_, `@synweap15`_)
+* Increased the minimum ``redis-py`` library version to ``4.0.0``.
+  (`#738`_, `#764`_, `@LincolnPuzey`_)
+
+.. _#760: https://github.com/Bogdanp/dramatiq/pull/760
+.. _#738: https://github.com/Bogdanp/dramatiq/issues/738
+.. _#764: https://github.com/Bogdanp/dramatiq/pull/764
+
+Packaging
+^^^^^^^^^
+
+* The project now defines a PEP-518 build backend in the ``pyproject.toml`` file.
+  (`#750`_, `@LincolnPuzey`_)
+
+.. _#750: https://github.com/Bogdanp/dramatiq/pull/750
 
 Documentation
 ^^^^^^^^^^^^^
@@ -67,6 +148,8 @@ Documentation
   (`#724`_, `#725`_, `@LincolnPuzey`_)
 * Add documentation section about environment variables.
   (`#720`_, `@LincolnPuzey`_)
+* Improve documentation for ``before_enqueue`` and ``after_enqueue`` |Middleware| hooks.
+  (`#753`_, `@karolinepauls`_)
 
 .. _#718: https://github.com/Bogdanp/dramatiq/pull/718
 .. _#723: https://github.com/Bogdanp/dramatiq/pull/723
@@ -75,6 +158,7 @@ Documentation
 .. _#724: https://github.com/Bogdanp/dramatiq/issues/724
 .. _#725: https://github.com/Bogdanp/dramatiq/pull/725
 .. _#720: https://github.com/Bogdanp/dramatiq/pull/720
+.. _#753: https://github.com/Bogdanp/dramatiq/pull/753
 
 
 `1.18.0`_ -- 2025-05-29
