@@ -363,14 +363,18 @@ class Consumer:
           messages(Iterable[MessageProxy]): The messages to requeue.
         """
 
-    def __next__(self) -> MessageProxy:  # pragma: no cover
-        """Retrieve the next message off of the queue.  This method
-        blocks until a message becomes available.
+    def __next__(self) -> MessageProxy | None:  # pragma: no cover
+        """Retrieve the next message off of the queue.
+
+        This method should block for a limited amount of time
+        (typically self.timeout) until a message becomes available.
+        After that time is elapsed, return None if no message is available.
 
         Returns:
           MessageProxy: A transparent proxy around a Message that can
           be used to acknowledge or reject it once it's done being
           processed.
+          None: When no message was available.
         """
         raise NotImplementedError
 
