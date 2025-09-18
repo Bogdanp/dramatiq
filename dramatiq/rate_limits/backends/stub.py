@@ -63,9 +63,7 @@ class StubBackend(RateLimiterBackend):
             if value > maximum:
                 return False
 
-            # TODO: Drop non-callable keys in Dramatiq v2.
-            key_list = keys() if callable(keys) else keys
-            values = sum(self._get(k, default=0) for k in key_list)
+            values = sum(self._get(k, default=0) for k in keys())
             total = amount + values
             if total > maximum:
                 return False

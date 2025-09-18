@@ -74,3 +74,4 @@ of those changes to CLEARTYPE SRL.
 | [@karolinepauls](https://karolinepauls.com)            | Karoline Pauls         |
 | [@gurelkaynak](https://gurel.kaynak.link)              | Gurel Kaynak           |
 | [@ksoviero-zengrc](https://github.com/ksoviero-zengrc) | Kevin Soviero          |
+| [@mikeroll](https://github.com/mikeroll)               | Mikhail Bulash         |
