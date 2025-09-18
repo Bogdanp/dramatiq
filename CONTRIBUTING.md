@@ -12,6 +12,15 @@ those changes to CLEARTYPE SRL.  If you cannot or do not want to
 reassign those rights, you shouldn't submit a PR.  Instead, you should
 open an issue and let someone else do that work.
 
+### Local Development
+
+To set up a development environment, it is recommended to:
+
+1. Clone the repository (or your fork of it).
+2. Create and active a virtual environment.
+3. Install dramatiq in editable mode with all optional extras: `pip install -e ".[all]"`.
+4. Install the development dependencies `pip install --group dev`.
+
 ### Pull Requests
 
 * Make sure any code changes are covered by tests.
