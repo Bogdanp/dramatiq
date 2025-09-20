@@ -271,3 +271,6 @@ These are the environment variables that dramatiq reads
    * - ``dramatiq_prom_port``
      - 9191
      - See :ref:`prometheus-metrics`.
+   * - ``dramatiq_worker_timeout``
+     - 1000
+     - The number of milliseconds workers should wake up after if the queue is idle.

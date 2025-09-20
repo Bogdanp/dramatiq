@@ -2,6 +2,47 @@
 requires = ["setuptools >= 80.9.0, < 81"]
 build-backend = "setuptools.build_meta"
 
+[dependency-groups]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "format"},
+    {include-group = "type-check"},
+    {include-group = "build"},
+    {include-group = "docs"},
+    "bumpversion",
+    "hiredis",
+    "twine",
+    "wheel",
+    "tox",
+]
+test = [
+    "pytest",
+    "pytest-benchmark[histogram]",
+    "pytest-cov",
+]
+lint = [
+    "flake8",
+    "flake8-bugbear",
+    "flake8-quotes",
+    "isort",
+]
+format = [
+    "black",
+]
+type-check = [
+    "mypy",
+]
+build = [
+    "build",
+]
+docs = [
+    "alabaster",
+    "sphinx",
+    "sphinxcontrib-napoleon",
+]
+
+
 [tool.pytest.ini_options]
 testpaths = "tests"
 addopts = "--cov dramatiq --cov-report html --benchmark-autosave --benchmark-compare"
