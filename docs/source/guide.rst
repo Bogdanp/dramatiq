@@ -319,6 +319,56 @@ wrap its source code in a try block and catch |TimeLimitExceeded|::
       except TimeLimitExceeded:
           teardown_missiles()  # <- this will run
 
+You can set dynamic time limits to a message. On a producer, you can add a time_limit argument as options, for example::
+
+  @dramatiq.actor
+  def add(x, y):
+      print(x + y)
+  x = 1
+  y = 2
+  add.send_with_options(x,y, time_limit=x+y)
+
+Or, at the consumer, you can create a middleware to add your dynamic time limit::
+
+  import dramatiq
+  
+  class DynamicTimeLimit(dramatiq.Middleware):
+      """This middleware dynamically sets the time_limit for an actor
+      based on the 'total_pages' attribute in the message data."""
+  
+      def before_process_message(self, broker, message):
+          """Called before the message is processed."""
+          # The actor is expected to receive one argument: a dictionary.
+          if not message.args:
+              return
+
+          message_obj = message.args[0]
+          data = message_obj.get("args", [{}])[0]
+
+          if (
+              "total_pages" in data
+              and data["total_pages"] is not None
+          ):
+              total_pages = int(data["total_pages"])
+              dynamic_limit = total_pages * 10 * 1000 # time in ms
+              message.options["time_limit"] = dynamic_limit
+                  
+  broker = RabbitmqBroker(
+      host="rabbitmq",
+      middleware=[
+          DynamicTimeLimit(),  # Our custom middleware
+          AgeLimit(),
+          TimeLimit(),
+          Callbacks(),
+          Pipelines(),
+          Retries(
+              max_retries=3,
+          ),
+      ],
+  )
+  
+
+
 
 Scheduling Messages
 -------------------
