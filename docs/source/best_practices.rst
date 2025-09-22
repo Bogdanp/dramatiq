@@ -35,6 +35,8 @@ Additionally, since messages are sent over the wire you'll want to
 keep them as short as possible.  For example, if you've got an actor
 that operates over ``User`` objects in your system, send that actor
 the user's id rather than the serialized user.
+Or, if you have an actor that operates on a file, send the path to the
+file in the message, rather than the body of the file.
 
 
 Error Reporting
