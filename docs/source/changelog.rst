@@ -25,12 +25,17 @@ These are breaking changes we believe are most likely to effect your project.
 * The ``backend`` argument to the |Results| middleware is now required.
   Previously, not supplying this argument would result in a non-functional |Results| middleware.
   (`#728`_, `@LincolnPuzey`_)
+* The ``dramatiq_group_callback_barrier_ttl`` environment variable has been removed.
+  Instead, use the ``barrier_ttl`` parameter of the |GroupCallbacks| middleware.
+  (`#775`_, `@mikeroll`_)
 
 .. _#95: https://github.com/Bogdanp/dramatiq/issues/95
 .. _#345: https://github.com/Bogdanp/dramatiq/issues/345
 .. _#688: https://github.com/Bogdanp/dramatiq/pull/688
 .. _@azmeuk: https://github.com/azmeuk
 .. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+.. _#775: https://github.com/Bogdanp/dramatiq/pull/775
+.. _@mikeroll: https://github.com/mikeroll 
 
 Minor Breaking Changes
 ~~~~~~~~~~~~~~~~~~~~~~
