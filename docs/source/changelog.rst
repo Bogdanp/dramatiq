@@ -47,7 +47,8 @@ These are changes that while technically breaking, we believe are unlikely to ef
   This is only relevant if you have written custom code (such as a custom Rate Limiter)
   that uses a ``RateLimiterBackend``.
   (`#741`_, `#772`_, `@mikeroll`_)
-* The long-deprecated ``requeue_{deadline,interval}`` arguments of |RedisBroker| have been removed.
+* The deprecated ``requeue_deadline`` and ``requeue_interval`` arguments of |RedisBroker| have been removed.
+  These have been deprecated and have had no effect since version 1.2.0.
   (`#782`_, `@mikeroll`_)
 
 .. _#766: https://github.com/Bogdanp/dramatiq/pull/766
