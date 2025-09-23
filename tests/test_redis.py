@@ -332,15 +332,6 @@ def test_redis_broker_can_connect_via_client():
     assert broker.client is client
 
 
-def test_redis_broker_warns_about_deprecated_parameters():
-    # When I pass deprecated params to RedisBroker
-    # Then it should warn me that those params do nothing
-    with pytest.warns(DeprecationWarning) as record:
-        RedisBroker(requeue_deadline=1000)
-
-    assert str(record[0].message) == "requeue_{deadline,interval} have been deprecated and no longer do anything"
-
-
 def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(redis_broker):
     # Given that I have a Redis broker
     # When I try to access an attribute that doesn't exist

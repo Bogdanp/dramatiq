@@ -20,7 +20,6 @@ from __future__ import annotations
 import glob
 import random
 import time
-import warnings
 from os import path
 from threading import Lock
 from typing import Optional
@@ -82,9 +81,7 @@ class RedisBroker(Broker):
         offline.
       dead_message_ttl(int): The amount of time (in ms) that
         dead-lettered messages are kept in Redis for.
-      requeue_deadline(int): Deprecated.  Does nothing.
-      requeue_interval(int): Deprecated.  Does nothing.
-      client(redis.StrictRedis): A redis client to use.
+      client(redis.Redis): A redis client to use.
       **parameters: Connection parameters are passed directly
         to :class:`redis.Redis`.
 
@@ -100,8 +97,6 @@ class RedisBroker(Broker):
         maintenance_chance=DEFAULT_MAINTENANCE_CHANCE,
         heartbeat_timeout=DEFAULT_HEARTBEAT_TIMEOUT,
         dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
-        requeue_deadline=None,
-        requeue_interval=None,
         client=None,
         **parameters,
     ):
@@ -109,10 +104,6 @@ class RedisBroker(Broker):
 
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
-
-        if requeue_deadline or requeue_interval:
-            message = "requeue_{deadline,interval} have been deprecated and no longer do anything"
-            warnings.warn(message, DeprecationWarning, stacklevel=2)
 
         self.broker_id = str(uuid4())
         self.namespace = namespace
