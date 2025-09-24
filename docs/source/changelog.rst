@@ -50,10 +50,13 @@ These are changes that while technically breaking, we believe are unlikely to ef
 * The deprecated ``requeue_deadline`` and ``requeue_interval`` arguments of |RedisBroker| have been removed.
   These have been deprecated and have had no effect since version 1.2.0.
   (`#782`_, `@mikeroll`_)
+* |RedisBroker|: the obsolete worker heartbeat compatibility code has been removed.
+  (`#771`_, `@mikeroll`_)
 
 .. _#766: https://github.com/Bogdanp/dramatiq/pull/766
 .. _PEP-735: https://peps.python.org/pep-0735/
 .. _#741: https://github.com/Bogdanp/dramatiq/issues/741
+.. _#771: https://github.com/Bogdanp/dramatiq/pull/771
 .. _#772: https://github.com/Bogdanp/dramatiq/pull/772
 .. _#782: https://github.com/Bogdanp/dramatiq/pull/782
 .. _@mikeroll: https://github.com/mikeroll
