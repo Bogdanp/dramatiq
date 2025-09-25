@@ -27,8 +27,6 @@ from threading import Event, local
 from typing import Any, Optional, Union
 
 import pika
-from gevent.os import ignored_errors
-from jinja2.lexer import ignored_tokens
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, q_name, xq_name
