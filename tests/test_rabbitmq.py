@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import time
 from threading import Event
@@ -398,6 +399,40 @@ def test_ignore_scary_logs_filter_ignores_logs():
 
     # Then it should ignore that log message
     assert log_filter.filter(record)
+
+
+def test_rabbitmq_close_only_registers_ignore_filter_once():
+    # Given a RabbitmqBroker
+    broker = RabbitmqBroker()
+
+    base_logger = logging.getLogger("pika.adapters.base_connection")
+    blocking_logger = logging.getLogger("pika.adapters.blocking_connection")
+
+    # And snapshots of the current filters
+    original_base_filters = list(base_logger.filters)
+    original_blocking_filters = list(blocking_logger.filters)
+
+    try:
+        # When I close the broker twice
+        broker.close()
+        broker.close()
+
+        base_filters = [f for f in base_logger.filters if isinstance(f, _IgnoreScaryLogs)]
+        blocking_filters = [f for f in blocking_logger.filters if isinstance(f, _IgnoreScaryLogs)]
+
+        # Then only one ignore filter is registered per logger
+        assert len(base_filters) == 1
+        assert len(blocking_filters) == 1
+    finally:
+        # And the filters are removed after the test run
+        # so they don't affect the global state.
+        for log_filter in list(base_logger.filters):
+            if log_filter not in original_base_filters:
+                base_logger.removeFilter(log_filter)
+
+        for log_filter in list(blocking_logger.filters):
+            if log_filter not in original_blocking_filters:
+                blocking_logger.removeFilter(log_filter)
 
 
 def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker):

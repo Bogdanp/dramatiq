@@ -27,6 +27,8 @@ from threading import Event, local
 from typing import Any, Optional, Union
 
 import pika
+from gevent.os import ignored_errors
+from jinja2.lexer import ignored_tokens
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, q_name, xq_name
@@ -208,16 +210,29 @@ class RabbitmqBroker(Broker):
             except Exception:
                 self.logger.exception("Encountered exception while closing Channel.")
 
+    def _ignore_pika_logs(self) -> None:
+        """Ensures that pika logs are filtered.
+
+        The main thread may keep connections open for a long time
+        w/o publishing heartbeats, which means that they'll end up
+        being closed by the time the broker is closed.  When that
+        happens, pika logs a bunch of scary stuff so we want to
+        filter that out.
+        """
+
+        logging_filter = _IgnoreScaryLogs()
+        ignored_loggers = ["pika.adapters.base_connection", "pika.adapters.blocking_connection"]
+
+        # Make sure the filter is added only once.
+        for logger_name in ignored_loggers:
+            ignored_logger = logging.getLogger(logger_name)
+            if not any(isinstance(f, _IgnoreScaryLogs) for f in ignored_logger.filters):
+                ignored_logger.addFilter(logging_filter)
+
     def close(self) -> None:
         """Close all open RabbitMQ connections."""
-        # The main thread may keep connections open for a long time
-        # w/o publishing heartbeats, which means that they'll end up
-        # being closed by the time the broker is closed.  When that
-        # happens, pika logs a bunch of scary stuff so we want to
-        # filter that out.
-        logging_filter = _IgnoreScaryLogs()
-        logging.getLogger("pika.adapters.base_connection").addFilter(logging_filter)
-        logging.getLogger("pika.adapters.blocking_connection").addFilter(logging_filter)
+
+        self._ignore_pika_logs()
 
         self.logger.debug("Closing channels and connections...")
         for channel_or_conn in chain(self.channels, self.connections):
