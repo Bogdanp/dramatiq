@@ -30,12 +30,19 @@ from ..message import Message
 
 
 class StubBroker(Broker):
-    """A broker that can be used within unit tests."""
+    """A broker that can be used within unit tests.
 
-    def __init__(self, middleware=None):
+    Parameters:
+      middleware: See :class:`Broker<dramatiq.Broker>`.
+      fail_fast_default: Specifies the default value for the ``fail_fast``
+        argument of :meth:`join<dramatiq.brokers.stub.StubBroker.join>`.
+    """
+
+    def __init__(self, middleware=None, *, fail_fast_default: bool = True):
         super().__init__(middleware)
 
         self.dead_letters_by_queue = defaultdict(list)
+        self.fail_fast_default: bool = fail_fast_default
 
     @property
     def dead_letters(self) -> list[Message]:
@@ -131,7 +138,7 @@ class StubBroker(Broker):
 
         self.dead_letters_by_queue.clear()
 
-    def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: bool = True) -> None:
+    def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: Optional[bool] = None) -> None:
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests
         to wait for all the messages in a queue to be processed.
@@ -145,12 +152,15 @@ class StubBroker(Broker):
           fail_fast(bool): When this is True and any message gets
             dead-lettered during the join, then an exception will be
             raised. When False, no exception will be raised.
-            Defaults to True.
+            Defaults to None, which means use the value of the
+            ``fail_fast_default`` instance attribute
+            (which defaults to True).
           timeout(Optional[int]): The max amount of time, in
             milliseconds, to wait on this queue.
 
         .. versionchanged:: 2.0.0
-           The ``fail_fast`` parameter now defaults to True.
+           The ``fail_fast`` parameter now defaults to ``self.fail_fast_default``
+           (which defaults to True).
         """
         try:
             queues = [
@@ -161,6 +171,7 @@ class StubBroker(Broker):
             raise QueueNotFound(queue_name) from None
 
         deadline = timeout and time.monotonic() + timeout / 1000
+        should_fail_fast = fail_fast if fail_fast is not None else self.fail_fast_default
         while True:
             for queue in queues:
                 join_timeout = deadline and deadline - time.monotonic()
@@ -173,7 +184,7 @@ class StubBroker(Broker):
                 if queue.unfinished_tasks:
                     break
             else:
-                if fail_fast:
+                if should_fail_fast:
                     for message in self.dead_letters_by_queue[queue_name]:
                         raise (message._exception or Exception("Message failed with unknown error")) from None
 
