@@ -27,6 +27,7 @@ from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, iter_queue, join_queue
 from ..errors import QueueNotFound
 from ..message import Message
+from ..middleware import Middleware
 
 
 class StubBroker(Broker):
@@ -38,14 +39,14 @@ class StubBroker(Broker):
         argument of :meth:`join<dramatiq.brokers.stub.StubBroker.join>`.
     """
 
-    def __init__(self, middleware=None, *, fail_fast_default: bool = True):
+    def __init__(self, middleware: Optional[list[Middleware]] = None, *, fail_fast_default: bool = True):
         super().__init__(middleware)
 
-        self.dead_letters_by_queue = defaultdict(list)
+        self.dead_letters_by_queue: defaultdict[str, list[MessageProxy]] = defaultdict(list)
         self.fail_fast_default: bool = fail_fast_default
 
     @property
-    def dead_letters(self) -> list[Message]:
+    def dead_letters(self) -> list[MessageProxy]:
         """The dead-lettered messages for all defined queues."""
         return [message for messages in self.dead_letters_by_queue.values() for message in messages]
 
