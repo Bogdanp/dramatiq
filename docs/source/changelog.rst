@@ -132,6 +132,14 @@ Changed
 .. _#738: https://github.com/Bogdanp/dramatiq/issues/738
 .. _#764: https://github.com/Bogdanp/dramatiq/pull/764
 
+Removed
+^^^^^^^
+
+* Removed support for Python 3.9.
+  (`#784`_, `@LincolnPuzey`_)
+
+.. _#784: https://github.com/Bogdanp/dramatiq/pull/784
+
 Packaging
 ^^^^^^^^^
 
