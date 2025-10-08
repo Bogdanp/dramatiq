@@ -6,7 +6,7 @@ jobs:
     name: lint
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - run: |
@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-24.04"]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
         concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}
@@ -49,9 +49,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
+          allow-prereleases: true
       - run: |
           sudo apt-get update
           sudo apt-get remove libhashkit2 libmemcached11 || true
