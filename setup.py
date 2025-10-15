@@ -87,12 +87,11 @@ setup(
         "dramatiq.results.backends",
     ],
     include_package_data=True,
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
