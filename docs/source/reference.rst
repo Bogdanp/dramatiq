@@ -35,6 +35,7 @@ Message Composition
    :members:
 .. autoclass:: pipeline
    :members:
+.. autoclass:: dramatiq.middleware.GroupCallbacks
 
 Message Encoders
 ^^^^^^^^^^^^^^^^
@@ -105,6 +106,7 @@ The following middleware classes are available, but not enabled by default.
 .. autoclass:: dramatiq.middleware.CurrentMessage
    :members: get_current_message
    :member-order: bysource
+.. autoclass:: dramatiq.middleware.GroupCallbacks
 .. autoclass:: dramatiq.middleware.prometheus.Prometheus
 
 .. py:class:: dramatiq.results.Results
@@ -259,9 +261,6 @@ These are the environment variables that dramatiq reads
    * - ``dramatiq_dead_message_ttl``
      - 604800000 (One week)
      - The maximum amount of time a message can be in the dead letter queue for the RabbitMQ Broker (in milliseconds).
-   * - ``dramatiq_group_callback_barrier_ttl``
-     - 86400000 (One day)
-     -
    * - ``dramatiq_prom_db``
      - tempfile.gettempdir()/dramatiq-prometheus
      - The path to store the prometheus database files. See :ref:`gotchas-with-prometheus`.
