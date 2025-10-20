@@ -291,7 +291,7 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
     pipe = do_nothing.message_with_options(pipe_ignore=True) | should_never_run.message()
     pipe.run()
 
-    stub_broker.join(should_never_run.queue_name, timeout=10 * 1000)
+    stub_broker.join(should_never_run.queue_name, timeout=10 * 1000, fail_fast=False)
     stub_worker.join()
 
     # Then the second message in the pipe should never have run
