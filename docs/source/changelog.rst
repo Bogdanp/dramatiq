@@ -67,10 +67,17 @@ These are changes that while technically breaking, we believe are unlikely to ef
 * The deprecated ``requeue_deadline`` and ``requeue_interval`` arguments of |RedisBroker| have been removed.
   These have been deprecated and have had no effect since version 1.2.0.
   (`#782`_, `@mikeroll`_)
+* |RedisBroker|: The code for compatibility with pre-v1.2.0 acks has been removed.
+  If you are using the |RedisBroker|, you must first upgrade Dramatiq to a version >=1.2.0, <2.0.0,
+  and run it for some time, before upgrading to a version >=2.0.0.
+  This is to allow Dramatiq to migrate the pre-v1.2.0 ack data structures in redis to the v1.2.0+
+  versions. This migration code is what has been removed in version 2.0.0.
+  (`#771`_, `@mikeroll`_)
 
 .. _#766: https://github.com/Bogdanp/dramatiq/pull/766
 .. _PEP-735: https://peps.python.org/pep-0735/
 .. _#741: https://github.com/Bogdanp/dramatiq/issues/741
+.. _#771: https://github.com/Bogdanp/dramatiq/pull/771
 .. _#772: https://github.com/Bogdanp/dramatiq/pull/772
 .. _#782: https://github.com/Bogdanp/dramatiq/pull/782
 .. _@mikeroll: https://github.com/mikeroll
