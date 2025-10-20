@@ -41,7 +41,6 @@
 .. |StubBroker| replace:: :class:`StubBroker<dramatiq.brokers.stub.StubBroker>`
 .. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<dramatiq.middleware.TimeLimitExceeded>`
 .. |TimeLimit| replace:: :class:`TimeLimit<dramatiq.middleware.TimeLimit>`
-.. |URLRabbitmqBroker| replace:: :class:`URLRabbitmqBroker<dramatiq.brokers.rabbitmq.URLRabbitmqBroker>`
 .. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<dramatiq.rate_limits.WindowRateLimiter>`
 .. |Worker_join| replace:: :meth:`Worker.join<dramatiq.Worker.join>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`

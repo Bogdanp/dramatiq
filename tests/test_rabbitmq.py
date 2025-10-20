@@ -14,7 +14,6 @@ from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import (
     MAX_DECLARE_ATTEMPTS,
     RabbitmqBroker,
-    URLRabbitmqBroker,
     _IgnoreScaryLogs,
 )
 from dramatiq.common import current_millis
@@ -25,18 +24,6 @@ from .common import (
     RABBITMQ_USERNAME,
     skip_unless_rabbit_mq,
 )
-
-
-def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
-    # Given a URL connection string
-    url = "amqp://%s:%s@127.0.0.1:5672" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
-
-    # When I pass that to URLRabbitmqBroker
-    with pytest.warns(DeprecationWarning):
-        broker = URLRabbitmqBroker(url)
-
-    # Then I should get back a RabbitmqBroker
-    assert isinstance(broker, RabbitmqBroker)
 
 
 @skip_unless_rabbit_mq
