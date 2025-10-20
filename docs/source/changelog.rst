@@ -16,6 +16,21 @@ Major Breaking Changes
 
 These are breaking changes we believe are most likely to effect your project.
 
+* The ``fail_fast`` argument to |StubBroker_join| now defaults to True.
+  This means that calling |StubBroker_join|, will by default,
+  re-raise any Exceptions that caused messages to get dead-lettered
+  (i.e. any uncaught Exceptions in your actor functions).
+  You may need to explicitly catch these exception in your tests
+  (e.g. with :meth:`unittest.TestCase.assertRaises` or :func:`pytest.raises`).
+
+  Alternatively, you can revert to the old behavior
+  by passing ``fail_fast_default=False`` to |StubBroker|.
+
+  However, we think the new default behavior is best, because it makes
+  exceptions happening in your actor functions obvious in your tests.
+  Previsouly, exceptions in your actor functions could pass silently,
+  and potentially unnoticed unless you checked the side-effects of the actor.
+  (`#739`_, `#758`_, `@LincolnPuzey`_)
 * The |Prometheus| middleware is no longer in the default middleware list.
   To keep exporting the Prometheus statistics, you must now install the ``prometheus`` extra
   (e.g. ``pip install 'dramatiq[prometheus]'``)
@@ -31,6 +46,8 @@ These are breaking changes we believe are most likely to effect your project.
 .. _#688: https://github.com/Bogdanp/dramatiq/pull/688
 .. _@azmeuk: https://github.com/azmeuk
 .. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+.. _#758: https://github.com/Bogdanp/dramatiq/pull/758
+.. _#739: https://github.com/Bogdanp/dramatiq/issues/739
 
 Minor Breaking Changes
 ~~~~~~~~~~~~~~~~~~~~~~
