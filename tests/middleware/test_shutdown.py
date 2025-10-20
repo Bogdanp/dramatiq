@@ -174,7 +174,8 @@ def test_shutdown_notifications_are_received(stub_broker, stub_worker):
     stub_worker.stop()
 
     # Then join on the queue
-    stub_broker.join(do_work.queue_name)
+    with pytest.raises(shutdown.Shutdown):  # expect Shutdown exception
+        stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # I expect it to shutdown
@@ -240,7 +241,7 @@ def test_shutdown_notifications_dont_notify_completed_threads(stub_broker, stub_
     stub_worker.stop()
 
     # Then join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # I expect only one success and one shutdown

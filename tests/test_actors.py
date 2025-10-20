@@ -10,7 +10,7 @@ import pytest
 import dramatiq
 from dramatiq import Message, Middleware
 from dramatiq.errors import ActorNotFound, RateLimitExceeded
-from dramatiq.middleware import CurrentMessage, SkipMessage
+from dramatiq.middleware import CurrentMessage, SkipMessage, TimeLimitExceeded
 
 from .common import skip_on_pypy, worker
 
@@ -199,7 +199,8 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    with pytest.raises(TimeLimitExceeded):  # expect TimeLimitExceeded exception
+        stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # Then I expect it to fail
@@ -223,7 +224,8 @@ def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
     do_work.send_with_options(time_limit=1000)
 
     # Then join on the queue
-    stub_broker.join(do_work.queue_name)
+    with pytest.raises(TimeLimitExceeded):  # expect TimeLimitExceeded exception
+        stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # I expect it to fail
@@ -248,7 +250,8 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
 
     # Then join on its queue
     with worker(stub_broker, worker_timeout=100) as stub_worker:
-        stub_broker.join(do_work.queue_name)
+        with pytest.raises(SkipMessage):  # expect SkipMessage exception
+            stub_broker.join(do_work.queue_name)
         stub_worker.join()
 
         # I expect the message to have been skipped
@@ -272,7 +275,8 @@ def test_actor_messages_can_be_assigned_message_age_limits(stub_broker):
 
     # Then join on its queue
     with worker(stub_broker, worker_timeout=100) as stub_worker:
-        stub_broker.join(do_work.queue_name)
+        with pytest.raises(SkipMessage):  # expect SkipMessage exception
+            stub_broker.join(do_work.queue_name)
         stub_worker.join()
 
         # I expect the message to have been skipped
@@ -483,7 +487,8 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
         raise_rate_limit_exceeded.send()
 
         # And wait for the message to get processed
-        stub_broker.join(raise_rate_limit_exceeded.queue_name)
+        with pytest.raises(RateLimitExceeded):  # expect RateLimitExceeded exception
+            stub_broker.join(raise_rate_limit_exceeded.queue_name)
         stub_worker.join()
 
         # Then debug mock should be called with a special message

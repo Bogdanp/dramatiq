@@ -163,7 +163,8 @@ def test_time_limits_are_handled(stub_broker, stub_worker):
     do_work.send()
 
     # Then join on the queue
-    stub_broker.join(do_work.queue_name)
+    with pytest.raises(time_limit.TimeLimitExceeded):  # expect TimeLimitExceeded exception
+        stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # I expect the time limit to have been exceeded

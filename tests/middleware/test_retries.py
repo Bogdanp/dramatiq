@@ -27,7 +27,7 @@ def test_actors_retry_on_failure(stub_broker, stub_worker):
     do_work.send()
 
     # Then join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # I expect successes
@@ -48,7 +48,7 @@ def test_actors_retry_a_max_number_of_times_on_failure(stub_broker, stub_worker)
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect 4 attempts to have occurred
@@ -69,7 +69,7 @@ def test_actors_retry_for_a_max_time(stub_broker, stub_worker):
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect at least one attempt to have occurred
@@ -88,7 +88,7 @@ def test_retry_exceptions_are_not_logged(stub_broker, stub_worker):
         do_work.send()
 
         # And join on the queue
-        stub_broker.join(do_work.queue_name)
+        stub_broker.join(do_work.queue_name, fail_fast=False)
         stub_worker.join()
 
         # Then no error should be logged
@@ -113,7 +113,7 @@ def test_retry_exceptions_can_specify_a_delay(stub_broker, stub_worker):
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then the actor should have been retried after 100ms
@@ -136,7 +136,7 @@ def test_actors_can_be_assigned_zero_min_backoff(stub_broker, stub_worker):
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then the actor should have retried 10 times without delay
@@ -160,7 +160,7 @@ def test_actors_can_be_assigned_zero_max_backoff(stub_broker, stub_worker):
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then the actor should have retried 10 times without delay
@@ -184,7 +184,7 @@ def test_actor_messages_can_be_assigned_zero_min_backoff(stub_broker, stub_worke
     do_work.send_with_options(min_backoff=0)
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then the actor should have retried 10 times without delay
@@ -208,7 +208,7 @@ def test_actor_messages_can_be_assigned_zero_max_backoff(stub_broker, stub_worke
     do_work.send_with_options(max_backoff=0)
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then the actor should have retried 10 times without delay
@@ -231,7 +231,7 @@ def test_actors_can_be_assigned_message_max_retries(stub_broker, stub_worker, ma
     do_work.send_with_options(max_retries=max_retries_message_option, min_backoff=50, max_backoff=500)
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect it to be retried as specified in the message options
@@ -257,7 +257,7 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
     raises_errors.send(False)
 
     # And wait for it
-    stub_broker.join(raises_errors.queue_name)
+    stub_broker.join(raises_errors.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect the actor not to retry
@@ -268,7 +268,7 @@ def test_actors_can_conditionally_retry(stub_broker, stub_worker):
     raises_errors.send(True)
 
     # And wait for it
-    stub_broker.join(raises_errors.queue_name)
+    stub_broker.join(raises_errors.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect the actor to retry 3 times
@@ -312,7 +312,7 @@ def test_actor_with_throws_logs_info_and_does_not_retry(stub_broker, stub_worker
         do_work.send()
 
         # And join on the queue
-        stub_broker.join(do_work.queue_name)
+        stub_broker.join(do_work.queue_name, fail_fast=False)
         stub_worker.join()
 
         # Then no errors and or warnings should be logged
@@ -350,7 +350,7 @@ def test_message_contains_requeue_time_after_retry(stub_broker, stub_worker):
     message = do_work.send_with_options(delay=100)
 
     # When I join on the queue and run the actor
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect correct number of requeue timestamps recorded
@@ -380,8 +380,8 @@ def test_on_retry_exhausted_is_sent(stub_broker, stub_worker):
 
     do_work.send()
 
-    stub_broker.join(do_work.queue_name)
-    stub_broker.join(handle_retries_exhausted.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
+    stub_broker.join(handle_retries_exhausted.queue_name, fail_fast=False)
     stub_worker.join()
 
     # We should have the initial attempt + max_retries
@@ -405,8 +405,8 @@ def test_on_retry_exhausted_is_not_sent_for_success(stub_broker, stub_worker):
 
     do_work.send()
 
-    stub_broker.join(do_work.queue_name)
-    stub_broker.join(handle_retries_exhausted.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
+    stub_broker.join(handle_retries_exhausted.queue_name, fail_fast=False)
     stub_worker.join()
 
     # No retry should be required
@@ -432,8 +432,8 @@ def test_on_retry_exhausted_is_not_sent_for_eventual_success(stub_broker, stub_w
 
     do_work.send()
 
-    stub_broker.join(do_work.queue_name)
-    stub_broker.join(handle_retries_exhausted.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
+    stub_broker.join(handle_retries_exhausted.queue_name, fail_fast=False)
     stub_worker.join()
 
     # The first retry should have succeeded

@@ -50,7 +50,7 @@ def test_actors_can_define_failure_callbacks(stub_broker, stub_worker):
     do_work.send_with_options(on_failure="report_exceptions")
 
     # And join on the broker and worker
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then my db should contain the result
@@ -98,7 +98,7 @@ def test_actor_callback_knows_correct_number_of_retries(stub_broker, stub_worker
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    stub_broker.join(do_work.queue_name, fail_fast=False)
     stub_worker.join()
 
     # Then I expect 4 attempts to have occurred
