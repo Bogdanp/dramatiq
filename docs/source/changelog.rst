@@ -54,6 +54,9 @@ Minor Breaking Changes
 
 These are changes that while technically breaking, we believe are unlikely to effect your project.
 
+* Removed ``URLRabbitmqBroker``. This has been deprecated since version 1.1.0.
+  Use |RabbitmqBroker| with ``url`` as a keyword argument instead.
+  (`#786`_, `@LincolnPuzey`_)
 * Removed the ``dev`` installable extra from the project metadata.
   Instead the development dependencies are defined in a `PEP-735`_
   ``[dependency-groups]`` table in ``pyproject.toml``.
@@ -81,6 +84,7 @@ These are changes that while technically breaking, we believe are unlikely to ef
 .. _#772: https://github.com/Bogdanp/dramatiq/pull/772
 .. _#782: https://github.com/Bogdanp/dramatiq/pull/782
 .. _@mikeroll: https://github.com/mikeroll
+.. _#786: https://github.com/Bogdanp/dramatiq/pull/786
 
 Fixed
 ^^^^^
@@ -1092,8 +1096,8 @@ Changed
 Deprecated
 ^^^^^^^^^^
 
-* |URLRabbitmqBroker| is deprecated.  The |RabbitmqBroker| takes a
-  ``url`` parameter so use that instead.  |URLRabbitmqBroker| will be
+* ``URLRabbitmqBroker`` is deprecated.  The |RabbitmqBroker| takes a
+  ``url`` parameter so use that instead.  ``URLRabbitmqBroker`` will be
   removed in version 2.0.
 
 Fixed
@@ -1372,7 +1376,7 @@ Changed
 ^^^^^^^
 
 * Consumer reconnect backoff factor has been lowered from 10s to 100ms.
-* |URLRabbitmqBroker| is now a factory function that creates instances
+* ``URLRabbitmqBroker`` is now a factory function that creates instances
   of |RabbitmqBroker|.
 
 Fixed
@@ -1412,7 +1416,7 @@ Fixed
 Added
 ^^^^^
 
-* |URLRabbitmqbroker| (`@whalesalad`_).
+* ``URLRabbitmqbroker`` (`@whalesalad`_).
 * StubBroker |StubBroker_flush| and |StubBroker_flush_all|.
 * |before_consumer_thread_shutdown| middleware hook.
 * |before_worker_thread_shutdown| middleware hook.

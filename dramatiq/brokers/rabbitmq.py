@@ -20,7 +20,6 @@ from __future__ import annotations
 import logging
 import os
 import time
-import warnings
 from functools import partial
 from itertools import chain
 from threading import Event, local
@@ -496,23 +495,6 @@ class RabbitmqBroker(Broker):
                 successes = 0
 
             self.connection.sleep(idle_time / 1000)
-
-
-def URLRabbitmqBroker(url: str, *, middleware: Optional[list[Middleware]] = None):
-    """Alias for the RabbitMQ broker that takes a connection URL as a
-    positional argument.
-
-    Parameters:
-      url(str): A connection string.
-      middleware(list[Middleware]): The middleware to add to this
-        broker.
-    """
-    warnings.warn(
-        "Use RabbitmqBroker with the 'url' parameter instead of URLRabbitmqBroker.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return RabbitmqBroker(url=url, middleware=middleware)
 
 
 class _IgnoreScaryLogs(logging.Filter):
