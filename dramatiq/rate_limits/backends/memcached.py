@@ -36,8 +36,6 @@ class MemcachedBackend(RateLimiterBackend):
       pool_size(int): The size of the connection pool to use.
       **parameters: Connection parameters are passed directly
         to :class:`pylibmc.Client`.
-
-    .. _memcached: https://memcached.org
     """
 
     def __init__(self, *, pool=None, pool_size=8, **parameters):

@@ -52,8 +52,6 @@ class BucketRateLimiter(RateLimiter):
       key(str): The key to rate limit on.
       limit(int): The maximum number of operations per bucket per key.
       bucket(int): The bucket interval in milliseconds.
-
-    .. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<dramatiq.rate_limits.WindowRateLimiter>`
     """
 
     def __init__(self, backend, key, *, limit=1, bucket=1000):
