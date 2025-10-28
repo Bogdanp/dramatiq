@@ -1,3 +1,5 @@
+.. include:: global.rst
+
 API Reference
 =============
 
@@ -53,18 +55,21 @@ Brokers
 .. autoclass:: Broker
    :members:
 .. autoclass:: Consumer
-   :members:  __iter__, __next__, ack, nack, close
+   :members:
 .. autoclass:: MessageProxy
    :members:
 .. autoclass:: dramatiq.brokers.rabbitmq.RabbitmqBroker
    :members:
    :inherited-members:
+   :show-inheritance:
 .. autoclass:: dramatiq.brokers.redis.RedisBroker
    :members:
    :inherited-members:
+   :show-inheritance:
 .. autoclass:: dramatiq.brokers.stub.StubBroker
    :members:
    :inherited-members:
+   :show-inheritance:
 
 
 Middleware
@@ -129,11 +134,16 @@ The class hierarchy for middleware exceptions:
         +-- dramatiq.middleware.TimeLimitExceeded
 
 
-.. autoclass:: dramatiq.middleware.MiddlewareError
-.. autoclass:: dramatiq.middleware.SkipMessage
-.. autoclass:: dramatiq.middleware.Interrupt
-.. autoclass:: dramatiq.middleware.TimeLimitExceeded
-.. autoclass:: dramatiq.middleware.Shutdown
+.. autoexception:: dramatiq.middleware.MiddlewareError
+   :show-inheritance:
+.. autoexception:: dramatiq.middleware.SkipMessage
+   :show-inheritance:
+.. autoexception:: dramatiq.middleware.Interrupt
+   :show-inheritance:
+.. autoexception:: dramatiq.middleware.TimeLimitExceeded
+   :show-inheritance:
+.. autoexception:: dramatiq.middleware.Shutdown
+   :show-inheritance:
 
 
 Results
@@ -149,8 +159,6 @@ Results Middleware
 ^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: dramatiq.results.Results
-   :members:
-   :exclude-members: actor_options, after_process_message, after_skip_message, after_nack
 
 Results Backends
 ^^^^^^^^^^^^^^^^
@@ -158,8 +166,11 @@ Results Backends
 .. autoclass:: dramatiq.results.ResultBackend
    :members:
 .. autoclass:: dramatiq.results.backends.MemcachedBackend
+   :show-inheritance:
 .. autoclass:: dramatiq.results.backends.RedisBackend
+   :show-inheritance:
 .. autoclass:: dramatiq.results.backends.StubBackend
+   :show-inheritance:
 
 
 Rate Limiters
@@ -177,8 +188,11 @@ Rate limiter backends are used to store metadata about rate limits.
 .. autoclass:: dramatiq.rate_limits.RateLimiterBackend
    :members:
 .. autoclass:: dramatiq.rate_limits.backends.MemcachedBackend
+   :show-inheritance:
 .. autoclass:: dramatiq.rate_limits.backends.RedisBackend
+   :show-inheritance:
 .. autoclass:: dramatiq.rate_limits.backends.StubBackend
+   :show-inheritance:
 
 
 Limiters
@@ -187,8 +201,11 @@ Limiters
 .. autoclass:: dramatiq.rate_limits.RateLimiter
    :members:
 .. autoclass:: dramatiq.rate_limits.BucketRateLimiter
+   :show-inheritance:
 .. autoclass:: dramatiq.rate_limits.ConcurrentRateLimiter
+   :show-inheritance:
 .. autoclass:: dramatiq.rate_limits.WindowRateLimiter
+   :show-inheritance:
 
 Barriers
 ^^^^^^^^
@@ -207,34 +224,48 @@ Workers
 Errors
 ------
 
-.. autoclass:: DramatiqError
+.. autoexception:: DramatiqError
    :members:
-.. autoclass:: BrokerError
+   :show-inheritance:
+.. autoexception:: BrokerError
    :members:
-.. autoclass:: DecodeError
+   :show-inheritance:
+.. autoexception:: DecodeError
    :members:
-.. autoclass:: ActorNotFound
+   :show-inheritance:
+.. autoexception:: ActorNotFound
    :members:
-.. autoclass:: QueueNotFound
+   :show-inheritance:
+.. autoexception:: QueueNotFound
    :members:
-.. autoclass:: ConnectionError
+   :show-inheritance:
+.. autoexception:: ConnectionError
    :members:
-.. autoclass:: ConnectionClosed
+   :show-inheritance:
+.. autoexception:: ConnectionClosed
    :members:
-.. autoclass:: ConnectionFailed
+   :show-inheritance:
+.. autoexception:: ConnectionFailed
    :members:
-.. autoclass:: RateLimitExceeded
+   :show-inheritance:
+.. autoexception:: RateLimitExceeded
    :members:
-.. autoclass:: Retry
+   :show-inheritance:
+.. autoexception:: Retry
    :members:
-.. autoclass:: dramatiq.results.ResultError
+   :show-inheritance:
+.. autoexception:: dramatiq.results.ResultError
    :members:
-.. autoclass:: dramatiq.results.ResultMissing
+   :show-inheritance:
+.. autoexception:: dramatiq.results.ResultMissing
    :members:
-.. autoclass:: dramatiq.results.ResultTimeout
+   :show-inheritance:
+.. autoexception:: dramatiq.results.ResultTimeout
    :members:
-.. autoclass:: dramatiq.results.ResultFailure
+   :show-inheritance:
+.. autoexception:: dramatiq.results.ResultFailure
    :members:
+   :show-inheritance:
 
 Environment Variables
 ---------------------

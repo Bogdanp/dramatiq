@@ -87,6 +87,7 @@ class Broker:
         to this broker.  If you supply this parameter, you are
         expected to declare *all* middleware.  Most of the time,
         you'll want to use :meth:`.add_middleware` instead.
+        See :ref:`customizing-middleware` for details.
 
     Attributes:
       actor_options(set[str]): The names of all the options actors may

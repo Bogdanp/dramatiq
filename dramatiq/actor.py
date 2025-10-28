@@ -21,12 +21,12 @@ import time
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from typing import (
-    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
     Generic,
     Optional,
+    ParamSpec,
     TypeVar,
     Union,
     overload,
@@ -37,16 +37,11 @@ from .broker import Broker, get_broker
 from .logging import get_logger
 from .message import Message
 
-if TYPE_CHECKING:
-    from typing_extensions import ParamSpec
-
-    P = ParamSpec("P")
-else:
-    P = TypeVar("P")
-
 #: The regular expression that represents valid queue names.
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 
+# Type variables for the Actor function's parameters and return type.
+P = ParamSpec("P")
 R = TypeVar("R")
 
 

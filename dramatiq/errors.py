@@ -23,7 +23,7 @@ from typing import Optional
 class DramatiqError(Exception):  # pragma: no cover
     """Base class for all dramatiq errors."""
 
-    def __init__(self, message):
+    def __init__(self, message):  # noqa: B042
         self.message = message
 
     def __str__(self) -> str:
@@ -33,7 +33,7 @@ class DramatiqError(Exception):  # pragma: no cover
 class DecodeError(DramatiqError):
     """Raised when a message fails to decode."""
 
-    def __init__(self, message, data, error):
+    def __init__(self, message, data, error):  # noqa: B042
         super().__init__(message)
         self.data = data
         self.error = error
@@ -83,6 +83,6 @@ class Retry(DramatiqError):
     retried after at least that amount of time (in milliseconds).
     """
 
-    def __init__(self, message: str = "", delay: Optional[int] = None):
+    def __init__(self, message: str = "", delay: Optional[int] = None):  # noqa: B042
         super().__init__(message)
         self.delay = delay
