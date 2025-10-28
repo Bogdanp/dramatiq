@@ -24,13 +24,18 @@ from .middleware import Middleware
 
 class AsyncIO(Middleware):
     """This middleware manages the event loop thread for async actors.
+    
+    Parameters:
+      cleanup_timeout(float): The maximum amount of time (in seconds) to wait
+        for async actors to clean up when interrupted. Defaults to 1.0 seconds.
     """
 
-    def __init__(self):
+    def __init__(self, cleanup_timeout: float = 1.0):
         self.logger = get_logger(__name__, type(self))
+        self.cleanup_timeout = cleanup_timeout
 
     def before_worker_boot(self, broker, worker):
-        event_loop_thread = EventLoopThread(self.logger)
+        event_loop_thread = EventLoopThread(self.logger, cleanup_timeout=self.cleanup_timeout)
         event_loop_thread.start(timeout=1.0)
         set_event_loop_thread(event_loop_thread)
 

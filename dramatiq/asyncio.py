@@ -73,11 +73,13 @@ class EventLoopThread(threading.Thread):
     """A thread that runs an asyncio event loop."""
 
     interrupt_check_ival: float
+    cleanup_timeout: float
     logger: logging.Logger
     loop: asyncio.AbstractEventLoop
 
-    def __init__(self, logger, interrupt_check_ival: float = 0.1):
+    def __init__(self, logger, interrupt_check_ival: float = 0.1, cleanup_timeout: float = 1.0):
         self.interrupt_check_ival = interrupt_check_ival
+        self.cleanup_timeout = cleanup_timeout
         self.logger = logger
         self.loop = asyncio.new_event_loop()
         super().__init__()
@@ -155,6 +157,6 @@ class EventLoopThread(threading.Thread):
             # future will raise CancelledError immediately while we
             # should wait for the coro to actually finish its cleanup
             # actions.
-            if not done.wait(timeout=1.0):
-                raise RuntimeError("Timed out while waiting for coroutine.") from e
+            if not done.wait(timeout=self.cleanup_timeout):
+                raise RuntimeError(f"Timed out while waiting for coroutine after {self.cleanup_timeout}s.") from e
             raise
