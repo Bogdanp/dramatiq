@@ -206,7 +206,7 @@ class group:
         callbacks.
 
         Warning:
-          This functionality is dependent upon the GroupCallbacks
+          This functionality is dependent upon the optional |GroupCallbacks|
           middleware.  If that's not set up correctly, then calling
           run after adding a callback will raise a RuntimeError.
 
