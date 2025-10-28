@@ -11,6 +11,7 @@
 .. |Encoders| replace:: :class:`Encoders<dramatiq.Encoder>`
 .. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`
 .. |Groups| replace:: :func:`Groups<dramatiq.group>`
+.. |GroupCallbacks| replace:: :class:`GroupCallbacks<dramatiq.middleware.GroupCallbacks>`
 .. |Interrupt| replace:: :class:`Interrupt<dramatiq.middleware.Interrupt>`
 .. |MemcachedRLBackend| replace:: :class:`Memcached<dramatiq.rate_limits.backends.MemcachedBackend>`
 .. |Messages| replace:: :class:`Messages<dramatiq.Message>`

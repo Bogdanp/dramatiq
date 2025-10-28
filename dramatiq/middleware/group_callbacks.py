@@ -26,6 +26,8 @@ GROUP_CALLBACK_BARRIER_TTL = int(os.getenv("dramatiq_group_callback_barrier_ttl"
 
 
 class GroupCallbacks(Middleware):
+    """Middleware that enables adding completion callbacks to |Groups|."""
+
     def __init__(self, rate_limiter_backend: RateLimiterBackend) -> None:
         self.rate_limiter_backend = rate_limiter_backend
 

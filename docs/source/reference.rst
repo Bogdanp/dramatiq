@@ -110,6 +110,7 @@ The following middleware classes are available, but not enabled by default.
 .. autoclass:: dramatiq.middleware.CurrentMessage
    :members: get_current_message
    :member-order: bysource
+.. autoclass:: dramatiq.middleware.GroupCallbacks
 .. autoclass:: dramatiq.middleware.prometheus.Prometheus
 
 .. py:class:: dramatiq.results.Results
