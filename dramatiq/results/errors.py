@@ -35,7 +35,7 @@ class ResultMissing(ResultError):
 class ResultFailure(ResultError):
     """Raised when getting a result from an actor that failed."""
 
-    def __init__(self, message="", orig_exc_type="", orig_exc_msg=""):
+    def __init__(self, message="", orig_exc_type="", orig_exc_msg=""):  # noqa: B042
         super().__init__(message)
 
         self.orig_exc_type = orig_exc_type
