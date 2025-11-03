@@ -30,12 +30,13 @@ class AsyncIO(Middleware):
         for async actors to clean up when interrupted. Defaults to 1.0 seconds.
     """
 
-    def __init__(self, cleanup_timeout: float = 1.0):
+    def __init__(self, interrupt_check_ival: float = 0.1, cleanup_timeout: float = 1.0):
         self.logger = get_logger(__name__, type(self))
+        self.interrupt_check_ival = interrupt_check_ival
         self.cleanup_timeout = cleanup_timeout
 
     def before_worker_boot(self, broker, worker):
-        event_loop_thread = EventLoopThread(self.logger, cleanup_timeout=self.cleanup_timeout)
+        event_loop_thread = EventLoopThread(self.logger, interrupt_check_ival=self.interrupt_check_ival, cleanup_timeout=self.cleanup_timeout)
         event_loop_thread.start(timeout=1.0)
         set_event_loop_thread(event_loop_thread)
 
