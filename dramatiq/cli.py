@@ -221,10 +221,11 @@ def make_argument_parser():
         help="write all logs to a file (default: sys.stderr)",
     )
     parser.add_argument("--skip-logging", action="store_true", help="do not call logging.basicConfig()")
+    _unix_default = "fork" if sys.version_info < (3, 14) else "forkserver"
     parser.add_argument(
         "--use-spawn",
         action="store_true",
-        help="start processes by spawning (default: fork on unix, spawn on windows)",
+        help=f"start processes by spawning (default: {_unix_default} on unix, spawn on Windows and macOS)",
     )
     parser.add_argument(
         "--fork-function",
