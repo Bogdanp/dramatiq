@@ -131,6 +131,10 @@ Added
     ``forkserver`` should be less bug-prone than the old default ``fork``.
     However, if you run into weird issues, using the existing ``--use-spawn`` flag when starting Dramatiq to
     set the start method to ``spawn``, might solve them.
+  * The free-threaded build of Python is now `officially supported`_ by Python.
+    Dramatiq is not yet unit-tested with free-threaded Python, but we hope to do so soon.
+    In the meantime, if you have any success or problems running Dramatiq with free-threaded Python,
+    we would love to hear about it.
 
 * Added type annotations for the external API of the |Worker| and |Broker| classes.
   (`#727`_, `#731`_, `#744`_, `@jenstroeger`_)
@@ -145,6 +149,7 @@ Added
 .. _changes: https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-multiprocessing-start-method
 .. _start method: https://docs.python.org/3.14/library/multiprocessing.html#multiprocessing-start-methods
 .. _forkserver: https://docs.python.org/3.14/library/multiprocessing.html#multiprocessing-start-method-forkserver
+.. _officially supported: https://docs.python.org/3.14/whatsnew/3.14.html#free-threaded-python-is-officially-supported
 
 .. _#751: https://github.com/Bogdanp/dramatiq/pull/751
 .. _#727: https://github.com/Bogdanp/dramatiq/issues/727
