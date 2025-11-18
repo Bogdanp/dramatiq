@@ -72,6 +72,7 @@ setup(
     author_email="bogdan@cleartype.io",
     project_urls={
         "Documentation": "https://dramatiq.io",
+        "Changelog": "https://dramatiq.io/changelog.html",
         "Source": "https://github.com/Bogdanp/dramatiq",
     },
     description="Background Processing for Python 3.",
