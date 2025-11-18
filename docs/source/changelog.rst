@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+
+`2.0.0`_ -- 2025-11-18
+-----------------------
+
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 
@@ -1550,7 +1554,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...HEAD
+.. _2.0.0: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...v2.0.0
 .. _1.18.0: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...v1.18.0
 .. _1.17.1: https://github.com/Bogdanp/dramatiq/compare/v1.17.0...v1.17.1
 .. _1.17.0: https://github.com/Bogdanp/dramatiq/compare/v1.16.0...v1.17.0
