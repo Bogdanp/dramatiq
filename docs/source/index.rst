@@ -101,6 +101,7 @@ Project Info
 
    Source Code <https://github.com/Bogdanp/dramatiq>
    changelog
+   PyPI <https://pypi.org/project/dramatiq/>
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    Discussion Board <https://groups.io/g/dramatiq-users>
    license
