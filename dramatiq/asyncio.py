@@ -150,7 +150,23 @@ class EventLoopThread(threading.Thread):
                     # TODO replace with built-in TimeoutError once 3.10 support dropped.
                     concurrent.futures.TimeoutError
                 ):
-                    continue
+                    # NOTE: TimeoutError caught here could be from future.result() timing out (i.e. future not done yet),
+                    # or a TimeoutError raised inside the future itself (future is done).
+                    if not future.done():
+                        # future not done, so .result() must've timed out. continue to wait again.
+                        continue
+
+                # If execution reaches here, it means a TimeoutError was caught above, and the future is done.
+                # There are 3 possibilities here:
+                # 1. TimeoutError was raised inside the future. This will re-raise it.
+                # 2. First .result() call timed out, but the future completed by the time .done() was called.
+                #     a) This will return the future's result, or
+                #     b) raise the Exception that happened in the future.
+                return future.result(timeout=0)
+                # This is outside the 'except' block to avoid any
+                # "During handling of the above exception, another exception occurred" messages.
+                # zero timeout used because future is now done.
+
         except Interrupt as e:
             # Asynchronously raised from another thread: cancel the
             # future.
