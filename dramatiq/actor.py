@@ -27,6 +27,7 @@ from typing import (
     Generic,
     Optional,
     ParamSpec,
+    Protocol,
     TypeVar,
     Union,
     overload,
@@ -202,13 +203,28 @@ class Actor(Generic[P, R]):
         return "Actor(%(actor_name)s)" % vars(self)
 
 
+class ActorDecorator(Protocol):
+    @overload
+    def __call__(self, fn: Callable[P, Awaitable[R]]) -> Actor[P, R]: ...
+
+    @overload
+    def __call__(self, fn: Callable[P, R]) -> Actor[P, R]: ...
+
+    def __call__(self, fn: Callable[P, Union[Awaitable[R], R]]) -> Actor[P, R]: ...
+
+
 @overload
-def actor(fn: Callable[P, Union[Awaitable[R], R]], **kwargs) -> Actor[P, R]:
+def actor(fn: Callable[P, Awaitable[R]], **kwargs) -> Actor[P, R]:
     pass
 
 
 @overload
-def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, Union[Awaitable[R], R]]], Actor[P, R]]:
+def actor(fn: Callable[P, R], **kwargs) -> Actor[P, R]:
+    pass
+
+
+@overload
+def actor(fn: None = None, **kwargs) -> ActorDecorator:
     pass
 
 
