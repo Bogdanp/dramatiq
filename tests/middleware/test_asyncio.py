@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import gc
+import logging
+import weakref
 from threading import get_ident
 from unittest import mock
 
@@ -180,3 +183,41 @@ def test_anyio_currrent_message_middleware_exposes_the_current_message(stub_brok
         # When I try to access the current message from a non-worker thread
         # Then I should get back None
         assert CurrentMessage.get_current_message() is None
+
+
+def test_async_middleware_clearing_exception_traceback(stub_broker, caplog):
+    """Test that exception tracebacks don't cause memory leaks.
+
+    When an exception is raised from a coroutine, the traceback holds references
+    to all local variables in every frame of the async call stack. If the
+    traceback is not cleared, these references prevent garbage collection of
+    potentially large objects (database connections, HTTP clients, etc.).
+    """
+    # Disable log capturing to prevent pytest from holding traceback references
+    # via captured LogRecord.exc_info
+    caplog.set_level(logging.CRITICAL)
+
+    stub_broker.add_middleware(AsyncIO())
+
+    with worker(stub_broker, worker_timeout=100, worker_threads=1):
+
+        class LeakingObject:
+            pass
+
+        weak_ref: weakref.ReferenceType[LeakingObject] | None = None
+
+        @actor(max_retries=0)
+        async def coroutine_with_local():
+            nonlocal weak_ref
+            obj = LeakingObject()
+            weak_ref = weakref.ref(obj)
+            raise ValueError("test")
+
+        coroutine_with_local.send()
+
+        stub_broker.join(coroutine_with_local.queue_name, fail_fast=False)
+
+        # Force garbage collection to ensure that any unreachable objects are collected.
+        gc.collect()
+
+        assert weak_ref() is None
