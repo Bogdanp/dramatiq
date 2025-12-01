@@ -82,6 +82,24 @@ def test_event_loop_thread_run_coroutine_exception(started_thread: EventLoopThre
     assert e.traceback[-1].name == "raise_actual_error"
 
 
+def test_event_loop_thread_run_coroutine_timeout_exception(started_thread: EventLoopThread):
+    """Test that TimeoutError in coroutine doesn't lead to infinite loop.
+
+    Regression test for https://github.com/Bogdanp/dramatiq/issues/791
+    """
+
+    async def raise_actual_error():
+        raise TimeoutError("something took too long")
+
+    async def raise_error():
+        await raise_actual_error()
+
+    coro = raise_error()
+
+    with pytest.raises(TimeoutError, match="something took too long"):
+        started_thread.run_coroutine(coro)
+
+
 @pytest.mark.skipif(
     threading.current_platform not in threading.supported_platforms,
     reason="Threading not supported on this platform.",
