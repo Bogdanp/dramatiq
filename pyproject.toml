@@ -82,6 +82,5 @@ module = [
     "pylibmc",
     "redis",
     "watchdog",
-    "watchdog_gevent",
 ]
 ignore_missing_imports = true
