@@ -38,3 +38,7 @@ class AsyncIO(Middleware):
         event_loop_thread.stop()
         event_loop_thread.join()
         set_event_loop_thread(None)
+
+    def after_process_message(self, broker, message, *, result=None, exception=None):
+        if exception is not None:
+            exception.__traceback__ = None
