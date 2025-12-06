@@ -81,6 +81,10 @@ jobs:
         ports:
           - 6379:6379
 
+    env:
+      RABBITMQ_USERNAME: "dramatiq"
+      RABBITMQ_PASSWORD: "dramatiq"
+
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -93,11 +97,5 @@ jobs:
       - run: pip install -e '.[all]' --group test
       - run: pytest --benchmark-skip
         if: ${{ matrix.concurrency == 'cpython' }}
-        env:
-          RABBITMQ_USERNAME: "dramatiq"
-          RABBITMQ_PASSWORD: "dramatiq"
       - run: python pytest-gevent.py --benchmark-skip
         if: ${{ matrix.concurrency == 'gevent' }}
-        env:
-          RABBITMQ_USERNAME: "dramatiq"
-          RABBITMQ_PASSWORD: "dramatiq"
