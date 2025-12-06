@@ -22,7 +22,7 @@ import concurrent.futures
 import functools
 import logging
 import threading
-from typing import Awaitable, Callable, Optional, TypeVar
+from typing import Awaitable, Callable, Optional, ParamSpec, TypeVar
 
 from .threading import Interrupt
 
@@ -34,6 +34,7 @@ __all__ = [
 ]
 
 R = TypeVar("R")
+P = ParamSpec("P")
 
 _event_loop_thread = None
 
@@ -53,13 +54,13 @@ def set_event_loop_thread(thread: Optional[EventLoopThread]) -> None:
     _event_loop_thread = thread
 
 
-def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
+def async_to_sync(async_fn: Callable[P, Awaitable[R]]) -> Callable[P, R]:
     """Wrap an async function to run it on the event loop thread and
     synchronously wait for its result on the calling thread.
     """
 
     @functools.wraps(async_fn)
-    def wrapper(*args, **kwargs) -> R:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         event_loop_thread = get_event_loop_thread()
         if event_loop_thread is None:
             raise RuntimeError(
