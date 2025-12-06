@@ -7,7 +7,10 @@ to test that Dramatiq's types can be "consumed" by user code without type errors
 
 from __future__ import annotations
 
-from typing import ParamSpec, TypeVar
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
+
+if TYPE_CHECKING:
+    from typing_extensions import assert_type
 
 import dramatiq
 
@@ -96,3 +99,16 @@ async def async_actor_with_options(arg: ArgType) -> ReturnType:
 )
 async def async_actor_with_custom_actor_class(arg: ArgType) -> ReturnType:
     return ReturnType()
+
+
+# # # Test that calling actors has correct arg/return type
+def _calling_actors_type_check() -> None:
+    assert_type(actor(ArgType()), ReturnType)
+    assert_type(actor_no_options(ArgType()), ReturnType)
+    assert_type(actor_with_options(ArgType()), ReturnType)
+    assert_type(actor_with_custom_actor_class(ArgType()), ReturnType)
+
+    assert_type(async_actor(ArgType()), ReturnType)
+    assert_type(async_actor_no_options(ArgType()), ReturnType)
+    assert_type(async_actor_with_options(ArgType()), ReturnType)
+    assert_type(async_actor_with_custom_actor_class(ArgType()), ReturnType)

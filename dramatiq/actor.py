@@ -63,7 +63,7 @@ class Actor(Generic[P, R]):
 
     def __init__(
         self,
-        fn: Callable[P, Union[R, Awaitable[R]]],
+        fn: Union[Callable[P, Awaitable[R]], Callable[P, R]],
         *,
         broker: Broker,
         actor_name: str,
@@ -75,7 +75,7 @@ class Actor(Generic[P, R]):
             raise ValueError(f"An actor named {actor_name!r} is already registered.")
 
         self.logger = get_logger(fn.__module__ or "_", actor_name)
-        self.fn = async_to_sync(fn) if iscoroutinefunction(fn) else fn
+        self.fn: Callable[P, R] = async_to_sync(fn) if iscoroutinefunction(fn) else fn  # type: ignore[assignment]
         self.broker = broker
         self.actor_name = actor_name
         self.queue_name = queue_name
@@ -178,7 +178,7 @@ class Actor(Generic[P, R]):
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Any | R | Awaitable[R]:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """Synchronously call this actor.
 
         Parameters:
@@ -210,7 +210,7 @@ class ActorDecorator(Protocol):
     @overload
     def __call__(self, fn: Callable[P, R]) -> Actor[P, R]: ...
 
-    def __call__(self, fn: Callable[P, Union[Awaitable[R], R]]) -> Actor[P, R]: ...
+    def __call__(self, fn: Union[Callable[P, Awaitable[R]], Callable[P, R]]) -> Actor[P, R]: ...
 
 
 @overload
