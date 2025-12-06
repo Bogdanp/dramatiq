@@ -82,8 +82,8 @@ jobs:
           - 6379:6379
 
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - run: |
