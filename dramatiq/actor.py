@@ -224,7 +224,15 @@ def actor(fn: Callable[P, R]) -> Actor[P, R]:
 
 
 @overload
-def actor(fn: None = None, **kwargs) -> ActorDecorator:
+def actor(
+    *,
+    queue_name: str = "default",
+    priority: int = 0,
+    actor_name: Optional[str] = None,
+    broker: Optional[Broker] = None,
+    actor_class: Callable[..., Actor[Any, Any]] = Actor,
+    **options: Any,
+) -> ActorDecorator:
     pass
 
 
@@ -236,7 +244,7 @@ def actor(
     queue_name: str = "default",
     priority: int = 0,
     broker: Optional[Broker] = None,
-    **options,
+    **options: Any,
 ) -> Union[Actor[P, R], Callable]:
     """Declare an actor.
 
