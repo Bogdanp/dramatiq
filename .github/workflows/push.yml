@@ -1,21 +1,55 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  lint:
-    runs-on: ubuntu-24.04
-    name: lint
+  black:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
-      - run: |
-          sudo apt-get update
-          sudo apt-get remove libhashkit2 libmemcached11 || true
-          sudo apt-get install -y libmemcached-dev
-      - run: pip install tox
-      - run: tox -e lint
-      - run: tox -e docs
+          python-version: "3.10"
+      - run: pip install --group format
+      - run: black --check .
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - run: pip install ".[all]" --group type-check --group test
+      - run: mypy
+
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - run: pip install --group lint
+      - run: isort --check dramatiq tests
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - run: pip install --group lint
+      - run: flake8 dramatiq tests examples
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - run: pip install ".[all]" --group docs
+      - run: cd docs && make html
 
   build-unix:
     timeout-minutes: 30
