@@ -214,12 +214,12 @@ class ActorDecorator(Protocol):
 
 
 @overload
-def actor(fn: Callable[P, Awaitable[R]], **kwargs) -> Actor[P, R]:
+def actor(fn: Callable[P, Awaitable[R]]) -> Actor[P, R]:
     pass
 
 
 @overload
-def actor(fn: Callable[P, R], **kwargs) -> Actor[P, R]:
+def actor(fn: Callable[P, R]) -> Actor[P, R]:
     pass
 
 
