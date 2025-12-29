@@ -32,7 +32,10 @@ extra requirements:
 =============  =======================================================================================
 Name           Description
 =============  =======================================================================================
+``all``        Installs all available extras.
+``gevent``     Installs the required dependencies for running workers under gevent.
 ``memcached``  Installs the required dependencies for the Memcached rate limiter backend.
+``prometheus`` Installs the required dependencies for the Prometheus metrics middleware.
 ``rabbitmq``   Installs the required dependencies for using Dramatiq with RabbitMQ.
 ``redis``      Installs the required dependencies for using Dramatiq with Redis.
 ``watch``      Installs the required dependencies for the ``--watch`` flag.  (Supported only on UNIX)
