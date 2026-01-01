@@ -32,6 +32,8 @@ format = [
 ]
 type-check = [
     "mypy",
+    # Include test group so mypy can see the types of the pytest modules the tests import.
+    {include-group = "test"},
 ]
 build = [
     "build",
