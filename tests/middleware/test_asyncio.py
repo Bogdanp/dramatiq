@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import weakref
 from threading import get_ident
 from unittest import mock
 
@@ -13,6 +15,7 @@ from dramatiq.asyncio import (
     get_event_loop_thread,
     set_event_loop_thread,
 )
+from dramatiq.brokers.stub import StubBroker
 from dramatiq.logging import get_logger
 from dramatiq.middleware import CurrentMessage
 from dramatiq.middleware.asyncio import AsyncIO
@@ -100,11 +103,55 @@ def test_event_loop_thread_run_coroutine_timeout_exception(started_thread: Event
         started_thread.run_coroutine(coro)
 
 
+def test_run_coroutine_exception_doesnt_leak(
+    stub_broker: StubBroker, caplog: pytest.LogCaptureFixture
+):
+    # Disable log capturing to prevent pytest from holding traceback references
+    # via captured LogRecord.exc_info
+    caplog.set_level(logging.CRITICAL)
+
+    stub_broker.add_middleware(AsyncIO())
+
+    class Payload:
+        def __init__(self, data: bytes) -> None:
+            self.data = data
+
+    class PayloadError(Exception):
+        def __init__(self, payload: Payload) -> None:
+            self.payload = payload
+
+    weak_refs: list[weakref.ref[Payload]] = []
+
+    @actor(max_retries=1, max_backoff=1)
+    async def failing_actor():
+        payload = Payload(b"x" * 1024)
+        weak_refs.append(weakref.ref(payload))
+        raise PayloadError(payload)
+
+    with worker(stub_broker, worker_timeout=100, worker_threads=1) as stub_worker:
+        failing_actor.send()
+        stub_broker.join(failing_actor.queue_name, fail_fast=False)
+        stub_worker.join()
+
+    # StubBroker overloads MessageProxy.clear_exception to do nothing.
+    # Simulate here the normal behavior of clearing exception references.
+    for message in stub_broker.dead_letters:
+        del message._exception
+
+    stub_broker.flush_all()
+
+    # Check that payloads were collected
+    for weak_ref in weak_refs:
+        assert weak_ref() is None, "Payload object still alive"
+
+
 @pytest.mark.skipif(
     threading.current_platform not in threading.supported_platforms,
     reason="Threading not supported on this platform.",
 )
-@pytest.mark.skipif(threading.is_gevent_active(), reason="Thread exceptions not supported with gevent.")
+@pytest.mark.skipif(
+    threading.is_gevent_active(), reason="Thread exceptions not supported with gevent."
+)
 def test_event_loop_thread_run_coroutine_interrupted(started_thread: EventLoopThread):
     side_effect_target = {"cleanup": False}
 
