@@ -242,14 +242,16 @@ class group:
         Returns:
           int: The total number of results.
         """
-        for count, child in enumerate(self.children, start=1):
+        count = 0
+        for child in self.children:
             try:
                 if isinstance(child, group):
                     child.get_results()
                 else:
                     child.get_result()
+                count += 1
             except ResultMissing:
-                return count - 1
+                pass
 
         return count
 
