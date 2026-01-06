@@ -98,13 +98,11 @@ class pipeline:
         Returns:
           int: The total number of results.
         """
-        count = 0
-        for message in self.messages:
+        for count, message in enumerate(self.messages, start=1):
             try:
                 message.get_result()
-                count += 1
             except ResultMissing:
-                pass
+                return count - 1
 
         return count
 
@@ -244,16 +242,14 @@ class group:
         Returns:
           int: The total number of results.
         """
-        count = 0
-        for child in self.children:
+        for count, child in enumerate(self.children, start=1):
             try:
                 if isinstance(child, group):
                     child.get_results()
                 else:
                     child.get_result()
-                count += 1
             except ResultMissing:
-                pass
+                return count - 1
 
         return count
 
