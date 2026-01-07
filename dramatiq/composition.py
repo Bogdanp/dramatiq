@@ -266,15 +266,12 @@ class group:
           group: This same group.
         """
         if self.completion_callbacks:
-            from .middleware.group_callbacks import (
-                GROUP_CALLBACK_BARRIER_TTL,
-                GroupCallbacks,
-            )
+            from .middleware.group_callbacks import GroupCallbacks
 
-            rate_limiter_backend = None
             for middleware in self.broker.middleware:
                 if isinstance(middleware, GroupCallbacks):
                     rate_limiter_backend = middleware.rate_limiter_backend
+                    barrier_ttl = middleware.barrier_ttl
                     break
             else:
                 raise RuntimeError(
@@ -287,7 +284,7 @@ class group:
             # group is re-run, the barriers are all separate.
             # Re-using a barrier's name is an unsafe operation.
             completion_uuid = str(uuid4())
-            completion_barrier = Barrier(rate_limiter_backend, completion_uuid, ttl=GROUP_CALLBACK_BARRIER_TTL)
+            completion_barrier = Barrier(rate_limiter_backend, completion_uuid, ttl=barrier_ttl)
             completion_barrier.create(len(self.children))
 
             children = []
