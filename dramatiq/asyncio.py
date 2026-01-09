@@ -119,7 +119,15 @@ class EventLoopThread(threading.Thread):
                 for task in tasks:
                     task.cancel()
                 if tasks:
-                    await asyncio.gather(*tasks, return_exceptions=True)
+                    try:
+                        await asyncio.wait_for(
+                            asyncio.gather(*tasks, return_exceptions=True),
+                            timeout=90,
+                        )
+                    except asyncio.TimeoutError:
+                        self.logger.warning(
+                            "Event loop shutdown timed out after 90s; stopping anyway."
+                        )
                 await self.loop.shutdown_asyncgens()
                 self.loop.stop()
 
