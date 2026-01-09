@@ -21,23 +21,47 @@ import warnings
 
 from .stub import StubBackend
 
-try:
-    from .memcached import MemcachedBackend
-except ImportError:  # pragma: no cover
-    warnings.warn(
-        "MemcachedBackend is not available.  Run `pip install dramatiq[memcached]` to add support for that backend.",
-        category=ImportWarning,
-        stacklevel=2,
-    )
-
-try:
-    from .redis import RedisBackend
-except ImportError:  # pragma: no cover
-    warnings.warn(
-        "RedisBackend is not available.  Run `pip install dramatiq[redis]` to add support for that backend.",
-        category=ImportWarning,
-        stacklevel=2,
-    )
-
-
 __all__ = ["StubBackend", "MemcachedBackend", "RedisBackend"]
+
+
+def __getattr__(name):
+    module_importer = _module_importers.get(name)
+    if module_importer is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    return module_importer()
+
+
+def import_memcached():
+    try:
+        from .memcached import MemcachedBackend
+
+        return MemcachedBackend
+    except ModuleNotFoundError:
+        warnings.warn(
+            "MemcachedBackend is not available.  Run `pip install dramatiq[memcached]` "
+            "to add support for that backend.",
+            category=ImportWarning,
+            stacklevel=2,
+        )
+        raise
+
+
+def import_redis():
+    try:
+        from .redis import RedisBackend
+
+        return RedisBackend
+    except ModuleNotFoundError:
+        warnings.warn(
+            "RedisBackend is not available.  Run `pip install dramatiq[redis]` to add support for that backend.",
+            category=ImportWarning,
+            stacklevel=2,
+        )
+        raise
+
+
+_module_importers = {
+    "MemcachedBackend": import_memcached,
+    "RedisBackend": import_redis,
+}
