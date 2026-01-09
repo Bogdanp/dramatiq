@@ -14,6 +14,7 @@ if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():  # noqa: SLF00
 
 try:
     from gevent import monkey
+
     monkey.patch_all()
 except ImportError:
     sys.stderr.write("error: gevent is missing. Run `pip install gevent`")
