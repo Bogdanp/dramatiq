@@ -113,9 +113,18 @@ class EventLoopThread(threading.Thread):
     def stop(self):
         if self.loop.is_running():
             self.logger.info("Stopping event loop...")
-            self.loop.call_soon_threadsafe(self.loop.stop)
+
+            async def shutdown():
+                tasks = [t for t in asyncio.all_tasks(self.loop) if t is not asyncio.current_task()]
+                for task in tasks:
+                    task.cancel()
+                if tasks:
+                    await asyncio.gather(*tasks, return_exceptions=True)
+                await self.loop.shutdown_asyncgens()
+                self.loop.stop()
+
+            asyncio.run_coroutine_threadsafe(shutdown(), self.loop)
             self.join()
-            self.loop.close()
 
     def run_coroutine(self, coro: Awaitable[R]) -> R:
         """Runs the given coroutine on the event loop.
