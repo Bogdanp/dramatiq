@@ -9,6 +9,40 @@ All notable changes to this project will be documented in this file.
 -------------
 
 
+`2.0.1`_ -- 2026-01-12
+-----------------------
+
+Fixed
+^^^^^
+
+* Fixed infinite loop when an async actor function raises a ``TimeoutError``.
+  (`#791`_, `#801`_, `@LincolnPuzey`_)
+* Fixed the |group| ``completed_count`` property to return the correct value,
+  regardless of what order the tasks in the group finish.
+  (`#452`_, `#814`_, `@ABolouk`_)
+* Fixed type hints of |actor| decorator.
+  (`#795`_, `#796`_, `@janek-cosmose`_, `#804`_, `@LincolnPuzey`_)
+
+.. _#791: https://github.com/Bogdanp/dramatiq/issues/791
+.. _#801: https://github.com/Bogdanp/dramatiq/pull/801
+.. _#452: https://github.com/Bogdanp/dramatiq/issues/452
+.. _#814: https://github.com/Bogdanp/dramatiq/pull/814
+.. _@ABolouk: https://github.com/ABolouk
+.. _#795: https://github.com/Bogdanp/dramatiq/issues/795
+.. _#796: https://github.com/Bogdanp/dramatiq/pull/796
+.. _@janek-cosmose: https://github.com/janek-cosmose
+.. _#804: https://github.com/Bogdanp/dramatiq/pull/804
+
+Documentation
+^^^^^^^^^^^^^
+
+* Fixed Installation page so it lists all installable extras.
+  (`#797`_, `#808`_, `@synweap15`_)
+
+.. _#797: https://github.com/Bogdanp/dramatiq/issues/797
+.. _#808: https://github.com/Bogdanp/dramatiq/pull/808
+
+
 `2.0.0`_ -- 2025-11-18
 -----------------------
 
@@ -1554,7 +1588,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.0.1...HEAD
+.. _2.0.1: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...v2.0.1
 .. _2.0.0: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...v2.0.0
 .. _1.18.0: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...v1.18.0
 .. _1.17.1: https://github.com/Bogdanp/dramatiq/compare/v1.17.0...v1.17.1
