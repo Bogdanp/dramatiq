@@ -17,7 +17,7 @@ try:
 
     monkey.patch_all()
 except ImportError:
-    sys.stderr.write("error: gevent is missing. Run `pip install gevent`")
+    sys.stderr.write("error: gevent is missing. Run `pip install gevent`.")
     sys.exit(1)
 
 import pytest
