@@ -20,8 +20,10 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import functools
+import gc
 import logging
 import threading
+from types import TracebackType
 from typing import Awaitable, Callable, Optional, ParamSpec, TypeVar
 
 from .threading import Interrupt
@@ -133,10 +135,15 @@ class EventLoopThread(threading.Thread):
             raise RuntimeError("Event loop is not running.")
 
         done = threading.Event()
+        result_container: list[R] = []
+        exception_container: list[tuple[BaseException, TracebackType | None]] = []
 
-        async def wrapped_coro() -> R:
+        async def wrapped_coro() -> None:
             try:
-                return await coro
+                result = await coro
+                result_container.append(result)
+            except BaseException as e:
+                exception_container.append((e, e.__traceback__))
             finally:
                 done.set()
 
@@ -146,28 +153,13 @@ class EventLoopThread(threading.Thread):
                 try:
                     # Use a timeout to be able to catch asynchronously
                     # raised dramatiq exceptions (Interrupt).
-                    return future.result(timeout=self.interrupt_check_ival)
+                    future.result(timeout=self.interrupt_check_ival)
+                    break
                 except (
                     # TODO replace with built-in TimeoutError once 3.10 support dropped.
                     concurrent.futures.TimeoutError
                 ):
-                    # NOTE: TimeoutError caught here could be from future.result() timing out (i.e. future not done yet),
-                    # or a TimeoutError raised inside the future itself (future is done).
-                    if not future.done():
-                        # future not done, so .result() must've timed out. continue to wait again.
-                        continue
-
-                # If execution reaches here, it means a TimeoutError was caught above, and the future is done.
-                # There are 3 possibilities here:
-                # 1. TimeoutError was raised inside the future. This will re-raise it.
-                # 2. First .result() call timed out, but the future completed by the time .done() was called.
-                #     a) This will return the future's result, or
-                #     b) raise the Exception that happened in the future.
-                return future.result(timeout=0)
-                # This is outside the 'except' block to avoid any
-                # "During handling of the above exception, another exception occurred" messages.
-                # zero timeout used because future is now done.
-
+                    continue
         except Interrupt as e:
             # Asynchronously raised from another thread: cancel the
             # future.
@@ -179,3 +171,15 @@ class EventLoopThread(threading.Thread):
             if not done.wait(timeout=1.0):
                 raise RuntimeError("Timed out while waiting for coroutine.") from e
             raise
+
+        exc_value: BaseException | None
+        if exception_container:
+            exc_value, exc_tb = exception_container[0]
+            exception_container.clear()
+            try:
+                raise exc_value.with_traceback(exc_tb)
+            finally:
+                exc_value = None
+                exc_tb = None
+
+        return result_container[0]
