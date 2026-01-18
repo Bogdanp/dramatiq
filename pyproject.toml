@@ -51,7 +51,7 @@ addopts = "--cov dramatiq --cov-report html --benchmark-autosave --benchmark-com
 
 [tool.black]
 line-length = 120
-target-version = ["py310", "py311", "py312", "py313"]
+target-version = ["py310", "py311", "py312", "py313", "py314"]
 
 [tool.isort]
 line_length = 120
