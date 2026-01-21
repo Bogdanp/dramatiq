@@ -36,6 +36,7 @@ class GroupCallbacks(Middleware):
                 "Configuring the barrier TTL via the environment variable is deprecated; "
                 "use the `barrier_ttl` argument instead.",
                 FutureWarning,
+                stacklevel=2,
             )
             self.barrier_ttl = int(_barrier_ttl_env)
         else:
