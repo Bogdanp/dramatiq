@@ -33,8 +33,8 @@ class GroupCallbacks(Middleware):
         _barrier_ttl_env = os.getenv("dramatiq_group_callback_barrier_ttl", None)
         if _barrier_ttl_env is not None:
             warnings.warn(
-                "Configuring the barrier TTL via the environment variable is deprecated; "
-                "use the `barrier_ttl` argument instead.",
+                "Configuring the barrier TTL via the 'dramatiq_group_callback_barrier_ttl' environment variable is deprecated; "
+                "use the `barrier_ttl` argument of the `GroupCallbacks` middleware instead.",
                 FutureWarning,
                 stacklevel=2,
             )
