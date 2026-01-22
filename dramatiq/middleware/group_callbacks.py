@@ -18,18 +18,29 @@
 from __future__ import annotations
 
 import os
+import warnings
 
 from ..rate_limits import Barrier, RateLimiterBackend
 from .middleware import Middleware
-
-GROUP_CALLBACK_BARRIER_TTL = int(os.getenv("dramatiq_group_callback_barrier_ttl", "86400000"))
 
 
 class GroupCallbacks(Middleware):
     """Middleware that enables adding completion callbacks to |Groups|."""
 
-    def __init__(self, rate_limiter_backend: RateLimiterBackend) -> None:
+    def __init__(self, rate_limiter_backend: RateLimiterBackend, *, barrier_ttl: int = 86400 * 1000) -> None:
         self.rate_limiter_backend = rate_limiter_backend
+
+        _barrier_ttl_env = os.getenv("dramatiq_group_callback_barrier_ttl", None)
+        if _barrier_ttl_env is not None:
+            warnings.warn(
+                "Configuring the barrier TTL via the 'dramatiq_group_callback_barrier_ttl' environment variable is deprecated; "
+                "use the `barrier_ttl` argument of the `GroupCallbacks` middleware instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            self.barrier_ttl = int(_barrier_ttl_env)
+        else:
+            self.barrier_ttl = barrier_ttl
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         from ..message import Message
@@ -41,7 +52,7 @@ class GroupCallbacks(Middleware):
                 barrier = Barrier(
                     self.rate_limiter_backend,
                     group_completion_uuid,
-                    ttl=GROUP_CALLBACK_BARRIER_TTL,
+                    ttl=self.barrier_ttl,
                 )
                 if barrier.wait(block=False):
                     for message in group_completion_callbacks:
