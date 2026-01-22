@@ -214,15 +214,6 @@ Changed
 .. _#738: https://github.com/Bogdanp/dramatiq/issues/738
 .. _#764: https://github.com/Bogdanp/dramatiq/pull/764
 
-Deprecated
-^^^^^^^^^^
-
-* The ``dramatiq_group_callback_barrier_ttl`` environment variable has been deprecated.
-  Instead, use the ``barrier_ttl`` parameter of the |GroupCallbacks| middleware.
-  (`#775`_, `@mikeroll`_)
-
-.. _#775: https://github.com/Bogdanp/dramatiq/pull/775
-
 Removed
 ^^^^^^^
 
