@@ -9,5 +9,5 @@ updates:
       interval: "weekly"
     groups:
       github-actions-updates:
-        paterns:
+        patterns:
           - "*"
