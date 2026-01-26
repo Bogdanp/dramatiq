@@ -55,7 +55,7 @@ extra_dependencies = {
         "pika>=1.0,<2.0",
     ],
     "redis": [
-        "redis>=4.0,<7.0",
+        "redis>=4.0,<8.0",
     ],
     "watch": [
         "watchdog>=6.0.0",
