@@ -69,7 +69,7 @@ jobs:
         ports:
           - 11211:11211
       rabbitmq:
-        image: rabbitmq:3
+        image: rabbitmq:latest
         env:
           RABBITMQ_DEFAULT_USER: "dramatiq"
           RABBITMQ_DEFAULT_PASS: "dramatiq"
