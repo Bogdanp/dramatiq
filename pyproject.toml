@@ -47,7 +47,11 @@ docs = [
 
 [tool.pytest.ini_options]
 testpaths = "tests"
-addopts = "--cov dramatiq --cov-report html --benchmark-autosave --benchmark-compare"
+addopts = "--cov=dramatiq --cov=tests --cov-report=term --no-cov-on-fail"
+
+[tool.coverage.run]
+branch = true
+source = ['dramatiq', 'tests']
 
 [tool.black]
 line-length = 120
