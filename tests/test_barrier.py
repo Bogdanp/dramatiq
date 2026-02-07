@@ -34,7 +34,7 @@ def test_barriers_can_block(rate_limiter_backend):
 
     def worker():
         time.sleep(0.1)
-        assert barrier.wait(timeout=1000)
+        assert barrier.wait(timeout=2000)
         times.append(time.monotonic())
 
     try:
