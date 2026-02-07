@@ -51,7 +51,7 @@ jobs:
       - run: pip install ".[all]" --group docs
       - run: cd docs && make html
 
-  build-unix:
+  test:
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -94,7 +94,10 @@ jobs:
           sudo apt-get update
           sudo apt-get remove libhashkit2 libmemcached11 || true
           sudo apt-get install -y libmemcached-dev
-      - run: pip install -e '.[all]' --group test
+      - run: pip install -e '.[rabbitmq,redis,memcached,prometheus]' --group test
+        if: ${{ matrix.concurrency == 'cpython' }}
+      - run: pip install -e '.[rabbitmq,redis,memcached,prometheus,gevent]' --group test
+        if: ${{ matrix.concurrency == 'gevent' }}
       - run: pytest --benchmark-skip
         if: ${{ matrix.concurrency == 'cpython' }}
       - run: python pytest-gevent.py --benchmark-skip
