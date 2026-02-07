@@ -5,13 +5,17 @@ import time
 from unittest import mock
 
 import pytest
-from greenlet import getcurrent
 
 import dramatiq
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.middleware import threading, time_limit
 
 from ..common import skip_with_gevent, skip_without_gevent
+
+try:
+    from greenlet import getcurrent
+except ImportError:
+    pass  # tests using greenlet must use @skip_without_gevent
 
 not_supported = threading.current_platform not in threading.supported_platforms
 
