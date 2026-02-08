@@ -143,7 +143,11 @@ class RabbitmqBroker(Broker):
         self.max_priority = max_priority
         self.connections: set[pika.BlockingConnection] = set()
         self.channels: set[pika.BlockingChannel] = set()
+        # 'queues' is the set of Queues declared on the Broker. These are created lazily in RabbitMQ when required.
+        # Note 'queues' should only contain 'canonical' queue names (not delayed or dead-letter queues).
         self.queues: set[str] = set()
+        # 'pending_queues' is the Queues that may not exist in RabbitMQ because we haven't attempted to create them yet.
+        # Also, should only contain 'canonical' queue names.
         self.queues_pending: set[str] = set()
         self.state = local()
 
@@ -273,28 +277,30 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: When ensure=True if the underlying channel
             or connection fails.
         """
-        if q_name(queue_name) not in self.queues:
-            self.emit_before("declare_queue", queue_name)
-            self.queues.add(queue_name)
-            self.queues_pending.add(queue_name)
-            self.emit_after("declare_queue", queue_name)
+        # Note: queue_name can be a canonical queue or a delayed queue.
+        canonical_queue_name = q_name(queue_name)
+        if canonical_queue_name not in self.queues:
+            self.emit_before("declare_queue", canonical_queue_name)
+            self.queues.add(canonical_queue_name)
+            self.queues_pending.add(canonical_queue_name)
+            self.emit_after("declare_queue", canonical_queue_name)
 
             delayed_name = dq_name(queue_name)
             self.delay_queues.add(delayed_name)
             self.emit_after("declare_delay_queue", delayed_name)
 
         if ensure:
-            self._ensure_queue(queue_name)
+            self._ensure_queue(canonical_queue_name)
 
-    def _ensure_queue(self, queue_name):
+    def _ensure_queue(self, canonical_queue_name):
         attempts = 0
         while True:
             try:
-                if queue_name in self.queues_pending:
-                    self._declare_queue(queue_name)
-                    self._declare_dq_queue(queue_name)
-                    self._declare_xq_queue(queue_name)
-                    self.queues_pending.discard(queue_name)
+                if canonical_queue_name in self.queues_pending:
+                    self._declare_queue(canonical_queue_name)
+                    self._declare_dq_queue(canonical_queue_name)
+                    self._declare_xq_queue(canonical_queue_name)
+                    self.queues_pending.discard(canonical_queue_name)
 
                 break
             except (
