@@ -10,7 +10,7 @@ import dramatiq
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
-from dramatiq.errors import ConnectionError
+from dramatiq.errors import BrokerConnectionError
 
 from .common import worker
 
@@ -365,8 +365,8 @@ def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_wo
             result = do_ack(queue, msg_id)
 
             if ack_mock.call_count < 2:
-                # Trigger a retry by raising a ConnectionError
-                raise ConnectionError(message)
+                # Trigger a retry by raising a BrokerConnectionError
+                raise BrokerConnectionError(message)
 
             return result
 
@@ -407,8 +407,8 @@ def test_redis_consumer_nack_can_retry_on_connection_error(redis_broker, redis_w
             result = do_nack(queue, msg_id)
 
             if nack_mock.call_count < 2:
-                # Trigger a retry by raising a ConnectionError
-                raise ConnectionError(message)
+                # Trigger a retry by raising a BrokerConnectionError
+                raise BrokerConnectionError(message)
 
             return result
 

@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Optional
 
 
@@ -57,15 +58,15 @@ class QueueJoinTimeout(DramatiqError):
     """
 
 
-class ConnectionError(BrokerError):
+class BrokerConnectionError(BrokerError):
     """Base class for broker connection-related errors."""
 
 
-class ConnectionFailed(ConnectionError):
+class ConnectionFailed(BrokerConnectionError):
     """Raised when a broker connection could not be opened."""
 
 
-class ConnectionClosed(ConnectionError):
+class ConnectionClosed(BrokerConnectionError):
     """Raised when a broker connection is suddenly closed."""
 
 
@@ -86,3 +87,16 @@ class Retry(DramatiqError):
     def __init__(self, message: str = "", delay: Optional[int] = None):  # noqa: B042
         super().__init__(message)
         self.delay = delay
+
+
+def __getattr__(name):
+    if name == "ConnectionError":
+        warnings.warn(
+            "The class 'ConnectionError' has been renamed to 'BrokerConnectionError'. "
+            "The old name 'ConnectionError' will be removed in dramatiq v3.0.0.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return BrokerConnectionError
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

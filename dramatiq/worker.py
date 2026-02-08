@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, Union
 
 from .broker import Broker, Consumer, MessageProxy
 from .common import current_millis, iter_queue, join_all, q_name
-from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
+from .errors import ActorNotFound, BrokerConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
 from .results.middleware import Results
@@ -174,7 +174,7 @@ class Worker:
         for queue_name, messages in messages_by_queue.items():
             try:
                 self.consumers[queue_name].requeue_messages(messages)
-            except ConnectionError:
+            except BrokerConnectionError:
                 self.logger.warning("Failed to requeue messages on queue %r.", queue_name, exc_info=True)
         self.logger.debug("Done requeueing in-progress messages.")
 
@@ -304,7 +304,7 @@ class ConsumerThread(Thread):
                     if not self.running:
                         break
 
-            except ConnectionError as e:
+            except BrokerConnectionError as e:
                 self.logger.critical("Consumer encountered a connection error: %s", e)
                 self.delay_queue = PriorityQueue()
 
@@ -406,7 +406,7 @@ class ConsumerThread(Thread):
             # stopped or restarted, but we'd be doing the same work
             # twice in that case and the behaviour would surprise
             # users who don't deploy frequently.
-            except ConnectionError as e:
+            except BrokerConnectionError as e:
                 self.logger.warning(
                     "Failed to post_process_message(%s) due to a connection error: %s\n"
                     "The operation will be retried in %s seconds until the connection recovers.\n"
@@ -465,7 +465,7 @@ class ConsumerThread(Thread):
             if self.consumer:
                 self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
                 self.consumer.close()
-        except ConnectionError:
+        except BrokerConnectionError:
             pass
 
 
