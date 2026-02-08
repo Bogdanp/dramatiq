@@ -87,6 +87,8 @@ class RabbitmqBroker(Broker):
     Parameters:
       confirm_delivery(bool): Wait for RabbitMQ to confirm that
         messages have been committed on every call to enqueue.
+        This must be enabled for Dramatiq to detect and re-declare
+        missing queues when enqueing messages.
         Defaults to False.
       url(str|list[str]): An optional connection URL.  If both a URL
         and connection parameters are provided, the URL is used.
@@ -389,6 +391,10 @@ class RabbitmqBroker(Broker):
                         delivery_mode=2,
                         priority=message.options.get("broker_priority"),
                     ),
+                    # mandatory flag ensures UnroutableError is raised if message could not be routed to a queue,
+                    # but it only works when confirm_delivery is turned on, so only set it when that is the case.
+                    # https://www.rabbitmq.com/docs/publishers#unroutable
+                    mandatory=self.confirm_delivery,
                 )
                 self.emit_after("enqueue", message, delay)
                 return message
@@ -404,7 +410,8 @@ class RabbitmqBroker(Broker):
                 # If the queue disappears, remove it from the known set
                 # so that it can be redeclared on retry or the next time
                 # a message is enqueued.
-                if getattr(e, "reply_code", None) == 404:
+                # Note this only happens when confirm_delivery is enabled.
+                if isinstance(e, pika.exceptions.UnroutableError):
                     self.queues.remove(q_name(queue_name))
 
                 attempts += 1
