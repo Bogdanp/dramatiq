@@ -10,7 +10,8 @@ import pika.exceptions
 import pytest
 
 import dramatiq
-from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
+import dramatiq.worker
+from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import (
     MAX_DECLARE_ATTEMPTS,
     RabbitmqBroker,
@@ -522,48 +523,72 @@ def test_rabbitmq_broker_retries_declaring_queues_when_connection_related_errors
             worker.stop()
 
 
-def test_rabbitmq_broker_retries_declaring_queues_when_declared_queue_disappears(rabbitmq_broker):
-    executed = False
+def test_rabbitmq_broker_consuming_messages_re_declares_queues_when_declared_queue_disappears(rabbitmq_broker):
+    """Test that consuming messages re-declares queues when they are deleted.
+
+    Regression test for #832.
+    """
 
     # Given that I have an actor on a flaky queue
-    flaky_queue_name = "flaky_queue"
-    rabbitmq_broker.channel.queue_delete(flaky_queue_name)
-
-    @dramatiq.actor(queue_name=flaky_queue_name)
+    @dramatiq.actor(queue_name="flaky_queue")
     def do_work():
-        nonlocal executed
-        executed = True
+        pass
 
-    # When I start a server
-    worker = Worker(rabbitmq_broker, worker_threads=1)
-    worker.start()
+    # Make consumers restart quickly for this test
+    with patch.object(dramatiq.worker, "CONSUMER_RESTART_DELAY_SECS", new=0.01):
 
-    declared_ev = Event()
+        # When I start a Worker the queue should be declared
+        worker = Worker(rabbitmq_broker, worker_threads=1, worker_timeout=10)
+        worker.start()
 
-    class DeclaredMiddleware(Middleware):
-        def after_declare_queue(self, broker, queue_name):
-            if queue_name == flaky_queue_name:
-                declared_ev.set()
+        try:
+            time.sleep(0.1)
+            rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
 
-    # I expect that queue to be declared
-    rabbitmq_broker.add_middleware(DeclaredMiddleware())
-    assert declared_ev.wait(timeout=5)
+            # Pause the worker, so queue isn't re-created
+            worker.pause()
 
-    # If I delete the queue
+            # If I delete the queue, it disappears
+            rabbitmq_broker.channel.queue_delete(do_work.queue_name)
+            with pytest.raises(pika.exceptions.ChannelClosedByBroker):
+                rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
+
+            # Resume the worker, and it should re-declare the queue
+            worker.resume()
+            time.sleep(0.1)
+            del rabbitmq_broker.channel  # close channel. not sure why this is required.
+            rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
+        finally:
+            worker.stop()
+
+
+def test_rabbitmq_broker_enqueueing_message_re_declares_queues_when_declared_queue_disappears(rabbitmq_broker):
+    """Test that enqueueing messages re-declares the queue if it has been deleted.
+
+    Regression test for #832
+    """
+    # conform_delivery must be turned on to detect missing queues when publishing messages.
+    rabbitmq_broker.confirm_delivery = True
+
+    # Given that I have an actor on a flaky queue
+    @dramatiq.actor(queue_name="flaky_queue")
+    def do_work():
+        pass
+
+    # Sending message should create queue
+    do_work.send()
+    result = rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
+    assert result.method.message_count == 1
+
+    # If I delete the queue, it disappears
     rabbitmq_broker.channel.queue_delete(do_work.queue_name)
     with pytest.raises(pika.exceptions.ChannelClosedByBroker):
         rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
 
-    # And I send that actor a message
+    # If I send that actor another message, the queue should be re-declared
     do_work.send()
-    try:
-        rabbitmq_broker.join(do_work.queue_name, timeout=20000)
-        worker.join()
-    finally:
-        worker.stop()
-
-    # Then the queue should be declared and the message executed
-    assert executed
+    result = rabbitmq_broker.channel.queue_declare(do_work.queue_name, passive=True)
+    assert result.method.message_count == 1
 
 
 def test_rabbitmq_messages_that_failed_to_decode_are_rejected(rabbitmq_broker, rabbitmq_worker):
