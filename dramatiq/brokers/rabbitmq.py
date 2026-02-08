@@ -407,12 +407,12 @@ class RabbitmqBroker(Broker):
                 # next caller/attempt may initiate new ones of each.
                 del self.connection
 
-                # If the queue disappears, remove it from the known set
+                # If the queue disappears, add it to the set of pending queues
                 # so that it can be redeclared on retry or the next time
                 # a message is enqueued.
                 # Note this only happens when confirm_delivery is enabled.
                 if isinstance(e, pika.exceptions.UnroutableError):
-                    self.queues.remove(q_name(queue_name))
+                    self.queues_pending.add(q_name(queue_name))
 
                 attempts += 1
                 if attempts >= MAX_ENQUEUE_ATTEMPTS:
