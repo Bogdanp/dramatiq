@@ -251,37 +251,36 @@ def make_argument_parser():
         help="timeout for worker shutdown, in milliseconds (default: 10 minutes)",
     )
 
-    if HAS_WATCHDOG:
-        parser.add_argument(
-            "--watch",
-            type=folder_path,
-            metavar="DIR",
-            help=(
-                "watch a directory and reload the workers when any source files "
-                "change (this feature must only be used during development). "
-                "This option is currently only supported on unix systems."
-            ),
-        )
-        parser.add_argument(
-            "--watch-use-polling",
-            action="store_true",
-            help="poll the filesystem for changes rather than using a system-dependent filesystem event emitter",
-        )
-        parser.add_argument(
-            "-i",
-            "--watch-include",
-            action="append",
-            dest="include_patterns",
-            default=["**.py"],
-            help="Patterns to include when watching for changes. Always includes all python files (*.py).",
-        )
-        parser.add_argument(
-            "-x",
-            "--watch-exclude",
-            action="append",
-            dest="exclude_patterns",
-            help="Patterns to ignore when watching for changes",
-        )
+    parser.add_argument(
+        "--watch",
+        type=folder_path,
+        metavar="DIR",
+        help=(
+            "watch a directory and reload the workers when any source files "
+            "change (this feature must only be used during development). "
+            "This option is currently only supported on unix systems."
+        ),
+    )
+    parser.add_argument(
+        "--watch-use-polling",
+        action="store_true",
+        help="poll the filesystem for changes rather than using a system-dependent filesystem event emitter",
+    )
+    parser.add_argument(
+        "-i",
+        "--watch-include",
+        action="append",
+        dest="include_patterns",
+        default=["**.py"],
+        help="Patterns to include when watching for changes. Always includes all python files (*.py).",
+    )
+    parser.add_argument(
+        "-x",
+        "--watch-exclude",
+        action="append",
+        dest="exclude_patterns",
+        help="Patterns to ignore when watching for changes",
+    )
 
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0, help="turn on verbose log output")
@@ -539,6 +538,23 @@ def main(args=None):  # noqa: C901
             logger.critical(e)
             return RET_PIDFILE
 
+    # perform checks of the command-line args that block start-up here, before starting child processes.
+    try:
+        # If user requested watching, check pre-requisites for that.
+        if args.watch:
+            if not hasattr(signal, "SIGHUP"):
+                raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
+            if not HAS_WATCHDOG:
+                raise RuntimeError(
+                    "Watching for source changes requires dramatiq be to installed with the extra 'watch' "
+                    "e.g. pip install 'dramatiq[watch]'"
+                )
+    except RuntimeError as e:
+        with file_or_stderr(args.log_file) as stream:
+            logger = setup_parent_logging(args, stream=stream)
+            logger.critical(e)
+            return RET_IMPORT
+
     canteen = multiprocessing.Value(Canteen)
 
     # To prevent the main process from exiting due to signals after worker
@@ -597,9 +613,8 @@ def main(args=None):  # noqa: C901
     # The file watcher and log watcher threads should inherit the
     # signal blocking behaviour, so do not unblock the signals when
     # starting those threads.
-    if HAS_WATCHDOG and args.watch:
-        if not hasattr(signal, "SIGHUP"):
-            raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
+    if args.watch:
+        # pre-requisites for watching should be checked above, before child processes were started.
         file_watcher = setup_file_watcher(
             args.watch,
             args.watch_use_polling,

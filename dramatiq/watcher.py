@@ -4,6 +4,7 @@ import logging
 import os
 import signal
 
+# Note: importing watchdog may fail (it is an optional dependency). Code importing this module should handle that.
 import watchdog.events
 import watchdog.observers.polling
 
