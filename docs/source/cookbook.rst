@@ -447,6 +447,40 @@ The result expiration can be also set per an actor:
    def add(x, y):
        return x + y
 
+Handling dynamic time limits
+-------
+
+Setting dynamic time limits for messages
+^^^^^^^^^^^^^^^^^^^^^^^
+
+If you need a static time limit, you can set it on the actor with the
+ `time_limit` parameter. For more complex scenarios, you can set 
+ a `time_limit` option on each message.  You can also create a 
+ custom middleware to set the time limit before the message is processed:
+
+.. code-block:: python
+
+  import dramatiq
+
+   class DynamicTimeLimitMiddleware(dramatiq.Middleware):
+     def before_process_message(self, broker, message):
+         """Sets a dynamic time limit on messages based on their payload."""
+         # This example assumes the first argument to the actor is a dict
+         # that contains a 'time_limit_factor' key. Any key can be used.
+         if message.args:
+             message_payload = message.args[0]
+             if isinstance(message_payload, dict) and "time_limit_factor" in message_payload:
+                 time_limit_ms = message_payload["time_limit_factor"] * 1000
+                 message.options["time_limit"] = int(time_limit_ms)
+
+Finally, instantiate and add it to your broker:    
+
+.. code-block:: python
+
+   broker.add_middleware(DynamicTimeLimitMiddleware())
+   dramatiq.set_broker(broker)
+
+
 Scheduling
 ----------
 
