@@ -17,15 +17,17 @@
 
 from __future__ import annotations
 
+import warnings
+
 from .actor import Actor, actor
 from .broker import Broker, Consumer, MessageProxy, get_broker, set_broker
 from .composition import group, pipeline
 from .encoder import Encoder, JSONEncoder, PickleEncoder
 from .errors import (
     ActorNotFound,
+    BrokerConnectionError,
     BrokerError,
     ConnectionClosed,
-    ConnectionError,
     ConnectionFailed,
     DecodeError,
     DramatiqError,
@@ -65,7 +67,7 @@ __all__ = [
     "ActorNotFound",
     "QueueNotFound",
     "QueueJoinTimeout",
-    "ConnectionError",
+    "BrokerConnectionError",
     "ConnectionClosed",
     "ConnectionFailed",
     "RateLimitExceeded",
@@ -85,3 +87,16 @@ __all__ = [
 ]
 
 __version__ = "2.0.1"
+
+
+def __getattr__(name):
+    if name == "ConnectionError":
+        warnings.warn(
+            "The class 'ConnectionError' has been renamed to 'BrokerConnectionError'. "
+            "The old name 'ConnectionError' will be removed in dramatiq v3.0.0.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return BrokerConnectionError
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

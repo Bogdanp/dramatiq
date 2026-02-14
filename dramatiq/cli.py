@@ -37,7 +37,7 @@ from typing import Optional, Set
 
 from dramatiq import (
     Broker,
-    ConnectionError,
+    BrokerConnectionError,
     Worker,
     __version__,
     get_broker,
@@ -462,7 +462,7 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
     except ImportError:
         logger.exception("Failed to import module.")
         return sys.exit(RET_IMPORT)
-    except ConnectionError:
+    except BrokerConnectionError:
         logger.exception("Broker connection failed.")
         return sys.exit(RET_CONNECT)
     finally:

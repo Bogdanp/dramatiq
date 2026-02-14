@@ -240,7 +240,7 @@ Errors
 .. autoexception:: QueueNotFound
    :members:
    :show-inheritance:
-.. autoexception:: ConnectionError
+.. autoexception:: BrokerConnectionError
    :members:
    :show-inheritance:
 .. autoexception:: ConnectionClosed
