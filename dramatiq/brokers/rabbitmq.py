@@ -264,7 +264,7 @@ class RabbitmqBroker(Broker):
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
         self.declare_queue(queue_name, ensure=True)
-        return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
+        return self.consumer_class(self, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name: str, *, ensure: bool = False) -> None:
         """Declare a queue.  Has no effect if a queue with the given
@@ -516,10 +516,12 @@ class _IgnoreScaryLogs(logging.Filter):
 
 
 class _RabbitmqConsumer(Consumer):
-    def __init__(self, parameters, queue_name, prefetch, timeout):
+    def __init__(self, broker, queue_name, prefetch, timeout):
+        self.broker = broker
+        self.queue_name = queue_name
+        self.logger = get_logger(__name__, type(self))
         try:
-            self.logger = get_logger(__name__, type(self))
-            self.connection = pika.BlockingConnection(parameters=parameters)
+            self.connection = pika.BlockingConnection(parameters=self.broker.parameters)
             self.channel = self.connection.channel()
             self.channel.basic_qos(prefetch_count=prefetch)
             self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
@@ -585,6 +587,10 @@ class _RabbitmqConsumer(Consumer):
             pika.exceptions.AMQPConnectionError,
             pika.exceptions.AMQPChannelError,
         ) as e:
+            # If the queue disappears, add it to the set of pending queues
+            # so that it can be redeclared on when the consumer restarts.
+            if getattr(e, "reply_code", None) == 404:
+                self.broker.queues_pending.add(q_name(self.queue_name))
             raise ConnectionClosed(e) from None
 
         try:
