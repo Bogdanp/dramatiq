@@ -9,6 +9,79 @@ All notable changes to this project will be documented in this file.
 -------------
 
 
+`2.1.0`_ -- 2026-03-01
+----------------------
+
+Fixed
+^^^^^
+
+* Stopped unnecessary ``ImportWarning`` warnings being issued when importing
+  the ``dramatiq.rate_limits.backends`` module.
+  (`#787`_, `#816`_, `@synweap15`_, `#821`_, `#834`_, `@LincolnPuzey`_)
+* Added ``*args`` and ``**kwargs`` to the ``GenericActor.perform`` method.
+  This means ``NotImplementedError`` is always raised, as intended,
+  when this method is called but not implemented in a subclass.
+  This can also fix type-checking errors on subclasses that implement this method.
+  (`#805`_, `#837`_, `@LincolnPuzey`_)
+
+.. _#787: https://github.com/Bogdanp/dramatiq/issues/787
+.. _#816: https://github.com/Bogdanp/dramatiq/pull/816
+.. _#821: https://github.com/Bogdanp/dramatiq/issues/821
+.. _#834: https://github.com/Bogdanp/dramatiq/pull/834
+.. _#805: https://github.com/Bogdanp/dramatiq/issues/805
+.. _#837: https://github.com/Bogdanp/dramatiq/pull/837
+
+
+Added
+^^^^^
+
+* Added a warning when using ``dramatiq-gevent`` with a free-threaded python build.
+  Doing so is redundant because using gevent causes the GIL to be enabled.
+  (`#811`_, `#815`_, `@synweap15`_)
+
+.. _#811: https://github.com/Bogdanp/dramatiq/issues/811
+.. _#815: https://github.com/Bogdanp/dramatiq/pull/815
+
+Changed
+^^^^^^^
+
+* Increased the maximum ``redis`` library version to v7.X
+  (`#824`_, `#826`_, `@LincolnPuzey`_)
+* Renamed the ``dramatiq.errors.ConnectionError`` exception to ``BrokerConnectionError``,
+  so that it doesn't shadow the built-in exception class with the same name.
+  The old name is still importable for backwards compatibility,
+  and will be removed in Dramatiq v3.0.0.
+  (`#800`_, `#835`_, `@LincolnPuzey`_)
+* Removed dependency on the ``watchdog_gevent`` library.
+  This was previously used to ensure the ``--watch`` argument worked
+  when starting Dramatiq with ``dramatiq-gevent``.
+  Our testing shows that this now works without this extra compatibility library.
+  This change also bumps the minimum required versions of ``watchdog`` and ``gevent``
+  to the latest.
+  (`#799`_, `@LincolnPuzey`_)
+* Improved the error message printed when the ``--watch`` argument is used without
+  the ``watch`` extra installed.
+  (`#798`_, `#836`_, `@LincolnPuzey`_)
+
+.. _#824: https://github.com/Bogdanp/dramatiq/issues/824
+.. _#826: https://github.com/Bogdanp/dramatiq/pull/826
+.. _#800: https://github.com/Bogdanp/dramatiq/issues/800
+.. _#835: https://github.com/Bogdanp/dramatiq/pull/835
+.. _#799: https://github.com/Bogdanp/dramatiq/pull/799
+.. _#798: https://github.com/Bogdanp/dramatiq/issues/798
+.. _#836: https://github.com/Bogdanp/dramatiq/pull/836
+
+Deprecated
+^^^^^^^^^^
+
+* Deprecated the ``dramatiq_group_callback_barrier_ttl`` environment variable.
+  The new ``barrier_ttl`` argument to the |GroupCallbacks| middleware should be used instead.
+  The environment variable will be removed in Dramatiq v3.0.0.
+  (`#775`_, `@mikeroll`_)
+
+.. _#775: https://github.com/Bogdanp/dramatiq/pull/775
+
+
 `2.0.1`_ -- 2026-01-12
 -----------------------
 
@@ -66,7 +139,7 @@ These are breaking changes we believe are most likely to effect your project.
 
   However, we think the new default behavior is best, because it makes
   exceptions happening in your actor functions obvious in your tests.
-  Previsouly, exceptions in your actor functions could pass silently,
+  Previously, exceptions in your actor functions could pass silently,
   and potentially unnoticed unless you checked the side-effects of the actor.
   (`#739`_, `#758`_, `@LincolnPuzey`_)
 * The |Prometheus| middleware is no longer in the default middleware list.
@@ -1588,7 +1661,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.0.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.1.0...HEAD
+.. _2.1.0: https://github.com/Bogdanp/dramatiq/compare/v2.0.1...v2.1.0
 .. _2.0.1: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...v2.0.1
 .. _2.0.0: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...v2.0.0
 .. _1.18.0: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...v1.18.0
