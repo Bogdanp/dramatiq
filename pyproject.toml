@@ -10,7 +10,6 @@ dev = [
     {include-group = "type-check"},
     {include-group = "build"},
     {include-group = "docs"},
-    "bumpversion",
     "hiredis",
     "twine",
     "wheel",
