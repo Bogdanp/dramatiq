@@ -198,7 +198,15 @@ class group:
         return len(self.children)
 
     def __str__(self):  # pragma: no cover
-        return "group([%s])" % ", ".join(str(c) for c in self.children)
+        if self.completion_callbacks:
+            from .message import Message
+
+            return "group([%s]) -> (%s)" % (
+                ", ".join(str(c) for c in self.children),
+                ", ".join(str(Message(**m)) for m in self.completion_callbacks),
+            )
+        else:
+            return "group([%s])" % ", ".join(str(c) for c in self.children)
 
     def add_completion_callback(self, message):
         """Adds a completion callback to run once every job in this
