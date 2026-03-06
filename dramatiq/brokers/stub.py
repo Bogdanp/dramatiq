@@ -137,7 +137,9 @@ class StubBroker(Broker):
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
 
-        self.dead_letters_by_queue.clear()
+        # NOTE: do not clear the dead_letters_by_queue to avoid orphaning the references in existing consumers.
+        for dlq in self.dead_letters_by_queue.values():
+            dlq.clear()
 
     def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: Optional[bool] = None) -> None:
         """Wait for all the messages on the given queue to be

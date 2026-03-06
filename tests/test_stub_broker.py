@@ -91,3 +91,23 @@ def test_stub_broker_join_reraises_actor_exceptions_in_the_joining_current_threa
     # Then that exception should be raised in my thread
     with pytest.raises(CustomError):
         stub_broker.join(do_work.queue_name, fail_fast=True)
+
+
+def test_stub_broker_flush_all_does_not_break_dead_letters(stub_broker, stub_worker):
+    class SomeError(Exception):
+        pass
+
+    @dramatiq.actor(max_retries=0)
+    def do_work():
+        raise SomeError(":(")
+
+    do_work.send()
+    with pytest.raises(SomeError):
+        stub_broker.join(do_work.queue_name)
+
+    # Flush queues then retry. Should have the same result
+    stub_broker.flush_all()
+
+    do_work.send()
+    with pytest.raises(SomeError):
+        stub_broker.join(do_work.queue_name)
