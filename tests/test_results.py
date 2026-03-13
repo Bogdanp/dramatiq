@@ -82,12 +82,12 @@ def test_use_namespace_prefix_keys_produces_readable_key(stub_broker, stub_worke
     hashed_key = hashlib.md5(key.encode("utf-8")).hexdigest()
     assert message_key.endswith(f":{hashed_key}")
 
+
 def test_use_namespace_prefix_keys_default_is_legacy_hash(stub_broker):
     # Given a result backend with the default (legacy) behaviour
     backend = StubBackend(namespace="myns")
 
     # And a message
-    from dramatiq.message import Message
     message = Message(
         queue_name="default",
         actor_name="do_work",
