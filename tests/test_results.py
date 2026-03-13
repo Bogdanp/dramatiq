@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import time
 from unittest.mock import patch
 
@@ -52,6 +53,54 @@ def test_actors_results_are_backwards_compatible(stub_broker, stub_worker, resul
 
     # Then it should be unwrapped correctly
     assert result == 42
+
+
+def test_use_namespace_prefix_keys_produces_readable_key(stub_broker, stub_worker):
+    # Given a result backend with use_namespace_prefix_keys enabled
+    backend = StubBackend(namespace="myns", use_namespace_prefix_keys=True)
+    stub_broker.add_middleware(Results(backend=backend))
+
+    # And an actor that stores results
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        return 99
+
+    # When I send that actor a message and wait for the result
+    message = do_work.send()
+    result = backend.get_result(message, block=True)
+
+    # Then the result should be correct
+    assert result == 99
+
+    # And the stored key should start with the namespace prefix (not be an opaque hash)
+    message_key = backend.build_message_key(message)
+    assert message_key.startswith("myns:")
+
+    # And the rest of the key should be a 32-character hex MD5 digest of the queue, actor, and message ID
+    message_id = message.message_id
+    key = f"default:do_work:{message_id}"
+    hashed_key = hashlib.md5(key.encode("utf-8")).hexdigest()
+    assert message_key.endswith(f":{hashed_key}")
+
+
+def test_use_namespace_prefix_keys_default_is_legacy_hash(stub_broker):
+    # Given a result backend with the default (legacy) behaviour
+    backend = StubBackend(namespace="myns")
+
+    # And a message
+    message = Message(
+        queue_name="default",
+        actor_name="do_work",
+        args=(),
+        kwargs={},
+        options={},
+    )
+
+    # Then the key should be a 32-character hex MD5 digest, not a prefixed string
+    key = backend.build_message_key(message)
+    assert len(key) == 32
+    assert key.isalnum()
+    assert not key.startswith("myns:")
 
 
 def test_actors_can_store_exceptions(stub_broker, stub_worker, result_backend):
