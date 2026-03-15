@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import redis
 
 from ..backend import RateLimiterBackend
@@ -38,8 +40,7 @@ class RedisBackend(RateLimiterBackend):
         if url is not None:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
-        # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
 
     def add(self, key, value, ttl):
         return bool(self.client.set(key, value, px=ttl, nx=True))
@@ -82,16 +83,14 @@ class RedisBackend(RateLimiterBackend):
         with self.client.pipeline() as pipe:
             while True:
                 try:
-                    # TODO: Drop non-callable keys in Dramatiq v2.
-                    key_list = keys() if callable(keys) else keys
-                    pipe.watch(key, *key_list)
+                    pipe.watch(key, *keys())
                     value = int(pipe.get(key) or b"0")
                     value += amount
                     if value > maximum:
                         return False
 
                     # Fetch keys again to account for net/server latency.
-                    values = pipe.mget(keys() if callable(keys) else keys)
+                    values = pipe.mget(keys())
                     total = amount + sum(int(n) for n in values if n)
                     if total > maximum:
                         return False

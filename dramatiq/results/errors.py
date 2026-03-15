@@ -15,29 +15,27 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from ..errors import DramatiqError
 
 
 class ResultError(DramatiqError):
-    """Base class for result errors.
-    """
+    """Base class for result errors."""
 
 
 class ResultTimeout(ResultError):
-    """Raised when waiting for a result times out.
-    """
+    """Raised when waiting for a result times out."""
 
 
 class ResultMissing(ResultError):
-    """Raised when a result can't be found.
-    """
+    """Raised when a result can't be found."""
 
 
 class ResultFailure(ResultError):
-    """Raised when getting a result from an actor that failed.
-    """
+    """Raised when getting a result from an actor that failed."""
 
-    def __init__(self, message="", orig_exc_type="", orig_exc_msg=""):
+    def __init__(self, message="", orig_exc_type="", orig_exc_msg=""):  # noqa: B042
         super().__init__(message)
 
         self.orig_exc_type = orig_exc_type

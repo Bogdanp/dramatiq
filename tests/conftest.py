@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import random
@@ -24,8 +26,7 @@ logging.getLogger("pika").setLevel(logging.WARN)
 
 random.seed(1337)
 
-CI = os.getenv("GITHUB_ACTION") or \
-    os.getenv("APPVEYOR") == "true"
+CI = os.getenv("GITHUB_ACTION") or os.getenv("APPVEYOR") == "true"
 
 
 def check_rabbitmq(broker):

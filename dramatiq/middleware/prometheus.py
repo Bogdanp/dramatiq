@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -22,9 +24,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from ..common import current_millis
 from ..logging import get_logger
 from .middleware import Middleware
-
-#: The path to the file to use to race Exposition servers against one another.
-LOCK_PATH = os.getenv("dramatiq_prom_lock", "%s/dramatiq-prometheus.lock" % tempfile.gettempdir())
 
 #: The path to store the prometheus database files.  This path is
 #: cleared before every run.
@@ -46,10 +45,10 @@ class Prometheus(Middleware):
     .. _Prometheus: https://prometheus.io
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger(__name__, type(self))
-        self.delayed_messages = set()
-        self.message_start_times = {}
+        self.delayed_messages: set[str] = set()
+        self.message_start_times: dict[str, int] = {}
 
     @property
     def forks(self):
@@ -106,8 +105,27 @@ class Prometheus(Middleware):
             "dramatiq_message_duration_milliseconds",
             "The time spent processing messages.",
             ["queue_name", "actor_name"],
-            buckets=(5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,
-                     7500, 10000, 30000, 60000, 600000, 900000, float("inf")),
+            buckets=(
+                5,
+                10,
+                25,
+                50,
+                75,
+                100,
+                250,
+                500,
+                750,
+                1000,
+                2500,
+                5000,
+                7500,
+                10000,
+                30000,
+                60000,
+                600000,
+                900000,
+                float("inf"),
+            ),
             registry=registry,
         )
 

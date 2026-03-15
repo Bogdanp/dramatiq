@@ -15,15 +15,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import threading
 import warnings
 from threading import Thread
 from time import monotonic, sleep
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
+from .threading import (
+    Interrupt,
+    current_platform,
+    is_gevent_active,
+    raise_thread_exception,
+    supported_platforms,
+)
 
 if TYPE_CHECKING:
     import gevent
@@ -49,15 +57,18 @@ class TimeLimit(Middleware):
       time_limit(float): The maximum number of milliseconds actors may
         run for. Use `float("inf")` to avoid setting a timeout for the
         actor.
+        Defaults to 10 minutes (600,000 milliseconds).
       interval(int): The interval (in milliseconds) with which to
         check for actors that have exceeded the limit. This does not take
         effect when using gevent because the timers are managed by gevent.
+        Defaults to 1 second (1,000 milliseconds).
     """
 
-    def __init__(self, *, time_limit=600000, interval=1000):
+    def __init__(self, *, time_limit: float = 600000, interval: int = 1000) -> None:
         self.logger = get_logger(__name__, type(self))
         self.time_limit = time_limit
 
+        self.manager: Union[_GeventTimeoutManager, _CtypesTimeoutManager]
         if is_gevent_active():
             self.manager = _GeventTimeoutManager(logger=self.logger)
         else:
@@ -100,7 +111,10 @@ class _CtypesTimeoutManager(Thread):
         with self.mu:
             for thread_id, deadline in self.deadlines.items():
                 if deadline and current_time >= deadline:
-                    self.logger.warning("Time limit exceeded. Raising exception in worker thread %r.", thread_id)
+                    self.logger.warning(
+                        "Time limit exceeded. Raising exception in worker thread %r.",
+                        thread_id,
+                    )
                     self.deadlines[thread_id] = None
                     threads_to_kill.append(thread_id)
 
@@ -149,7 +163,7 @@ class _GeventTimeoutManager:
             timer.close()
 
 
-_GeventTimeout: Optional["gevent.Timeout"] = None
+_GeventTimeout: Optional[gevent.Timeout] = None
 if is_gevent_active():
     from gevent import Timeout
 
@@ -164,7 +178,9 @@ if is_gevent_active():
 
         def _on_expiration(self, prev_greenlet, ex):
             self.logger.warning(
-                "Time limit exceeded. Raising exception in worker thread %r.", self.thread_id)
+                "Time limit exceeded. Raising exception in worker thread %r.",
+                self.thread_id,
+            )
             res = super()._on_expiration(prev_greenlet, ex)
             if self.after_expiration is not None:
                 self.after_expiration()

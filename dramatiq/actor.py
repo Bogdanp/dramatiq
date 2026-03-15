@@ -20,23 +20,29 @@ import re
 import time
 from datetime import timedelta
 from inspect import iscoroutinefunction
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar, Union, overload
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Generic,
+    Optional,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from .asyncio import async_to_sync
 from .broker import Broker, get_broker
 from .logging import get_logger
 from .message import Message
 
-if TYPE_CHECKING:
-    from typing_extensions import ParamSpec
-
-    P = ParamSpec("P")
-else:
-    P = TypeVar("P")
-
 #: The regular expression that represents valid queue names.
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
 
+# Type variables for the Actor function's parameters and return type.
+P = ParamSpec("P")
 R = TypeVar("R")
 
 
@@ -54,21 +60,22 @@ class Actor(Generic[P, R]):
       options(dict): Arbitrary options that are passed to the broker
         and middleware.
     """
+
     def __init__(
         self,
-        fn: Callable[P, Union[R, Awaitable[R]]],
+        fn: Union[Callable[P, Awaitable[R]], Callable[P, R]],
         *,
         broker: Broker,
         actor_name: str,
         queue_name: str,
         priority: int,
-        options: Dict[str, Any],
+        options: dict[str, Any],
     ) -> None:
         if actor_name in broker.actors:
             raise ValueError(f"An actor named {actor_name!r} is already registered.")
 
-        self.logger = get_logger(fn.__module__, actor_name)
-        self.fn = async_to_sync(fn) if iscoroutinefunction(fn) else fn
+        self.logger = get_logger(fn.__module__ or "_", actor_name)
+        self.fn: Callable[P, R] = async_to_sync(fn) if iscoroutinefunction(fn) else fn  # type: ignore[assignment]
         self.broker = broker
         self.actor_name = actor_name
         self.queue_name = queue_name
@@ -95,9 +102,10 @@ class Actor(Generic[P, R]):
         return self.message_with_options(args=args, kwargs=kwargs)
 
     def message_with_options(
-        self, *,
+        self,
+        *,
         args: tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: Optional[dict[str, Any]] = None,
         **options,
     ) -> Message[R]:
         """Build a message with an arbitrary set of processing options.
@@ -142,9 +150,10 @@ class Actor(Generic[P, R]):
         return self.send_with_options(args=args, kwargs=kwargs)
 
     def send_with_options(
-        self, *,
+        self,
+        *,
         args: tuple = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: Optional[dict[str, Any]] = None,
         delay: Optional[timedelta | int] = None,
         **options,
     ) -> Message[R]:
@@ -169,7 +178,7 @@ class Actor(Generic[P, R]):
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
         return self.broker.enqueue(message, delay=delay)
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Any | R | Awaitable[R]:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """Synchronously call this actor.
 
         Parameters:
@@ -194,25 +203,48 @@ class Actor(Generic[P, R]):
         return "Actor(%(actor_name)s)" % vars(self)
 
 
+class ActorDecorator(Protocol):
+    @overload
+    def __call__(self, fn: Callable[P, Awaitable[R]]) -> Actor[P, R]: ...
+
+    @overload
+    def __call__(self, fn: Callable[P, R]) -> Actor[P, R]: ...
+
+    def __call__(self, fn: Union[Callable[P, Awaitable[R]], Callable[P, R]]) -> Actor[P, R]: ...
+
+
 @overload
-def actor(fn: Callable[P, Union[Awaitable[R], R]], **kwargs) -> Actor[P, R]:
+def actor(fn: Callable[P, Awaitable[R]]) -> Actor[P, R]:
     pass
 
 
 @overload
-def actor(fn: None = None, **kwargs) -> Callable[[Callable[P, Union[Awaitable[R], R]]], Actor[P, R]]:
+def actor(fn: Callable[P, R]) -> Actor[P, R]:
+    pass
+
+
+@overload
+def actor(
+    *,
+    queue_name: str = "default",
+    priority: int = 0,
+    actor_name: Optional[str] = None,
+    broker: Optional[Broker] = None,
+    actor_class: Callable[..., Actor[Any, Any]] = Actor,
+    **options: Any,
+) -> ActorDecorator:
     pass
 
 
 def actor(
     fn: Optional[Callable[P, Union[Awaitable[R], R]]] = None,
     *,
-    actor_class: Callable[..., Actor[P, R]] = Actor,  # type: ignore[assignment]
+    actor_class: Callable[..., Actor[P, R]] = Actor,
     actor_name: Optional[str] = None,
     queue_name: str = "default",
     priority: int = 0,
     broker: Optional[Broker] = None,
-    **options,
+    **options: Any,
 ) -> Union[Actor[P, R], Callable]:
     """Declare an actor.
 
@@ -256,6 +288,7 @@ def actor(
     Returns:
       Actor: The decorated function.
     """
+
     def decorator(fn: Callable[..., Union[Awaitable[R], R]]) -> Actor[P, R]:
         nonlocal actor_name, broker
         actor_name = actor_name or fn.__name__
@@ -269,14 +302,18 @@ def actor(
         invalid_options = set(options) - broker.actor_options
         if invalid_options:
             invalid_options_list = ", ".join(invalid_options)
-            raise ValueError((
-                "The following actor options are undefined: %s. "
-                "Did you forget to add a middleware to your Broker?"
-            ) % invalid_options_list)
+            raise ValueError(
+                "The following actor options are undefined: %s. Did you forget to add a middleware to your Broker?"
+                % invalid_options_list
+            )
 
         return actor_class(
-            fn, actor_name=actor_name, queue_name=queue_name,
-            priority=priority, broker=broker, options=options,
+            fn,
+            actor_name=actor_name,
+            queue_name=queue_name,
+            priority=priority,
+            broker=broker,
+            options=options,
         )
 
     if fn is None:

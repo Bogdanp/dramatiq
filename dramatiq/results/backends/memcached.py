@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from pylibmc import Client, ClientPool
 
 from ..backend import Missing, ResultBackend
@@ -33,8 +35,6 @@ class MemcachedBackend(ResultBackend):
       pool_size(int): The size of the connection pool to use.
       **parameters: Connection parameters are passed directly
         to :class:`pylibmc.Client`.
-
-    .. _memcached: https://memcached.org
     """
 
     def __init__(self, *, namespace="dramatiq-results", encoder=None, pool=None, pool_size=8, **parameters):

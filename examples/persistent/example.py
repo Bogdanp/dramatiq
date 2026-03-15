@@ -9,6 +9,7 @@ from dramatiq.middleware import Shutdown
 
 if os.getenv("REDIS") == "1":
     from dramatiq.brokers.redis import RedisBroker
+
     broker = RedisBroker()
     dramatiq.set_broker(broker)
 
@@ -61,7 +62,7 @@ def fib(n):
 
             x2, x1 = x1, x2 + x1
             fib.logger.info("fib(%d): %d", i, x1)
-            time.sleep(.1)
+            time.sleep(0.1)
 
         remove_state(n)
         fib.logger.info("Done!")

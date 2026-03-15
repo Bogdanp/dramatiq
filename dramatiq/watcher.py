@@ -1,16 +1,12 @@
+from __future__ import annotations
+
 import logging
 import os
 import signal
 
+# Note: importing watchdog may fail (it is an optional dependency). Code importing this module should handle that.
 import watchdog.events
 import watchdog.observers.polling
-
-try:
-    import watchdog_gevent
-
-    EVENTED_OBSERVER = watchdog_gevent.Observer
-except ImportError:
-    EVENTED_OBSERVER = watchdog.observers.Observer
 
 
 def setup_file_watcher(path, use_polling=False, include_patterns=None, exclude_patterns=None):
@@ -21,14 +17,12 @@ def setup_file_watcher(path, use_polling=False, include_patterns=None, exclude_p
     if use_polling:
         observer_class = watchdog.observers.polling.PollingObserver
     else:
-        observer_class = EVENTED_OBSERVER
+        observer_class = watchdog.observers.Observer
 
     if include_patterns is None:
         include_patterns = ["*.py"]
 
-    file_event_handler = _SourceChangesHandler(
-        patterns=include_patterns, ignore_patterns=exclude_patterns
-    )
+    file_event_handler = _SourceChangesHandler(patterns=include_patterns, ignore_patterns=exclude_patterns)
     file_watcher = observer_class()
     file_watcher.schedule(file_event_handler, path, recursive=True)
     file_watcher.start()
@@ -49,6 +43,12 @@ class _SourceChangesHandler(watchdog.events.PatternMatchingEventHandler):  # pra
         #   https://github.com/gorakhargosh/watchdog/issues/949
         #   https://github.com/pallets/werkzeug/pull/2604/files
         if event.event_type == "opened":
+            return
+
+        # watchdog >= 5.0.0 added events for when a file is closed without being written.
+        # Also ignore these so they don't cause unnecessay restarts.
+        # See https://github.com/gorakhargosh/watchdog/pull/1059
+        if event.event_type == "closed_no_write":
             return
 
         logger = logging.getLogger("SourceChangesHandler")

@@ -15,7 +15,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ..threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
+from __future__ import annotations
+
+from ..threading import (
+    Interrupt,
+    current_platform,
+    is_gevent_active,
+    raise_thread_exception,
+    supported_platforms,
+)
 
 __all__ = [
     "Interrupt",

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import redis
 
 from ..backend import DEFAULT_TIMEOUT, ResultBackend, ResultMissing, ResultTimeout
@@ -44,8 +46,7 @@ class RedisBackend(ResultBackend):
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
 
-        # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
 
     def get_result(self, message, *, block=False, timeout=None):
         """Get a result from the backend.

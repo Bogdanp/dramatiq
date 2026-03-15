@@ -1,8 +1,10 @@
 /.benchmarks
 /.cache
 /.coverage
+/.idea
 /.pytest_cache
 /.tox
+/.venv
 /benchmark*.svg
 /build
 /dist

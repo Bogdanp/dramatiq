@@ -3,7 +3,7 @@
 Installation
 ============
 
-Dramatiq supports Python versions 3.9 and up and is installable via
+Dramatiq supports Python versions 3.10 and up and is installable via
 `pip`_ or from source.
 
 
@@ -29,14 +29,17 @@ Extra Requirements
 When installing the package via pip you can specify the following
 extra requirements:
 
-=============  =======================================================================================
-Name           Description
-=============  =======================================================================================
-``memcached``  Installs the required dependencies for the Memcached rate limiter backend.
-``rabbitmq``   Installs the required dependencies for using Dramatiq with RabbitMQ.
-``redis``      Installs the required dependencies for using Dramatiq with Redis.
-``watch``      Installs the required dependencies for the ``--watch`` flag.  (Supported only on UNIX)
-=============  =======================================================================================
+================  =======================================================================================
+Name              Description
+================  =======================================================================================
+``all``           Installs all available extras.
+``gevent``        Installs the required dependencies for running workers under gevent.
+``memcached``     Installs the required dependencies for the Memcached rate limiter backend.
+``prometheus``    Installs the required dependencies for the Prometheus metrics middleware.
+``rabbitmq``      Installs the required dependencies for using Dramatiq with RabbitMQ.
+``redis``         Installs the required dependencies for using Dramatiq with Redis.
+``watch``         Installs the required dependencies for the ``--watch`` flag.  (Supported only on UNIX)
+================  =======================================================================================
 
 If you want to install Dramatiq with all available features, run::
 

@@ -1,6 +1,7 @@
 .. References
 
 .. |AgeLimit| replace:: :class:`AgeLimit<dramatiq.middleware.AgeLimit>`
+.. |AsyncIO| replace:: :class:`AsyncIO<dramatiq.middleware.AsyncIO>`
 .. |Barriers| replace:: :class:`Barriers<dramatiq.rate_limits.Barrier>`
 .. |Brokers| replace:: :class:`Brokers<dramatiq.Broker>`
 .. |Broker| replace:: :class:`Broker<dramatiq.Broker>`
@@ -10,11 +11,14 @@
 .. |Encoders| replace:: :class:`Encoders<dramatiq.Encoder>`
 .. |GenericActors| replace:: :class:`class-based actors<dramatiq.GenericActor>`
 .. |Groups| replace:: :func:`Groups<dramatiq.group>`
+.. |GroupCallbacks| replace:: :class:`GroupCallbacks<dramatiq.middleware.GroupCallbacks>`
 .. |Interrupt| replace:: :class:`Interrupt<dramatiq.middleware.Interrupt>`
 .. |MemcachedRLBackend| replace:: :class:`Memcached<dramatiq.rate_limits.backends.MemcachedBackend>`
 .. |Messages| replace:: :class:`Messages<dramatiq.Message>`
+.. |Middleware| replace:: :class:`Middleware<dramatiq.Middleware>`
 .. |MiddlewareError| replace:: :class:`MiddlewareError<dramatiq.middleware.MiddlewareError>`
-.. |Prometheus| replace:: :class:`Prometheus<dramatiq.middleware.Prometheus>`
+.. |Pipelines| replace:: :class:`Pipelines<dramatiq.middleware.Pipelines>`
+.. |Prometheus| replace:: :class:`Prometheus<dramatiq.middleware.prometheus.Prometheus>`
 .. |RabbitmqBroker_join| replace:: :meth:`join<dramatiq.brokers.rabbitmq.RabbitmqBroker.join>`
 .. |RabbitmqBroker| replace:: :class:`RabbitmqBroker<dramatiq.brokers.rabbitmq.RabbitmqBroker>`
 .. |RateLimitExceeded| replace:: :class:`RateLimitExceeded<dramatiq.RateLimitExceeded>`
@@ -38,7 +42,6 @@
 .. |StubBroker| replace:: :class:`StubBroker<dramatiq.brokers.stub.StubBroker>`
 .. |TimeLimitExceeded| replace:: :class:`TimeLimitExceeded<dramatiq.middleware.TimeLimitExceeded>`
 .. |TimeLimit| replace:: :class:`TimeLimit<dramatiq.middleware.TimeLimit>`
-.. |URLRabbitmqBroker| replace:: :class:`URLRabbitmqBroker<dramatiq.brokers.rabbitmq.URLRabbitmqBroker>`
 .. |WindowRateLimiter| replace:: :class:`WindowRateLimiter<dramatiq.rate_limits.WindowRateLimiter>`
 .. |Worker_join| replace:: :meth:`Worker.join<dramatiq.Worker.join>`
 .. |Worker_pause| replace:: :meth:`Worker.pause<dramatiq.Worker.pause>`

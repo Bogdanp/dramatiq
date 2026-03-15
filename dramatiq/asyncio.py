@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import concurrent.futures
 import functools
 import logging
 import threading
-from typing import Awaitable, Callable, Optional, TypeVar
+from typing import Awaitable, Callable, Optional, ParamSpec, TypeVar
 
 from .threading import Interrupt
 
@@ -32,11 +34,12 @@ __all__ = [
 ]
 
 R = TypeVar("R")
+P = ParamSpec("P")
 
 _event_loop_thread = None
 
 
-def get_event_loop_thread() -> Optional["EventLoopThread"]:
+def get_event_loop_thread() -> Optional[EventLoopThread]:
     """Get the global event loop thread.
 
     Returns:
@@ -45,24 +48,23 @@ def get_event_loop_thread() -> Optional["EventLoopThread"]:
     return _event_loop_thread
 
 
-def set_event_loop_thread(thread: Optional["EventLoopThread"]) -> None:
+def set_event_loop_thread(thread: Optional[EventLoopThread]) -> None:
     """Set the global event loop thread."""
     global _event_loop_thread
     _event_loop_thread = thread
 
 
-def async_to_sync(async_fn: Callable[..., Awaitable[R]]) -> Callable[..., R]:
+def async_to_sync(async_fn: Callable[P, Awaitable[R]]) -> Callable[P, R]:
     """Wrap an async function to run it on the event loop thread and
     synchronously wait for its result on the calling thread.
     """
 
     @functools.wraps(async_fn)
-    def wrapper(*args, **kwargs) -> R:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         event_loop_thread = get_event_loop_thread()
         if event_loop_thread is None:
             raise RuntimeError(
-                "Global event loop thread not set. "
-                "Have you added the AsyncIO middleware to your middleware stack?"
+                "Global event loop thread not set. Have you added the AsyncIO middleware to your middleware stack?"
             )
         return event_loop_thread.run_coroutine(async_fn(*args, **kwargs))
 
@@ -145,8 +147,27 @@ class EventLoopThread(threading.Thread):
                     # Use a timeout to be able to catch asynchronously
                     # raised dramatiq exceptions (Interrupt).
                     return future.result(timeout=self.interrupt_check_ival)
-                except concurrent.futures.TimeoutError:
-                    continue
+                except (
+                    # TODO replace with built-in TimeoutError once 3.10 support dropped.
+                    concurrent.futures.TimeoutError
+                ):
+                    # NOTE: TimeoutError caught here could be from future.result() timing out (i.e. future not done yet),
+                    # or a TimeoutError raised inside the future itself (future is done).
+                    if not future.done():
+                        # future not done, so .result() must've timed out. continue to wait again.
+                        continue
+
+                # If execution reaches here, it means a TimeoutError was caught above, and the future is done.
+                # There are 3 possibilities here:
+                # 1. TimeoutError was raised inside the future. This will re-raise it.
+                # 2. First .result() call timed out, but the future completed by the time .done() was called.
+                #     a) This will return the future's result, or
+                #     b) raise the Exception that happened in the future.
+                return future.result(timeout=0)
+                # This is outside the 'except' block to avoid any
+                # "During handling of the above exception, another exception occurred" messages.
+                # zero timeout used because future is now done.
+
         except Interrupt as e:
             # Asynchronously raised from another thread: cancel the
             # future.

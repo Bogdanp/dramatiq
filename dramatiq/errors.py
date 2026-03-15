@@ -15,41 +15,41 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+import warnings
+from typing import Optional
+
 
 class DramatiqError(Exception):  # pragma: no cover
-    """Base class for all dramatiq errors.
-    """
+    """Base class for all dramatiq errors."""
 
-    def __init__(self, message):
+    def __init__(self, message):  # noqa: B042
         self.message = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.message) or repr(self.message)
 
 
 class DecodeError(DramatiqError):
-    """Raised when a message fails to decode.
-    """
+    """Raised when a message fails to decode."""
 
-    def __init__(self, message, data, error):
+    def __init__(self, message, data, error):  # noqa: B042
         super().__init__(message)
         self.data = data
         self.error = error
 
 
 class BrokerError(DramatiqError):
-    """Base class for broker-related errors.
-    """
+    """Base class for broker-related errors."""
 
 
 class ActorNotFound(BrokerError):
-    """Raised when a message is sent to an actor that hasn't been declared.
-    """
+    """Raised when a message is sent to an actor that hasn't been declared."""
 
 
 class QueueNotFound(BrokerError):
-    """Raised when a message is sent to an queue that hasn't been declared.
-    """
+    """Raised when a message is sent to an queue that hasn't been declared."""
 
 
 class QueueJoinTimeout(DramatiqError):
@@ -58,24 +58,20 @@ class QueueJoinTimeout(DramatiqError):
     """
 
 
-class ConnectionError(BrokerError):
-    """Base class for broker connection-related errors.
-    """
+class BrokerConnectionError(BrokerError):
+    """Base class for broker connection-related errors."""
 
 
-class ConnectionFailed(ConnectionError):
-    """Raised when a broker connection could not be opened.
-    """
+class ConnectionFailed(BrokerConnectionError):
+    """Raised when a broker connection could not be opened."""
 
 
-class ConnectionClosed(ConnectionError):
-    """Raised when a broker connection is suddenly closed.
-    """
+class ConnectionClosed(BrokerConnectionError):
+    """Raised when a broker connection is suddenly closed."""
 
 
 class RateLimitExceeded(DramatiqError):
-    """Raised when a rate limit has been exceeded.
-    """
+    """Raised when a rate limit has been exceeded."""
 
 
 class Retry(DramatiqError):
@@ -88,6 +84,19 @@ class Retry(DramatiqError):
     retried after at least that amount of time (in milliseconds).
     """
 
-    def __init__(self, message="", delay=None):
+    def __init__(self, message: str = "", delay: Optional[int] = None):  # noqa: B042
         super().__init__(message)
         self.delay = delay
+
+
+def __getattr__(name):
+    if name == "ConnectionError":
+        warnings.warn(
+            "The class 'ConnectionError' has been renamed to 'BrokerConnectionError'. "
+            "The old name 'ConnectionError' will be removed in dramatiq v3.0.0.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return BrokerConnectionError
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

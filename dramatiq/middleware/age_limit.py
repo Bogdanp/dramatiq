@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+from typing import Optional
+
 from ..common import current_millis
 from ..logging import get_logger
 from .middleware import Middleware, SkipMessage
@@ -30,7 +34,7 @@ class AgeLimit(Middleware):
         indefinitely.
     """
 
-    def __init__(self, *, max_age=None):
+    def __init__(self, *, max_age: Optional[int] = None) -> None:
         self.logger = get_logger(__name__, type(self))
         self.max_age = max_age
 

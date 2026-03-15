@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import logging
 import os
 import time
 from threading import Event
@@ -8,22 +11,19 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, Middleware, QueueJoinTimeout, Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker, URLRabbitmqBroker, _IgnoreScaryLogs
+from dramatiq.brokers.rabbitmq import (
+    MAX_DECLARE_ATTEMPTS,
+    RabbitmqBroker,
+    _IgnoreScaryLogs,
+)
 from dramatiq.common import current_millis
 
-from .common import RABBITMQ_CREDENTIALS, RABBITMQ_PASSWORD, RABBITMQ_USERNAME, skip_unless_rabbit_mq
-
-
-def test_urlrabbitmq_creates_instances_of_rabbitmq_broker():
-    # Given a URL connection string
-    url = "amqp://%s:%s@127.0.0.1:5672" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
-
-    # When I pass that to URLRabbitmqBroker
-    with pytest.warns(DeprecationWarning):
-        broker = URLRabbitmqBroker(url)
-
-    # Then I should get back a RabbitmqBroker
-    assert isinstance(broker, RabbitmqBroker)
+from .common import (
+    RABBITMQ_CREDENTIALS,
+    RABBITMQ_PASSWORD,
+    RABBITMQ_USERNAME,
+    skip_unless_rabbit_mq,
+)
 
 
 @skip_unless_rabbit_mq
@@ -31,7 +31,8 @@ def test_rabbitmq_broker_can_be_passed_a_semicolon_separated_list_of_uris():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a ;-separated string
     broker = RabbitmqBroker(
-        url="amqp://127.0.0.1:55672;amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD))
+        url="amqp://127.0.0.1:55672;amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
+    )
 
     # The the broker should connect to the host that is up
     assert broker.connection
@@ -42,7 +43,11 @@ def test_rabbitmq_broker_can_be_passed_a_list_of_uri_for_failover():
     # Given a string with a list of RabbitMQ connection URIs, including an invalid one
     # When I pass those URIs to RabbitMQ broker as a list
     broker = RabbitmqBroker(
-        url=["amqp://127.0.0.1:55672", "amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD)])
+        url=[
+            "amqp://127.0.0.1:55672",
+            "amqp://%s:%s@127.0.0.1" % (RABBITMQ_USERNAME, RABBITMQ_PASSWORD),
+        ]
+    )
 
     # The the broker should connect to the host that is up
     assert broker.connection
@@ -53,7 +58,10 @@ def test_rabbitmq_broker_raises_an_error_if_given_invalid_parameter_combinations
     # When I try to give it both a connection URL and a list of connection parameters
     # Then a RuntimeError should be raised
     with pytest.raises(RuntimeError):
-        RabbitmqBroker(url="amqp://127.0.0.1:5672", parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)])
+        RabbitmqBroker(
+            url="amqp://127.0.0.1:5672",
+            parameters=[dict(host="127.0.0.1", credentials=RABBITMQ_CREDENTIALS)],
+        )
 
     # When I try to give it both a connection URL and pika connection parameters
     # Then a RuntimeError should be raised
@@ -125,7 +133,9 @@ def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq
     succeeded.wait(timeout=30)
 
     # I expect backoff time to have passed between success and failure
-    assert 500 <= success_time - failure_time <= 1500
+    assert 1000 <= success_time - failure_time <= (2000 + 200)
+    # The first backoff time should be 100-200% of min_backoff.
+    # Add an extra 200 milliseconds to account for processing and to prevent flakiness.
 
 
 def test_rabbitmq_actors_can_retry_multiple_times(rabbitmq_broker, rabbitmq_worker):
@@ -250,15 +260,23 @@ def test_rabbitmq_broker_connections_are_lazy():
 
 def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):
     # Given that I have a rabbit instance that lost its connection
-    with patch.object(rabbitmq_broker, "_declare_queue", side_effect=pika.exceptions.AMQPConnectionError):
+    with patch.object(
+        rabbitmq_broker,
+        "_declare_queue",
+        side_effect=pika.exceptions.AMQPConnectionError,
+    ) as mock_declare_queue:
         # When I declare and use an actor
         # Then a ConnectionClosed error should be raised
         with pytest.raises(dramatiq.errors.ConnectionClosed):
+
             @dramatiq.actor(queue_name="flaky_queue")
             def do_work():
                 pass
 
             do_work.send()
+
+    # check declare was attempted the max number of times.
+    assert mock_declare_queue.call_count == MAX_DECLARE_ATTEMPTS
 
 
 def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_broker, rabbitmq_worker):
@@ -267,7 +285,8 @@ def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_bro
     message = Message(
         queue_name="some-queue",
         actor_name="some-actor",
-        args=(), kwargs={},
+        args=(),
+        kwargs={},
         options={},
     )
     rabbitmq_broker.declare_queue(message.queue_name)
@@ -367,6 +386,40 @@ def test_ignore_scary_logs_filter_ignores_logs():
 
     # Then it should ignore that log message
     assert log_filter.filter(record)
+
+
+def test_rabbitmq_close_only_registers_ignore_filter_once():
+    # Given a RabbitmqBroker
+    broker = RabbitmqBroker()
+
+    base_logger = logging.getLogger("pika.adapters.base_connection")
+    blocking_logger = logging.getLogger("pika.adapters.blocking_connection")
+
+    # And snapshots of the current filters
+    original_base_filters = list(base_logger.filters)
+    original_blocking_filters = list(blocking_logger.filters)
+
+    try:
+        # When I close the broker twice
+        broker.close()
+        broker.close()
+
+        base_filters = [f for f in base_logger.filters if isinstance(f, _IgnoreScaryLogs)]
+        blocking_filters = [f for f in blocking_logger.filters if isinstance(f, _IgnoreScaryLogs)]
+
+        # Then only one ignore filter is registered per logger
+        assert len(base_filters) == 1
+        assert len(blocking_filters) == 1
+    finally:
+        # And the filters are removed after the test run
+        # so they don't affect the global state.
+        for log_filter in list(base_logger.filters):
+            if log_filter not in original_base_filters:
+                base_logger.removeFilter(log_filter)
+
+        for log_filter in list(blocking_logger.filters):
+            if log_filter not in original_blocking_filters:
+                blocking_logger.removeFilter(log_filter)
 
 
 def test_rabbitmq_broker_can_join_with_timeout(rabbitmq_broker, rabbitmq_worker):

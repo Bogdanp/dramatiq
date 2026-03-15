@@ -14,6 +14,7 @@ of those changes to CLEARTYPE SRL.
 | [@jssuzanne](https://github.com/jssuzanne)             | Jean-Sébastien Suzanne |
 | [@chen2aaron](https://github.com/chen2aaron)           | xixijun                |
 | [@aequitas](https://github.com/aequitas)               | Johan Bloemberg        |
+| [@udogri](https://github.com/udogri)                   | Udogri Oruaro          |
 | [@najamansari](https://github.com/najamansari)         | Najam Ahmed Ansari     |
 | [@rpkilby](https://github.com/rpkilby)                 | Ryan P Kilby           |
 | [@2miksyn](https://github.com/2miksyn)                 | Mikhail Smirnov        |
@@ -67,3 +68,13 @@ of those changes to CLEARTYPE SRL.
 | [@kuba-lilz](https://github.com/kuba-lilz/)            | Jakub Kolodziejczyk    |
 | [@dbowring](https://github.com/dbowring/)              | Daniel Bowring         |
 | [@bagowix](https://github.com/bagowix/)                | Bogdan Galushko        |
+| [@olii](https://github.com/olii)                       | Oliver Nemček          |
+| [@bartvanandel](https://github.com/bartvanandel)       | Bart van Andel         |
+| [@LincolnPuzey](https://github.com/LincolnPuzey)       | Lincoln Puzey          |
+| [@guedesfelipe](https://github.com/guedesfelipe)       | Felipe Guedes          |
+| [@karolinepauls](https://karolinepauls.com)            | Karoline Pauls         |
+| [@gurelkaynak](https://gurel.kaynak.link)              | Gurel Kaynak           |
+| [@ksoviero-zengrc](https://github.com/ksoviero-zengrc) | Kevin Soviero          |
+| [@mikeroll](https://github.com/mikeroll)               | Mikhail Bulash         |
+| [@janek-cosmose](https://github.com/janek-cosmose)     | Jan Szejko             |
+| [@ABolouk](https://github.com/ABolouk) | Amirhossein Bolouk Asli |

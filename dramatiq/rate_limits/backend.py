@@ -16,9 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from __future__ import annotations
+
+
 class RateLimiterBackend:
-    """ABC for rate limiter backends.
-    """
+    """ABC for rate limiter backends."""
 
     def add(self, key, value, ttl):  # pragma: no cover
         """Add a key to the backend iff it doesn't exist.

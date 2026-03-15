@@ -45,7 +45,7 @@ Here's what it looks like:
   count_words.send("http://example.com")
 
 **Dramatiq** is :doc:`licensed<license>` under the LGPL and it
-officially supports Python 3.9 and later.
+officially supports Python 3.10 and later.
 
 
 Get It Now
@@ -101,6 +101,7 @@ Project Info
 
    Source Code <https://github.com/Bogdanp/dramatiq>
    changelog
+   PyPI <https://pypi.org/project/dramatiq/>
    Contributing <https://github.com/Bogdanp/dramatiq/blob/master/CONTRIBUTING.md>
    Discussion Board <https://groups.io/g/dramatiq-users>
    license

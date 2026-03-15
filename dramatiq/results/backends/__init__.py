@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import warnings
 
 from .stub import StubBackend
@@ -35,14 +37,12 @@ def import_memcached():
         from .memcached import MemcachedBackend
 
         return MemcachedBackend
-    except ModuleNotFoundError:
-        warnings.warn(
-            "MemcachedBackend is not available.  Run `pip install dramatiq[memcached]` "
-            "to add support for that backend.",
-            category=ImportWarning,
-            stacklevel=2,
+    except ModuleNotFoundError as e:
+        message = (
+            "MemcachedBackend is not available.  Run `pip install dramatiq[memcached]` to add support for that backend."
         )
-        raise
+        warnings.warn(message, category=ImportWarning, stacklevel=3)
+        raise AttributeError(message) from e
 
 
 def import_redis():
@@ -50,14 +50,10 @@ def import_redis():
         from .redis import RedisBackend
 
         return RedisBackend
-    except ModuleNotFoundError:
-        warnings.warn(
-            "RedisBackend is not available.  Run `pip install dramatiq[redis]` "
-            "to add support for that backend.",
-            category=ImportWarning,
-            stacklevel=2,
-        )
-        raise
+    except ModuleNotFoundError as e:
+        message = "RedisBackend is not available.  Run `pip install dramatiq[redis]` to add support for that backend."
+        warnings.warn(message, category=ImportWarning, stacklevel=3)
+        raise AttributeError(message) from e
 
 
 _module_importers = {

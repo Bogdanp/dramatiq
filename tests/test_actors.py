@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import logging
 import time
 from datetime import timedelta
 from unittest.mock import patch
@@ -6,8 +9,8 @@ import pytest
 
 import dramatiq
 from dramatiq import Message, Middleware
-from dramatiq.errors import RateLimitExceeded
-from dramatiq.middleware import CurrentMessage, SkipMessage
+from dramatiq.errors import ActorNotFound, RateLimitExceeded
+from dramatiq.middleware import CurrentMessage, SkipMessage, TimeLimitExceeded
 
 from .common import skip_on_pypy, worker
 
@@ -20,6 +23,33 @@ def test_actors_can_be_defined(stub_broker):
 
     # I expect that function to become an instance of Actor
     assert isinstance(add, dramatiq.Actor)
+
+
+def test_actors_get_valid_logger(stub_broker):
+    # Given a function with a __module__ attribute
+    def add(x, y):
+        return x + y
+
+    # When I apply the @actor decorator
+    decorated_add = dramatiq.actor(add)
+
+    # I expect its logger to be named after the function's module and actor name
+    assert decorated_add.logger.name == f"{add.__module__}.{add.__name__}"
+
+
+def test_actors_without_module_get_valid_logger(stub_broker):
+    # Given a function without a __module__ attribute
+    # (e.g., a function defined in an interactive Python shell)
+    def add(x, y):
+        return x + y
+
+    del add.__module__
+
+    # When I apply the @actor decorator
+    decorated_add = dramatiq.actor(add)
+
+    # I expect its logger to be named after '_' and the actor name
+    assert decorated_add.logger.name == f"_.{add.__name__}"
 
 
 def test_actors_can_be_declared_with_actor_class(stub_broker):
@@ -52,6 +82,7 @@ def test_actors_cannot_be_assigned_arbitrary_options(stub_broker):
     # If I define an actor with a nonexistent option
     # I expect it to raise a ValueError
     with pytest.raises(ValueError):
+
         @dramatiq.actor(invalid_option=32)
         def add(x, y):
             return x + y
@@ -81,6 +112,7 @@ def test_actors_fail_given_invalid_queue_names(stub_broker):
     # If I define an actor with an invalid queue name
     # I expect a ValueError to be raised
     with pytest.raises(ValueError):
+
         @dramatiq.actor(queue_name="$2@!@#")
         def foo():
             pass
@@ -167,7 +199,8 @@ def test_actors_can_be_assigned_time_limits(stub_broker, stub_worker):
     do_work.send()
 
     # And join on the queue
-    stub_broker.join(do_work.queue_name)
+    with pytest.raises(TimeLimitExceeded):  # expect TimeLimitExceeded exception
+        stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # Then I expect it to fail
@@ -191,7 +224,8 @@ def test_actor_messages_can_be_assigned_time_limits(stub_broker, stub_worker):
     do_work.send_with_options(time_limit=1000)
 
     # Then join on the queue
-    stub_broker.join(do_work.queue_name)
+    with pytest.raises(TimeLimitExceeded):  # expect TimeLimitExceeded exception
+        stub_broker.join(do_work.queue_name)
     stub_worker.join()
 
     # I expect it to fail
@@ -216,7 +250,8 @@ def test_actors_can_be_assigned_message_age_limits(stub_broker):
 
     # Then join on its queue
     with worker(stub_broker, worker_timeout=100) as stub_worker:
-        stub_broker.join(do_work.queue_name)
+        with pytest.raises(SkipMessage):  # expect SkipMessage exception
+            stub_broker.join(do_work.queue_name)
         stub_worker.join()
 
         # I expect the message to have been skipped
@@ -240,7 +275,8 @@ def test_actor_messages_can_be_assigned_message_age_limits(stub_broker):
 
     # Then join on its queue
     with worker(stub_broker, worker_timeout=100) as stub_worker:
-        stub_broker.join(do_work.queue_name)
+        with pytest.raises(SkipMessage):  # expect SkipMessage exception
+            stub_broker.join(do_work.queue_name)
         stub_worker.join()
 
         # I expect the message to have been skipped
@@ -276,14 +312,16 @@ def test_messages_belonging_to_missing_actors_are_rejected(stub_broker, stub_wor
     message = Message(
         queue_name="some-queue",
         actor_name="some-actor",
-        args=(), kwargs={},
+        args=(),
+        kwargs={},
         options={},
     )
     stub_broker.declare_queue("some-queue")
     stub_broker.enqueue(message)
 
     # Then join on the queue
-    stub_broker.join("some-queue")
+    with pytest.raises(ActorNotFound, match=r"^some-actor$"):
+        stub_broker.join("some-queue", fail_fast=True)
     stub_worker.join()
 
     # I expect the message to end up on the dead letter queue
@@ -449,7 +487,8 @@ def test_workers_log_rate_limit_exceeded_errors_differently(stub_broker, stub_wo
         raise_rate_limit_exceeded.send()
 
         # And wait for the message to get processed
-        stub_broker.join(raise_rate_limit_exceeded.queue_name)
+        with pytest.raises(RateLimitExceeded):  # expect RateLimitExceeded exception
+            stub_broker.join(raise_rate_limit_exceeded.queue_name)
         stub_worker.join()
 
         # Then debug mock should be called with a special message
@@ -493,6 +532,7 @@ def test_decorator_raises_error_on_duplicate_name(stub_broker):
 
     # When I try to declare another actor with that name
     with pytest.raises(ValueError) as exc_info:
+
         @dramatiq.actor(actor_name="foo")
         def f2():
             pass
@@ -500,3 +540,51 @@ def test_decorator_raises_error_on_duplicate_name(stub_broker):
     # Then a ValueError should be raised
     assert exc_info.type is ValueError
     assert str(exc_info.value) == "An actor named 'foo' is already registered."
+
+
+def test_worker_handles_non_numeric_eta_and_logs_warning(stub_broker, stub_worker, caplog):
+    # Set the log level to capture warnings
+    caplog.set_level(logging.WARNING)
+
+    # Given an actor that records when it runs
+    run = []
+
+    @dramatiq.actor
+    def record():
+        run.append(True)
+
+    # If I send it a message with a non-numeric eta manually from another project or manually from rabbitmq UI (not using dramatiq)
+    message = record.message_with_options(eta="not-a-number")
+    stub_broker.queues[record.queue_name].put(message.encode())
+
+    # Then join on the queue
+    stub_broker.join(record.queue_name)
+    stub_worker.join()
+
+    # I expect the message to have been processed
+    assert run
+
+    # And a warning should have been logged about the invalid eta
+    assert any(
+        "Invalid eta value for message" in record.message for record in caplog.records if record.levelname == "WARNING"
+    )
+
+
+def test_worker_handles_none_eta(stub_broker, stub_worker):
+    # Given an actor that records when it runs
+    run = []
+
+    @dramatiq.actor
+    def record():
+        run.append(True)
+
+    # If I send it a message with a None eta
+    message = record.message_with_options(eta=None)
+    stub_broker.queues[record.queue_name].put(message.encode())
+
+    # Then join on the queue
+    stub_broker.join(record.queue_name)
+    stub_worker.join()
+
+    # I expect the message to have been processed
+    assert run

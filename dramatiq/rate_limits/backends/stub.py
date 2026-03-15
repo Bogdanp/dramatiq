@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import time
 from collections import defaultdict
 from threading import Condition, Lock
@@ -23,8 +25,7 @@ from ..backend import RateLimiterBackend
 
 
 class StubBackend(RateLimiterBackend):
-    """An in-memory rate limiter backend.  For use in unit tests.
-    """
+    """An in-memory rate limiter backend.  For use in unit tests."""
 
     def __init__(self):
         self.conditions = defaultdict(lambda: Condition(self.mutex))
@@ -62,9 +63,7 @@ class StubBackend(RateLimiterBackend):
             if value > maximum:
                 return False
 
-            # TODO: Drop non-callable keys in Dramatiq v2.
-            key_list = keys() if callable(keys) else keys
-            values = sum(self._get(k, default=0) for k in key_list)
+            values = sum(self._get(k, default=0) for k in keys())
             total = amount + values
             if total > maximum:
                 return False

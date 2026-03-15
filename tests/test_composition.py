@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from threading import Condition, Event
 
@@ -55,9 +57,7 @@ def test_pipe_ignore_applies_to_receiving_message(stub_broker, stub_worker, resu
 
     # When I compose pipe of three messages with pipe_ignore option on second message
     pipe = (
-        return_args.message(1) |
-        return_args.message_with_options(pipe_ignore=True, args=(2, )) |
-        return_args.message(3)
+        return_args.message(1) | return_args.message_with_options(pipe_ignore=True, args=(2,)) | return_args.message(3)
     )
 
     # And then run and wait for it to complete
@@ -268,6 +268,38 @@ def test_groups_expose_completion_stats(stub_broker, stub_worker, result_backend
     assert g.completed
 
 
+def test_groups_completion_count_works_for_tasks_finishing_out_of_order(stub_broker, stub_worker, result_backend):
+    # Regression test for https://github.com/Bogdanp/dramatiq/issues/452
+
+    # Given that I have a result backend
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And an actor that waits some amount of time, before notifying the Condition
+    condition = Condition()
+
+    @dramatiq.actor(store_results=True)
+    def wait(n):
+        time.sleep(n)
+        with condition:
+            condition.notify_all()
+            return n
+
+    # When I group messages of varying durations together and run the group.
+    # NOTE the durations ensure the jobs finish in a different order to what they are in the group.
+    g = group(wait.message(t) for t in [3.5, 1, 2.2])
+    g.run()
+
+    # Then every time a job in the group completes, the completed_count should increase by 1
+    for count in [1, 2, 3]:
+        with condition:
+            condition.wait(5)
+            time.sleep(0.1)  # give the worker time to set the result
+            assert g.completed_count == count
+
+    # Finally, completed should be true
+    assert g.completed
+
+
 def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_failed(stub_broker, stub_worker):
     # Given that I have an actor that fails messages
     class FailMessageMiddleware(middleware.Middleware):
@@ -291,7 +323,7 @@ def test_pipeline_does_not_continue_to_next_actor_when_message_is_marked_as_fail
     pipe = do_nothing.message_with_options(pipe_ignore=True) | should_never_run.message()
     pipe.run()
 
-    stub_broker.join(should_never_run.queue_name, timeout=10 * 1000)
+    stub_broker.join(should_never_run.queue_name, timeout=10 * 1000, fail_fast=False)
     stub_worker.join()
 
     # Then the second message in the pipe should never have run
@@ -460,10 +492,7 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
         finalized.set()
 
     # When I group together some messages with a completion callback
-    g = group([
-        do_nothing.message(1) | do_nothing.message(),
-        do_nothing.message(1)
-    ])
+    g = group([do_nothing.message(1) | do_nothing.message(), do_nothing.message(1)])
     g.add_completion_callback(finalize.message(42))
     g.run()
 

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from pylibmc import Client, ClientPool, NotFound
 
 from ..backend import RateLimiterBackend
@@ -34,8 +36,6 @@ class MemcachedBackend(RateLimiterBackend):
       pool_size(int): The size of the connection pool to use.
       **parameters: Connection parameters are passed directly
         to :class:`pylibmc.Client`.
-
-    .. _memcached: https://memcached.org
     """
 
     def __init__(self, *, pool=None, pool_size=8, **parameters):
@@ -70,9 +70,7 @@ class MemcachedBackend(RateLimiterBackend):
                 if value > maximum:
                     return False
 
-                # TODO: Drop non-callable keys in Dramatiq v2.
-                key_list = keys() if callable(keys) else keys
-                mapping = client.get_multi(key_list)
+                mapping = client.get_multi(keys())
                 total = amount + sum(mapping.values())
                 if total > maximum:
                     return False

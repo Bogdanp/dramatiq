@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 
 from setuptools import setup
@@ -39,59 +41,28 @@ with open(rel("dramatiq", "__init__.py"), "r") as f:
         raise RuntimeError("Version marker not found.")
 
 
-dependencies = [
-    "prometheus-client>=0.2",
-]
-
 extra_dependencies = {
     "gevent": [
-        "gevent>=1.1",
+        "gevent>=25.9.1",
     ],
-
     "memcached": [
         "pylibmc>=1.5,<2.0",
     ],
-
+    "prometheus": [
+        "prometheus-client>=0.2",
+    ],
     "rabbitmq": [
         "pika>=1.0,<2.0",
     ],
-
     "redis": [
-        "redis>=2.0,<6.0",
+        "redis>=4.0,<8.0",
     ],
-
     "watch": [
-        "watchdog>=4.0",
-        "watchdog_gevent>=0.2",
+        "watchdog>=6.0.0",
     ],
 }
 
 extra_dependencies["all"] = list(set(sum(extra_dependencies.values(), [])))
-extra_dependencies["dev"] = extra_dependencies["all"] + [
-    # Docs
-    "alabaster",
-    "sphinx",
-    "sphinxcontrib-napoleon",
-
-    # Linting
-    "flake8",
-    "flake8-bugbear",
-    "flake8-quotes",
-    "isort",
-    "mypy",
-
-    # Misc
-    "bumpversion",
-    "hiredis",
-    "twine",
-    "wheel",
-
-    # Testing
-    "pytest",
-    "pytest-benchmark[histogram]",
-    "pytest-cov",
-    "tox",
-]
 
 setup(
     name="dramatiq",
@@ -100,6 +71,7 @@ setup(
     author_email="bogdan@cleartype.io",
     project_urls={
         "Documentation": "https://dramatiq.io",
+        "Changelog": "https://dramatiq.io/changelog.html",
         "Source": "https://github.com/Bogdanp/dramatiq",
     },
     description="Background Processing for Python 3.",
@@ -115,17 +87,16 @@ setup(
         "dramatiq.results.backends",
     ],
     include_package_data=True,
-    install_requires=dependencies,
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: System :: Distributed Computing",
         "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",

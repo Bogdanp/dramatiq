@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import hashlib
 import time
 import typing
@@ -97,11 +99,11 @@ class ResultBackend:
             result = self._get(message_key)
             if result is Missing and block:
                 attempts, delay = compute_backoff(attempts, factor=BACKOFF_FACTOR)
-                delay /= 1000
-                if time.monotonic() + delay > end_time:
+                delay_seconds = delay / 1000
+                if time.monotonic() + delay_seconds > end_time:
                     raise ResultTimeout(message)
 
-                time.sleep(delay)
+                time.sleep(delay_seconds)
                 continue
 
             elif result is Missing:
@@ -156,15 +158,21 @@ class ResultBackend:
         this method if they want to use the default, polling,
         implementation of get_result.
         """
-        raise NotImplementedError("%(classname)r does not implement _get()" % {
-            "classname": type(self).__name__,
-        })
+        raise NotImplementedError(
+            "%(classname)r does not implement _get()"
+            % {
+                "classname": type(self).__name__,
+            }
+        )
 
     def _store(self, message_key: str, result: Result, ttl: int) -> None:  # pragma: no cover
         """Store a result in the backend.  Subclasses may implement
         this method if they want to use the default implementation of
         set_result.
         """
-        raise NotImplementedError("%(classname)r does not implement _store()" % {
-            "classname": type(self).__name__,
-        })
+        raise NotImplementedError(
+            "%(classname)r does not implement _store()"
+            % {
+                "classname": type(self).__name__,
+            }
+        )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import platform
 from contextlib import contextmanager
@@ -22,13 +24,15 @@ def worker(*args, **kwargs):
 
 
 skip_in_ci = pytest.mark.skipif(
-    os.getenv("APPVEYOR") is not None or
-    os.getenv("GITHUB_ACTION") is not None,
-    reason="test skipped in CI"
+    os.getenv("APPVEYOR") is not None or os.getenv("GITHUB_ACTION") is not None,
+    reason="test skipped in CI",
 )
 
 skip_on_windows = pytest.mark.skipif(platform.system() == "Windows", reason="test skipped on Windows")
-skip_on_pypy = pytest.mark.skipif(platform.python_implementation() == "PyPy", reason="Time limits are not supported under PyPy.")
+skip_on_pypy = pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="Time limits are not supported under PyPy.",
+)
 skip_with_gevent = pytest.mark.skipif(is_gevent_active(), reason="Behaviour with gevent is different.")
 skip_without_gevent = pytest.mark.skipif(not is_gevent_active(), reason="Behaviour without gevent is different.")
 

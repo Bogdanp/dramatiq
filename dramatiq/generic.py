@@ -15,12 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from . import actor
 
 
 class generic_actor(type):
-    """Meta for class-based actors.
-    """
+    """Meta for class-based actors."""
 
     def __new__(metacls, name, bases, attrs):
         clazz = super().__new__(metacls, name, bases, attrs)
@@ -98,14 +99,13 @@ class GenericActor(metaclass=generic_actor):
 
     @property
     def __name__(self):
-        """The default name of this actor.
-        """
+        """The default name of this actor."""
         return type(self).__name__
 
     def __call__(self, *args, **kwargs):
         return self.perform(*args, **kwargs)
 
-    def perform(self):
+    def perform(self, *args, **kwargs):
         """This is the method that gets called when the actor receives
         a message.  All non-abstract subclasses must implement this
         method.

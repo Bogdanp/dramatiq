@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from .middleware import Middleware
 
 
@@ -48,7 +50,10 @@ class Callbacks(Middleware):
             target_actor_name = message.options.get("on_failure") or actor.options.get("on_failure")
             if target_actor_name:
                 target_actor = broker.get_actor(target_actor_name)
-                target_actor.send(message.asdict(), {
-                    "type": type(exception).__name__,
-                    "message": str(exception),
-                })
+                target_actor.send(
+                    message.asdict(),
+                    {
+                        "type": type(exception).__name__,
+                        "message": str(exception),
+                    },
+                )

@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 # Don't depend on *anything* in this module.  The contents of this
 # module can and *will* change without notice.
-
 import argparse
 import atexit
 import functools
@@ -32,9 +33,16 @@ import time
 import types
 from itertools import chain
 from threading import Event, Thread
-from typing import Optional
+from typing import Optional, Set
 
-from dramatiq import Broker, ConnectionError, Worker, __version__, get_broker, get_logger
+from dramatiq import (
+    Broker,
+    BrokerConnectionError,
+    Worker,
+    __version__,
+    get_broker,
+    get_logger,
+)
 from dramatiq.canteen import Canteen, canteen_add, canteen_get, canteen_try_init
 from dramatiq.compat import StreamablePipe, file_or_stderr
 
@@ -141,6 +149,21 @@ def folder_path(value):
     return os.path.abspath(value)
 
 
+def worker_fork_timeout_type(value: str) -> float:
+    try:
+        ms = float(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("worker-fork-timeout be a number.") from e
+
+    if ms < 10:
+        raise argparse.ArgumentTypeError("worker-fork-timeout too small (minimum recommended: 10ms).")
+
+    if ms > 1_800_000:
+        raise argparse.ArgumentTypeError("worker-fork-timeout too large (maximum: 30 minutes).")
+
+    return ms
+
+
 def make_argument_parser():
     parser = argparse.ArgumentParser(
         prog="dramatiq",
@@ -153,97 +176,122 @@ def make_argument_parser():
         help="the broker to use (eg: 'module' or 'module:a_broker')",
     )
     parser.add_argument(
-        "modules", metavar="module", nargs="*",
+        "modules",
+        metavar="module",
+        nargs="*",
         help="additional python modules to import",
     )
     parser.add_argument(
-        "--processes", "-p", default=CPUS, type=int,
+        "--processes",
+        "-p",
+        default=CPUS,
+        type=int,
         help="the number of worker processes to run (default: %s)" % CPUS,
     )
     parser.add_argument(
-        "--threads", "-t", default=8, type=int,
+        "--threads",
+        "-t",
+        default=8,
+        type=int,
         help="the number of worker threads per process (default: 8)",
     )
     parser.add_argument(
-        "--path", "-P", default=".", nargs="*", type=str,
-        help="the module import path (default: .)"
+        "--path",
+        "-P",
+        default=".",
+        nargs="*",
+        type=str,
+        help="the module import path (default: .)",
     )
     parser.add_argument(
-        "--queues", "-Q", nargs="*", type=str,
+        "--queues",
+        "-Q",
+        nargs="*",
+        type=str,
         help="listen to a subset of queues (default: all queues)",
     )
     parser.add_argument(
-        "--pid-file", type=str,
+        "--pid-file",
+        type=str,
         help="write the PID of the master process to a file (default: no pid file)",
     )
     parser.add_argument(
-        "--log-file", type=str,
+        "--log-file",
+        type=str,
         help="write all logs to a file (default: sys.stderr)",
     )
+    parser.add_argument("--skip-logging", action="store_true", help="do not call logging.basicConfig()")
+    _unix_default = "fork" if sys.version_info < (3, 14) else "forkserver"
     parser.add_argument(
-        "--skip-logging",
+        "--use-spawn",
         action="store_true",
-        help="do not call logging.basicConfig()"
+        help=f"start processes by spawning (default: {_unix_default} on unix, spawn on Windows and macOS)",
     )
     parser.add_argument(
-        "--use-spawn", action="store_true",
-        help="start processes by spawning (default: fork on unix, spawn on windows)"
+        "--fork-function",
+        "-f",
+        action="append",
+        dest="forks",
+        default=[],
+        help="fork a subprocess to run the given function",
     )
     parser.add_argument(
-        "--fork-function", "-f", action="append", dest="forks", default=[],
-        help="fork a subprocess to run the given function"
+        "--worker-fork-timeout",
+        type=worker_fork_timeout_type,
+        default=30_000,
+        help=(
+            "timeout for wait all worker processes to come online before starting the fork processes. "
+            "In milliseconds (default: 30 seconds)"
+        ),
     )
     parser.add_argument(
-        "--worker-shutdown-timeout", type=int, default=600000,
-        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)"
+        "--worker-shutdown-timeout",
+        type=int,
+        default=600000,
+        help="timeout for worker shutdown, in milliseconds (default: 10 minutes)",
     )
 
-    if HAS_WATCHDOG:
-        parser.add_argument(
-            "--watch", type=folder_path, metavar="DIR",
-            help=(
-                "watch a directory and reload the workers when any source files "
-                "change (this feature must only be used during development). "
-                "This option is currently only supported on unix systems."
-            )
-        )
-        parser.add_argument(
-            "--watch-use-polling",
-            action="store_true",
-            help=(
-                "poll the filesystem for changes rather than using a "
-                "system-dependent filesystem event emitter"
-            )
-        )
-        parser.add_argument(
-            "-i",
-            "--watch-include",
-            action="append",
-            dest="include_patterns",
-            default=["**.py"],
-            help=(
-                "Patterns to include when watching for changes. "
-                "Always includes all python files (*.py)."
-            ),
-        )
-        parser.add_argument(
-            "-x",
-            "--watch-exclude",
-            action="append",
-            dest="exclude_patterns",
-            help="Patterns to ignore when watching for changes",
-        )
+    parser.add_argument(
+        "--watch",
+        type=folder_path,
+        metavar="DIR",
+        help=(
+            "watch a directory and reload the workers when any source files "
+            "change (this feature must only be used during development). "
+            "This option is currently only supported on unix systems."
+        ),
+    )
+    parser.add_argument(
+        "--watch-use-polling",
+        action="store_true",
+        help="poll the filesystem for changes rather than using a system-dependent filesystem event emitter",
+    )
+    parser.add_argument(
+        "-i",
+        "--watch-include",
+        action="append",
+        dest="include_patterns",
+        default=["**.py"],
+        help="Patterns to include when watching for changes. Always includes all python files (*.py).",
+    )
+    parser.add_argument(
+        "-x",
+        "--watch-exclude",
+        action="append",
+        dest="exclude_patterns",
+        help="Patterns to ignore when watching for changes",
+    )
 
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--verbose", "-v", action="count", default=0, help="turn on verbose log output")
     return parser
 
 
-HANDLED_SIGNALS = {signal.SIGINT, signal.SIGTERM}
+HANDLED_SIGNALS: Set[signal.Signals] = {signal.SIGINT, signal.SIGTERM}
 if hasattr(signal, "SIGHUP"):
     HANDLED_SIGNALS.add(signal.SIGHUP)
 if hasattr(signal, "SIGBREAK"):
-    HANDLED_SIGNALS.add(signal.SIGBREAK)  # type: ignore
+    HANDLED_SIGNALS.add(signal.SIGBREAK)
 
 
 def try_block_signals():
@@ -413,7 +461,7 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
     except ImportError:
         logger.exception("Failed to import module.")
         return sys.exit(RET_IMPORT)
-    except ConnectionError:
+    except BrokerConnectionError:
         logger.exception("Broker connection failed.")
         return sys.exit(RET_CONNECT)
     finally:
@@ -473,7 +521,7 @@ def fork_process(args, fork_id, fork_path, logging_pipe):
     return sys.exit(func())
 
 
-def main(args=None):  # noqa
+def main(args=None):  # noqa: C901
     args = args or make_argument_parser().parse_args()
     for path in args.path:
         sys.path.insert(0, path)
@@ -489,6 +537,23 @@ def main(args=None):  # noqa
             logger = setup_parent_logging(args, stream=stream)
             logger.critical(e)
             return RET_PIDFILE
+
+    # perform checks of the command-line args that block start-up here, before starting child processes.
+    try:
+        # If user requested watching, check pre-requisites for that.
+        if args.watch:
+            if not hasattr(signal, "SIGHUP"):
+                raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
+            if not HAS_WATCHDOG:
+                raise RuntimeError(
+                    "Watching for source changes requires dramatiq be to installed with the extra 'watch' "
+                    "e.g. pip install 'dramatiq[watch]'"
+                )
+    except RuntimeError as e:
+        with file_or_stderr(args.log_file) as stream:
+            logger = setup_parent_logging(args, stream=stream)
+            logger.critical(e)
+            return RET_IMPORT
 
     canteen = multiprocessing.Value(Canteen)
 
@@ -513,13 +578,14 @@ def main(args=None):  # noqa
         worker_pipes.append(read_pipe)
         worker_processes.append(proc)
         worker_process_events.append(event)
+        write_pipe.close()
 
     # Wait for all worker processes to come online before starting the
     # fork processes.  This is required to avoid race conditions like
-    # in #297.
+    # in #297, #701.
     for event in worker_process_events:
         if proc.is_alive():
-            if not event.wait(timeout=30):
+            if not event.wait(timeout=args.worker_fork_timeout / 1000):
                 break
 
     fork_pipes = []
@@ -534,6 +600,7 @@ def main(args=None):  # noqa
         proc.start()
         fork_pipes.append(read_pipe)
         fork_processes.append(proc)
+        write_pipe.close()
 
     parent_read_pipe, parent_write_pipe = multiprocessing.Pipe(duplex=False)
     logger = setup_parent_logging(args, stream=StreamablePipe(parent_write_pipe))
@@ -546,17 +613,23 @@ def main(args=None):  # noqa
     # The file watcher and log watcher threads should inherit the
     # signal blocking behaviour, so do not unblock the signals when
     # starting those threads.
-    if HAS_WATCHDOG and args.watch:
-        if not hasattr(signal, "SIGHUP"):
-            raise RuntimeError("Watching for source changes is not supported on %s." % sys.platform)
+    if args.watch:
+        # pre-requisites for watching should be checked above, before child processes were started.
         file_watcher = setup_file_watcher(
-            args.watch, args.watch_use_polling, args.include_patterns, args.exclude_patterns
+            args.watch,
+            args.watch_use_polling,
+            args.include_patterns,
+            args.exclude_patterns,
         )
 
     log_watcher_stop_event = Event()
     log_watcher = Thread(
         target=watch_logs,
-        args=(args.log_file, [parent_read_pipe, *worker_pipes, *fork_pipes], log_watcher_stop_event),
+        args=(
+            args.log_file,
+            [parent_read_pipe, *worker_pipes, *fork_pipes],
+            log_watcher_stop_event,
+        ),
         daemon=False,
     )
     log_watcher.start()
@@ -606,7 +679,11 @@ def main(args=None):  # noqa
                 continue
 
             if running:  # pragma: no cover
-                logger.critical("Worker with PID %r exited unexpectedly (code %r). Shutting down...", proc.pid, proc.exitcode)
+                logger.critical(
+                    "Worker with PID %r exited unexpectedly (code %r). Shutting down...",
+                    proc.pid,
+                    proc.exitcode,
+                )
                 stop_subprocesses(signal.SIGTERM)
                 retcode = proc.exitcode
                 break

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import Mock
 
 import pytest
@@ -41,6 +43,30 @@ def test_generic_actors_raise_not_implemented_if_perform_is_missing(stub_broker)
     # Then a NotImplementedError should be raised
     with pytest.raises(NotImplementedError):
         Foo()
+
+
+def test_generic_actors_raise_not_implemented_if_perform_is_missing_and_called_with_args(stub_broker):
+    # Reggression test for #805
+    # Given that I've subclassed GenericActor without implementing perform
+    class Foo(dramatiq.GenericActor):
+        pass
+
+    # When I call that actor with some arguments
+    # Then a NotImplementedError should be raised
+    with pytest.raises(NotImplementedError, match=r"Foo does not implement perform\(\)"):
+        Foo(1, foo="bar")
+
+
+def test_generic_actors_raise_type_error_if_perform_is_called_with_wrong_args(stub_broker):
+    # Given that I've subclassed GenericActor without implementing perform
+    class Foo(dramatiq.GenericActor):
+        def perform(self, foo):
+            pass
+
+    # When I call that actor with the wrong arguments
+    # Then a TypeError should be raised
+    with pytest.raises(TypeError, match=r"\.Foo\.perform\(\) got an unexpected keyword argument 'bar'"):
+        Foo(bar=2)
 
 
 def test_generic_actors_can_be_abstract(stub_broker, stub_worker):

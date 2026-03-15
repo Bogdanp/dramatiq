@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions
+    url: https://groups.io/g/dramatiq-users
+    about:  If you have questions, please ask them on the discussion Board.
+  - name: Feature Requests
+    url: https://groups.io/g/dramatiq-users
+    about:  If you want to request or suggest a feature, please start a discussion on the discussion Board.

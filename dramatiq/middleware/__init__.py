@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from .age_limit import AgeLimit
 from .asyncio import AsyncIO
 from .callbacks import Callbacks
@@ -22,7 +24,6 @@ from .current_message import CurrentMessage
 from .group_callbacks import GroupCallbacks
 from .middleware import Middleware, MiddlewareError, SkipMessage
 from .pipelines import Pipelines
-from .prometheus import Prometheus
 from .retries import Retries
 from .shutdown import Shutdown, ShutdownNotifications
 from .threading import Interrupt, raise_thread_exception
@@ -30,19 +31,33 @@ from .time_limit import TimeLimit, TimeLimitExceeded
 
 __all__ = [
     # Basics
-    "Middleware", "MiddlewareError", "SkipMessage",
-
+    "Middleware",
+    "MiddlewareError",
+    "SkipMessage",
     # Threading
-    "Interrupt", "raise_thread_exception",
-
+    "Interrupt",
+    "raise_thread_exception",
     # Middlewares
-    "AgeLimit", "AsyncIO", "Callbacks", "CurrentMessage", "GroupCallbacks",
-    "Pipelines", "Retries", "Shutdown", "ShutdownNotifications", "TimeLimit",
-    "TimeLimitExceeded", "Prometheus",
+    "AgeLimit",
+    "AsyncIO",
+    "Callbacks",
+    "CurrentMessage",
+    "GroupCallbacks",
+    "Pipelines",
+    "Retries",
+    "Shutdown",
+    "ShutdownNotifications",
+    "TimeLimit",
+    "TimeLimitExceeded",
 ]
 
 
 #: The list of middleware that are enabled by default.
 default_middleware = [
-    Prometheus, AgeLimit, TimeLimit, ShutdownNotifications, Callbacks, Pipelines, Retries
+    AgeLimit,
+    TimeLimit,
+    ShutdownNotifications,
+    Callbacks,
+    Pipelines,
+    Retries,
 ]

@@ -14,6 +14,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
+
 from ..errors import ActorNotFound
 from ..logging import get_logger
 from ..middleware import Middleware
@@ -67,7 +69,7 @@ class Results(Middleware):
       run out!
     """
 
-    def __init__(self, *, backend=None, store_results=False, result_ttl=None):
+    def __init__(self, *, backend, store_results=False, result_ttl=None):
         self.logger = get_logger(__name__, type(self))
         self.backend = backend
         self.store_results = store_results
@@ -93,9 +95,7 @@ class Results(Middleware):
         store_results, result_ttl = self._lookup_options(broker, message)
         if store_results and exception is None:
             self.backend.store_result(message, result, result_ttl)
-        if not store_results \
-           and result is not None \
-           and message.options.get("pipe_target") is None:
+        if not store_results and result is not None and message.options.get("pipe_target") is None:
             self.logger.warning(
                 "Actor '%s' returned a value that is not None, but you "
                 "haven't set its `store_results' option to `True' so "

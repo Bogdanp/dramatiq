@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import glob
 import random
 import time
-import warnings
 from os import path
 from threading import Lock
+from typing import Optional
 from uuid import uuid4
 
 import redis
@@ -52,7 +54,7 @@ DEFAULT_LUA_MAX_STACK = getenv_int("dramatiq_lua_max_stack")
 
 
 class RedisBroker(Broker):
-    """A broker than can be used with Redis.
+    """A broker than can be used with Redis_.
 
     Examples:
 
@@ -65,7 +67,7 @@ class RedisBroker(Broker):
       >>> RedisBroker(url="redis://127.0.0.1:6379/0")
 
     See also:
-      Redis_ for a list of all the available connection parameters.
+      :class:`redis.Redis` for a list of all the available connection parameters.
 
     Parameters:
       url(str): An optional connection URL.  If both a URL and
@@ -79,34 +81,29 @@ class RedisBroker(Broker):
         offline.
       dead_message_ttl(int): The amount of time (in ms) that
         dead-lettered messages are kept in Redis for.
-      requeue_deadline(int): Deprecated.  Does nothing.
-      requeue_interval(int): Deprecated.  Does nothing.
-      client(redis.StrictRedis): A redis client to use.
+      client(redis.Redis): A redis client to use.
       **parameters: Connection parameters are passed directly
         to :class:`redis.Redis`.
 
-    .. _Redis: http://redis-py.readthedocs.io/en/latest/#redis.Redis
+    .. _Redis: https://redis.io
     """
 
     def __init__(
-            self, *,
-            url=None, middleware=None, namespace="dramatiq",
-            maintenance_chance=DEFAULT_MAINTENANCE_CHANCE,
-            heartbeat_timeout=DEFAULT_HEARTBEAT_TIMEOUT,
-            dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
-            requeue_deadline=None,
-            requeue_interval=None,
-            client=None,
-            **parameters
+        self,
+        *,
+        url=None,
+        middleware=None,
+        namespace="dramatiq",
+        maintenance_chance=DEFAULT_MAINTENANCE_CHANCE,
+        heartbeat_timeout=DEFAULT_HEARTBEAT_TIMEOUT,
+        dead_message_ttl=DEFAULT_DEAD_MESSAGE_TTL,
+        client=None,
+        **parameters,
     ):
         super().__init__(middleware=middleware)
 
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
-
-        if requeue_deadline or requeue_interval:
-            message = "requeue_{deadline,interval} have been deprecated and no longer do anything"
-            warnings.warn(message, DeprecationWarning, stacklevel=2)
 
         self.broker_id = str(uuid4())
         self.namespace = namespace
@@ -114,15 +111,14 @@ class RedisBroker(Broker):
         self.heartbeat_timeout = heartbeat_timeout
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
-        # TODO: Replace usages of StrictRedis (redis-py 2.x) with Redis in Dramatiq 2.0.
-        self.client = client or redis.StrictRedis(**parameters)
+        self.client = client or redis.Redis(**parameters)
         self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
 
     @property
     def consumer_class(self):
         return _RedisConsumer
 
-    def consume(self, queue_name, prefetch=1, timeout=5000):
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> Consumer:
         """Create a new consumer for a queue.
 
         Parameters:
@@ -135,7 +131,7 @@ class RedisBroker(Broker):
         """
         return self.consumer_class(self, queue_name, prefetch, timeout)
 
-    def declare_queue(self, queue_name):
+    def declare_queue(self, queue_name: str) -> None:
         """Declare a queue.  Has no effect if a queue with the given
         name has already been declared.
 
@@ -151,7 +147,7 @@ class RedisBroker(Broker):
             self.delay_queues.add(delayed_name)
             self.emit_after("declare_delay_queue", delayed_name)
 
-    def enqueue(self, message, *, delay=None):
+    def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
 
         Parameters:
@@ -167,9 +163,11 @@ class RedisBroker(Broker):
         # Each enqueued message must have a unique id in Redis so
         # using the Message's id isn't safe because messages may be
         # retried.
-        message = message.copy(options={
-            "redis_message_id": str(uuid4()),
-        })
+        message = message.copy(
+            options={
+                "redis_message_id": str(uuid4()),
+            }
+        )
 
         if delay is not None:
             queue_name = dq_name(queue_name)
@@ -187,7 +185,7 @@ class RedisBroker(Broker):
         self.emit_after("enqueue", message, delay)
         return message
 
-    def get_declared_queues(self):
+    def get_declared_queues(self) -> set[str]:
         """Get all declared queues.
 
         Returns:
@@ -196,7 +194,7 @@ class RedisBroker(Broker):
         """
         return self.queues.copy()
 
-    def flush(self, queue_name):
+    def flush(self, queue_name: str) -> None:
         """Drop all the messages from a queue.
 
         Parameters:
@@ -205,13 +203,12 @@ class RedisBroker(Broker):
         for name in (queue_name, dq_name(queue_name)):
             self.do_purge(name)
 
-    def flush_all(self):
-        """Drop all messages from all declared queues.
-        """
+    def flush_all(self) -> None:
+        """Drop all messages from all declared queues."""
         for queue_name in self.queues:
             self.flush(queue_name)
 
-    def join(self, queue_name, *, interval=100, timeout=None):
+    def join(self, queue_name: str, *, interval: int = 100, timeout: Optional[int] = None) -> None:
         """Wait for all the messages on the given queue to be
         processed.  This method is only meant to be used in tests to
         wait for all the messages in a queue to be processed.
@@ -238,10 +235,10 @@ class RedisBroker(Broker):
 
             time.sleep(interval / 1000)
 
-    def _should_do_maintenance(self, command):
+    def _should_do_maintenance(self, command: str) -> int:
         return int(
-            command not in MAINTENANCE_COMMAND_BLACKLIST and
-            random.randint(1, MAINTENANCE_SCALE) <= self.maintenance_chance
+            command not in MAINTENANCE_COMMAND_BLACKLIST
+            and random.randint(1, MAINTENANCE_SCALE) <= self.maintenance_chance
         )
 
     _max_unpack_size_val = None
@@ -279,13 +276,14 @@ class RedisBroker(Broker):
                 *args,
             ]
             return dispatch(args=args, keys=keys)
+
         return do_dispatch
 
     def __getattr__(self, name):
         if not name.startswith("do_"):
             raise AttributeError("attribute %s does not exist" % name)
 
-        command = name[len("do_"):]
+        command = name[len("do_") :]
         return self._dispatch(command)
 
 

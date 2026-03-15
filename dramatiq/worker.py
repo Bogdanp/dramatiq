@@ -15,16 +15,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 import time
 from collections import defaultdict
 from functools import lru_cache
-from itertools import chain
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
+from .broker import Broker, Consumer, MessageProxy
 from .common import current_millis, iter_queue, join_all, q_name
-from .errors import ActorNotFound, ConnectionError, RateLimitExceeded, Retry
+from .errors import ActorNotFound, BrokerConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
 from .results.middleware import Results
@@ -50,6 +53,9 @@ QUEUE_PREFETCH = int(os.getenv("dramatiq_queue_prefetch", 0))
 #: prefetched.
 DELAY_QUEUE_PREFETCH = int(os.getenv("dramatiq_delay_queue_prefetch", 0))
 
+#: The number of milliseconds workers should wake up after if the queue is idle.
+WORKER_TIMEOUT = int(os.getenv("dramatiq_worker_timeout", 1000))
+
 
 class Worker:
     """Workers consume messages off of all declared queues and
@@ -61,7 +67,7 @@ class Worker:
 
     Parameters:
       broker(Broker)
-      queues(Set[str]): An optional subset of queues to listen on.  By
+      queues(set[str]): An optional subset of queues to listen on.  By
         default, if this is not provided, the worker will listen on
         all declared queues.
       worker_timeout(int): The number of milliseconds workers should
@@ -69,11 +75,18 @@ class Worker:
       worker_threads(int): The number of worker threads to spawn.
     """
 
-    def __init__(self, broker, *, queues=None, worker_timeout=1000, worker_threads=8):
+    def __init__(
+        self,
+        broker: Broker,
+        *,
+        queues: Optional[set[str]] = None,
+        worker_timeout: int = WORKER_TIMEOUT,
+        worker_threads: int = 8,
+    ) -> None:
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
 
-        self.consumers = {}
+        self.consumers: dict[str, "ConsumerThread"] = {}
         self.consumer_whitelist = queues and set(queues)
         # Load a small factor more messages than there are workers to
         # avoid waiting on network IO as much as possible.  The factor
@@ -83,12 +96,12 @@ class Worker:
         # workers as those messages could have far-future etas.
         self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
-        self.workers = []
-        self.work_queue = PriorityQueue()
+        self.workers: list[WorkerThread] = []
+        self.work_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
 
-    def start(self):
+    def start(self) -> None:
         """Initialize the worker boot sequence and start up all the
         worker threads.
         """
@@ -101,22 +114,30 @@ class Worker:
 
         self.broker.emit_after("worker_boot", self)
 
-    def pause(self):
-        """Pauses all the worker threads.
-        """
-        for child in chain(self.consumers.values(), self.workers):
+    def pause(self) -> None:
+        """Pauses all the worker threads."""
+        child: Union[WorkerThread, ConsumerThread]
+
+        for child in self.consumers.values():
+            child.pause()
+        for child in self.workers:
             child.pause()
 
-        for child in chain(self.consumers.values(), self.workers):
+        for child in self.consumers.values():
+            child.paused_event.wait()
+        for child in self.workers:
             child.paused_event.wait()
 
-    def resume(self):
-        """Resumes all the worker threads.
-        """
-        for child in chain(self.consumers.values(), self.workers):
+    def resume(self) -> None:
+        """Resumes all the worker threads."""
+        child: Union[WorkerThread, ConsumerThread]
+
+        for child in self.consumers.values():
+            child.resume()
+        for child in self.workers:
             child.resume()
 
-    def stop(self, timeout=600000):
+    def stop(self, timeout: int = 600000) -> None:
         """Gracefully stop the Worker and all of its consumers and
         workers.
 
@@ -126,6 +147,8 @@ class Worker:
         """
         self.broker.emit_before("worker_shutdown", self)
         self.logger.info("Shutting down...")
+
+        thread: Union[WorkerThread, ConsumerThread]
 
         # Stop workers before consumers.  The consumers are kept alive
         # during this process so that heartbeats keep being sent to
@@ -151,7 +174,7 @@ class Worker:
         for queue_name, messages in messages_by_queue.items():
             try:
                 self.consumers[queue_name].requeue_messages(messages)
-            except ConnectionError:
+            except BrokerConnectionError:
                 self.logger.warning("Failed to requeue messages on queue %r.", queue_name, exc_info=True)
         self.logger.debug("Done requeueing in-progress messages.")
 
@@ -163,7 +186,7 @@ class Worker:
         self.broker.emit_after("worker_shutdown", self)
         self.logger.info("Worker has been shut down.")
 
-    def join(self):
+    def join(self) -> None:
         """Wait for this worker to complete its work in progress.
         This method is useful when testing code.
         """
@@ -184,7 +207,7 @@ class Worker:
                     continue
                 return
 
-    def _add_consumer(self, queue_name, *, delay=False):
+    def _add_consumer(self, queue_name: str, *, delay: bool = False) -> None:
         if queue_name in self.consumers:
             self.logger.debug("A consumer for queue %r is already running.", queue_name)
             return
@@ -194,7 +217,7 @@ class Worker:
             self.logger.debug("Dropping consumer for queue %r: not whitelisted.", queue_name)
             return
 
-        consumer = self.consumers[queue_name] = _ConsumerThread(
+        consumer = self.consumers[queue_name] = ConsumerThread(
             broker=self.broker,
             queue_name=queue_name,
             prefetch=self.delay_prefetch if delay else self.queue_prefetch,
@@ -203,48 +226,56 @@ class Worker:
         )
         consumer.start()
 
-    def _add_worker(self):
-        worker = _WorkerThread(
+    def _add_worker(self) -> None:
+        worker = WorkerThread(
             broker=self.broker,
             consumers=self.consumers,
             work_queue=self.work_queue,
-            worker_timeout=self.worker_timeout
+            worker_timeout=self.worker_timeout,
         )
         worker.start()
         self.workers.append(worker)
 
 
 class _WorkerMiddleware(Middleware):
-    def __init__(self, worker):
+    def __init__(self, worker: Worker) -> None:
         self.logger = get_logger(__name__, type(self))
         self.worker = worker
 
-    def after_declare_queue(self, broker, queue_name):
+    def after_declare_queue(self, broker: Broker, queue_name: str) -> None:
         self.logger.debug("Adding consumer for queue %r.", queue_name)
         self.worker._add_consumer(queue_name)
 
-    def after_declare_delay_queue(self, broker, queue_name):
+    def after_declare_delay_queue(self, broker: Broker, queue_name: str) -> None:
         self.logger.debug("Adding consumer for delay queue %r.", queue_name)
         self.worker._add_consumer(queue_name, delay=True)
 
 
-class _ConsumerThread(Thread):
-    def __init__(self, *, broker, queue_name, prefetch, work_queue, worker_timeout):
+class ConsumerThread(Thread):
+    def __init__(
+        self,
+        *,
+        broker: Broker,
+        queue_name: str,
+        prefetch: int,
+        work_queue: PriorityQueue[tuple[int, MessageProxy]],
+        worker_timeout: int,
+    ) -> None:
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "ConsumerThread(%s)" % queue_name)
         self.running = False
         self.paused = False
         self.paused_event = Event()
-        self.consumer = None
+        self.consumer: Optional[Consumer] = None
         self.broker = broker
         self.prefetch = prefetch
         self.queue_name = queue_name
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
-        self.delay_queue = PriorityQueue()
+        self.delay_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
 
-    def run(self):
+    def run(self) -> None:
         self.logger.debug("Running consumer thread...")
         self.running = True
         self.broker.emit_after("consumer_thread_boot", self)
@@ -273,7 +304,7 @@ class _ConsumerThread(Thread):
                     if not self.running:
                         break
 
-            except ConnectionError as e:
+            except BrokerConnectionError as e:
                 self.logger.critical("Consumer encountered a connection error: %s", e)
                 self.delay_queue = PriorityQueue()
 
@@ -294,9 +325,8 @@ class _ConsumerThread(Thread):
         self.broker.emit_before("consumer_thread_shutdown", self)
         self.logger.debug("Consumer thread stopped.")
 
-    def handle_delayed_messages(self):
-        """Enqueue any delayed messages whose eta has passed.
-        """
+    def handle_delayed_messages(self) -> None:
+        """Enqueue any delayed messages whose eta has passed."""
         for eta, message in iter_queue(self.delay_queue):
             if eta > current_millis():
                 self.delay_queue.put((eta, message))
@@ -311,11 +341,22 @@ class _ConsumerThread(Thread):
             self.post_process_message(message)
             self.delay_queue.task_done()
 
-    def handle_message(self, message):
+    def handle_message(self, message: MessageProxy) -> None:
         """Handle a message received off of the underlying consumer.
         If the message has an eta, delay it.  Otherwise, put it on the
         work queue.
         """
+        if "eta" in message.options:
+            if message.options["eta"] is None:
+                del message.options["eta"]
+            elif not isinstance(message.options["eta"], (int, float)):
+                self.logger.warning(
+                    "Invalid eta value for message %r: %r. Setting eta to current_millis().",
+                    message.message_id,
+                    message.options["eta"],
+                )
+                message.options["eta"] = current_millis()
+
         try:
             if "eta" in message.options:
                 self.logger.debug("Pushing message %r onto delay queue.", message.message_id)
@@ -326,19 +367,23 @@ class _ConsumerThread(Thread):
                 actor = self.broker.get_actor(message.actor_name)
                 self.logger.debug("Pushing message %r onto work queue.", message.message_id)
                 self.work_queue.put((actor.priority, message))
-        except ActorNotFound:
+        except ActorNotFound as e:
             self.logger.error(
                 "Received message for undefined actor %r. Moving it to the DLQ.",
-                message.actor_name, exc_info=True,
+                message.actor_name,
+                exc_info=True,
             )
             message.fail()
+            message.stuff_exception(e)
             self.post_process_message(message)
 
-    def post_process_message(self, message):
+    def post_process_message(self, message: MessageProxy) -> None:
         """Called by worker threads whenever they're done processing
         individual messages, signaling that each message is ready to
         be acked or rejected.
         """
+        if TYPE_CHECKING:
+            assert self.consumer
         while True:
             try:
                 if message.failed:
@@ -361,12 +406,14 @@ class _ConsumerThread(Thread):
             # stopped or restarted, but we'd be doing the same work
             # twice in that case and the behaviour would surprise
             # users who don't deploy frequently.
-            except ConnectionError as e:
+            except BrokerConnectionError as e:
                 self.logger.warning(
                     "Failed to post_process_message(%s) due to a connection error: %s\n"
                     "The operation will be retried in %s seconds until the connection recovers.\n"
                     "If you restart this worker before this operation succeeds, the message will be re-processed later.",
-                    message, e, POST_PROCESS_MESSAGE_RETRY_DELAY_SECS
+                    message,
+                    e,
+                    POST_PROCESS_MESSAGE_RETRY_DELAY_SECS,
                 )
 
                 time.sleep(POST_PROCESS_MESSAGE_RETRY_DELAY_SECS)
@@ -384,26 +431,26 @@ class _ConsumerThread(Thread):
 
                 return
 
-    def requeue_messages(self, messages):
+    def requeue_messages(self, messages: Iterable[MessageProxy]) -> None:
         """Called on worker shutdown and whenever there is a
         connection error to move unacked messages back to their
         respective queues asap.
         """
+        if TYPE_CHECKING:
+            assert self.consumer
         self.consumer.requeue(messages)
 
-    def pause(self):
-        """Pause this consumer.
-        """
+    def pause(self) -> None:
+        """Pause this consumer."""
         self.paused = True
         self.paused_event.clear()
 
-    def resume(self):
-        """Resume this consumer.
-        """
+    def resume(self) -> None:
+        """Resume this consumer."""
         self.paused = False
         self.paused_event.clear()
 
-    def stop(self):
+    def stop(self) -> None:
         """Initiate the ConsumerThread shutdown sequence.
 
         Code calling this method should then join on the thread and
@@ -412,29 +459,35 @@ class _ConsumerThread(Thread):
         self.logger.debug("Stopping consumer thread...")
         self.running = False
 
-    def close(self):
-        """Close this consumer thread and its underlying connection.
-        """
+    def close(self) -> None:
+        """Close this consumer thread and its underlying connection."""
         try:
             if self.consumer:
                 self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
                 self.consumer.close()
-        except ConnectionError:
+        except BrokerConnectionError:
             pass
 
 
-class _WorkerThread(Thread):
+class WorkerThread(Thread):
     """WorkerThreads process incoming messages off of the work queue
     on a loop.  By themselves, they don't do any sort of network IO.
 
     Parameters:
       broker(Broker)
-      consumers(dict[str, _ConsumerThread])
+      consumers(dict[str, ConsumerThread])
       work_queue(Queue)
       worker_timeout(int)
     """
 
-    def __init__(self, *, broker, consumers, work_queue, worker_timeout):
+    def __init__(
+        self,
+        *,
+        broker: Broker,
+        consumers: dict[str, ConsumerThread],
+        work_queue: PriorityQueue[tuple[int, MessageProxy]],
+        worker_timeout: int,
+    ) -> None:
         super().__init__(daemon=True)
 
         self.logger = get_logger(__name__, "WorkerThread")
@@ -446,7 +499,7 @@ class _WorkerThread(Thread):
         self.work_queue = work_queue
         self.timeout = worker_timeout / 1000
 
-    def run(self):
+    def run(self) -> None:
         self.logger.debug("Running worker thread...")
         self.running = True
         self.broker.emit_after("worker_thread_boot", self)
@@ -466,7 +519,7 @@ class _WorkerThread(Thread):
         self.broker.emit_before("worker_thread_shutdown", self)
         self.logger.debug("Worker thread stopped.")
 
-    def process_message(self, message):
+    def process_message(self, message: MessageProxy) -> None:
         """Process a message pulled off of the work queue then push it
         back to its associated consumer for post processing. Stuff any SkipMessage
         exception or BaseException into the message [proxy] so that it may be used
@@ -485,9 +538,11 @@ class _WorkerThread(Thread):
             if not message.failed:
                 actor = self.broker.get_actor(message.actor_name)
                 res = actor(*message.args, **message.kwargs)
-                if res is not None \
-                   and message.options.get("pipe_target") is None \
-                   and not has_results_middleware(self.broker):
+                if (
+                    res is not None
+                    and message.options.get("pipe_target") is None
+                    and not has_results_middleware(self.broker)
+                ):
                     self.logger.warning(
                         "Actor '%s' returned a value that is not None, and you haven't added the "
                         "Results middleware to the broker, so the value has been discarded. "
@@ -510,9 +565,17 @@ class _WorkerThread(Thread):
             if isinstance(e, RateLimitExceeded):
                 self.logger.debug("Rate limit exceeded in message %s: %s.", message, e)
             elif throws and isinstance(e, throws):
-                self.logger.info("Failed to process message %s with expected exception %s.", message, type(e).__name__)
+                self.logger.info(
+                    "Failed to process message %s with expected exception %s.",
+                    message,
+                    type(e).__name__,
+                )
             elif not isinstance(e, Retry):
-                self.logger.error("Failed to process message %s with unhandled exception.", message, exc_info=True)
+                self.logger.error(
+                    "Failed to process message %s with unhandled exception.",
+                    message,
+                    exc_info=True,
+                )
 
             self.broker.emit_after("process_message", message, exception=e)
 
@@ -529,19 +592,17 @@ class _WorkerThread(Thread):
             # while before a GC triggers.
             message.clear_exception()
 
-    def pause(self):
-        """Pause this worker.
-        """
+    def pause(self) -> None:
+        """Pause this worker."""
         self.paused = True
         self.paused_event.clear()
 
-    def resume(self):
-        """Resume this worker.
-        """
+    def resume(self) -> None:
+        """Resume this worker."""
         self.paused = False
         self.paused_event.clear()
 
-    def stop(self):
+    def stop(self) -> None:
         """Initiate the WorkerThread shutdown process.
 
         Code calling this method should then join on the thread and
@@ -552,5 +613,9 @@ class _WorkerThread(Thread):
 
 
 @lru_cache(maxsize=128)
-def has_results_middleware(broker):
+def has_results_middleware(broker: Broker) -> bool:
     return any(type(m) is Results for m in broker.middleware)
+
+
+_ConsumerThread = ConsumerThread
+_WorkerThread = WorkerThread

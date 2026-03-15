@@ -8,6 +8,411 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+
+`2.1.0`_ -- 2026-03-01
+----------------------
+
+Fixed
+^^^^^
+
+* Stopped unnecessary ``ImportWarning`` warnings being issued when importing
+  the ``dramatiq.rate_limits.backends`` module.
+  (`#787`_, `#816`_, `@synweap15`_, `#821`_, `#834`_, `@LincolnPuzey`_)
+* Added ``*args`` and ``**kwargs`` to the ``GenericActor.perform`` method.
+  This means ``NotImplementedError`` is always raised, as intended,
+  when this method is called but not implemented in a subclass.
+  This can also fix type-checking errors on subclasses that implement this method.
+  (`#805`_, `#837`_, `@LincolnPuzey`_)
+
+.. _#787: https://github.com/Bogdanp/dramatiq/issues/787
+.. _#816: https://github.com/Bogdanp/dramatiq/pull/816
+.. _#821: https://github.com/Bogdanp/dramatiq/issues/821
+.. _#834: https://github.com/Bogdanp/dramatiq/pull/834
+.. _#805: https://github.com/Bogdanp/dramatiq/issues/805
+.. _#837: https://github.com/Bogdanp/dramatiq/pull/837
+
+
+Added
+^^^^^
+
+* Added a warning when using ``dramatiq-gevent`` with a free-threaded python build.
+  Doing so is redundant because using gevent causes the GIL to be enabled.
+  (`#811`_, `#815`_, `@synweap15`_)
+
+.. _#811: https://github.com/Bogdanp/dramatiq/issues/811
+.. _#815: https://github.com/Bogdanp/dramatiq/pull/815
+
+Changed
+^^^^^^^
+
+* Increased the maximum ``redis`` library version to v7.X
+  (`#824`_, `#826`_, `@LincolnPuzey`_)
+* Renamed the ``dramatiq.errors.ConnectionError`` exception to ``BrokerConnectionError``,
+  so that it doesn't shadow the built-in exception class with the same name.
+  The old name is still importable for backwards compatibility,
+  and will be removed in Dramatiq v3.0.0.
+  (`#800`_, `#835`_, `@LincolnPuzey`_)
+* Removed dependency on the ``watchdog_gevent`` library.
+  This was previously used to ensure the ``--watch`` argument worked
+  when starting Dramatiq with ``dramatiq-gevent``.
+  Our testing shows that this now works without this extra compatibility library.
+  This change also bumps the minimum required versions of ``watchdog`` and ``gevent``
+  to the latest.
+  (`#799`_, `@LincolnPuzey`_)
+* Improved the error message printed when the ``--watch`` argument is used without
+  the ``watch`` extra installed.
+  (`#798`_, `#836`_, `@LincolnPuzey`_)
+
+.. _#824: https://github.com/Bogdanp/dramatiq/issues/824
+.. _#826: https://github.com/Bogdanp/dramatiq/pull/826
+.. _#800: https://github.com/Bogdanp/dramatiq/issues/800
+.. _#835: https://github.com/Bogdanp/dramatiq/pull/835
+.. _#799: https://github.com/Bogdanp/dramatiq/pull/799
+.. _#798: https://github.com/Bogdanp/dramatiq/issues/798
+.. _#836: https://github.com/Bogdanp/dramatiq/pull/836
+
+Deprecated
+^^^^^^^^^^
+
+* Deprecated the ``dramatiq_group_callback_barrier_ttl`` environment variable.
+  The new ``barrier_ttl`` argument to the |GroupCallbacks| middleware should be used instead.
+  The environment variable will be removed in Dramatiq v3.0.0.
+  (`#775`_, `@mikeroll`_)
+
+.. _#775: https://github.com/Bogdanp/dramatiq/pull/775
+
+
+`2.0.1`_ -- 2026-01-12
+-----------------------
+
+Fixed
+^^^^^
+
+* Fixed infinite loop when an async actor function raises a ``TimeoutError``.
+  (`#791`_, `#801`_, `@LincolnPuzey`_)
+* Fixed the |group| ``completed_count`` property to return the correct value,
+  regardless of what order the tasks in the group finish.
+  (`#452`_, `#814`_, `@ABolouk`_)
+* Fixed type hints of |actor| decorator.
+  (`#795`_, `#796`_, `@janek-cosmose`_, `#804`_, `@LincolnPuzey`_)
+
+.. _#791: https://github.com/Bogdanp/dramatiq/issues/791
+.. _#801: https://github.com/Bogdanp/dramatiq/pull/801
+.. _#452: https://github.com/Bogdanp/dramatiq/issues/452
+.. _#814: https://github.com/Bogdanp/dramatiq/pull/814
+.. _@ABolouk: https://github.com/ABolouk
+.. _#795: https://github.com/Bogdanp/dramatiq/issues/795
+.. _#796: https://github.com/Bogdanp/dramatiq/pull/796
+.. _@janek-cosmose: https://github.com/janek-cosmose
+.. _#804: https://github.com/Bogdanp/dramatiq/pull/804
+
+Documentation
+^^^^^^^^^^^^^
+
+* Fixed Installation page so it lists all installable extras.
+  (`#797`_, `#808`_, `@synweap15`_)
+
+.. _#797: https://github.com/Bogdanp/dramatiq/issues/797
+.. _#808: https://github.com/Bogdanp/dramatiq/pull/808
+
+
+`2.0.0`_ -- 2025-11-18
+-----------------------
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+
+Major Breaking Changes
+~~~~~~~~~~~~~~~~~~~~~~
+
+These are breaking changes we believe are most likely to effect your project.
+
+* The ``fail_fast`` argument to |StubBroker_join| now defaults to True.
+  This means that calling |StubBroker_join|, will by default,
+  re-raise any Exceptions that caused messages to get dead-lettered
+  (i.e. any uncaught Exceptions in your actor functions).
+  You may need to explicitly catch these exception in your tests
+  (e.g. with :meth:`unittest.TestCase.assertRaises` or :func:`pytest.raises`).
+
+  Alternatively, you can revert to the old behavior
+  by passing ``fail_fast_default=False`` to |StubBroker|.
+
+  However, we think the new default behavior is best, because it makes
+  exceptions happening in your actor functions obvious in your tests.
+  Previously, exceptions in your actor functions could pass silently,
+  and potentially unnoticed unless you checked the side-effects of the actor.
+  (`#739`_, `#758`_, `@LincolnPuzey`_)
+* The |Prometheus| middleware is no longer in the default middleware list.
+  To keep exporting the Prometheus statistics, you must now install the ``prometheus`` extra
+  (e.g. ``pip install 'dramatiq[prometheus]'``)
+  and add the |Prometheus| middleware (see :ref:`customizing-middleware`).
+  If you are not using the Promotheus statistics, no action is needed.
+  (`#95`_, `#345`_, `#688`_, `@azmeuk`_)
+* The ``backend`` argument to the |Results| middleware is now required.
+  Previously, not supplying this argument would result in a non-functional |Results| middleware.
+  (`#728`_, `@LincolnPuzey`_)
+
+.. _#95: https://github.com/Bogdanp/dramatiq/issues/95
+.. _#345: https://github.com/Bogdanp/dramatiq/issues/345
+.. _#688: https://github.com/Bogdanp/dramatiq/pull/688
+.. _@azmeuk: https://github.com/azmeuk
+.. _#728: https://github.com/Bogdanp/dramatiq/pull/728
+.. _#758: https://github.com/Bogdanp/dramatiq/pull/758
+.. _#739: https://github.com/Bogdanp/dramatiq/issues/739
+
+Minor Breaking Changes
+~~~~~~~~~~~~~~~~~~~~~~
+
+These are changes that while technically breaking, we believe are unlikely to effect your project.
+
+* Removed ``URLRabbitmqBroker``. This has been deprecated since version 1.1.0.
+  Use |RabbitmqBroker| with ``url`` as a keyword argument instead.
+  (`#786`_, `@LincolnPuzey`_)
+* Removed the ``dev`` installable extra from the project metadata.
+  Instead the development dependencies are defined in a `PEP-735`_
+  ``[dependency-groups]`` table in ``pyproject.toml``.
+  These can be installed in development environments with ``pip install --group dev``.
+  (`#766`_, `@LincolnPuzey`_)
+* The ``keys`` argument to ``RateLimiterBackend.incr_and_sum`` must now be a callable
+  that returns a list of keys.
+  This is only relevant if you have written custom code (such as a custom Rate Limiter)
+  that uses a ``RateLimiterBackend``.
+  (`#741`_, `#772`_, `@mikeroll`_)
+* The deprecated ``requeue_deadline`` and ``requeue_interval`` arguments of |RedisBroker| have been removed.
+  These have been deprecated and have had no effect since version 1.2.0.
+  (`#782`_, `@mikeroll`_)
+* |RedisBroker|: The code for compatibility with pre-v1.2.0 acks has been removed.
+  If you are using the |RedisBroker|, you must first upgrade Dramatiq to a version >=1.2.0, <2.0.0,
+  and run it for some time, before upgrading to a version >=2.0.0.
+  This is to allow Dramatiq to migrate the pre-v1.2.0 ack data structures in redis to the v1.2.0+
+  versions. This migration code is what has been removed in version 2.0.0.
+  (`#771`_, `@mikeroll`_)
+
+.. _#766: https://github.com/Bogdanp/dramatiq/pull/766
+.. _PEP-735: https://peps.python.org/pep-0735/
+.. _#741: https://github.com/Bogdanp/dramatiq/issues/741
+.. _#771: https://github.com/Bogdanp/dramatiq/pull/771
+.. _#772: https://github.com/Bogdanp/dramatiq/pull/772
+.. _#782: https://github.com/Bogdanp/dramatiq/pull/782
+.. _@mikeroll: https://github.com/mikeroll
+.. _#786: https://github.com/Bogdanp/dramatiq/pull/786
+
+Fixed
+^^^^^
+
+* Fixed the way that backoff time is calculated for retries so that the
+  first backoff is not less than ``min_backoff``.
+  This means that each retry backoff is now, on average, twice as long.
+  To avoid this effect, you can halve your ``min_backoff``
+  (which should now be correctly observed).
+  (`#651`_, `#721`_, `@LincolnPuzey`_)
+* Fixed the RabbitMQ broker making 1 more retry than configured when
+  declaring queues or enqueueing messages fail due to connection errors.
+  1 fewer retries are now made.
+  This fixes a regression introduced by `#669`_ released in ``1.18.0``.
+  (`#734`_, `@LincolnPuzey`_)
+* When adding middleware to a Broker that already has actors declared,
+  call the ``after_declare_actor`` middleware hook with the correct argument.
+  (`#743`_, `@jenstroeger`_)
+* Made dramatiq robust against non-numeric values for the ``eta`` option.
+  This should only be necessary when manually enqueuing messages.
+  (`#759`_, `#761`_, `@gurelkaynak`_)
+* Fixed edge case where the |StubBroker_join| would try to raise ``None`` as an exception.
+  (`#763`_, `@LincolnPuzey`_)
+
+
+.. _@gurelkaynak: https://github.com/gurelkaynak
+.. _#651: https://github.com/Bogdanp/dramatiq/issues/651
+.. _#721: https://github.com/Bogdanp/dramatiq/pull/721
+.. _#734: https://github.com/Bogdanp/dramatiq/pull/734
+.. _#743: https://github.com/Bogdanp/dramatiq/pull/743
+.. _#759: https://github.com/Bogdanp/dramatiq/issues/759
+.. _#761: https://github.com/Bogdanp/dramatiq/pull/761
+.. _#763: https://github.com/Bogdanp/dramatiq/pull/763
+
+Added
+^^^^^
+
+* Add Python 3.14 to test matrix and project classifiers.
+  (`#751`_, `@LincolnPuzey`_)
+  Things to be aware of when upgrading to Python 3.14:
+
+  * Python 3.14 `changes`_ the default multiprocessing `start method`_ to `forkserver`_ on some platforms.
+    Dramatiq Workers use multiprocessing and will be effected by this change.
+    ``forkserver`` should be less bug-prone than the old default ``fork``.
+    However, if you run into weird issues, using the existing ``--use-spawn`` flag when starting Dramatiq to
+    set the start method to ``spawn``, might solve them.
+  * The free-threaded build of Python is now `officially supported`_ by Python.
+    Dramatiq is not yet unit-tested with free-threaded Python, but we hope to do so soon.
+    In the meantime, if you have any success or problems running Dramatiq with free-threaded Python,
+    we would love to hear about it.
+
+* Added type annotations for the external API of the |Worker| and |Broker| classes.
+  (`#727`_, `#731`_, `#744`_, `@jenstroeger`_)
+* Added type annotations for the external API of the |Middleware| class and its subclasses.
+  (`#521`_, `#735`_, `@jenstroeger`_)
+* Added ``message_datetime`` property to the ``Message`` class to retrieve ``message_timestamp``
+  as an aware ``datetime.datetime`` instance.
+  (`#736`_, `@karolinepauls`_)
+* Added ``dramatiq_worker_timeout`` environment variable.
+  (`#773`_, `@ksoviero-zengrc`_)
+
+.. _changes: https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-multiprocessing-start-method
+.. _start method: https://docs.python.org/3.14/library/multiprocessing.html#multiprocessing-start-methods
+.. _forkserver: https://docs.python.org/3.14/library/multiprocessing.html#multiprocessing-start-method-forkserver
+.. _officially supported: https://docs.python.org/3.14/whatsnew/3.14.html#free-threaded-python-is-officially-supported
+
+.. _#751: https://github.com/Bogdanp/dramatiq/pull/751
+.. _#727: https://github.com/Bogdanp/dramatiq/issues/727
+.. _#731: https://github.com/Bogdanp/dramatiq/pull/731
+.. _#744: https://github.com/Bogdanp/dramatiq/pull/744
+.. _#521: https://github.com/Bogdanp/dramatiq/issues/521
+.. _#735: https://github.com/Bogdanp/dramatiq/pull/735
+.. _#736: https://github.com/Bogdanp/dramatiq/pull/736
+.. _#773: https://github.com/Bogdanp/dramatiq/pull/773
+.. _@ksoviero-zengrc: https://github.com/ksoviero-zengrc
+
+Changed
+^^^^^^^
+
+* Promoted ``ConsumerThread`` and ``WorkerThread`` classes to public names,
+  since they are used in the |Middleware| interface type hints.
+  The previous names ``_ConsumerThread`` and ``_WorkerThread`` are still
+  available for backwards compatibility.
+  (`#760`_, `@synweap15`_)
+* Increased the minimum ``redis-py`` library version to ``4.0.0``.
+  (`#738`_, `#764`_, `@LincolnPuzey`_)
+
+.. _#760: https://github.com/Bogdanp/dramatiq/pull/760
+.. _#738: https://github.com/Bogdanp/dramatiq/issues/738
+.. _#764: https://github.com/Bogdanp/dramatiq/pull/764
+
+Removed
+^^^^^^^
+
+* Removed support for Python 3.9.
+  (`#784`_, `@LincolnPuzey`_)
+
+.. _#784: https://github.com/Bogdanp/dramatiq/pull/784
+
+Packaging
+^^^^^^^^^
+
+* The project now defines a PEP-518 build backend in the ``pyproject.toml`` file.
+  (`#750`_, `@LincolnPuzey`_)
+
+.. _#750: https://github.com/Bogdanp/dramatiq/pull/750
+
+Documentation
+^^^^^^^^^^^^^
+
+* Improved documentation relating to middleware.
+  (`#718`_, `@LincolnPuzey`_, `#723`_, `@karolinepauls`_)
+* Add documentation section about asyncio support.
+  (`#595`_, `#719`_, `@LincolnPuzey`_)
+* Improved documentation about prioritizing messages with
+  the ``priority`` argument of an |Actor|.
+  (`#724`_, `#725`_, `@LincolnPuzey`_)
+* Add documentation section about environment variables.
+  (`#720`_, `@LincolnPuzey`_)
+* Improve documentation for ``before_enqueue`` and ``after_enqueue`` |Middleware| hooks.
+  (`#753`_, `@karolinepauls`_)
+
+.. _#718: https://github.com/Bogdanp/dramatiq/pull/718
+.. _#723: https://github.com/Bogdanp/dramatiq/pull/723
+.. _#595: https://github.com/Bogdanp/dramatiq/issues/595
+.. _#719: https://github.com/Bogdanp/dramatiq/pull/719
+.. _#724: https://github.com/Bogdanp/dramatiq/issues/724
+.. _#725: https://github.com/Bogdanp/dramatiq/pull/725
+.. _#720: https://github.com/Bogdanp/dramatiq/pull/720
+.. _#753: https://github.com/Bogdanp/dramatiq/pull/753
+
+
+`1.18.0`_ -- 2025-05-29
+-----------------------
+
+Fixed
+^^^^^
+
+* Correct typing on signal handler. (`#664`_, `@igor47`_)
+* Make sure RabbitMQ Broker enqueue() attempts the correct number
+  of preset retries. (`#668`_, `#669`_, `@jenstoeger`_)
+* Fix ``Message`` Result type variable to be covariant.
+  (`#685`_, `@alecbarber`_)
+* Fix flushing of RabbitMQ queues. (`#687`_, `@olii`_)
+* Fixed unexpected restarts when using ``--watch`` option.
+  (`#654`_, `#696`_, `@LincolnPuzey`_)
+* Fixed using actor decorator in the interactive shell.
+  (`#694`_, `#695`_, `@bartvanandel`_)
+* Fix ``join_queue`` (and ``StubBroker``) compatibility with gevent
+  25.4.1. (`#699`_, `@synweap15`_)
+* Close write_pipe after forking to fix hangs on Worker
+  shutdown. (`#693`_, `#707`_, `@dansimko`_)
+
+.. _#664: https://github.com/Bogdanp/dramatiq/pull/664
+.. _@igor47: https://github.com/igor47
+.. _#668: https://github.com/Bogdanp/dramatiq/issues/668
+.. _#669: https://github.com/Bogdanp/dramatiq/pull/669
+.. _@jenstoeger: https://github.com/jenstoeger
+.. _#685: https://github.com/Bogdanp/dramatiq/pull/685
+.. _@alecbarber: https://github.com/alecbarber
+.. _#687: https://github.com/Bogdanp/dramatiq/pull/687
+.. _@olii: https://github.com/olii
+.. _#654: https://github.com/Bogdanp/dramatiq/issues/654
+.. _#696: https://github.com/Bogdanp/dramatiq/pull/696
+.. _@LincolnPuzey: https://github.com/LincolnPuzey
+.. _#694: https://github.com/Bogdanp/dramatiq/issues/694
+.. _#695: https://github.com/Bogdanp/dramatiq/pull/695
+.. _@bartvanandel: https://github.com/bartvanandel
+.. _#699: https://github.com/Bogdanp/dramatiq/pull/699
+.. _#707: https://github.com/Bogdanp/dramatiq/pull/707
+.. _#693: https://github.com/Bogdanp/dramatiq/issues/693
+.. _@dansimko: https://github.com/dansimko
+
+Added
+^^^^^
+
+* Add repr to ``MessageProxy`` class. (`#690`_, `@karolinepauls`_)
+* Add ``--worker-fork-timeout`` command-line argument to
+  configure time to wait for the worker processes to come
+  online after forking. (`#706`_, `@guedesfelipe`_)
+* Log a warning when added a duplicate middleware class,
+  since this can lead to unexpected behavior. (`#709`_, `@synweap15`_)
+
+.. _#690: https://github.com/Bogdanp/dramatiq/pull/690
+.. _@karolinepauls: https://github.com/karolinepauls
+.. _#706: https://github.com/Bogdanp/dramatiq/pull/706
+.. _@guedesfelipe: https://github.com/guedesfelipe
+.. _#709: https://github.com/Bogdanp/dramatiq/pull/709
+
+Changed
+^^^^^^^
+
+* Extend version limit on ``redis-py`` to version 6.X.
+  (`#711`_, `@dbowring`_)
+
+.. _#711: https://github.com/Bogdanp/dramatiq/pull/711
+
+Removed
+^^^^^^^
+
+* Remove support for end-of-life Python 3.8. (`#662`_, `@amureki`_)
+
+.. _#662: https://github.com/Bogdanp/dramatiq/pull/662
+
+Documentation
+^^^^^^^^^^^^^
+
+* Add Podcatcher sponsor.
+* Add link to ``dramatiq-workflow``. (`#667`_, `@pencil`_)
+* Update Sentry docs to reference ``sentry-sdk``. (`#675`_, `@DHUKK`_)
+
+.. _#667: https://github.com/Bogdanp/dramatiq/pull/667
+.. _@pencil: https://github.com/pencil
+.. _#675: https://github.com/Bogdanp/dramatiq/pull/675
+.. _@DHUKK: https://github.com/DHUKK
+
+
 `1.17.1`_ -- 2024-10-26
 -----------------------
 
@@ -575,7 +980,7 @@ Added
 ^^^^^
 
 * `dramatiq_queue_prefetch` environment variable to control the number
-  of messages to prefetch per worker thread.  (`#183`_, `#184`_, `@xelhark`_)
+  of messages to prefetch per worker process.  (`#183`_, `#184`_, `@xelhark`_)
 * The RabbitMQ broker now retries the queue declaration process if an
   error occurs.  (`#179`_, `@davidt99`_)
 * Support for accessing nested broker instances from the CLI.
@@ -818,8 +1223,8 @@ Changed
 Deprecated
 ^^^^^^^^^^
 
-* |URLRabbitmqBroker| is deprecated.  The |RabbitmqBroker| takes a
-  ``url`` parameter so use that instead.  |URLRabbitmqBroker| will be
+* ``URLRabbitmqBroker`` is deprecated.  The |RabbitmqBroker| takes a
+  ``url`` parameter so use that instead.  ``URLRabbitmqBroker`` will be
   removed in version 2.0.
 
 Fixed
@@ -1098,7 +1503,7 @@ Changed
 ^^^^^^^
 
 * Consumer reconnect backoff factor has been lowered from 10s to 100ms.
-* |URLRabbitmqBroker| is now a factory function that creates instances
+* ``URLRabbitmqBroker`` is now a factory function that creates instances
   of |RabbitmqBroker|.
 
 Fixed
@@ -1138,7 +1543,7 @@ Fixed
 Added
 ^^^^^
 
-* |URLRabbitmqbroker| (`@whalesalad`_).
+* ``URLRabbitmqbroker`` (`@whalesalad`_).
 * StubBroker |StubBroker_flush| and |StubBroker_flush_all|.
 * |before_consumer_thread_shutdown| middleware hook.
 * |before_worker_thread_shutdown| middleware hook.
@@ -1256,7 +1661,11 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.1.0...HEAD
+.. _2.1.0: https://github.com/Bogdanp/dramatiq/compare/v2.0.1...v2.1.0
+.. _2.0.1: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...v2.0.1
+.. _2.0.0: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...v2.0.0
+.. _1.18.0: https://github.com/Bogdanp/dramatiq/compare/v1.17.1...v1.18.0
 .. _1.17.1: https://github.com/Bogdanp/dramatiq/compare/v1.17.0...v1.17.1
 .. _1.17.0: https://github.com/Bogdanp/dramatiq/compare/v1.16.0...v1.17.0
 .. _1.16.0: https://github.com/Bogdanp/dramatiq/compare/v1.15.0...v1.16.0

@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import dataclasses
 import time
 import uuid
-from typing import Any, Dict, Generic, Optional, Tuple, TypeVar
+from datetime import datetime, timezone
+from typing import Any, Generic, Optional, TypeVar
 
 from .broker import get_broker
 from .composition import pipeline
@@ -29,7 +32,7 @@ from .results import ResultBackend
 #: The global encoder instance.
 global_encoder: Encoder = JSONEncoder()
 
-R = TypeVar("R")
+R = TypeVar("R", covariant=True)
 
 
 def get_encoder() -> Encoder:
@@ -38,7 +41,6 @@ def get_encoder() -> Encoder:
     Returns:
       Encoder
     """
-    global global_encoder
     return global_encoder
 
 
@@ -54,8 +56,7 @@ def set_encoder(encoder: Encoder) -> None:
 
 
 def generate_unique_id() -> str:
-    """Generate a globally-unique message id.
-    """
+    """Generate a globally-unique message id."""
     return str(uuid.uuid4())
 
 
@@ -73,11 +74,12 @@ class Message(Generic[R]):
       message_timestamp(int): The UNIX timestamp in milliseconds
         representing when the message was first enqueued.
     """
+
     queue_name: str
     actor_name: str
-    args: tuple
-    kwargs: Dict[str, Any]
-    options: Dict[str, Any]
+    args: tuple[Any, ...]
+    kwargs: dict[str, Any]
+    options: dict[str, Any]
     message_id: str = dataclasses.field(default_factory=generate_unique_id)
     message_timestamp: int = dataclasses.field(default_factory=lambda: int(time.time() * 1000))
 
@@ -89,13 +91,11 @@ class Message(Generic[R]):
             object.__setattr__(self, "args", tuple(self.args))
 
     def __or__(self, other) -> pipeline:
-        """Combine this message into a pipeline with "other".
-        """
+        """Combine this message into a pipeline with "other"."""
         return pipeline([self, other])
 
-    def asdict(self) -> Dict[str, Any]:
-        """Convert this message to a dictionary.
-        """
+    def asdict(self) -> dict[str, Any]:
+        """Convert this message to a dictionary."""
         # For backward compatibility, we can't use `dataclasses.asdict`
         # because it creates a copy of all values, including `options`.
         result = {}
@@ -104,7 +104,7 @@ class Message(Generic[R]):
         return result
 
     @classmethod
-    def decode(cls, data: bytes) -> "Message":
+    def decode(cls, data: bytes) -> Message:
         """Convert a bytestring to a message.
 
         Raises:
@@ -119,18 +119,17 @@ class Message(Generic[R]):
             raise DecodeError("Failed to decode message.", data, e) from e
 
     def encode(self) -> bytes:
-        """Convert this message to a bytestring.
-        """
+        """Convert this message to a bytestring."""
         return global_encoder.encode(self.asdict())
 
-    def copy(self, **attributes) -> "Message":
-        """Create a copy of this message.
-        """
+    def copy(self, **attributes) -> Message:
+        """Create a copy of this message."""
         new_options = attributes.pop("options", {})
         return dataclasses.replace(self, **attributes, options={**self.options, **new_options})
 
     def get_result(
-        self, *,
+        self,
+        *,
         backend: Optional[ResultBackend] = None,
         block: bool = False,
         timeout: Optional[int] = None,
@@ -175,19 +174,29 @@ class Message(Generic[R]):
 
         return "%s(%s)" % (self.actor_name, params)
 
-    def __lt__(self, other: "Message") -> bool:
+    def __lt__(self, other: Message) -> bool:
         return dataclasses.astuple(self) < dataclasses.astuple(other)
 
     # Backwards-compatibility with namedtuple.
     _asdict = asdict
 
     @property
-    def _field_defaults(self) -> Dict[str, Any]:
+    def _field_defaults(self) -> dict[str, Any]:
         return {f.name: f.default for f in dataclasses.fields(self) if f.default is not dataclasses.MISSING}
 
     @property
-    def _fields(self) -> Tuple[str, ...]:
+    def _fields(self) -> tuple[str, ...]:
         return tuple(f.name for f in dataclasses.fields(self))
 
-    def _replace(self, **changes) -> "Message[R]":
+    def _replace(self, **changes) -> Message[R]:
         return dataclasses.replace(self, **changes)
+
+    @property
+    def message_datetime(self) -> datetime:
+        """Read ``message_timestamp`` as a UTC-aware datetime.
+
+        Datetime precision is limited by the representation of ``Message.message_timestamp``, which is an
+        integer storing milliseconds.
+        """
+        unix_seconds, ms = divmod(self.message_timestamp, 1000)
+        return datetime.fromtimestamp(unix_seconds, tz=timezone.utc).replace(microsecond=ms * 1000)

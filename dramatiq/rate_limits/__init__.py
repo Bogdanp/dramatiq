@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from .backend import RateLimiterBackend
 from .barrier import Barrier
 from .bucket import BucketRateLimiter
@@ -23,6 +25,11 @@ from .rate_limiter import RateLimiter, RateLimitExceeded
 from .window import WindowRateLimiter
 
 __all__ = [
-    "RateLimiterBackend", "RateLimiter", "RateLimitExceeded", "Barrier",
-    "BucketRateLimiter", "ConcurrentRateLimiter", "WindowRateLimiter",
+    "RateLimiterBackend",
+    "RateLimiter",
+    "RateLimitExceeded",
+    "Barrier",
+    "BucketRateLimiter",
+    "ConcurrentRateLimiter",
+    "WindowRateLimiter",
 ]

@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools >= 80.9.0, < 81"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "format"},
+    {include-group = "type-check"},
+    {include-group = "build"},
+    {include-group = "docs"},
+    "hiredis",
+    "twine",
+    "wheel",
+    "tox",
+]
+test = [
+    "pytest",
+    "pytest-benchmark[histogram]",
+    "pytest-cov",
+]
+lint = [
+    "flake8",
+    "flake8-bugbear",
+    "flake8-quotes",
+    "isort",
+]
+format = [
+    "black",
+]
+type-check = [
+    "mypy",
+    # Include test group so mypy can see the types of the pytest modules the tests import.
+    {include-group = "test"},
+]
+build = [
+    "build",
+]
+docs = [
+    "alabaster",
+    "sphinx",
+    "sphinxcontrib-napoleon",
+]
+
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = "--cov=dramatiq --cov=tests --cov-report=term --no-cov-on-fail"
+
+[tool.coverage.run]
+branch = true
+source = ['dramatiq', 'tests']
+
+[tool.black]
+line-length = 120
+target-version = ["py310", "py311", "py312", "py313", "py314"]
+
+[tool.isort]
+line_length = 120
+known_first_party = ["dramatiq"]
+multi_line_output = 5
+order_by_type = true
+profile = "black"
+add_imports = [
+# Remove annotations import once we only support python 3.14+
+    "from __future__ import annotations",
+]
+
+[tool.mypy]
+packages = ["dramatiq", "tests"]
+python_version = "3.10"
+pretty = true
+show_column_numbers = true
+show_error_context = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+module = [
+    "gevent",
+    "greenlet",
+    "pika",
+    "pika.exceptions",
+    "prometheus_client",
+    "pylibmc",
+    "redis",
+    "watchdog",
+]
+ignore_missing_imports = true

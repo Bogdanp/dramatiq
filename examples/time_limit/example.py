@@ -6,6 +6,7 @@ import dramatiq
 
 if os.getenv("REDIS") == "1":
     from dramatiq.brokers.redis import RedisBroker
+
     broker = RedisBroker()
     dramatiq.set_broker(broker)
 

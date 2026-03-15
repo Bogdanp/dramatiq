@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import time
 
 from .rate_limiter import RateLimiter
@@ -55,7 +57,9 @@ class WindowRateLimiter(RateLimiter):
     def _acquire(self):
         keys = self._get_keys()
         return self.backend.incr_and_sum(
-            keys[0], self._get_keys, 1,
+            keys[0],
+            self._get_keys,
+            1,
             maximum=self.limit,
             ttl=self.window_millis,
         )

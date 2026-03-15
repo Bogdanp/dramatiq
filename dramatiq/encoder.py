@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import abc
 import json
 import pickle
@@ -23,29 +25,25 @@ import typing
 from .errors import DecodeError
 
 #: Represents the contents of a Message object as a dict.
-MessageData = typing.Dict[str, typing.Any]
+MessageData = dict[str, typing.Any]
 
 
 class Encoder(abc.ABC):
-    """Base class for message encoders.
-    """
+    """Base class for message encoders."""
 
     @abc.abstractmethod
     def encode(self, data: MessageData) -> bytes:  # pragma: no cover
-        """Convert message metadata into a bytestring.
-        """
+        """Convert message metadata into a bytestring."""
         raise NotImplementedError
 
     @abc.abstractmethod
     def decode(self, data: bytes) -> MessageData:  # pragma: no cover
-        """Convert a bytestring into message metadata.
-        """
+        """Convert a bytestring into message metadata."""
         raise NotImplementedError
 
 
 class JSONEncoder(Encoder):
-    """Encodes messages as JSON.  This is the default encoder.
-    """
+    """Encodes messages as JSON.  This is the default encoder."""
 
     def encode(self, data: MessageData) -> bytes:
         return json.dumps(data, separators=(",", ":")).encode("utf-8")

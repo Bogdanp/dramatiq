@@ -12,10 +12,20 @@ those changes to CLEARTYPE SRL.  If you cannot or do not want to
 reassign those rights, you shouldn't submit a PR.  Instead, you should
 open an issue and let someone else do that work.
 
+### Local Development
+
+To set up a development environment, it is recommended to:
+
+1. Clone the repository (or your fork of it).
+2. Create and active a virtual environment.
+3. Install dramatiq in editable mode with all optional extras: `pip install -e ".[all]"`.
+4. Install the development dependencies `pip install --group dev`.
+
 ### Pull Requests
 
 * Make sure any code changes are covered by tests.
-* Run [isort] on any modified files.
+* Run [black], [isort] and [flake8] on any modified files.
+* Run [mypy] to check type correctness.
 * If this is your first contribution, add yourself to the [CONTRIBUTORS] file.
 * If your branch is behind master, [rebase] on top of it.
 
@@ -27,6 +37,9 @@ Run the test suite with `tox`.  The tests require running [RabbitMQ],
 [Redis]: https://redis.io
 [Memcached]: https://memcached.org/
 [isort]: https://github.com/timothycrosley/isort
+[black]: https://github.com/psf/black
+[flake8]: https://flake8.pycqa.org/en/latest/
+[mypy]: https://mypy.readthedocs.io/en/stable/getting_started.html
 [rebase]: https://github.com/edx/edx-platform/wiki/How-to-Rebase-a-Pull-Request
 
 

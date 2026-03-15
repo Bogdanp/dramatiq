@@ -15,13 +15,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import threading
 import warnings
-from typing import Optional, Type
 
 from ..logging import get_logger
 from .middleware import Middleware
-from .threading import Interrupt, current_platform, is_gevent_active, raise_thread_exception, supported_platforms
+from .threading import (
+    Interrupt,
+    current_platform,
+    is_gevent_active,
+    raise_thread_exception,
+    supported_platforms,
+)
 
 
 class Shutdown(Interrupt):
@@ -42,13 +49,16 @@ class ShutdownNotifications(Middleware):
       this means that this middleware can't cancel system calls.
 
     Parameters:
-      notify_shutdown(bool): When true, the actor will be interrupted
+      notify_shutdown(bool): When True, the actor will be interrupted
         if the worker process was terminated.
+        Defaults to False, meaning actors will not be interrupted, and allowed to finish.
     """
 
-    def __init__(self, notify_shutdown=False):
+    def __init__(self, notify_shutdown: bool = False) -> None:
         self.logger = get_logger(__name__, type(self))
         self.notify_shutdown = notify_shutdown
+
+        self.manager: _ShutdownManager
         if is_gevent_active():
             self.manager = _GeventShutdownManager(self.logger)
         else:
@@ -116,15 +126,17 @@ class _CtypesShutdownManager(_ShutdownManager):
 
     def shutdown(self):
         for thread_id in self.notifications:
-            self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+            self.logger.info(
+                "Worker shutdown notification. Raising exception in worker thread %r.",
+                thread_id,
+            )
             raise_thread_exception(thread_id, Shutdown)
 
 
-_GeventShutdownManager: Optional[Type[_ShutdownManager]] = None
 if is_gevent_active():
     from gevent import getcurrent
 
-    class __GeventShutdownManager(_ShutdownManager):
+    class _GeventShutdownManager(_ShutdownManager):
 
         def __init__(self, logger=None):
             self.logger = logger or get_logger(__name__, type(self))
@@ -144,7 +156,8 @@ if is_gevent_active():
 
         def shutdown(self):
             for thread_id, greenlet in self.notification_greenlets:
-                self.logger.info("Worker shutdown notification. Raising exception in worker thread %r.", thread_id)
+                self.logger.info(
+                    "Worker shutdown notification. Raising exception in worker thread %r.",
+                    thread_id,
+                )
                 greenlet.kill(Shutdown, block=False)
-
-    _GeventShutdownManager = __GeventShutdownManager

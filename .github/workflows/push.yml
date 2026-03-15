@@ -1,29 +1,63 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  lint:
-    runs-on: ubuntu-20.04
-    name: lint
+  black:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.13"
-      - run: |
-          sudo apt-get update
-          sudo apt-get remove libhashkit2 libmemcached11 || true
-          sudo apt-get install -y libmemcached-dev
-      - run: pip install tox
-      - run: tox -e lint
-      - run: tox -e docs
+          python-version: "3.10"
+      - run: pip install --group format
+      - run: black --check .
 
-  build-unix:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.10"
+      - run: pip install ".[all]" --group type-check
+      - run: mypy
+
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.10"
+      - run: pip install --group lint
+      - run: isort --check dramatiq tests
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.10"
+      - run: pip install --group lint
+      - run: flake8 dramatiq tests examples
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.10"
+      - run: pip install ".[all]" --group docs
+      - run: cd docs && make html
+
+  test:
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-20.04"]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        os: ["ubuntu-24.04"]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         concurrency: ["cpython", "gevent"]
 
     runs-on: ${{ matrix.os }}
@@ -35,7 +69,7 @@ jobs:
         ports:
           - 11211:11211
       rabbitmq:
-        image: rabbitmq:3
+        image: rabbitmq:latest
         env:
           RABBITMQ_DEFAULT_USER: "dramatiq"
           RABBITMQ_DEFAULT_PASS: "dramatiq"
@@ -47,23 +81,24 @@ jobs:
         ports:
           - 6379:6379
 
+    env:
+      RABBITMQ_USERNAME: "dramatiq"
+      RABBITMQ_PASSWORD: "dramatiq"
+
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python }}
       - run: |
           sudo apt-get update
           sudo apt-get remove libhashkit2 libmemcached11 || true
           sudo apt-get install -y libmemcached-dev
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[rabbitmq,redis,memcached,prometheus]' --group test
+        if: ${{ matrix.concurrency == 'cpython' }}
+      - run: pip install -e '.[rabbitmq,redis,memcached,prometheus,gevent]' --group test
+        if: ${{ matrix.concurrency == 'gevent' }}
       - run: pytest --benchmark-skip
         if: ${{ matrix.concurrency == 'cpython' }}
-        env:
-          RABBITMQ_USERNAME: "dramatiq"
-          RABBITMQ_PASSWORD: "dramatiq"
       - run: python pytest-gevent.py --benchmark-skip
         if: ${{ matrix.concurrency == 'gevent' }}
-        env:
-          RABBITMQ_USERNAME: "dramatiq"
-          RABBITMQ_PASSWORD: "dramatiq"
