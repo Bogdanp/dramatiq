@@ -1,14 +1,15 @@
-from fastapi import FastAPI
+# Import Broker first so it is set up.
+import my_broker  # noqa: F401
 
-from tasks.bar.tasks import bar_task
-from tasks.foo.tasks import foo_task
-
-
-app = FastAPI()
+# Import actors after broker.
+import actors
 
 
-@app.get("/test-task")
-async def test_task():
-    foo_task.send()
-    bar_task.send()
-    return {"message": "Tasks sent."}
+def my_app():
+    """Basic application that publishes some messages."""
+    actors.bar_task.send()
+    actors.foo_task.send()
+
+
+if __name__ == "__main__":
+    my_app()
