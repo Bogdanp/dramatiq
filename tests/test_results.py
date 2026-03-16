@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import time
 from unittest.mock import patch
 
@@ -76,11 +75,15 @@ def test_use_namespace_prefix_keys_produces_readable_key(stub_broker, stub_worke
     message_key = backend.build_message_key(message)
     assert message_key.startswith("myns:")
 
-    # And the rest of the key should be a 32-character hex MD5 digest of the queue, actor, and message ID
+    # And then continue with the queue name
+    assert message_key.startswith("myns:default:")
+
+    # And then the actor name
+    assert message_key.startswith("myns:default:do_work:")
+
+    # And finally end with the message ID
     message_id = message.message_id
-    key = f"default:do_work:{message_id}"
-    hashed_key = hashlib.md5(key.encode("utf-8")).hexdigest()
-    assert message_key.endswith(f":{hashed_key}")
+    assert message_key.endswith(f":{message_id}")
 
 
 def test_use_namespace_prefix_keys_default_is_legacy_hash(stub_broker):

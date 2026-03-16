@@ -51,12 +51,11 @@ class ResultBackend:
       encoder(Encoder): The encoder to use when storing and retrieving
         result data.  Defaults to :class:`.JSONEncoder`.
       use_namespace_prefix_keys(bool): When True, message keys are
-        stored as ``"<namespace>:md5_hash(<queue>:<actor>:<message_id>)"`` so the
-        namespace is a human-readable prefix and keys can be scanned or
-        expired by namespace in the backend.  When False (the default)
-        the legacy behaviour is preserved: the full qualified name is
-        hashed with MD5 and the namespace is not visible in the stored
-        keys.
+        stored as ``"<namespace>:<queue>:<actor>:<message_id>"`` so the
+        keys are human-readable and can be scanned or expired by namespace in the backend.
+        When False (the default) the legacy behaviour is preserved:
+        the full qualified name is hashed with MD5 and
+        the namespace is not visible in the stored keys.
     """
 
     def __init__(
@@ -159,24 +158,15 @@ class ResultBackend:
         Returns:
           str
         """
+        message_key = "%(namespace)s:%(queue_name)s:%(actor_name)s:%(message_id)s" % {
+            "namespace": self.namespace,
+            "queue_name": q_name(message.queue_name),
+            "actor_name": message.actor_name,
+            "message_id": message.message_id,
+        }
         if self.use_namespace_prefix_keys:
-            message_key = "%(queue_name)s:%(actor_name)s:%(message_id)s" % {
-                "queue_name": q_name(message.queue_name),
-                "actor_name": message.actor_name,
-                "message_id": message.message_id,
-            }
-            hashed_key = hashlib.md5(message_key.encode("utf-8")).hexdigest()
-            return "%(namespace)s:%(hashed_key)s" % {
-                "namespace": self.namespace,
-                "hashed_key": hashed_key,
-            }
+            return message_key
         else:
-            message_key = "%(namespace)s:%(queue_name)s:%(actor_name)s:%(message_id)s" % {
-                "namespace": self.namespace,
-                "queue_name": q_name(message.queue_name),
-                "actor_name": message.actor_name,
-                "message_id": message.message_id,
-            }
             return hashlib.md5(message_key.encode("utf-8")).hexdigest()
 
     def _get(self, message_key: str) -> MResult:  # pragma: no cover

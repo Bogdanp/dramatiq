@@ -30,6 +30,12 @@ class StubBackend(ResultBackend):
       namespace(str): A string with which to prefix result keys.
       encoder(Encoder): The encoder to use when storing and retrieving
         result data.  Defaults to :class:`.JSONEncoder`.
+      use_namespace_prefix_keys(bool): When True, message keys are
+        stored as ``"<namespace>:<queue>:<actor>:<message_id>"`` so the
+        keys are human-readable and can be scanned or expired by namespace in the backend.
+        When False (the default) the legacy behaviour is preserved:
+        the full qualified name is hashed with MD5 and
+        the namespace is not visible in the stored keys.
     """
 
     results: dict[str, tuple[Optional[str], Optional[float]]] = {}
