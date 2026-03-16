@@ -50,13 +50,26 @@ class ResultBackend:
         should be stored.
       encoder(Encoder): The encoder to use when storing and retrieving
         result data.  Defaults to :class:`.JSONEncoder`.
+      use_namespace_prefix_keys(bool): When True, message keys are
+        stored as ``"<namespace>:<queue>:<actor>:<message_id>"`` so the
+        keys are human-readable and can be scanned or expired by namespace in the backend.
+        When False (the default) the legacy behaviour is preserved:
+        the full qualified name is hashed with MD5 and
+        the namespace is not visible in the stored keys.
     """
 
-    def __init__(self, *, namespace: str = "dramatiq-results", encoder: typing.Optional[Encoder] = None):
+    def __init__(
+        self,
+        *,
+        namespace: str = "dramatiq-results",
+        encoder: typing.Optional[Encoder] = None,
+        use_namespace_prefix_keys: bool = False,
+    ):
         from ..message import get_encoder
 
         self.namespace = namespace
         self.encoder = encoder or get_encoder()
+        self.use_namespace_prefix_keys = use_namespace_prefix_keys
 
     def unwrap_result(self, res):
         """Unwrap the serialized result.  Passes through to
@@ -151,7 +164,10 @@ class ResultBackend:
             "actor_name": message.actor_name,
             "message_id": message.message_id,
         }
-        return hashlib.md5(message_key.encode("utf-8")).hexdigest()
+        if self.use_namespace_prefix_keys:
+            return message_key
+        else:
+            return hashlib.md5(message_key.encode("utf-8")).hexdigest()
 
     def _get(self, message_key: str) -> MResult:  # pragma: no cover
         """Get a result from the backend.  Subclasses may implement

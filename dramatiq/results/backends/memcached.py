@@ -30,6 +30,12 @@ class MemcachedBackend(ResultBackend):
       namespace(str): A string with which to prefix result keys.
       encoder(Encoder): The encoder to use when storing and retrieving
         result data.  Defaults to :class:`.JSONEncoder`.
+      use_namespace_prefix_keys(bool): When True, message keys are
+        stored as ``"<namespace>:<queue>:<actor>:<message_id>"`` so the
+        keys are human-readable and can be scanned or expired by namespace in the backend.
+        When False (the default) the legacy behaviour is preserved:
+        the full qualified name is hashed with MD5 and
+        the namespace is not visible in the stored keys.
       pool(ClientPool): An optional pylibmc client pool to use.  If
         this is passed, all other connection params are ignored.
       pool_size(int): The size of the connection pool to use.
@@ -37,8 +43,17 @@ class MemcachedBackend(ResultBackend):
         to :class:`pylibmc.Client`.
     """
 
-    def __init__(self, *, namespace="dramatiq-results", encoder=None, pool=None, pool_size=8, **parameters):
-        super().__init__(namespace=namespace, encoder=encoder)
+    def __init__(
+        self,
+        *,
+        namespace="dramatiq-results",
+        encoder=None,
+        use_namespace_prefix_keys=False,
+        pool=None,
+        pool_size=8,
+        **parameters,
+    ):
+        super().__init__(namespace=namespace, encoder=encoder, use_namespace_prefix_keys=use_namespace_prefix_keys)
         self.pool = pool or ClientPool(Client(**parameters), pool_size)
 
     def _get(self, message_key):
