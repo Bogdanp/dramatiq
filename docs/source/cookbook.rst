@@ -447,6 +447,46 @@ The result expiration can be also set per an actor:
    def add(x, y):
        return x + y
 
+
+Custom Middleware
+-----------------
+
+Writing a Custom Middleware Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can write a custom middleware class to customize or add functionality to many parts of Dramatiq.
+For the full list of hooks available, see the |Middleware| class.
+
+For example, you could write a middleware that sets the message time limit dynamically based
+on the message arguments,
+using the :meth:`Middleware.before_process_message<dramatiq.Middleware.before_process_message>` hook.
+
+.. code-block:: python
+
+   import dramatiq
+
+   class DynamicTimeLimitMiddleware(dramatiq.Middleware):
+     def before_process_message(self, broker, message):
+         """Sets a dynamic time limit on messages based on their arguments."""
+         message.options["time_limit"] = calculate_time_limit(
+             message.args, message.kwargs
+         )
+
+Finally, instantiate and add it to your broker:
+
+.. code-block:: python
+
+   import dramatiq.middleware
+
+   broker.add_middleware(
+       DynamicTimeLimitMiddleware(),
+       before=dramatiq.middleware.TimeLimit,
+   )
+
+Note that in this case, the custom middleware must be inserted before the |TimeLimit| middleware
+so the dynamic time limit is applied to messaged before it is used by the |TimeLimit| middleware.
+
+
 Scheduling
 ----------
 
