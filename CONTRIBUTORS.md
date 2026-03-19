@@ -77,4 +77,5 @@ of those changes to CLEARTYPE SRL.
 | [@ksoviero-zengrc](https://github.com/ksoviero-zengrc) | Kevin Soviero          |
 | [@mikeroll](https://github.com/mikeroll)               | Mikhail Bulash         |
 | [@janek-cosmose](https://github.com/janek-cosmose)     | Jan Szejko             |
-| [@ABolouk](https://github.com/ABolouk) | Amirhossein Bolouk Asli |
+| [@ABolouk](https://github.com/ABolouk)                 | Amirhossein Bolouk Asli|
+| [@albcunha](https://github.com/albcunha)               | Alberto Cunha          |
