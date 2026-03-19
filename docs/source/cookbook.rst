@@ -447,38 +447,44 @@ The result expiration can be also set per an actor:
    def add(x, y):
        return x + y
 
-Dynamic time limits
-----------------------------
 
-Setting dynamic time limits for messages
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Custom Middleware
+-----------------
 
-If you need a static time limit, you can set it on the actor with the 
-`time_limit` parameter. For more complex scenarios, you can set 
-a `time_limit` option on each message.  You can also create a 
-custom middleware to set the time limit before the message is processed:
+Writing a Custom Middleware Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can write a custom middleware class to customize or add functionality to many parts of Dramatiq.
+For the full list of hooks available, see the |Middleware| class.
+
+For example, you could write a middleware that sets the message time limit dynamically based
+on the message arguments,
+using the :meth:`Middleware.before_process_message<dramatiq.Middleware.before_process_message>` hook.
 
 .. code-block:: python
 
-  import dramatiq
+   import dramatiq
 
    class DynamicTimeLimitMiddleware(dramatiq.Middleware):
      def before_process_message(self, broker, message):
-         """Sets a dynamic time limit on messages based on their payload."""
-         # This example assumes the first argument to the actor is a dict
-         # that contains a 'time_limit_factor' key. Any key can be used.
-         if message.args:
-             message_payload = message.args[0]
-             if isinstance(message_payload, dict) and "time_limit_factor" in message_payload:
-                 time_limit_ms = message_payload["time_limit_factor"] * 1000
-                 message.options["time_limit"] = int(time_limit_ms)
+         """Sets a dynamic time limit on messages based on their arguments."""
+         message.options["time_limit"] = calculate_time_limit(
+             message.args, message.kwargs
+         )
 
-Finally, instantiate and add it to your broker:    
+Finally, instantiate and add it to your broker:
 
 .. code-block:: python
 
-   broker.add_middleware(DynamicTimeLimitMiddleware())
-   dramatiq.set_broker(broker)
+   import dramatiq.middleware
+
+   broker.add_middleware(
+       DynamicTimeLimitMiddleware(),
+       before=dramatiq.middleware.TimeLimit,
+   )
+
+Note that in this case, the custom middleware must be inserted before the |TimeLimit| middleware
+so the dynamic time limit is applied to messaged before it is used by the |TimeLimit| middleware.
 
 
 Scheduling
