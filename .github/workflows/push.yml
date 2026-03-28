@@ -58,7 +58,16 @@ jobs:
       matrix:
         os: ["ubuntu-24.04"]
         python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        concurrency: ["cpython", "gevent"]
+        concurrency: ["cpython", "free-threaded", "gevent"]
+        exclude:
+          - python: "3.10"
+            concurrency: "free-threaded"
+          - python: "3.11"
+            concurrency: "free-threaded"
+          - python: "3.12"
+            concurrency: "free-threaded"
+          - python: "3.13"
+            concurrency: "free-threaded"
 
     runs-on: ${{ matrix.os }}
     name: test on ${{ matrix.python }} (${{ matrix.os }}, ${{ matrix.concurrency }})
@@ -90,15 +99,27 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python }}
+          freethreaded: ${{ matrix.concurrency == 'free-threaded' }}
       - run: |
           sudo apt-get update
           sudo apt-get remove libhashkit2 libmemcached11 || true
           sudo apt-get install -y libmemcached-dev
+
       - run: pip install -e '.[rabbitmq,redis,memcached,prometheus]' --group test
-        if: ${{ matrix.concurrency == 'cpython' }}
+        if: ${{ matrix.concurrency == 'cpython' || matrix.concurrency == 'free-threaded' }}
       - run: pip install -e '.[rabbitmq,redis,memcached,prometheus,gevent]' --group test
         if: ${{ matrix.concurrency == 'gevent' }}
-      - run: pytest --benchmark-skip
+
+      - name: "Run tests"
+        run: pytest --benchmark-skip
         if: ${{ matrix.concurrency == 'cpython' }}
-      - run: python pytest-gevent.py --benchmark-skip
+      - name: "Run tests with free-threaded python"
+        run: pytest --benchmark-skip
+        env:
+          # Force the GIl to remain disabled, in case a dependency tries to enable it.
+          # https://docs.python.org/3/using/cmdline.html#envvar-PYTHON_GIL
+          PYTHON_GIL: 0
+        if: ${{ matrix.concurrency == 'free-threaded' }}
+      - name: "Run tests with gevent"
+        run: python pytest-gevent.py --benchmark-skip
         if: ${{ matrix.concurrency == 'gevent' }}
