@@ -67,6 +67,7 @@ of those changes to CLEARTYPE SRL.
 | [@5tefan](https://github.com/5tefan/)                  | Stefan Codrescu        |
 | [@kuba-lilz](https://github.com/kuba-lilz/)            | Jakub Kolodziejczyk    |
 | [@dbowring](https://github.com/dbowring/)              | Daniel Bowring         |
+| [@bagowix](https://github.com/bagowix/)                | Bogdan Galushko        |
 | [@olii](https://github.com/olii)                       | Oliver Nemček          |
 | [@bartvanandel](https://github.com/bartvanandel)       | Bart van Andel         |
 | [@LincolnPuzey](https://github.com/LincolnPuzey)       | Lincoln Puzey          |
@@ -76,5 +77,6 @@ of those changes to CLEARTYPE SRL.
 | [@ksoviero-zengrc](https://github.com/ksoviero-zengrc) | Kevin Soviero          |
 | [@mikeroll](https://github.com/mikeroll)               | Mikhail Bulash         |
 | [@janek-cosmose](https://github.com/janek-cosmose)     | Jan Szejko             |
-| [@ABolouk](https://github.com/ABolouk) | Amirhossein Bolouk Asli |
+| [@ABolouk](https://github.com/ABolouk)                 | Amirhossein Bolouk Asli|
 | [@JoaoAlmeida20](https://github.com/JoaoAlmeida20)     | João Almeida           |
+| [@albcunha](https://github.com/albcunha)               | Alberto Cunha          |
