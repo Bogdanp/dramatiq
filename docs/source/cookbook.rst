@@ -448,6 +448,40 @@ The result expiration can be also set per an actor:
        return x + y
 
 
+Result Key Format
+^^^^^^^^^^^^^^^^^
+
+The ``use_namespace_prefix_keys`` option of the |ResultBackends| controls
+the format of the keys used to store results in the backed.
+Specifically, it toggles between keys using a structured format,
+or keys being plain MD5 hashes.
+
+.. caution::
+
+   Dramatiq does not do any migration of result data
+   if you change the value of ``use_namespace_prefix_keys``.
+   Results stored when ``use_namespace_prefix_keys=False`` won't
+   be read when ``use_namespace_prefix_keys=True``, and vice versa.
+
+If you need complete control over the format of result keys, you can subclass
+the result backend class you are using and override
+:meth:`ResultBackend.build_message_key<dramatiq.results.ResultBackend.build_message_key>`:
+
+.. code-block:: python
+
+   import dramatiq
+
+   from dramatiq.results.backends import RedisBackend
+   from dramatiq.results import Results
+
+   class CustomRedisBackend(RedisBackend):
+       def build_message_key(self, message):
+           return f"my_custom_key_{message.message_id}"
+
+   result_backend = CustomRedisBackend()
+   broker.add_middleware(Results(backend=result_backend))
+
+
 Custom Middleware
 -----------------
 
