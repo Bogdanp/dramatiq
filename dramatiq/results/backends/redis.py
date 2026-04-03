@@ -30,6 +30,11 @@ class RedisBackend(ResultBackend):
       namespace(str): A string with which to prefix result keys.
       encoder(Encoder): The encoder to use when storing and retrieving
         result data.  Defaults to :class:`.JSONEncoder`.
+      use_namespace_prefix_keys(bool): When True, the keys used to store results
+        use the format ``<namespace>:<queue>:<actor>:<message_id>`` so that the
+        keys are human-readable and can be scanned or expired by namespace in the backend.
+        When False (the default) the keys are MD5 hashes of the format described above,
+        so the namespace is not visible in the stored keys.
       client(Redis): An optional client.  If this is passed,
         then all other parameters are ignored.
       url(str): An optional connection URL.  If both a URL and
@@ -40,8 +45,17 @@ class RedisBackend(ResultBackend):
     .. _redis: https://redis.io
     """
 
-    def __init__(self, *, namespace="dramatiq-results", encoder=None, client=None, url=None, **parameters):
-        super().__init__(namespace=namespace, encoder=encoder)
+    def __init__(
+        self,
+        *,
+        namespace="dramatiq-results",
+        encoder=None,
+        use_namespace_prefix_keys=False,
+        client=None,
+        url=None,
+        **parameters,
+    ):
+        super().__init__(namespace=namespace, encoder=encoder, use_namespace_prefix_keys=use_namespace_prefix_keys)
 
         if url:
             parameters["connection_pool"] = redis.ConnectionPool.from_url(url)

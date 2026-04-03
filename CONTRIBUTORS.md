@@ -78,4 +78,5 @@ of those changes to CLEARTYPE SRL.
 | [@mikeroll](https://github.com/mikeroll)               | Mikhail Bulash         |
 | [@janek-cosmose](https://github.com/janek-cosmose)     | Jan Szejko             |
 | [@ABolouk](https://github.com/ABolouk)                 | Amirhossein Bolouk Asli|
+| [@JoaoAlmeida20](https://github.com/JoaoAlmeida20)     | João Almeida           |
 | [@albcunha](https://github.com/albcunha)               | Alberto Cunha          |
