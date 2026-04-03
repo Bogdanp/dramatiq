@@ -87,6 +87,8 @@ class RabbitmqBroker(Broker):
     Parameters:
       confirm_delivery(bool): Wait for RabbitMQ to confirm that
         messages have been committed on every call to enqueue.
+        This must be enabled for Dramatiq to detect and re-declare
+        missing queues when enqueing messages.
         Defaults to False.
       url(str|list[str]): An optional connection URL.  If both a URL
         and connection parameters are provided, the URL is used.
@@ -143,7 +145,11 @@ class RabbitmqBroker(Broker):
         self.max_priority = max_priority
         self.connections: set[pika.BlockingConnection] = set()
         self.channels: set[pika.BlockingChannel] = set()
+        # 'queues' is the set of Queues declared on the Broker. These are created lazily in RabbitMQ when required.
+        # Note 'queues' should only contain 'canonical' queue names (not delayed or dead-letter queues).
         self.queues: set[str] = set()
+        # 'pending_queues' is the Queues that may not exist in RabbitMQ because we haven't attempted to create them yet.
+        # Also, should only contain 'canonical' queue names.
         self.queues_pending: set[str] = set()
         self.state = local()
 
@@ -258,7 +264,7 @@ class RabbitmqBroker(Broker):
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
         self.declare_queue(queue_name, ensure=True)
-        return self.consumer_class(self.parameters, queue_name, prefetch, timeout)
+        return self.consumer_class(self, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name: str, *, ensure: bool = False) -> None:
         """Declare a queue.  Has no effect if a queue with the given
@@ -273,28 +279,30 @@ class RabbitmqBroker(Broker):
           ConnectionClosed: When ensure=True if the underlying channel
             or connection fails.
         """
-        if q_name(queue_name) not in self.queues:
-            self.emit_before("declare_queue", queue_name)
-            self.queues.add(queue_name)
-            self.queues_pending.add(queue_name)
-            self.emit_after("declare_queue", queue_name)
+        # Note: queue_name can be a canonical queue or a delayed queue.
+        canonical_queue_name = q_name(queue_name)
+        if canonical_queue_name not in self.queues:
+            self.emit_before("declare_queue", canonical_queue_name)
+            self.queues.add(canonical_queue_name)
+            self.queues_pending.add(canonical_queue_name)
+            self.emit_after("declare_queue", canonical_queue_name)
 
             delayed_name = dq_name(queue_name)
             self.delay_queues.add(delayed_name)
             self.emit_after("declare_delay_queue", delayed_name)
 
         if ensure:
-            self._ensure_queue(queue_name)
+            self._ensure_queue(canonical_queue_name)
 
-    def _ensure_queue(self, queue_name):
+    def _ensure_queue(self, canonical_queue_name):
         attempts = 0
         while True:
             try:
-                if queue_name in self.queues_pending:
-                    self._declare_queue(queue_name)
-                    self._declare_dq_queue(queue_name)
-                    self._declare_xq_queue(queue_name)
-                    self.queues_pending.discard(queue_name)
+                if canonical_queue_name in self.queues_pending:
+                    self._declare_queue(canonical_queue_name)
+                    self._declare_dq_queue(canonical_queue_name)
+                    self._declare_xq_queue(canonical_queue_name)
+                    self.queues_pending.discard(canonical_queue_name)
 
                 break
             except (
@@ -383,6 +391,10 @@ class RabbitmqBroker(Broker):
                         delivery_mode=2,
                         priority=message.options.get("broker_priority"),
                     ),
+                    # mandatory flag ensures UnroutableError is raised if message could not be routed to a queue,
+                    # but it only works when confirm_delivery is turned on, so only set it when that is the case.
+                    # https://www.rabbitmq.com/docs/publishers#unroutable
+                    mandatory=self.confirm_delivery,
                 )
                 self.emit_after("enqueue", message, delay)
                 return message
@@ -395,11 +407,12 @@ class RabbitmqBroker(Broker):
                 # next caller/attempt may initiate new ones of each.
                 del self.connection
 
-                # If the queue disappears, remove it from the known set
+                # If the queue disappears, add it to the set of pending queues
                 # so that it can be redeclared on retry or the next time
                 # a message is enqueued.
-                if getattr(e, "reply_code", None) == 404:
-                    self.queues.remove(q_name(queue_name))
+                # Note this only happens when confirm_delivery is enabled.
+                if isinstance(e, pika.exceptions.UnroutableError):
+                    self.queues_pending.add(q_name(queue_name))
 
                 attempts += 1
                 if attempts >= MAX_ENQUEUE_ATTEMPTS:
@@ -503,10 +516,12 @@ class _IgnoreScaryLogs(logging.Filter):
 
 
 class _RabbitmqConsumer(Consumer):
-    def __init__(self, parameters, queue_name, prefetch, timeout):
+    def __init__(self, broker, queue_name, prefetch, timeout):
+        self.broker = broker
+        self.queue_name = queue_name
+        self.logger = get_logger(__name__, type(self))
         try:
-            self.logger = get_logger(__name__, type(self))
-            self.connection = pika.BlockingConnection(parameters=parameters)
+            self.connection = pika.BlockingConnection(parameters=self.broker.parameters)
             self.channel = self.connection.channel()
             self.channel.basic_qos(prefetch_count=prefetch)
             self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
@@ -572,6 +587,10 @@ class _RabbitmqConsumer(Consumer):
             pika.exceptions.AMQPConnectionError,
             pika.exceptions.AMQPChannelError,
         ) as e:
+            # If the queue disappears, add it to the set of pending queues
+            # so that it can be redeclared on when the consumer restarts.
+            if getattr(e, "reply_code", None) == 404:
+                self.broker.queues_pending.add(q_name(self.queue_name))
             raise ConnectionClosed(e) from None
 
         try:
