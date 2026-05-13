@@ -1,0 +1,21 @@
+Script started on Tue May 12 20:02:49 2026
+Command: 
+        local messages = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1])
+        for i, message in ipairs(messages) do
+            redis.call('lpush', KEYS[2], message)
+            redis.call('zrem', KEYS[1], message)
+        end
+        return messages
+        
+^Dscript: 
+        local messages = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1])
+        for i, message in ipairs(messages) do
+            redis.call('lpush', KEYS[2], message)
+            redis.call('zrem', KEYS[1], message)
+        end
+        return messages
+        : No such file or directory
+Script started, output file is =
+
+Command exit status: 1
+Script done on Tue May 12 20:02:49 2026
