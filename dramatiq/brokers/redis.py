@@ -28,7 +28,7 @@ from uuid import uuid4
 import redis
 
 from ..broker import Broker, Consumer, MessageProxy
-from ..common import compute_backoff, current_millis, dq_name, getenv_int
+from ..common import compute_backoff, current_millis, dq_name, getenv_int, q_name
 from ..errors import ConnectionClosed, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message
@@ -330,6 +330,21 @@ class _RedisConsumer(Consumer):
 
         self.logger.debug("Re-enqueueing %r on queue %r.", message_ids, self.queue_name)
         self.broker.do_requeue(self.queue_name, *message_ids)
+
+    def enqueue_from_delay_queue(self, message):
+        new_message = message.copy(queue_name=q_name(message.queue_name))
+        del new_message.options["eta"]
+
+        try:
+            return bool(
+                self.broker.do_enqueue_delayed(
+                    self.queue_name,
+                    message.options["redis_message_id"],
+                    new_message.encode(),
+                )
+            )
+        except redis.ConnectionError as e:
+            raise ConnectionClosed(e) from None
 
     def __next__(self):
         try:

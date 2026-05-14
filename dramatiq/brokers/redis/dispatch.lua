@@ -187,6 +187,26 @@ elseif command == "requeue" then
     end
 
 
+-- Atomically moves a due delayed message from its delay queue ack group
+-- to the canonical queue.
+elseif command == "enqueue_delayed" then
+    local message_id = ARGS[1]
+    local message_data = ARGS[2]
+
+    if redis.call("srem", queue_acks, message_id) > 0 then
+        if redis.call("hdel", queue_messages, message_id) > 0 then
+            local target_queue_full_name = namespace .. ":" .. queue_canonical_name
+            local target_queue_messages = target_queue_full_name .. ".msgs"
+
+            redis.call("hset", target_queue_messages, message_id, message_data)
+            redis.call("rpush", target_queue_full_name, message_id)
+            return 1
+        end
+    end
+
+    return 0
+
+
 -- Acknowledges that a message has been processed.
 elseif command == "ack" then
     local message_id = ARGS[1]
