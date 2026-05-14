@@ -507,3 +507,124 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
 
     # And the callback should run after all the messages
     assert sorted(do_nothing_times)[-1] <= finalize_times[0]
+
+
+def test_pipelines_can_include_groups(stub_broker, stub_worker, stub_rate_limiter_backend):
+    # Given that I have a rate limiter backend
+    # And I've added the GroupCallbacks middleware to my broker
+    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+
+    do_nothing_times = []
+    finalize_times = []
+    finalized = Event()
+
+    @dramatiq.actor
+    def do_nothing():
+        do_nothing_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def finalize():
+        finalize_times.append(time.monotonic())
+        finalized.set()
+
+    # When I run a pipeline that starts with a group
+    pipe = pipeline([group(do_nothing.message() for _ in range(5)), finalize.message()])
+    pipe.run()
+
+    # And wait for the final pipeline step to run
+    finalized.wait(timeout=30)
+
+    # Then all the messages in the group should run
+    assert len(do_nothing_times) == 5
+
+    # And the final pipeline step
+    assert len(finalize_times) == 1
+
+    # And the final pipeline step should run after the group completes
+    assert sorted(do_nothing_times)[-1] <= finalize_times[0]
+
+
+def test_pipelines_can_chain_groups(stub_broker, stub_worker, stub_rate_limiter_backend):
+    # Given that I have a rate limiter backend
+    # And I've added the GroupCallbacks middleware to my broker
+    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+
+    first_group_times = []
+    second_group_times = []
+    finalize_times = []
+    finalized = Event()
+
+    @dramatiq.actor
+    def first_group_task():
+        first_group_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def second_group_task():
+        second_group_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def finalize():
+        finalize_times.append(time.monotonic())
+        finalized.set()
+
+    # When I run a pipeline of groups
+    pipe = pipeline(
+        [
+            group(first_group_task.message() for _ in range(5)),
+            group(second_group_task.message() for _ in range(5)),
+            finalize.message(),
+        ]
+    )
+    pipe.run()
+
+    # And wait for the final pipeline step to run
+    finalized.wait(timeout=30)
+
+    # Then all the messages in both groups should run
+    assert len(first_group_times) == 5
+    assert len(second_group_times) == 5
+
+    # And the final pipeline step
+    assert len(finalize_times) == 1
+
+    # And each pipeline step should run after the previous group completes
+    assert sorted(first_group_times)[-1] <= sorted(second_group_times)[0]
+    assert sorted(second_group_times)[-1] <= finalize_times[0]
+
+
+def test_pipelines_with_groups_can_be_extended(stub_broker, stub_worker, stub_rate_limiter_backend):
+    # Given that I have a rate limiter backend
+    # And I've added the GroupCallbacks middleware to my broker
+    stub_broker.add_middleware(GroupCallbacks(stub_rate_limiter_backend))
+
+    do_nothing_times = []
+    intermediate_times = []
+    finalize_times = []
+    finalized = Event()
+
+    @dramatiq.actor
+    def do_nothing():
+        do_nothing_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def intermediate():
+        intermediate_times.append(time.monotonic())
+
+    @dramatiq.actor
+    def finalize(_):
+        finalize_times.append(time.monotonic())
+        finalized.set()
+
+    # When I extend a pipeline that starts with a group
+    pipe = pipeline([group(do_nothing.message() for _ in range(5)), intermediate.message()]) | finalize.message()
+    pipe.run()
+
+    # And wait for the final pipeline step to run
+    finalized.wait(timeout=30)
+
+    # Then the group should run once
+    assert len(do_nothing_times) == 5
+
+    # And each following pipeline step should run once
+    assert len(intermediate_times) == 1
+    assert len(finalize_times) == 1
