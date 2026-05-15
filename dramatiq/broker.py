@@ -1,3 +1,4 @@
+from .registry import TaskRegistry
 # This file is a part of Dramatiq.
 #
 # Copyright (C) 2017,2018,2019,2020 CLEARTYPE SRL <bogdan@cleartype.io>
