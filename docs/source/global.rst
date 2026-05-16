@@ -23,6 +23,7 @@
 .. |RabbitmqBroker| replace:: :class:`RabbitmqBroker<dramatiq.brokers.rabbitmq.RabbitmqBroker>`
 .. |RateLimitExceeded| replace:: :class:`RateLimitExceeded<dramatiq.RateLimitExceeded>`
 .. |RateLimiters| replace:: :class:`RateLimiters<dramatiq.rate_limits.RateLimiter>`
+.. |Registry| replace:: :class:`Registry<dramatiq.Registry>`
 .. |RedisBroker| replace:: :class:`RedisBroker<dramatiq.brokers.redis.RedisBroker>`
 .. |RedisRLBackend| replace:: :class:`Redis<dramatiq.rate_limits.backends.RedisBackend>`
 .. |RedisResBackend| replace:: :class:`Redis<dramatiq.results.backends.RedisBackend>`
@@ -59,6 +60,8 @@
 .. |pipeline_get_result| replace:: :meth:`get_result<dramatiq.pipeline.get_result>`
 .. |pipeline| replace:: :func:`pipeline<dramatiq.pipeline>`
 .. |rate_limits| replace:: :mod:`dramatiq.rate_limits`
+.. |registry_actor| replace:: :meth:`Registry.actor<dramatiq.Registry.actor>`
+.. |registry_bind| replace:: :meth:`Registry.bind<dramatiq.Registry.bind>`
 .. |send_with_options| replace:: :meth:`send_with_options<dramatiq.Actor.send_with_options>`
 .. |send| replace:: :meth:`send<dramatiq.Actor.send>`
 

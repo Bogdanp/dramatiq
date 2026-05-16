@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Added ``dramatiq.Registry`` for declaring actors before binding them
+  to a broker.
+  (`#324`_)
+
+.. _#324: https://github.com/Bogdanp/dramatiq/issues/324
+
 
 `2.1.0`_ -- 2026-03-01
 ----------------------
