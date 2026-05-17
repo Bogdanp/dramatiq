@@ -364,6 +364,18 @@ class Consumer:
           messages(Iterable[MessageProxy]): The messages to requeue.
         """
 
+    def enqueue_from_delay_queue(self, message: MessageProxy) -> bool | None:
+        """Atomically move a delayed message to its canonical queue if
+        this consumer supports it.
+
+        Returns:
+          True: When the delayed message was moved.
+          False: When the operation was supported but the message was no
+            longer owned by this consumer.
+          None: When the operation is not supported.
+        """
+        return None
+
     def __next__(self) -> MessageProxy | None:  # pragma: no cover
         """Retrieve the next message off of the queue.
 
