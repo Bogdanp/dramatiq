@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 import dramatiq
+import dramatiq.worker
 from dramatiq import Message, Middleware
 from dramatiq.errors import ActorNotFound, RateLimitExceeded
 from dramatiq.middleware import CurrentMessage, SkipMessage, TimeLimitExceeded
@@ -424,7 +425,11 @@ def test_workers_can_be_paused(stub_broker, stub_worker):
 
 
 def test_actors_can_prioritize_work(stub_broker):
-    with worker(stub_broker, worker_timeout=100, worker_threads=1) as stub_worker:
+    with (
+        # Increase prefetch so all messages are prefetched onto work_queue
+        patch.object(dramatiq.worker, "QUEUE_PREFETCH", 20),
+        worker(stub_broker, worker_timeout=100, worker_threads=1) as stub_worker,
+    ):
         # Given that I a paused worker
         stub_worker.pause()
 
