@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Iterable, Optional, cast
 
 from .errors import ActorNotFound
@@ -425,9 +426,11 @@ class MessageProxy:
         return f"<{self.__class__.__qualname__} {self._message!r}>"
 
     def __lt__(self, other) -> bool:
-        # This can get called if two messages have the same priority
-        # in a queue.  If that's the case, we don't care which runs
-        # first.
+        warnings.warn(
+            "Comparing MessageProxy instances by order (>, <, etc) is deprecated and will be removed in dramatiq v3.0.0.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return True
 
     def __eq__(self, other) -> bool:
