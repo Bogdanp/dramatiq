@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import time
 from collections import defaultdict
@@ -97,7 +98,7 @@ class Worker:
         self.delay_prefetch = DELAY_QUEUE_PREFETCH or min(worker_threads * 1000, 65535)
 
         self.workers: list[WorkerThread] = []
-        self.work_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
+        self.work_queue: PriorityQueue[_WorkQueueItem] = PriorityQueue()
         self.worker_timeout = worker_timeout
         self.worker_threads = worker_threads
 
@@ -168,8 +169,8 @@ class Worker:
 
         self.logger.debug("Requeueing in-memory messages...")
         messages_by_queue = defaultdict(list)
-        for _, message in iter_queue(self.work_queue):
-            messages_by_queue[message.queue_name].append(message)
+        for item in iter_queue(self.work_queue):
+            messages_by_queue[item.message.queue_name].append(item.message)
 
         for queue_name, messages in messages_by_queue.items():
             try:
@@ -251,6 +252,23 @@ class _WorkerMiddleware(Middleware):
         self.worker._add_consumer(queue_name, delay=True)
 
 
+@dataclasses.dataclass(frozen=True, slots=True, eq=True, order=True)
+class _WorkQueueItem:
+    """This class is used as wrapper around MessageProxy when they are placed in a PriorityQueue.
+
+    It uses order=True to define __lt__ etc., so the "lowest" item will be first in the queue.
+    The lowest item is the one with the lowest priority, or lowest _queued_time if priority matches.
+    Note the message itself is not compared.
+
+    The intention of this is to make the PriorityQueue operate in a roughly FIFO manner for items with equal priority.
+    """
+
+    # The priority of the message on the queue. This is either actor.priority, or options.eta for delayed messages.
+    priority: int
+    message: MessageProxy = dataclasses.field(compare=False)
+    _queued_time: int = dataclasses.field(default_factory=time.monotonic_ns)
+
+
 class ConsumerThread(Thread):
     def __init__(
         self,
@@ -258,7 +276,7 @@ class ConsumerThread(Thread):
         broker: Broker,
         queue_name: str,
         prefetch: int,
-        work_queue: PriorityQueue[tuple[int, MessageProxy]],
+        work_queue: PriorityQueue[_WorkQueueItem],
         worker_timeout: int,
     ) -> None:
         super().__init__(daemon=True)
@@ -273,7 +291,7 @@ class ConsumerThread(Thread):
         self.queue_name = queue_name
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
-        self.delay_queue: PriorityQueue[tuple[int, MessageProxy]] = PriorityQueue()
+        self.delay_queue: PriorityQueue[_WorkQueueItem] = PriorityQueue()
 
     def run(self) -> None:
         self.logger.debug("Running consumer thread...")
@@ -327,9 +345,11 @@ class ConsumerThread(Thread):
 
     def handle_delayed_messages(self) -> None:
         """Enqueue any delayed messages whose eta has passed."""
-        for eta, message in iter_queue(self.delay_queue):
+        for item in iter_queue(self.delay_queue):
+            eta = item.priority
+            message = item.message
             if eta > current_millis():
-                self.delay_queue.put((eta, message))
+                self.delay_queue.put(item)
                 self.delay_queue.task_done()
                 break
 
@@ -361,12 +381,12 @@ class ConsumerThread(Thread):
             if "eta" in message.options:
                 self.logger.debug("Pushing message %r onto delay queue.", message.message_id)
                 self.broker.emit_before("delay_message", message)
-                self.delay_queue.put((message.options.get("eta", 0), message))
+                self.delay_queue.put(_WorkQueueItem(message.options.get("eta", 0), message))
 
             else:
                 actor = self.broker.get_actor(message.actor_name)
                 self.logger.debug("Pushing message %r onto work queue.", message.message_id)
-                self.work_queue.put((actor.priority, message))
+                self.work_queue.put(_WorkQueueItem(actor.priority, message))
         except ActorNotFound as e:
             self.logger.error(
                 "Received message for undefined actor %r. Moving it to the DLQ.",
@@ -463,7 +483,7 @@ class ConsumerThread(Thread):
         """Close this consumer thread and its underlying connection."""
         try:
             if self.consumer:
-                self.requeue_messages(m for _, m in iter_queue(self.delay_queue))
+                self.requeue_messages(item.message for item in iter_queue(self.delay_queue))
                 self.consumer.close()
         except BrokerConnectionError:
             pass
@@ -476,7 +496,7 @@ class WorkerThread(Thread):
     Parameters:
       broker(Broker)
       consumers(dict[str, ConsumerThread])
-      work_queue(Queue)
+      work_queue(PriorityQueue[_WorkQueueItem])
       worker_timeout(int)
     """
 
@@ -485,7 +505,7 @@ class WorkerThread(Thread):
         *,
         broker: Broker,
         consumers: dict[str, ConsumerThread],
-        work_queue: PriorityQueue[tuple[int, MessageProxy]],
+        work_queue: PriorityQueue[_WorkQueueItem],
         worker_timeout: int,
     ) -> None:
         super().__init__(daemon=True)
@@ -511,8 +531,8 @@ class WorkerThread(Thread):
                 continue
 
             try:
-                _, message = self.work_queue.get(timeout=self.timeout)
-                self.process_message(message)
+                item = self.work_queue.get(timeout=self.timeout)
+                self.process_message(item.message)
             except Empty:
                 continue
 

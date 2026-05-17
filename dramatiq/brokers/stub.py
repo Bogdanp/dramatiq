@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from collections import defaultdict
 from itertools import chain
@@ -68,6 +69,7 @@ class StubBroker(Broker):
             return _StubConsumer(
                 self.queues[queue_name],
                 self.dead_letters_by_queue[queue_name],
+                prefetch,
                 timeout,
             )
         except KeyError:
@@ -195,24 +197,36 @@ class StubBroker(Broker):
 
 
 class _StubConsumer(Consumer):
-    def __init__(self, queue, dead_letters, timeout):
+    def __init__(self, queue, dead_letters, prefetch, timeout):
         self.queue = queue
         self.dead_letters = dead_letters
+        self.prefetch = prefetch
         self.timeout = timeout
+
+        # Use a Semaphore to manage 'slots' for prefetched messages.
+        self.prefetch_semaphore = threading.Semaphore(value=prefetch)
 
     def ack(self, message):
         self.queue.task_done()
+        self.prefetch_semaphore.release()
 
     def nack(self, message):
         self.queue.task_done()
         self.dead_letters.append(message)
+        self.prefetch_semaphore.release()
 
     def __next__(self):
+        # Reserve a prefetch 'slot' for the message being fetched.
+        if not self.prefetch_semaphore.acquire(timeout=self.timeout / 1000):
+            return None  # No slot available, return None
+
         try:
             data = self.queue.get(timeout=self.timeout / 1000)
             message = Message.decode(data)
             return _StubMessageProxy(message)
         except Empty:
+            # No message available, release 'slot' that was reserved.
+            self.prefetch_semaphore.release()
             return None
 
 
