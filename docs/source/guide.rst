@@ -84,6 +84,43 @@ worker.
    arguments you send to an actor must be JSON-encodable.
 
 
+Registries
+----------
+
+By default, decorating a function with |actor| immediately binds it to
+the current broker.  If your application needs to import actor modules
+before the final broker is configured, collect those actors in a
+|Registry| and bind them later:
+
+.. code-block:: python
+   :caption: tasks.py
+
+   import dramatiq
+
+   registry = dramatiq.Registry()
+
+
+   @registry.actor(max_retries=3)
+   def count_words(url):
+       ...
+
+.. code-block:: python
+   :caption: broker.py
+
+   import dramatiq
+   from dramatiq.brokers.rabbitmq import RabbitmqBroker
+   from tasks import registry
+
+   broker = RabbitmqBroker()
+   dramatiq.set_broker(broker)
+   registry.bind(broker)
+
+Actors declared on a registry can still be called synchronously, but
+messages can only be sent after |registry_bind| has attached them to a
+broker.  Actor options are validated against the target broker's
+middleware during binding.
+
+
 Workers
 -------
 

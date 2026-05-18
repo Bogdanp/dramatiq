@@ -18,6 +18,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 broker = dramatiq.get_broker()
+registry = dramatiq.Registry()
 
 
 class ArgType:
@@ -37,6 +38,11 @@ class CustomActor(dramatiq.Actor[P, R]):
 
 @dramatiq.actor
 def actor(arg: ArgType) -> ReturnType:
+    return ReturnType()
+
+
+@registry.actor
+def registry_actor(arg: ArgType) -> ReturnType:
     return ReturnType()
 
 
@@ -73,6 +79,11 @@ async def async_actor(arg: ArgType) -> ReturnType:
     return ReturnType()
 
 
+@registry.actor
+async def registry_async_actor(arg: ArgType) -> ReturnType:
+    return ReturnType()
+
+
 @dramatiq.actor()
 async def async_actor_no_options(arg: ArgType) -> ReturnType:
     return ReturnType()
@@ -104,11 +115,13 @@ async def async_actor_with_custom_actor_class(arg: ArgType) -> ReturnType:
 # # # Test that calling actors has correct arg/return type
 def _calling_actors_type_check() -> None:
     assert_type(actor(ArgType()), ReturnType)
+    assert_type(registry_actor(ArgType()), ReturnType)
     assert_type(actor_no_options(ArgType()), ReturnType)
     assert_type(actor_with_options(ArgType()), ReturnType)
     assert_type(actor_with_custom_actor_class(ArgType()), ReturnType)
 
     assert_type(async_actor(ArgType()), ReturnType)
+    assert_type(registry_async_actor(ArgType()), ReturnType)
     assert_type(async_actor_no_options(ArgType()), ReturnType)
     assert_type(async_actor_with_options(ArgType()), ReturnType)
     assert_type(async_actor_with_custom_actor_class(ArgType()), ReturnType)
