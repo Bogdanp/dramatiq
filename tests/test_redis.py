@@ -9,7 +9,7 @@ import redis
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
-from dramatiq.common import current_millis, dq_name, xq_name
+from dramatiq.common import current_millis, dq_name, q_name, xq_name
 from dramatiq.errors import BrokerConnectionError
 
 from .common import worker
@@ -133,6 +133,64 @@ def test_redis_actors_can_delay_messages_independent_of_each_other(redis_broker)
 
         # I expect the latter message to have been run first
         assert results == [2, 1]
+
+
+def test_redis_delayed_message_promotion_is_atomic(redis_broker):
+    # Given that I have an actor with a delayed message
+    @dramatiq.actor()
+    def do_work():
+        pass
+
+    message = do_work.send_with_options(delay=60000)
+    redis_message_id = message.options["redis_message_id"]
+    redis_message_id_bytes = redis_message_id.encode("utf-8")
+
+    # If I consume it off its delay queue
+    consumer = redis_broker.consume(dq_name(do_work.queue_name), prefetch=1, timeout=10)
+    delayed_message = next(consumer)
+    promoted_message = delayed_message.copy(queue_name=q_name(delayed_message.queue_name))
+    del promoted_message.options["eta"]
+
+    # And promote it into the canonical queue
+    assert consumer.promote_delayed_message(delayed_message, promoted_message)
+
+    # I expect the promotion to move the message without leaving the original delayed copy behind
+    assert consumer.outstanding_message_count == 0
+    assert redis_broker.client.lrange("dramatiq:%s" % do_work.queue_name, 0, 10) == [redis_message_id_bytes]
+    assert redis_broker.client.hget("dramatiq:%s.msgs" % dq_name(do_work.queue_name), redis_message_id) is None
+
+    stored_message = Message.decode(redis_broker.client.hget("dramatiq:%s.msgs" % do_work.queue_name, redis_message_id))
+    assert stored_message.options["redis_message_id"] == redis_message_id
+    assert "eta" not in stored_message.options
+
+
+def test_redis_delayed_message_promotion_skips_messages_lost_to_maintenance(redis_broker):
+    # Given that I have an actor with a delayed message
+    @dramatiq.actor()
+    def do_work():
+        pass
+
+    message = do_work.send_with_options(delay=60000)
+    redis_message_id = message.options["redis_message_id"]
+    redis_message_id_bytes = redis_message_id.encode("utf-8")
+    delay_queue_name = dq_name(do_work.queue_name)
+
+    # If I consume it off its delay queue
+    consumer = redis_broker.consume(delay_queue_name, prefetch=1, timeout=10)
+    delayed_message = next(consumer)
+
+    # But the message is requeued before promotion, like queue maintenance would do for a timed-out worker
+    redis_broker.do_requeue(delay_queue_name, redis_message_id)
+
+    promoted_message = delayed_message.copy(queue_name=q_name(delayed_message.queue_name))
+    del promoted_message.options["eta"]
+
+    # Then promotion should not create a duplicate in the canonical queue
+    assert not consumer.promote_delayed_message(delayed_message, promoted_message)
+    assert consumer.outstanding_message_count == 0
+    assert redis_broker.client.lrange("dramatiq:%s" % do_work.queue_name, 0, 10) == []
+    assert redis_broker.client.lrange("dramatiq:%s" % delay_queue_name, 0, 10) == [redis_message_id_bytes]
+    assert redis_broker.client.hget("dramatiq:%s.msgs" % delay_queue_name, redis_message_id) is not None
 
 
 def test_redis_unacked_messages_can_be_requeued(redis_broker):

@@ -185,6 +185,43 @@ class RedisBroker(Broker):
         self.emit_after("enqueue", message, delay)
         return message
 
+    def promote_delayed_message(self, message: MessageProxy, promoted_message: Message) -> bool:
+        """Atomically move a delayed message into its target queue.
+
+        Returns False if this broker no longer owns the delayed
+        message.  In that case, the message was likely requeued by
+        maintenance and should not be copied into the target queue.
+        """
+        message_id = message.options["redis_message_id"]
+
+        self.logger.debug(
+            "Promoting delayed message %r onto queue %r.", message.message_id, promoted_message.queue_name
+        )
+        self.emit_before("enqueue", promoted_message, None)
+        self.emit_before("ack", message)
+        try:
+            promoted = bool(
+                self.do_promote_delayed(
+                    message.queue_name,
+                    message_id,
+                    promoted_message.queue_name,
+                    promoted_message.encode(),
+                )
+            )
+        except redis.ConnectionError as e:
+            raise ConnectionClosed(e) from None
+
+        if promoted:
+            self.emit_after("enqueue", promoted_message, None)
+            self.emit_after("ack", message)
+        else:
+            self.logger.debug(
+                "Skipping delayed message %r because it is no longer owned by this consumer.",
+                message.message_id,
+            )
+
+        return promoted
+
     def get_declared_queues(self) -> set[str]:
         """Get all declared queues.
 
@@ -320,6 +357,12 @@ class _RedisConsumer(Consumer):
             self.broker.do_nack(self.queue_name, message.options["redis_message_id"])
         except redis.ConnectionError as e:
             raise ConnectionClosed(e) from None
+        finally:
+            self.queued_message_ids.discard(message.message_id)
+
+    def promote_delayed_message(self, message, promoted_message):
+        try:
+            return self.broker.promote_delayed_message(message, promoted_message)
         finally:
             self.queued_message_ids.discard(message.message_id)
 

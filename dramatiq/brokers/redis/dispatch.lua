@@ -150,6 +150,25 @@ if command == "enqueue" then
     redis.call("rpush", queue_full_name, message_id)
 
 
+-- Atomically promotes a delayed message into its canonical queue.
+elseif command == "promote_delayed" then
+    local message_id = ARGS[1]
+    local target_queue_name = ARGS[2]
+    local message_data = ARGS[3]
+
+    if redis.call("srem", queue_acks, message_id) > 0 then
+        local target_queue_full_name = namespace .. ":" .. target_queue_name
+        local target_queue_messages = target_queue_full_name .. ".msgs"
+
+        redis.call("hdel", queue_messages, message_id)
+        redis.call("hset", target_queue_messages, message_id, message_data)
+        redis.call("rpush", target_queue_full_name, message_id)
+        return 1
+    end
+
+    return 0
+
+
 -- Returns up to $prefetch number of messages from $queue_full_name.
 elseif command == "fetch" then
     -- Ensure prefetch isn't so large that we get errors fetching
