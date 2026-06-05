@@ -440,7 +440,10 @@ def test_redis_consumer_nack_does_not_raise_on_missing_id(redis_worker):
     def do_work():
         raise RuntimeError
 
-    consumer = redis_worker.consumers[do_work.queue_name].consumer
+    # Wait for actor consumer thread to start to get consumer object.
+    consumer_thread = redis_worker.consumers[do_work.queue_name]
+    while (consumer := consumer_thread.consumer) is None:
+        time.sleep(0.001)
 
     # If I send a bogus message to nack, I expect no exception to be raised.
     message = Message(
