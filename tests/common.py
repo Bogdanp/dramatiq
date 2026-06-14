@@ -4,12 +4,17 @@ import os
 import platform
 from contextlib import contextmanager
 
-import pika
-import pika.exceptions
+try:
+    import pika
+    import pika.exceptions
+    from dramatiq.brokers.rabbitmq import RabbitmqBroker
+except ImportError:
+    pika = None
+    RabbitmqBroker = None
+
 import pytest
 
 from dramatiq import Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from dramatiq.threading import is_gevent_active
 
 
@@ -38,10 +43,12 @@ skip_without_gevent = pytest.mark.skipif(not is_gevent_active(), reason="Behavio
 
 RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME", "guest")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
-RABBITMQ_CREDENTIALS = pika.credentials.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
+RABBITMQ_CREDENTIALS = pika.credentials.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD) if pika is not None else None
 
 
 def rabbit_mq_is_unreachable():
+    if pika is None or RabbitmqBroker is None:
+        return True
     broker = RabbitmqBroker(
         host="127.0.0.1",
         max_priority=10,

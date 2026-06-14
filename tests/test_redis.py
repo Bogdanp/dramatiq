@@ -8,7 +8,8 @@ import redis
 
 import dramatiq
 from dramatiq import Message, QueueJoinTimeout
-from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
+from dramatiq.broker import MessageProxy
+from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker, _RedisConsumer
 from dramatiq.common import current_millis, dq_name, xq_name
 from dramatiq.errors import BrokerConnectionError
 
@@ -278,6 +279,43 @@ def test_redis_requeues_unhandled_delay_messages_on_shutdown(redis_broker):
     # I expect it to have re-enqueued the message
     messages = redis_broker.client.lrange("dramatiq:%s" % dq_name(do_work.queue_name), 0, 10)
     assert message.options["redis_message_id"].encode("utf-8") in messages
+
+
+def test_redis_consumer_promotes_delayed_messages_atomically():
+    # Given that I have a Redis consumer with a delayed message
+    class Broker:
+        def __init__(self):
+            self.promoted_messages = []
+
+        def do_enqueue_delayed(self, queue_name, redis_message_id, message_data):
+            self.promoted_messages.append((queue_name, redis_message_id, Message.decode(message_data)))
+            return 1
+
+    broker = Broker()
+    consumer = _RedisConsumer(broker, "default.DQ", prefetch=1, timeout=100)
+    message = MessageProxy(
+        Message(
+            queue_name="default.DQ",
+            actor_name="actor",
+            args=(),
+            kwargs={},
+            options={"eta": 0, "redis_message_id": "redis-message-id"},
+        )
+    )
+
+    # When I promote that delayed message
+    promoted = consumer.enqueue_from_delay_queue(message)
+
+    # Then the broker moves the existing Redis message id into the
+    # canonical queue with eta stripped from the payload.
+    assert promoted
+    assert len(broker.promoted_messages) == 1
+
+    queue_name, redis_message_id, promoted_message = broker.promoted_messages[0]
+    assert queue_name == "default.DQ"
+    assert redis_message_id == "redis-message-id"
+    assert promoted_message.queue_name == "default"
+    assert promoted_message.options == {"redis_message_id": "redis-message-id"}
 
 
 def test_redis_broker_can_join_with_timeout(redis_broker, redis_worker):

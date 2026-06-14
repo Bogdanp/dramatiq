@@ -357,8 +357,10 @@ class ConsumerThread(Thread):
             new_message = message.copy(queue_name=queue_name)
             del new_message.options["eta"]
 
-            self.broker.enqueue(new_message)
-            self.post_process_message(message)
+            promoted = self.consumer.enqueue_from_delay_queue(message) if self.consumer else None
+            if promoted is None:
+                self.broker.enqueue(new_message)
+                self.post_process_message(message)
             self.delay_queue.task_done()
 
     def handle_message(self, message: MessageProxy) -> None:

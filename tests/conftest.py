@@ -6,13 +6,21 @@ import random
 import subprocess
 import sys
 
-import pylibmc
+try:
+    import pylibmc
+except ImportError:
+    pylibmc = None
+
 import pytest
 import redis
 
 import dramatiq
 from dramatiq import Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
+try:
+    from dramatiq.brokers.rabbitmq import RabbitmqBroker
+except ImportError:
+    RabbitmqBroker = None
+
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
@@ -44,6 +52,8 @@ def check_redis(client):
 
 
 def check_memcached(client):
+    if pylibmc is None:
+        pytest.skip("pylibmc is not installed.")
     try:
         client.get_stats()
     except pylibmc.SomeErrors as e:
@@ -62,6 +72,8 @@ def stub_broker():
 
 @pytest.fixture()
 def rabbitmq_broker():
+    if RabbitmqBroker is None:
+        pytest.skip("RabbitmqBroker is not available (pika is missing).")
     broker = RabbitmqBroker(
         host="127.0.0.1",
         max_priority=10,
