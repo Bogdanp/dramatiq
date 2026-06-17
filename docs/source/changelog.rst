@@ -9,6 +9,62 @@ All notable changes to this project will be documented in this file.
 -------------
 
 
+`2.2.0`_ -- 2026-06-17
+----------------------
+
+Fixed
+^^^^^
+
+* Fixed a bug that could cause messages to get stuck in a Worker's
+  in-memory prefetch queue for an indefinite amount of time.
+  (`#850`_, `#857`_, `@LincolnPuzey`_)
+* Ensure that |StubBroker_flush_all| doesn't break existing Consumers.
+  (`#840`_, `#841`_, `@CaselIT`_)
+
+.. _#840: https://github.com/Bogdanp/dramatiq/issues/840
+.. _#841: https://github.com/Bogdanp/dramatiq/pull/841
+.. _#850: https://github.com/Bogdanp/dramatiq/issues/850
+.. _#857: https://github.com/Bogdanp/dramatiq/pull/857
+
+Added
+^^^^^
+
+* Added the option ``use_namespace_prefix_keys`` to all |ResultBackends|.
+  When enabled, results are stored in keys with a structured namespace prefix.
+  Caution: Dramatiq does not implement any migration/fallback between this key format
+  and the current format used when this option is off.
+  See :ref:`result-key-format` for more information.
+  (`#499`_, `#842`_, `@JoaoAlmeida20`_)
+* When using the |RabbitmqBroker|, detect when queues are missing, and re-create them as needed.
+  This is implemented for both consuming (workers) and publishing messages.
+  This is in addition to the existing behavior where queues are created on Worker startup.
+  (`#832`_, `#838`_, `@LincolnPuzey`_)
+
+.. _#499: https://github.com/Bogdanp/dramatiq/issues/499
+.. _#842: https://github.com/Bogdanp/dramatiq/pull/842
+.. _@JoaoAlmeida20: https://github.com/JoaoAlmeida20
+.. _#832: https://github.com/Bogdanp/dramatiq/issues/832
+.. _#838: https://github.com/Bogdanp/dramatiq/pull/838
+
+Changed
+^^^^^^^
+
+* Increased the maximum ``redis`` library version to v8.X
+  (`#862`_, `#863`_, `@amureki`_)
+
+.. _#862: https://github.com/Bogdanp/dramatiq/issues/862
+.. _#863: https://github.com/Bogdanp/dramatiq/pull/863
+
+Documentation
+^^^^^^^^^^^^^
+
+* Added cookbook example of a custom middleware.
+  (`#780`_, `@albcunha`_)
+
+.. _#780: https://github.com/Bogdanp/dramatiq/pull/780
+.. _@albcunha: https://github.com/albcunha
+
+
 `2.1.0`_ -- 2026-03-01
 ----------------------
 
@@ -1661,7 +1717,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.1.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.2.0...HEAD
+.. _2.2.0: https://github.com/Bogdanp/dramatiq/compare/v2.1.0...v2.2.0
 .. _2.1.0: https://github.com/Bogdanp/dramatiq/compare/v2.0.1...v2.1.0
 .. _2.0.1: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...v2.0.1
 .. _2.0.0: https://github.com/Bogdanp/dramatiq/compare/v1.18.0...v2.0.0

@@ -448,6 +448,8 @@ The result expiration can be also set per an actor:
        return x + y
 
 
+.. _result-key-format:
+
 Result Key Format
 ^^^^^^^^^^^^^^^^^
 
