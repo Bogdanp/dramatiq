@@ -38,6 +38,9 @@ jobs:
     if: github.repository == 'Bogdanp/dramatiq'
     needs:
       - package
+    environment: pypi # Specifying a GitHub environment is optional, but strongly encouraged
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for Trusted Publishing
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -45,5 +48,3 @@ jobs:
           path: "dist"
       - name: Upload packages to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
