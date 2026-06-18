@@ -41,6 +41,24 @@ RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
 RABBITMQ_CREDENTIALS = pika.credentials.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
 
 
+def rabbitmq_server_version(broker):
+    """Return the connected RabbitMQ server version as a tuple of ints
+    (e.g. ``(4, 3, 1)``), or ``()`` if it can't be determined.
+    """
+    try:
+        properties = broker.connection._impl.server_properties
+        version = properties.get("version", "")
+    except Exception:
+        return ()
+
+    parts = []
+    for part in version.split("."):
+        if not part.isdigit():
+            break
+        parts.append(int(part))
+    return tuple(parts)
+
+
 def rabbit_mq_is_unreachable():
     broker = RabbitmqBroker(
         host="127.0.0.1",

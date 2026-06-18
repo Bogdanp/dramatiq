@@ -62,6 +62,9 @@ Brokers
    :members:
    :inherited-members:
    :show-inheritance:
+.. autoclass:: dramatiq.brokers.rabbitmq.QuorumRabbitmqBroker
+   :members:
+   :show-inheritance:
 .. autoclass:: dramatiq.brokers.redis.RedisBroker
    :members:
    :inherited-members:

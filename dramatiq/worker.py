@@ -344,11 +344,18 @@ class ConsumerThread(Thread):
         self.logger.debug("Consumer thread stopped.")
 
     def handle_delayed_messages(self) -> None:
-        """Enqueue any delayed messages whose eta has passed."""
+        """Enqueue delayed messages whose eta has passed, or re-lease those
+        whose in-memory hold nears the broker's consumer-acknowledgement
+        timeout.
+
+        Items are keyed on ``min(eta, redeliver_at)``, so the first item
+        still in the future means nothing past it is due.  A due item is
+        either fired (eta passed) or re-enqueued to the delay queue with
+        its remaining delay.
+        """
         for item in iter_queue(self.delay_queue):
-            eta = item.priority
             message = item.message
-            if eta > current_millis():
+            if item.priority > current_millis():
                 self.delay_queue.put(item)
                 self.delay_queue.task_done()
                 break
@@ -356,8 +363,10 @@ class ConsumerThread(Thread):
             queue_name = q_name(message.queue_name)
             new_message = message.copy(queue_name=queue_name)
             del new_message.options["eta"]
+            new_message.options.pop("redeliver_at", None)
 
-            self.broker.enqueue(new_message)
+            remaining = message.options.get("eta", 0) - current_millis()
+            self.broker.enqueue(new_message, delay=remaining if remaining > 0 else None)
             self.post_process_message(message)
             self.delay_queue.task_done()
 
@@ -381,7 +390,15 @@ class ConsumerThread(Thread):
             if "eta" in message.options:
                 self.logger.debug("Pushing message %r onto delay queue.", message.message_id)
                 self.broker.emit_before("delay_message", message)
-                self.delay_queue.put(_WorkQueueItem(message.options.get("eta", 0), message))
+                eta = message.options["eta"]
+                # If the broker declares a lease, wake this message at the lease
+                # deadline to re-lease it before the consumer timeout drops it.
+                # Key the queue on whichever comes first, the eta or the lease.
+                lease_ms = getattr(self.broker, "delay_queue_lease_ms", None)
+                if lease_ms is not None:
+                    message.options["redeliver_at"] = current_millis() + lease_ms
+                priority = min(message.options.get("redeliver_at", eta), eta)
+                self.delay_queue.put(_WorkQueueItem(priority, message))
 
             else:
                 actor = self.broker.get_actor(message.actor_name)

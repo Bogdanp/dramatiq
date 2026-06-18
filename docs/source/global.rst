@@ -21,6 +21,7 @@
 .. |Prometheus| replace:: :class:`Prometheus<dramatiq.middleware.prometheus.Prometheus>`
 .. |RabbitmqBroker_join| replace:: :meth:`join<dramatiq.brokers.rabbitmq.RabbitmqBroker.join>`
 .. |RabbitmqBroker| replace:: :class:`RabbitmqBroker<dramatiq.brokers.rabbitmq.RabbitmqBroker>`
+.. |QuorumRabbitmqBroker| replace:: :class:`QuorumRabbitmqBroker<dramatiq.brokers.rabbitmq.QuorumRabbitmqBroker>`
 .. |RateLimitExceeded| replace:: :class:`RateLimitExceeded<dramatiq.RateLimitExceeded>`
 .. |RateLimiters| replace:: :class:`RateLimiters<dramatiq.rate_limits.RateLimiter>`
 .. |RedisBroker| replace:: :class:`RedisBroker<dramatiq.brokers.redis.RedisBroker>`

@@ -12,7 +12,7 @@ import redis
 
 import dramatiq
 from dramatiq import Worker
-from dramatiq.brokers.rabbitmq import RabbitmqBroker
+from dramatiq.brokers.rabbitmq import QuorumRabbitmqBroker, RabbitmqBroker
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
@@ -76,6 +76,20 @@ def rabbitmq_broker():
 
 
 @pytest.fixture()
+def quorum_rabbitmq_broker():
+    broker = QuorumRabbitmqBroker(
+        host="127.0.0.1",
+        credentials=RABBITMQ_CREDENTIALS,
+    )
+    check_rabbitmq(broker)
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    broker.flush_all()
+    broker.close()
+
+
+@pytest.fixture()
 def redis_broker():
     broker = RedisBroker()
     check_redis(broker.client)
@@ -98,6 +112,14 @@ def stub_worker(stub_broker):
 @pytest.fixture()
 def rabbitmq_worker(rabbitmq_broker):
     worker = Worker(rabbitmq_broker, worker_threads=32)
+    worker.start()
+    yield worker
+    worker.stop()
+
+
+@pytest.fixture()
+def quorum_rabbitmq_worker(quorum_rabbitmq_broker):
+    worker = Worker(quorum_rabbitmq_broker, worker_threads=32)
     worker.start()
     yield worker
     worker.stop()
