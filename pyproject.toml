@@ -83,9 +83,6 @@ module = [
     "greenlet",
     "pika",
     "pika.exceptions",
-    "prometheus_client",
     "pylibmc",
-    "redis",
-    "watchdog",
 ]
 ignore_missing_imports = true
