@@ -507,3 +507,89 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
 
     # And the callback should run after all the messages
     assert sorted(do_nothing_times)[-1] <= finalize_times[0]
+
+
+def test_groups_do_not_fire_completion_callbacks_on_failure_by_default(stub_broker, stub_worker, rate_limiter_backend):
+    # Given that I've added the GroupCallbacks middleware to my broker
+    stub_broker.add_middleware(GroupCallbacks(rate_limiter_backend))
+
+    finalize_times = []
+
+    @dramatiq.actor(max_retries=0)
+    def fail():
+        raise RuntimeError("boom")
+
+    @dramatiq.actor
+    def finalize(n):
+        finalize_times.append(time.monotonic())
+
+    # When I group together some failing messages with a completion callback
+    g = group(fail.message() for _ in range(3))
+    g.add_completion_callback(finalize.message(42))
+    g.run()
+
+    stub_broker.join(fail.queue_name, fail_fast=False)
+    stub_worker.join()
+
+    # Then the callback should not run
+    assert len(finalize_times) == 0
+
+
+def test_groups_fire_completion_callbacks_on_failure_when_enabled(stub_broker, stub_worker, rate_limiter_backend):
+    # Given that I've added the GroupCallbacks middleware with fire_on_failure.
+    # It must run after Retries in the after-phase (i.e. before it in the
+    # middleware list) so that message.failed is set on permanent failures.
+    stub_broker.add_middleware(GroupCallbacks(rate_limiter_backend, fire_on_failure=True), before=middleware.Retries)
+
+    finalized = Event()
+    finalize_times = []
+
+    @dramatiq.actor(max_retries=0)
+    def maybe_fail(should_fail):
+        if should_fail:
+            raise RuntimeError("boom")
+
+    @dramatiq.actor
+    def finalize(n):
+        assert n == 42
+        finalize_times.append(time.monotonic())
+        finalized.set()
+
+    # When I group together some messages, one of which fails permanently
+    g = group([maybe_fail.message(True), maybe_fail.message(False), maybe_fail.message(False)])
+    g.add_completion_callback(finalize.message(42))
+    g.run()
+
+    # And wait for the callback to be called
+    finalized.wait(timeout=30)
+
+    # Then the callback should still run exactly once
+    assert len(finalize_times) == 1
+
+
+def test_groups_fire_completion_callbacks_on_skip_when_enabled(stub_broker, stub_worker, rate_limiter_backend):
+    # Given that I've added the GroupCallbacks middleware with fire_on_failure
+    stub_broker.add_middleware(GroupCallbacks(rate_limiter_backend, fire_on_failure=True))
+
+    finalized = Event()
+    finalize_times = []
+
+    @dramatiq.actor
+    def skip():
+        raise dramatiq.middleware.SkipMessage()
+
+    @dramatiq.actor
+    def finalize(n):
+        finalize_times.append(time.monotonic())
+        finalized.set()
+
+    # When I group together some messages, one of which is skipped
+    g = group([skip.message()])
+    g.add_completion_callback(finalize.message(42))
+    g.run()
+
+    # And wait for the callback to be called
+    finalized.wait(timeout=30)
+
+    # Then the callback should still run exactly once
+    assert len(finalize_times) == 1
