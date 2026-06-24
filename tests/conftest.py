@@ -76,6 +76,21 @@ def rabbitmq_broker():
 
 
 @pytest.fixture()
+def quorum_rabbitmq_broker():
+    broker = RabbitmqBroker(
+        host="127.0.0.1",
+        queue_type="quorum",
+        credentials=RABBITMQ_CREDENTIALS,
+    )
+    check_rabbitmq(broker)
+    broker.emit_after("process_boot")
+    dramatiq.set_broker(broker)
+    yield broker
+    broker.flush_all()
+    broker.close()
+
+
+@pytest.fixture()
 def redis_broker():
     broker = RedisBroker()
     check_redis(broker.client)
@@ -98,6 +113,14 @@ def stub_worker(stub_broker):
 @pytest.fixture()
 def rabbitmq_worker(rabbitmq_broker):
     worker = Worker(rabbitmq_broker, worker_threads=32)
+    worker.start()
+    yield worker
+    worker.stop()
+
+
+@pytest.fixture()
+def quorum_rabbitmq_worker(quorum_rabbitmq_broker):
+    worker = Worker(quorum_rabbitmq_broker, worker_threads=32)
     worker.start()
     yield worker
     worker.stop()

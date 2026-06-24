@@ -42,6 +42,15 @@ DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
 MAX_ENQUEUE_ATTEMPTS = 6
 MAX_DECLARE_ATTEMPTS = 2
 
+#: The fraction of ``consumer_timeout`` after which the delay-queue
+#: consumer re-leases (re-enqueues) a still-waiting message, so its
+#: in-memory hold never approaches the broker's acknowledgement timeout.
+DELAY_QUEUE_LEASE_FACTOR = 0.75
+
+#: The smallest ``consumer_timeout`` (in milliseconds) Dramatiq accepts;
+#: 30 minutes, matching RabbitMQ's own default.
+MIN_CONSUMER_TIMEOUT = 1_800_000
+
 
 class RabbitmqBroker(Broker):
     """A broker that can be used with RabbitMQ.
@@ -94,8 +103,29 @@ class RabbitmqBroker(Broker):
         and connection parameters are provided, the URL is used.
       middleware(list[Middleware]): The set of middleware that apply
         to this broker.
+      queue_type(str): The type of queue to declare, either ``"classic"``
+        (the default) or ``"quorum"``.  Quorum queues are replicated,
+        always-durable FIFO queues and require **RabbitMQ 4.3+**.  They
+        always expose the full 0-31 strict priority range, so
+        ``max_priority`` is rejected; send with the ``broker_priority``
+        option instead (messages without one default to priority 4).  When
+        ``"quorum"`` is selected, ``consumer_timeout`` defaults to
+        ``1_800_000`` (30 minutes).
+      delivery_limit(int): The ``x-delivery-limit`` to declare on quorum
+        work queues for poison-message handling.  When omitted, RabbitMQ's
+        default applies; pass ``-1`` to disable.  Ignored for classic
+        queues.
       max_priority(int): Configure queues with ``x-max-priority`` to
-        support queue-global priority queueing.
+        support queue-global priority queueing.  Not supported with quorum
+        queues.
+      consumer_timeout(int): Delivery-acknowledgement timeout, in
+        milliseconds, applied to the delay queue only (via the
+        ``x-consumer-timeout`` consumer argument); work-queue messages are
+        acked when the actor finishes, so their timeout is left to the
+        server.  Also sizes the delay queue's re-lease horizon.  Must be
+        at least ``1_800_000`` (30 minutes).  Defaults to ``None`` for
+        classic queues (no re-lease) and to ``1_800_000`` for quorum
+        queues.
       parameters(list[dict]): A sequence of (pika) connection parameters
         to determine which Rabbit server(s) to connect to.
       **kwargs: The (pika) connection parameters to use to
@@ -110,14 +140,32 @@ class RabbitmqBroker(Broker):
         confirm_delivery: bool = False,
         url: Optional[Union[str, list[str]]] = None,
         middleware: Optional[list[Middleware]] = None,
+        queue_type: str = "classic",
+        delivery_limit: Optional[int] = None,
         max_priority: Optional[int] = None,
+        consumer_timeout: Optional[int] = None,
         parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs: Any,
     ):
         super().__init__(middleware=middleware)
 
+        if queue_type not in ("classic", "quorum"):
+            raise ValueError("queue_type must be either 'classic' or 'quorum'")
+
+        if queue_type == "quorum":
+            if max_priority is not None:
+                raise RuntimeError(
+                    "max_priority is not supported by quorum queues; they always provide the "
+                    "full 0-31 priority range (send with the broker_priority option instead)."
+                )
+            if consumer_timeout is None:
+                consumer_timeout = MIN_CONSUMER_TIMEOUT
+
         if max_priority is not None and not (0 < max_priority <= 255):
             raise ValueError("max_priority must be a value between 0 and 255")
+
+        if consumer_timeout is not None and consumer_timeout < MIN_CONSUMER_TIMEOUT:
+            raise ValueError("consumer_timeout must be at least %d ms (30 minutes)" % MIN_CONSUMER_TIMEOUT)
 
         if url is not None:
             if parameters is not None or kwargs:
@@ -142,7 +190,15 @@ class RabbitmqBroker(Broker):
             self.parameters = pika.ConnectionParameters(**kwargs)
 
         self.confirm_delivery = confirm_delivery
+        self.queue_type = queue_type
+        self.delivery_limit = delivery_limit
         self.max_priority = max_priority
+        self._consumer_timeout = consumer_timeout
+        #: Read by the worker's delay-queue consumer to bound how long a
+        #: delayed message is held unacked before it is re-leased.
+        self.delay_queue_lease_ms = (
+            int(consumer_timeout * DELAY_QUEUE_LEASE_FACTOR) if consumer_timeout is not None else None
+        )
         self.connections: set[pika.BlockingConnection] = set()
         self.channels: set[pika.BlockingChannel] = set()
         # 'queues' is the set of Queues declared on the Broker. These are created lazily in RabbitMQ when required.
@@ -328,6 +384,10 @@ class RabbitmqBroker(Broker):
             "x-dead-letter-exchange": "",
             "x-dead-letter-routing-key": xq_name(queue_name),
         }
+        if self.queue_type == "quorum":
+            arguments["x-queue-type"] = "quorum"
+            if self.delivery_limit is not None:
+                arguments["x-delivery-limit"] = self.delivery_limit
         if self.max_priority:
             arguments["x-max-priority"] = self.max_priority
 
@@ -339,18 +399,22 @@ class RabbitmqBroker(Broker):
 
     def _declare_dq_queue(self, queue_name):
         arguments = self._build_queue_arguments(queue_name)
+        if self.queue_type == "quorum":
+            # The delay queue holds messages unacked in memory until their eta
+            # passes, so the broker must never cap their (re)deliveries -- the
+            # acknowledgement timeout would otherwise dead-letter them early.
+            arguments["x-delivery-limit"] = -1
         return self.channel.queue_declare(queue=dq_name(queue_name), durable=True, arguments=arguments)
 
     def _declare_xq_queue(self, queue_name):
-        return self.channel.queue_declare(
-            queue=xq_name(queue_name),
-            durable=True,
-            arguments={
-                # This HAS to be a static value since messages are expired
-                # in order inside of RabbitMQ (head-first).
-                "x-message-ttl": DEAD_MESSAGE_TTL,
-            },
-        )
+        arguments = {
+            # This HAS to be a static value since messages are expired
+            # in order inside of RabbitMQ (head-first).
+            "x-message-ttl": DEAD_MESSAGE_TTL,
+        }
+        if self.queue_type == "quorum":
+            arguments["x-queue-type"] = "quorum"
+        return self.channel.queue_declare(queue=xq_name(queue_name), durable=True, arguments=arguments)
 
     def enqueue(self, message: Message, *, delay: Optional[int] = None) -> Message:
         """Enqueue a message.
@@ -524,7 +588,19 @@ class _RabbitmqConsumer(Consumer):
             self.connection = pika.BlockingConnection(parameters=self.broker.parameters)
             self.channel = self.connection.channel()
             self.channel.basic_qos(prefetch_count=prefetch)
-            self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
+            # Only the delay queue holds messages unacked long enough to matter,
+            # so only its consumer gets an explicit x-consumer-timeout (a
+            # consumer argument, so no queue redeclaration).  Work-queue messages
+            # are acked when the actor finishes, so their timeout is left to the
+            # server.
+            consumer_arguments = {}
+            if self.queue_name.endswith(".DQ") and self.broker._consumer_timeout is not None:
+                consumer_arguments["x-consumer-timeout"] = self.broker._consumer_timeout
+            self.iterator = self.channel.consume(
+                queue_name,
+                inactivity_timeout=timeout / 1000,
+                arguments=consumer_arguments or None,
+            )
 
             # We need to keep track of known delivery tags so that
             # when connection errors occur and the consumer is reset,
@@ -614,10 +690,16 @@ class _RabbitmqConsumer(Consumer):
             # finish processing so we enqueue a final callback and
             # wait for it to finish before closing the connection.
             # Assumes callbacks are called in order (they should be).
-            all_callbacks_handled = Event()
-            self.connection.add_callback_threadsafe(all_callbacks_handled.set)
-            while not all_callbacks_handled.is_set():
-                self.connection.sleep(0)
+            if self.connection.is_open:
+                all_callbacks_handled = Event()
+                self.connection.add_callback_threadsafe(all_callbacks_handled.set)
+                while not all_callbacks_handled.is_set():
+                    self.connection.sleep(0)
+        except pika.exceptions.ConnectionWrongStateError:
+            # The connection is already closed (e.g. node shutdown or a forced
+            # close during failover), so there are no pending callbacks to
+            # drain.  Benign during node restarts.
+            self.logger.debug("Connection already closed; skipping callback drain.")
         except Exception:
             self.logger.exception(
                 "Failed to wait for all callbacks to complete.  This "

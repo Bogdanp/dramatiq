@@ -415,6 +415,58 @@ execution::
   rabbitmq_broker = RabbitmqBroker(host="rabbitmq")
   dramatiq.set_broker(rabbitmq_broker)
 
+Quorum Queue Broker
+^^^^^^^^^^^^^^^^^^^
+
+Pass ``queue_type="quorum"`` to the |RabbitmqBroker| to declare its
+queues as `quorum queues`_ instead of classic queues.  Quorum queues are
+replicated, always-durable FIFO queues and are the recommended queue type
+for most workloads.  This requires **RabbitMQ 4.3 or later**::
+
+  import dramatiq
+
+  from dramatiq.brokers.rabbitmq import RabbitmqBroker
+
+
+  rabbitmq_broker = RabbitmqBroker(host="rabbitmq", queue_type="quorum")
+  dramatiq.set_broker(rabbitmq_broker)
+
+This reuses all of the |RabbitmqBroker| machinery -- including the way
+delayed and retried messages are scheduled -- and only changes how the
+underlying queues are declared.  A few things differ from classic
+queues:
+
+- Message priorities work without any configuration.  Quorum queues
+  expose the full ``0``-``31`` strict priority range, so the
+  ``max_priority`` argument is not accepted; just send messages with the
+  ``broker_priority`` option.  Messages without an explicit priority
+  default to ``4``.
+- RabbitMQ's own poison-message handling (``x-delivery-limit``) is left
+  enabled on the main queue using the server default, unless you pass a
+  ``delivery_limit``.  It is always disabled on the delay queue.
+- The delivery-acknowledgement timeout for the *delay queue* is set
+  explicitly via the ``consumer_timeout`` argument, which defaults to
+  ``1_800_000`` (30 minutes, also the minimum).  Dramatiq sends it as the
+  ``x-consumer-timeout`` consumer argument on the delay-queue consumer
+  only -- the work queue is left to the server's own timeout, since those
+  messages are acked as soon as the actor finishes.
+
+Because dramatiq holds delayed and retried messages in memory until their
+scheduled time, a message delayed for longer than ``consumer_timeout``
+would otherwise be requeued by RabbitMQ before it runs.  To prevent this,
+the delay-queue consumer *re-leases* such a message -- re-enqueueing it
+before the timeout would elapse -- so its scheduled time is always
+honoured no matter how far in the future it is.  This is transparent: the
+message still runs exactly once, at its eta.
+
+.. note::
+
+   A queue that already exists as a classic queue cannot be redeclared
+   as a quorum queue.  When migrating an existing application, delete the
+   old queues (or use different queue names) before switching brokers.
+
+.. _quorum queues: https://www.rabbitmq.com/docs/quorum-queues
+
 Redis Broker
 ^^^^^^^^^^^^
 
