@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [
-    {include-group = "test"},
-    {include-group = "lint"},
-    {include-group = "format"},
-    {include-group = "type-check"},
-    {include-group = "build"},
-    {include-group = "docs"},
+    { include-group = "test" },
+    { include-group = "lint" },
+    { include-group = "format" },
+    { include-group = "type-check" },
+    { include-group = "build" },
+    { include-group = "docs" },
     "hiredis",
     "twine",
     "wheel",
@@ -32,7 +32,7 @@ format = [
 type-check = [
     "mypy",
     # Include test group so mypy can see the types of the pytest modules the tests import.
-    {include-group = "test"},
+    { include-group = "test" },
 ]
 build = [
     "build",
@@ -63,7 +63,7 @@ multi_line_output = 5
 order_by_type = true
 profile = "black"
 add_imports = [
-# Remove annotations import once we only support python 3.14+
+    # Remove annotations import once we only support python 3.14+
     "from __future__ import annotations",
 ]
 
@@ -83,9 +83,6 @@ module = [
     "greenlet",
     "pika",
     "pika.exceptions",
-    "prometheus_client",
     "pylibmc",
-    "redis",
-    "watchdog",
 ]
 ignore_missing_imports = true
