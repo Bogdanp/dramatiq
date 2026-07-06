@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from threading import get_ident
+import inspect
 from unittest import mock
 
 import pytest
@@ -144,21 +145,32 @@ def test_async_middleware_after_worker_shutdown():
         set_event_loop_thread(None)
 
 
-async def async_fn(value: int = 2) -> int:
-    return value + 1
-
-
 @mock.patch("dramatiq.asyncio.get_event_loop_thread")
 def test_async_to_sync(get_event_loop_thread_mocked):
+    mock_async_function = mock.Mock()
     thread = get_event_loop_thread_mocked()
     set_event_loop_thread(thread)
-    fn = async_to_sync(async_fn)
-    actual = fn(2)
+
+    # Check that a callable sync function is returned.
+    fn = async_to_sync(mock_async_function)
+    assert callable(fn) and inspect.isfunction(fn) and not inspect.iscoroutinefunction(fn)
+
+    # Call the sync function
+    actual = fn(2, foo="bar")
     try:
-        thread.run_coroutine.assert_called_once()
+        # Check that the (kw)args were passed through to the async function.
+        mock_async_function.assert_called_once_with(2, foo="bar")
+
+        # Check that run_coroutine was called once with return value from async function
+        thread.run_coroutine.assert_called_once_with(mock_async_function.return_value)
         assert actual is thread.run_coroutine.return_value
+
     finally:
         set_event_loop_thread(None)
+
+
+async def async_fn(value: int = 2) -> int:
+    return value + 1
 
 
 def test_async_to_sync_with_actual_thread(started_thread):
