@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from threading import get_ident
+import inspect
+from threading import Event, Thread, get_ident
 from unittest import mock
 
 import pytest
@@ -106,21 +107,47 @@ def test_event_loop_thread_run_coroutine_timeout_exception(started_thread: Event
 )
 @pytest.mark.skipif(threading.is_gevent_active(), reason="Thread exceptions not supported with gevent.")
 def test_event_loop_thread_run_coroutine_interrupted(started_thread: EventLoopThread):
-    side_effect_target = {"cleanup": False}
+    """Test that when EventLoopThread.run_coroutine() is interrupted,
+    the coroutine cleanup is allowed to run.
 
-    async def sleep_interrupt(worker_thread_id: int):
+    Note: in this test the main test thread calls EventLoopThread.run_coroutine()
+    AND is interrupted with a threading.Interrupt exception.
+    This simulates how the Worker threads call EventLoopThread.run_coroutine()
+    and are interrupted by TimeLimit/Shutdown middleware.
+    """
+    side_effect_target = {"cleanup": False}
+    ready_for_interrupt = Event()
+
+    # Set up a thread to interrupt the "worker thread" (i.e. the main test thread)
+    # This simulates TimeLimit/Shutdown middleware.
+    def interrupter(*, worker_thread_id: int):
+        ready_for_interrupt.wait()
         threading.raise_thread_exception(worker_thread_id, threading.Interrupt)
+
+    test_thread_id = get_ident()
+    interrupter_thread = Thread(target=interrupter, kwargs={"worker_thread_id": test_thread_id})
+    interrupter_thread.start()
+
+    # This will be canceled when the interrupt happens.
+    # This cleanup code in the 'finally' block should run.
+    async def sleeper():
         try:
-            for _ in range(100):
+            ready_for_interrupt.set()
+            while True:
                 await asyncio.sleep(0.01)
         finally:
             await asyncio.sleep(0.01)
             side_effect_target["cleanup"] = True
 
     with pytest.raises(threading.Interrupt):
-        started_thread.run_coroutine(sleep_interrupt(get_ident()))
+        started_thread.run_coroutine(sleeper())
 
+    # Assert cleanup code was run
     assert side_effect_target["cleanup"]
+
+    # ensure interrupter thread has finished.
+    interrupter_thread.join(timeout=1)
+    assert not interrupter_thread.is_alive()
 
 
 @mock.patch("dramatiq.middleware.asyncio.EventLoopThread")
@@ -144,21 +171,32 @@ def test_async_middleware_after_worker_shutdown():
         set_event_loop_thread(None)
 
 
-async def async_fn(value: int = 2) -> int:
-    return value + 1
-
-
 @mock.patch("dramatiq.asyncio.get_event_loop_thread")
 def test_async_to_sync(get_event_loop_thread_mocked):
+    mock_async_function = mock.Mock()
     thread = get_event_loop_thread_mocked()
     set_event_loop_thread(thread)
-    fn = async_to_sync(async_fn)
-    actual = fn(2)
+
+    # Check that a callable sync function is returned.
+    fn = async_to_sync(mock_async_function)
+    assert callable(fn) and inspect.isfunction(fn) and not inspect.iscoroutinefunction(fn)
+
+    # Call the sync function
+    actual = fn(2, foo="bar")
     try:
-        thread.run_coroutine.assert_called_once()
+        # Check that the (kw)args were passed through to the async function.
+        mock_async_function.assert_called_once_with(2, foo="bar")
+
+        # Check that run_coroutine was called once with return value from async function
+        thread.run_coroutine.assert_called_once_with(mock_async_function.return_value)
         assert actual is thread.run_coroutine.return_value
+
     finally:
         set_event_loop_thread(None)
+
+
+async def async_fn(value: int = 2) -> int:
+    return value + 1
 
 
 def test_async_to_sync_with_actual_thread(started_thread):
