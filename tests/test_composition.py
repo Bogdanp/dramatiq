@@ -439,7 +439,7 @@ def test_groups_can_have_completion_callbacks(stub_broker, stub_worker, rate_lim
     g.add_completion_callback(finalize.message(42))
     g.run()
 
-    # And wait for the callback to be callled
+    # And wait for the callback to be called
     finalized.wait(timeout=30)
 
     # Then all the messages in the group should run
@@ -496,7 +496,7 @@ def test_groups_of_pipelines_can_have_completion_callbacks(stub_broker, stub_wor
     g.add_completion_callback(finalize.message(42))
     g.run()
 
-    # And wait for the callback to be callled
+    # And wait for the callback to be called
     finalized.wait(timeout=30)
 
     # Then all the messages in the group should run

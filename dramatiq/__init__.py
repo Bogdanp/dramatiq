@@ -78,7 +78,7 @@ __all__ = [
     "Message",
     "get_encoder",
     "set_encoder",
-    # Middlware
+    # Middleware
     "Middleware",
     # Workers
     "Worker",

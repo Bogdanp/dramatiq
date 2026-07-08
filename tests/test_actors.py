@@ -444,7 +444,7 @@ def test_actors_can_prioritize_work(stub_broker):
         def lo():
             calls.append("lo")
 
-        # When I send both actors a nubmer of messages
+        # When I send both actors a number of messages
         for _ in range(10):
             lo.send()
             hi.send()

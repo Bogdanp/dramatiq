@@ -88,7 +88,7 @@ class RabbitmqBroker(Broker):
       confirm_delivery(bool): Wait for RabbitMQ to confirm that
         messages have been committed on every call to enqueue.
         This must be enabled for Dramatiq to detect and re-declare
-        missing queues when enqueing messages.
+        missing queues when enqueuing messages.
         Defaults to False.
       url(str|list[str]): An optional connection URL.  If both a URL
         and connection parameters are provided, the URL is used.

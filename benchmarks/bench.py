@@ -118,7 +118,7 @@ def main(args):
             elif args.benchmark == "fib":
                 dramatiq_fib_bench.send(random.randint(1, 200))
 
-    print("Done enqueing messages. Booting workers...")
+    print("Done enqueuing messages. Booting workers...")
     with memcache_pool.reserve() as client:
         client.set(counter_key, 0)
 
