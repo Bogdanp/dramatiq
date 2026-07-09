@@ -21,7 +21,7 @@ import os
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from ..common import current_millis
+from ..common import current_millis, q_name
 from ..logging import get_logger
 from .middleware import Middleware
 
@@ -145,7 +145,13 @@ class Prometheus(Middleware):
             self.total_retried_messages.labels(*labels).inc()
 
     def before_delay_message(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        # Delayed messages are held on the ".DQ" queue, but they are
+        # re-enqueued onto (and processed from) the canonical queue, where
+        # before_process_message decrements this gauge.  Use the canonical
+        # queue name here so the inc and dec land on the same label set;
+        # otherwise the ".DQ" series only ever increments and never settles
+        # back to zero.
+        labels = (q_name(message.queue_name), message.actor_name)
         self.delayed_messages.add(message.message_id)
         self.inprogress_delayed_messages.labels(*labels).inc()
 
