@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import inspect
+import logging
+import weakref
 from threading import Event, Thread, get_ident
 from unittest import mock
 
@@ -14,6 +17,8 @@ from dramatiq.asyncio import (
     get_event_loop_thread,
     set_event_loop_thread,
 )
+from dramatiq.broker import MessageProxy
+from dramatiq.brokers.stub import StubBroker
 from dramatiq.logging import get_logger
 from dramatiq.middleware import CurrentMessage
 from dramatiq.middleware.asyncio import AsyncIO
@@ -236,3 +241,77 @@ def test_anyio_currrent_message_middleware_exposes_the_current_message(stub_brok
         # When I try to access the current message from a non-worker thread
         # Then I should get back None
         assert CurrentMessage.get_current_message() is None
+
+
+def test_exception_from_async_actor_doesnt_leak(
+    stub_broker: StubBroker,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test that an Exception raised from an async Actor doesn't leak.
+
+    Specifically, test that the Exception is not caught in a reference cycle,
+    which would prevent it from being promptly destroyed/deallocated.
+
+    An Exception caught in a reference cycle should still be eventually destroyed
+    when the cyclic garbage collector runs (See https://docs.python.org/3/library/gc.html),
+    but relying on this is not ideal since memory will be held for longer than needed.
+
+    How does an Exception get caught in a reference cycle?
+    This typically happens because the Exception has a Traceback object, which holds a
+    reference to each Frame in the stack, which hold references to the local variables
+    in each Frame.
+    So if any local variable in any Frame references the Exception,
+    this creates a reference cycle.
+    """
+
+    # Add AsyncIO middleware being tested
+    stub_broker.add_middleware(AsyncIO())
+
+    # Disable log capturing to prevent pytest from holding exception references
+    # via captured LogRecord.exc_info
+    caplog.set_level(logging.CRITICAL)
+
+    # Keep a weakref to each CustomError object created
+    weak_refs: list[weakref.ref[CustomError]] = []
+
+    # Custom Error class for this test
+    class CustomError(Exception):
+        def __init__(self, *args) -> None:
+            super().__init__(*args)
+            weak_refs.append(weakref.ref(self))
+
+    # Actor that will raise exception and fail and retry once.
+    @actor(max_retries=1, max_backoff=1)
+    async def failing_actor():
+        raise CustomError()
+
+    try:
+        # Disable cyclic GC during the test so that Exceptions caught in reference cycles
+        # definitely WON'T be collected / deallocated.
+        gc.disable()
+
+        with (
+            # Reinstate regular clear_exeption() method
+            # so exceptions are not caught in reference cycles.
+            mock.patch(
+                "dramatiq.brokers.stub._StubMessageProxy.clear_exception",
+                new=MessageProxy.clear_exception,
+            ),
+            worker(stub_broker, worker_timeout=10, worker_threads=1) as stub_worker,
+        ):
+            # Run async actor that will raise an Exception
+            failing_actor.send()
+            stub_broker.join(failing_actor.queue_name, fail_fast=False)
+            stub_worker.join()
+
+        # Check expected number of exception were collected (first run + 1 retry)
+        assert len(weak_refs) == 2
+        # Check that all CustomErrors raised were deallocated.
+        # Because the cyclic Garbage collector is disabled (gc.disable()),
+        # ff the error is deallocated, it means it must NOT be in any reference cycles.
+        for i, weak_ref in enumerate(weak_refs):
+            assert weak_ref() is None, f"CustomError object #{i} still alive"
+
+    finally:
+        # Re-enable GC after test is finished.
+        gc.enable()
