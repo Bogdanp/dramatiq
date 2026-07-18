@@ -6,6 +6,8 @@ from unittest.mock import patch
 import pytest
 
 import dramatiq
+from dramatiq.broker import MessageProxy
+from dramatiq.errors import ActorNotFound
 from dramatiq.message import Message
 from dramatiq.middleware import Middleware, SkipMessage
 from dramatiq.results import ResultFailure, ResultMissing, Results, ResultTimeout
@@ -214,6 +216,30 @@ def test_messages_without_actor_not_crashing_lookup_options(stub_broker, redis_r
         options={},
     )
     assert Results(backend=redis_result_backend).after_nack(stub_broker, message) is None
+
+
+def test_messages_store_exception_when_actor_not_found(stub_broker, redis_result_backend):
+    # Given a message with store_results enabled for an actor that isn't registered
+    message = Message(
+        queue_name="default",
+        actor_name="idontexist",
+        args=(),
+        kwargs={},
+        options={"store_results": True},
+    )
+
+    # And a proxy that has failed with ActorNotFound, mimicking what the
+    # worker does when it receives a message for an undefined actor
+    proxy = MessageProxy(message)
+    proxy.fail()
+    proxy.stuff_exception(ActorNotFound(message.actor_name))
+
+    # When the results middleware handles the nack
+    Results(backend=redis_result_backend).after_nack(stub_broker, proxy)
+
+    # Then the exception should have been stored and be retrievable
+    with pytest.raises(ResultFailure):
+        message.get_result(backend=redis_result_backend)
 
 
 def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):

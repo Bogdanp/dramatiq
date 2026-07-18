@@ -84,12 +84,12 @@ class Results(Middleware):
 
     def _lookup_options(self, broker, message):
         try:
-            actor = broker.get_actor(message.actor_name)
-            store_results = message.options.get("store_results", actor.options.get("store_results", self.store_results))
-            result_ttl = message.options.get("result_ttl", actor.options.get("result_ttl", self.result_ttl))
-            return store_results, result_ttl
+            actor_options = broker.get_actor(message.actor_name).options
         except ActorNotFound:
-            return False, 0
+            actor_options = {}
+        store_results = message.options.get("store_results", actor_options.get("store_results", self.store_results))
+        result_ttl = message.options.get("result_ttl", actor_options.get("result_ttl", self.result_ttl))
+        return store_results, result_ttl
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         store_results, result_ttl = self._lookup_options(broker, message)
