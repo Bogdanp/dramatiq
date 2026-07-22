@@ -39,8 +39,13 @@ DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
 
 #: The max number of times to attempt an enqueue operation in case of
 #: a connection error.
-MAX_ENQUEUE_ATTEMPTS = 6
-MAX_DECLARE_ATTEMPTS = 2
+MAX_ENQUEUE_ATTEMPTS = int(os.getenv("dramatiq_max_enqueue_attempts", 6))
+MAX_DECLARE_ATTEMPTS = int(os.getenv("dramatiq_max_declare_attempts", 2))
+
+#: An optional wall-clock budget, in milliseconds, for a single enqueue call.
+#: Retries stop once it is exhausted; 0 (the default) leaves the attempt count
+#: as the only bound.
+MAX_ENQUEUE_DURATION = int(os.getenv("dramatiq_max_enqueue_duration", 0))
 
 
 class RabbitmqBroker(Broker):
@@ -321,6 +326,7 @@ class RabbitmqBroker(Broker):
                     "Retrying declare due to closed connection. [%d/%d] attempts made so far.",
                     attempts,
                     MAX_DECLARE_ATTEMPTS,
+                    exc_info=True,
                 )
 
     def _build_queue_arguments(self, queue_name):
@@ -378,6 +384,7 @@ class RabbitmqBroker(Broker):
             )
 
         attempts = 0
+        deadline = MAX_ENQUEUE_DURATION and time.monotonic() + MAX_ENQUEUE_DURATION / 1000
         while True:
             try:
                 self.declare_queue(canonical_queue_name, ensure=True)
@@ -415,6 +422,15 @@ class RabbitmqBroker(Broker):
                     self.queues_pending.add(q_name(queue_name))
 
                 attempts += 1
+                if deadline and time.monotonic() >= deadline:
+                    self.logger.debug(
+                        "Giving up on enqueue after %d attempt(s): time budget of %dms exhausted.",
+                        attempts,
+                        MAX_ENQUEUE_DURATION,
+                        exc_info=True,
+                    )
+                    raise ConnectionClosed(e) from None
+
                 if attempts >= MAX_ENQUEUE_ATTEMPTS:
                     raise ConnectionClosed(e) from None
 
@@ -422,6 +438,7 @@ class RabbitmqBroker(Broker):
                     "Retrying enqueue due to closed connection. [%d/%d] attempts made so far.",
                     attempts,
                     MAX_ENQUEUE_ATTEMPTS,
+                    exc_info=True,
                 )
 
     def get_declared_queues(self) -> set[str]:
