@@ -278,10 +278,14 @@ def test_rabbitmq_broker_connections_are_lazy():
     assert get_connection() is None
 
     # When I create a consumer on that queue
-    broker.consume("some-queue", timeout=1)
+    consumer = broker.consume("some-queue", timeout=1)
 
-    # Then it should connect
-    assert get_connection() is not None
+    # Then the connection used to declare the queue shouldn't be kept around,
+    # and the consumer itself lives on the broker's shared consumer connection
+    assert get_connection() is None
+
+    consumer.close()
+    broker.close()
 
 
 def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reached(rabbitmq_broker):

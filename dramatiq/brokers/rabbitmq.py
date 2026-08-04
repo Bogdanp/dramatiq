@@ -284,6 +284,9 @@ class RabbitmqBroker(Broker):
           Consumer: A consumer that retrieves messages from RabbitMQ.
         """
         self.declare_queue(queue_name, ensure=True)
+        # Drop the connection the declare just used: consume() runs on consumer
+        # threads, which don't publish, so it would sit idle on each of them forever.
+        del self.connection
         return self.consumer_class(self, queue_name, prefetch, timeout)
 
     def declare_queue(self, queue_name: str, *, ensure: bool = False) -> None:
