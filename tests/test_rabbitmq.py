@@ -111,6 +111,31 @@ def test_rabbitmq_actors_can_be_sent_messages(rabbitmq_broker, rabbitmq_worker):
     assert len(database) == 100
 
 
+def test_rabbitmq_consumers_share_a_single_connection(rabbitmq_broker, rabbitmq_worker):
+    # Given that I have actors spread over several queues
+    @dramatiq.actor(queue_name="shared-connection-queue-1")
+    def do_nothing_1():
+        pass
+
+    @dramatiq.actor(queue_name="shared-connection-queue-2")
+    def do_nothing_2():
+        pass
+
+    # And I wait for their consumers to boot
+    deadline = time.monotonic() + 5
+    consumers = []
+    while time.monotonic() < deadline:
+        consumers = [thread.consumer for thread in rabbitmq_worker.consumers.values()]
+        if len(consumers) >= 4 and all(consumers):
+            break
+        time.sleep(0.05)
+
+    # I expect all of them (two queues plus their delay queues, at least) to
+    # consume over the broker's one shared connection
+    assert len(consumers) >= 4 and all(consumers)
+    assert {consumer.shared_connection for consumer in consumers} == {rabbitmq_broker._consumer_connection}
+
+
 def test_rabbitmq_actors_retry_with_backoff_on_failure(rabbitmq_broker, rabbitmq_worker):
     # Given that I have a database
     failure_time, success_time = None, None

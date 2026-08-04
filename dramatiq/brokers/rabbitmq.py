@@ -22,7 +22,8 @@ import os
 import time
 from functools import partial
 from itertools import chain
-from threading import Event, local
+from queue import Empty, Queue
+from threading import Event, Lock, Thread, local
 from typing import Any, Optional, Union
 
 import pika
@@ -152,10 +153,24 @@ class RabbitmqBroker(Broker):
         # Also, should only contain 'canonical' queue names.
         self.queues_pending: set[str] = set()
         self.state = local()
+        self._consumer_connection: Optional[_ConsumerSharedConnection] = None
+        self._consumer_connection_lock = Lock()
 
     @property
     def consumer_class(self):
         return _RabbitmqConsumer
+
+    def _get_consumer_connection(self):
+        """The connection shared by all of this broker's consumers.
+
+        Each consumer gets its own channel on this connection, so the
+        connection count per worker process stays constant no matter how
+        many queues are consumed.
+        """
+        with self._consumer_connection_lock:
+            if self._consumer_connection is None:
+                self._consumer_connection = _ConsumerSharedConnection(self)
+            return self._consumer_connection
 
     @property
     def connection(self):
@@ -236,6 +251,11 @@ class RabbitmqBroker(Broker):
         """Close all open RabbitMQ connections."""
 
         self._ignore_pika_logs()
+
+        with self._consumer_connection_lock:
+            if self._consumer_connection is not None:
+                self._consumer_connection.stop()
+                self._consumer_connection = None
 
         self.logger.debug("Closing channels and connections...")
         for channel_or_conn in chain(self.channels, self.connections):
@@ -515,33 +535,221 @@ class _IgnoreScaryLogs(logging.Filter):
         return "Broken pipe" not in record.getMessage()
 
 
+class _ConsumerSharedConnection:
+    """The one connection all of a broker's consumers share.
+
+    pika connections aren't thread safe, so a dedicated I/O thread owns the
+    connection and everyone else interacts with it in exactly two ways:
+    deliveries are dispatched from the I/O thread into per-consumer buffers,
+    and consumers marshal their channel operations (subscribe, ack, nack,
+    close) onto the I/O thread with add_callback_threadsafe.
+
+    A consumer whose channel or connection dies is handed the error through
+    its buffer and never comes back: its ConsumerThread sees ConnectionClosed
+    and restarts with a fresh consumer.
+    """
+
+    # How long a consumer waits for its subscription to become live.
+    subscribe_timeout = 30
+
+    def __init__(self, broker):
+        self.broker = broker
+        self.logger = get_logger(__name__, type(self))
+        self.connection = None
+        self._consumers = set()
+        self._requests = Queue()
+        self._stopped = Event()
+        self._thread = Thread(target=self._run, daemon=True, name="dramatiq-rabbitmq-consumer-io")
+        self._thread.start()
+
+    def subscribe(self, consumer):
+        """Open a channel for the consumer and start consuming its queue.
+        Blocks until the subscription is live.
+        """
+        if not self._thread.is_alive():
+            raise pika.exceptions.AMQPConnectionError("the shared consumer connection is stopped")
+
+        ready = Event()
+        error = []
+
+        def request():
+            if consumer.closed:  # the consumer gave up waiting
+                return
+            try:
+                if self.connection is None:
+                    raise pika.exceptions.AMQPConnectionError("the shared consumer connection is down")
+                channel = self.connection.channel()
+                channel.basic_qos(prefetch_count=consumer.prefetch)
+                channel.add_on_cancel_callback(partial(self._on_cancel, consumer))
+                consumer.channel = channel
+                channel.basic_consume(consumer.queue_name, partial(self._on_message, consumer))
+                self._consumers.add(consumer)
+            except Exception as e:
+                error.append(e)
+            finally:
+                ready.set()
+
+        self._requests.put(request)
+        self._wake()
+        if not ready.wait(self.subscribe_timeout):
+            # The request may still run later.  The closed flag turns it into
+            # a no-op and the unsubscribe cleans up in case it just ran.
+            consumer.closed = True
+            self.unsubscribe(consumer)
+            raise pika.exceptions.AMQPConnectionError("timed out waiting for the shared consumer connection")
+        if error:
+            raise error[0]
+
+    def call_soon(self, callback):
+        """Run a channel operation on the I/O thread, in order with deliveries and acks."""
+        connection = self.connection
+        if connection is None or not connection.is_open or not self._thread.is_alive():
+            raise pika.exceptions.AMQPConnectionError("the shared consumer connection is down")
+        connection.add_callback_threadsafe(callback)
+
+    def unsubscribe(self, consumer):
+        """Close the consumer's channel. Blocks until it is closed, so
+        unacked deliveries are back in their queue by the time this returns.
+        """
+        done = Event()
+
+        def request():
+            try:
+                self._consumers.discard(consumer)
+                if consumer.channel is not None and consumer.channel.is_open:
+                    consumer.channel.close()
+            except pika.exceptions.AMQPChannelError:  # pragma: no cover
+                self.logger.debug("Encountered an error while closing a consumer channel.", exc_info=True)
+            finally:
+                done.set()
+
+        try:
+            # Through the connection so it runs after the consumer's pending acks.
+            self.call_soon(request)
+        except pika.exceptions.AMQPConnectionError:
+            return  # the connection is gone and took the channel with it
+        done.wait(self.subscribe_timeout)
+
+    def stop(self):
+        self._stopped.set()
+        self._thread.join(timeout=30)
+
+    def _wake(self):
+        try:
+            connection = self.connection
+            if connection is not None and connection.is_open:
+                connection.add_callback_threadsafe(self._drain_requests)
+        except pika.exceptions.ConnectionWrongStateError:  # pragma: no cover
+            pass  # the request will be drained by the main loop instead
+
+    def _run(self):
+        backoff = 0.5
+        while not self._stopped.is_set():
+            try:
+                if self.connection is None:
+                    self.connection = pika.BlockingConnection(parameters=self.broker.parameters)
+                    backoff = 0.5
+                self.connection.process_data_events(time_limit=1.0)
+                self._drain_requests()
+            except Exception as e:
+                # If this thread dies, every consumer starves without an error, so
+                # anything raised here has to turn into a reconnect instead.
+                if self._stopped.is_set():
+                    break
+                self.logger.warning("Consumer connection lost, reconnecting in %.01fs.", backoff, exc_info=True)
+                self._fail_consumers(e)
+                self.connection = None
+                self._stopped.wait(backoff)
+                backoff = min(backoff * 2, 8)
+        self._close_connection()
+
+    def _drain_requests(self):
+        while True:
+            try:
+                request = self._requests.get_nowait()
+            except Empty:
+                return
+            request()
+
+    def _on_message(self, consumer, channel, method, properties, body):
+        consumer.buffer.put((method, body))
+
+    def _on_cancel(self, consumer, method):
+        # The broker cancelled the consumer, most likely because its queue was
+        # deleted. Report it as a 404 so the queue gets redeclared on restart.
+        self._consumers.discard(consumer)
+        consumer.buffer.put(pika.exceptions.ChannelClosedByBroker(404, "consumer cancelled by the broker"))
+
+    def _fail_consumers(self, error):
+        consumers, self._consumers = self._consumers, set()
+        for consumer in consumers:
+            # Deliveries still sitting in the buffer were requeued by RabbitMQ when the connection died,
+            # so processing them now would process them twice.
+            while True:
+                try:
+                    consumer.buffer.get_nowait()
+                except Empty:
+                    break
+            consumer.buffer.put(error)
+
+    def _close_connection(self):
+        connection, self.connection = self.connection, None
+        if connection is None:
+            return
+        try:
+            # Closing the connection doesn't wait for all callbacks to
+            # finish processing so we enqueue a final callback and
+            # wait for it to finish before closing the connection.
+            # Assumes callbacks are called in order (they should be).
+            all_callbacks_handled = Event()
+            connection.add_callback_threadsafe(all_callbacks_handled.set)
+            while not all_callbacks_handled.is_set():
+                connection.sleep(0)
+            connection.close()
+        except Exception:
+            self.logger.exception(
+                "Failed to wait for all callbacks to complete.  This "
+                "can happen when the RabbitMQ server is suddenly "
+                "restarted."
+            )
+
+
 class _RabbitmqConsumer(Consumer):
     def __init__(self, broker, queue_name, prefetch, timeout):
         self.broker = broker
         self.queue_name = queue_name
+        self.prefetch = prefetch
+        self.timeout = timeout
         self.logger = get_logger(__name__, type(self))
-        try:
-            self.connection = pika.BlockingConnection(parameters=self.broker.parameters)
-            self.channel = self.connection.channel()
-            self.channel.basic_qos(prefetch_count=prefetch)
-            self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
 
-            # We need to keep track of known delivery tags so that
-            # when connection errors occur and the consumer is reset,
-            # we don't attempt to send invalid tags to Rabbit since
-            # pika doesn't handle this very well.
-            self.known_tags = set()
+        # Deliveries (and errors) handed over from the shared connection's I/O thread.
+        self.buffer = Queue()
+        self.channel = None
+        self.closed = False
+
+        # We need to keep track of known delivery tags so that
+        # when connection errors occur and the consumer is reset,
+        # we don't attempt to send invalid tags to Rabbit since
+        # pika doesn't handle this very well.
+        self.known_tags = set()
+
+        try:
+            self.shared_connection = broker._get_consumer_connection()
+            self.shared_connection.subscribe(self)
         except (
             pika.exceptions.AMQPConnectionError,
             pika.exceptions.AMQPChannelError,
         ) as e:
+            self.closed = True
+            if getattr(e, "reply_code", None) == 404:
+                self.broker.queues_pending.add(q_name(self.queue_name))
             raise ConnectionClosed(e) from None
 
     def ack(self, message):
         try:
             self.known_tags.remove(message._tag)
-            self.connection.add_callback_threadsafe(
-                partial(self.channel.basic_ack, message._tag),
+            self.shared_connection.call_soon(
+                partial(_ack_if_open, self.channel, message._tag),
             )
         except (
             pika.exceptions.AMQPConnectionError,
@@ -568,8 +776,8 @@ class _RabbitmqConsumer(Consumer):
             self.logger.warning("Failed to nack message.", exc_info=True)
 
     def _nack(self, tag):
-        self.connection.add_callback_threadsafe(
-            partial(self.channel.basic_nack, tag, requeue=False),
+        self.shared_connection.call_soon(
+            partial(_nack_if_open, self.channel, tag),
         )
 
     def requeue(self, messages):
@@ -579,25 +787,26 @@ class _RabbitmqConsumer(Consumer):
 
     def __next__(self):
         try:
-            method, properties, body = next(self.iterator)
-            if method is None:
-                return None
-        except (
-            AssertionError,
-            pika.exceptions.AMQPConnectionError,
-            pika.exceptions.AMQPChannelError,
-        ) as e:
+            item = self.buffer.get(timeout=self.timeout / 1000)
+        except Empty:
+            return None
+
+        if isinstance(item, Exception):
             # If the queue disappears, add it to the set of pending queues
             # so that it can be redeclared on when the consumer restarts.
-            if getattr(e, "reply_code", None) == 404:
+            if getattr(item, "reply_code", None) == 404:
                 self.broker.queues_pending.add(q_name(self.queue_name))
-            raise ConnectionClosed(e) from None
+            raise ConnectionClosed(item) from None
 
+        method, body = item
         try:
             message = Message.decode(body)
         except DecodeError:
             self.logger.exception("Failed to decode message using encoder %r.", get_encoder())
-            self._nack(method.delivery_tag)
+            try:
+                self._nack(method.delivery_tag)
+            except pika.exceptions.AMQPConnectionError:
+                pass  # The connection died, so RabbitMQ will redeliver.
             return None
 
         rmq_message = _RabbitmqMessage(
@@ -609,31 +818,20 @@ class _RabbitmqConsumer(Consumer):
         return rmq_message
 
     def close(self):
-        try:
-            # Closing the connection doesn't wait for all callbacks to
-            # finish processing so we enqueue a final callback and
-            # wait for it to finish before closing the connection.
-            # Assumes callbacks are called in order (they should be).
-            all_callbacks_handled = Event()
-            self.connection.add_callback_threadsafe(all_callbacks_handled.set)
-            while not all_callbacks_handled.is_set():
-                self.connection.sleep(0)
-        except Exception:
-            self.logger.exception(
-                "Failed to wait for all callbacks to complete.  This "
-                "can happen when the RabbitMQ server is suddenly "
-                "restarted."
-            )
+        self.closed = True
+        self.shared_connection.unsubscribe(self)
 
-        try:
-            self.channel.close()
-            self.connection.close()
-        except (
-            AssertionError,
-            pika.exceptions.AMQPConnectionError,
-            pika.exceptions.AMQPChannelError,
-        ) as e:
-            raise ConnectionClosed(e) from None
+
+def _ack_if_open(channel, tag):
+    # A dead channel means RabbitMQ already requeued the delivery, so its tag
+    # must not be sent to whatever channel replaced it.
+    if channel.is_open:
+        channel.basic_ack(tag)
+
+
+def _nack_if_open(channel, tag):
+    if channel.is_open:
+        channel.basic_nack(tag, requeue=False)
 
 
 class _RabbitmqMessage(MessageProxy):
