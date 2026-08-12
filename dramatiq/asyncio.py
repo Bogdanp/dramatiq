@@ -179,3 +179,11 @@ class EventLoopThread(threading.Thread):
             if not done.wait(timeout=1.0):
                 raise RuntimeError("Timed out while waiting for coroutine.") from e
             raise
+
+        finally:
+            # Clear reference to the future, to prevent an Exception that was raised in the coroutine
+            # (and subsequently raised from a future.result() call)
+            # from being caught in a reference cycle.
+            del future
+            # Without this, the potential reference cycle is
+            # Exception -> Traceback -> Frames -> run_coroutine() locals -> future -> Exception

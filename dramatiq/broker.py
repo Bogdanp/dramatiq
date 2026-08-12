@@ -410,7 +410,7 @@ class MessageProxy:
 
     def clear_exception(self) -> None:
         """Remove the exception from this message."""
-        del self._exception
+        self._exception = None
 
     def fail(self) -> None:
         """Mark this message for rejection."""

@@ -232,7 +232,17 @@ class _StubConsumer(Consumer):
 
 class _StubMessageProxy(MessageProxy):
     def clear_exception(self) -> None:
-        """Let the GC handle the cycle once the message is no longer
-        in use.  This lets us keep showing full stack traces in
-        failing tests.  See comment in `Worker' for details.
+        """Override so that Exceptions are NOT cleared from MessageProxy
+        when the StubBroker is used.
+
+        Normally, clearing exceptions is required to break a reference cycle involving
+        the Exception, to avoid memory bloat.
+
+        Instead, when using the StubBroker, let the GC handle the cycle once the message
+        is no longer in use.
+        This lets us keep showing full stack traces in failing tests.
+        See comment in 'Worker' where clear_exception() is called for details.
+
+        Not clearing Exceptions is also required for the StubBroker.join() function
+        to be able to re-raise the exception from the actor, when fail_fast=True is used.
         """
