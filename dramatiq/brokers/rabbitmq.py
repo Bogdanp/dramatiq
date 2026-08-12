@@ -26,6 +26,7 @@ from threading import Event, local
 from typing import Any, Optional, Union
 
 import pika
+import pika.exceptions
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, q_name, xq_name
@@ -618,6 +619,10 @@ class _RabbitmqConsumer(Consumer):
             self.connection.add_callback_threadsafe(all_callbacks_handled.set)
             while not all_callbacks_handled.is_set():
                 self.connection.sleep(0)
+        except pika.exceptions.ConnectionWrongStateError:
+            # The connection is already closed or closing (e.g. server shutdown),
+            # so pika doesn't allow adding a callback.
+            self.logger.debug("Connection already closed, skipping waiting for callbacks to finish.")
         except Exception:
             self.logger.exception(
                 "Failed to wait for all callbacks to complete.  This "
