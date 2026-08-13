@@ -535,10 +535,10 @@ def test_rabbitmq_broker_consuming_messages_re_declares_queues_when_declared_que
         pass
 
     # Make consumers restart quickly for this test
-    with patch.object(dramatiq.worker, "CONSUMER_RESTART_DELAY_SECS", new=0.01):
+    with patch.object(dramatiq.worker, "CONSUMER_RESTART_DELAY_SECS", new=0.001):
 
         # When I start a Worker the queue should be declared
-        worker = Worker(rabbitmq_broker, worker_threads=1, worker_timeout=10)
+        worker = Worker(rabbitmq_broker, worker_threads=1, worker_timeout=1)
         worker.start()
 
         try:
