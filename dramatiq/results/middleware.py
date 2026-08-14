@@ -82,14 +82,32 @@ class Results(Middleware):
             "result_ttl",
         }
 
+    def before_enqueue(self, broker, message, delay):
+        """Copy store_results/result_ttl onto the message so a worker
+        that does not have the actor imported can still persist failures.
+        """
+        try:
+            actor = broker.get_actor(message.actor_name)
+        except ActorNotFound:
+            return
+
+        store_results = message.options.get("store_results", actor.options.get("store_results", self.store_results))
+        if store_results and "store_results" not in message.options:
+            message.options["store_results"] = True
+            message.options.setdefault("result_ttl", actor.options.get("result_ttl", self.result_ttl))
+
     def _lookup_options(self, broker, message):
         try:
             actor = broker.get_actor(message.actor_name)
-            store_results = message.options.get("store_results", actor.options.get("store_results", self.store_results))
-            result_ttl = message.options.get("result_ttl", actor.options.get("result_ttl", self.result_ttl))
-            return store_results, result_ttl
+            actor_store_results = actor.options.get("store_results", self.store_results)
+            actor_result_ttl = actor.options.get("result_ttl", self.result_ttl)
         except ActorNotFound:
-            return False, 0
+            actor_store_results = self.store_results
+            actor_result_ttl = self.result_ttl
+
+        store_results = message.options.get("store_results", actor_store_results)
+        result_ttl = message.options.get("result_ttl", actor_result_ttl)
+        return store_results, result_ttl
 
     def after_process_message(self, broker, message, *, result=None, exception=None):
         store_results, result_ttl = self._lookup_options(broker, message)
