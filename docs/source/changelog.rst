@@ -8,6 +8,18 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Added an optional ``consumer_timeout`` to the |RabbitmqBroker|.  When set,
+  delayed messages held longer than 75% of it are re-leased so that delays and
+  retries longer than RabbitMQ's consumer acknowledgement timeout are honoured
+  instead of being requeued by the server.  Fixes `#827`_.
+  See :ref:`consumer-timeouts`.  (`@davidt99`_)
+
+.. _#827: https://github.com/Bogdanp/dramatiq/issues/827
+.. _@davidt99: https://github.com/davidt99
+
 
 `2.2.0`_ -- 2026-06-17
 ----------------------

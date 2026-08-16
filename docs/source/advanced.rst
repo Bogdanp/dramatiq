@@ -148,6 +148,41 @@ failover if the currently connected node fails.
 .. _connection parameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
 
 
+.. _consumer-timeouts:
+
+Consumer Timeouts and Long Delays
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RabbitMQ
+~~~~~~~~
+
+RabbitMQ requeues any delivery that is left unacknowledged past its
+`consumer acknowledgement timeout`_ (30 minutes by default).  Dramatiq keeps
+delayed and retried messages in memory until their scheduled time, so a
+message delayed for longer than that would be requeued by the server before
+it ever runs, producing a churn of redeliveries.
+
+On **RabbitMQ 3.12 and later** we recommend passing ``consumer_timeout``
+(in milliseconds, matching your server's setting).  Dramatiq then sends it
+as the ``x-consumer-timeout`` consumer argument on the delay-queue consumer
+and *re-leases* any delayed message it has held for longer than 75% of that
+value -- re-enqueueing it with its remaining delay -- so the message is never
+dropped by the server's timeout and still runs exactly once, at its eta.
+
+.. code-block:: python
+
+   from dramatiq.brokers.rabbitmq import RabbitmqBroker
+
+   rabbitmq_broker = RabbitmqBroker(host="rabbitmq", consumer_timeout=1_800_000)
+
+The value must be at least 15 minutes.  It defaults to ``None`` -- Dramatiq
+can't tell which RabbitMQ version it's talking to, and the
+``x-consumer-timeout`` consumer argument is only honoured from 3.12 onwards,
+so nothing is sent and messages aren't re-leased unless you opt in.
+
+.. _consumer acknowledgement timeout: https://www.rabbitmq.com/docs/consumers#acknowledgement-timeout
+
+
 Other brokers
 ^^^^^^^^^^^^^
 

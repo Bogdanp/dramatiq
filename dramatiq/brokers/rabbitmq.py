@@ -43,6 +43,13 @@ DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
 MAX_ENQUEUE_ATTEMPTS = 6
 MAX_DECLARE_ATTEMPTS = 2
 
+#: The fraction of ``consumer_timeout`` at which a held delayed message
+#: is re-leased, keeping it under the broker's acknowledgement timeout.
+DELAY_QUEUE_LEASE_FACTOR = 0.75
+
+#: The smallest ``consumer_timeout`` Dramatiq accepts, in milliseconds.
+MIN_CONSUMER_TIMEOUT = 900_000
+
 
 class RabbitmqBroker(Broker):
     """A broker that can be used with RabbitMQ.
@@ -97,6 +104,14 @@ class RabbitmqBroker(Broker):
         to this broker.
       max_priority(int): Configure queues with ``x-max-priority`` to
         support queue-global priority queueing.
+      consumer_timeout(int): Delivery-acknowledgement timeout, in
+        milliseconds, for the delay queue.  Sent as the
+        ``x-consumer-timeout`` consumer argument (honoured by RabbitMQ
+        3.12+) and used to re-lease delayed messages held longer than
+        ``consumer_timeout * 0.75``, so delays beyond the timeout are
+        preserved instead of being requeued by the server.  Must be at
+        least ``MIN_CONSUMER_TIMEOUT``.  Defaults to ``None`` (no
+        re-lease).
       parameters(list[dict]): A sequence of (pika) connection parameters
         to determine which Rabbit server(s) to connect to.
       **kwargs: The (pika) connection parameters to use to
@@ -112,6 +127,7 @@ class RabbitmqBroker(Broker):
         url: Optional[Union[str, list[str]]] = None,
         middleware: Optional[list[Middleware]] = None,
         max_priority: Optional[int] = None,
+        consumer_timeout: Optional[int] = None,
         parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs: Any,
     ):
@@ -119,6 +135,9 @@ class RabbitmqBroker(Broker):
 
         if max_priority is not None and not (0 < max_priority <= 255):
             raise ValueError("max_priority must be a value between 0 and 255")
+
+        if consumer_timeout is not None and consumer_timeout < MIN_CONSUMER_TIMEOUT:
+            raise ValueError("consumer_timeout must be at least %d ms" % MIN_CONSUMER_TIMEOUT)
 
         if url is not None:
             if parameters is not None or kwargs:
@@ -144,6 +163,11 @@ class RabbitmqBroker(Broker):
 
         self.confirm_delivery = confirm_delivery
         self.max_priority = max_priority
+        self._consumer_timeout = consumer_timeout
+        # How long the worker may hold a delayed message before re-leasing it.
+        self.delay_queue_lease_ms = (
+            int(consumer_timeout * DELAY_QUEUE_LEASE_FACTOR) if consumer_timeout is not None else None
+        )
         self.connections: set[pika.BlockingConnection] = set()
         self.channels: set[pika.BlockingChannel] = set()
         # 'queues' is the set of Queues declared on the Broker. These are created lazily in RabbitMQ when required.
@@ -157,6 +181,12 @@ class RabbitmqBroker(Broker):
     @property
     def consumer_class(self):
         return _RabbitmqConsumer
+
+    @property
+    def consumer_timeout(self) -> Optional[int]:
+        """The delivery-acknowledgement timeout, in milliseconds, or
+        ``None`` when it was not configured."""
+        return self._consumer_timeout
 
     @property
     def connection(self):
@@ -525,7 +555,18 @@ class _RabbitmqConsumer(Consumer):
             self.connection = pika.BlockingConnection(parameters=self.broker.parameters)
             self.channel = self.connection.channel()
             self.channel.basic_qos(prefetch_count=prefetch)
-            self.iterator = self.channel.consume(queue_name, inactivity_timeout=timeout / 1000)
+            # Only the delay queue holds messages unacked long enough to hit
+            # the timeout, so only its consumer sets x-consumer-timeout (a
+            # consumer argument -- no queue redeclaration, honoured by RabbitMQ
+            # 3.12+).
+            consumer_arguments = {}
+            if self.queue_name.endswith(".DQ") and self.broker.consumer_timeout is not None:
+                consumer_arguments["x-consumer-timeout"] = self.broker.consumer_timeout
+            self.iterator = self.channel.consume(
+                queue_name,
+                inactivity_timeout=timeout / 1000,
+                arguments=consumer_arguments or None,
+            )
 
             # We need to keep track of known delivery tags so that
             # when connection errors occur and the consumer is reset,
