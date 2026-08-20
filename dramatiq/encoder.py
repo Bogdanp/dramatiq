@@ -18,9 +18,11 @@
 from __future__ import annotations
 
 import abc
+import io
 import json
 import pickle
 import typing
+import warnings
 
 from .errors import DecodeError
 
@@ -63,13 +65,108 @@ class JSONEncoder(Encoder):
 class PickleEncoder(Encoder):
     """Pickles messages.
 
-    Warning:
-      This encoder is not secure against maliciously-constructed data.
-      Use it at your own risk.
+    .. deprecated:: 2.1.1
+      :class:`PickleEncoder` deserializes data without restrictions,
+      making it vulnerable to remote code execution when a broker is
+      compromised.  Use :class:`SafePickleEncoder` instead.
     """
 
     def encode(self, data: MessageData) -> bytes:
         return pickle.dumps(data)
 
     def decode(self, data: bytes) -> MessageData:
+        warnings.warn(
+            "PickleEncoder is deprecated because it is vulnerable to "
+            "remote code execution via crafted pickle payloads. Use "
+            "SafePickleEncoder instead, which restricts unpickling to "
+            "safe built-in types. PickleEncoder will be removed in "
+            "dramatiq v3.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return pickle.loads(data)
+
+
+#: Types that :class:`SafePickleEncoder` allows during unpickling.
+_SAFE_BUILTINS: frozenset[str] = frozenset({
+    "builtins.True",
+    "builtins.False",
+    "builtins.None",
+    "builtins.int",
+    "builtins.float",
+    "builtins.complex",
+    "builtins.bytes",
+    "builtins.bytearray",
+    "builtins.str",
+    "builtins.tuple",
+    "builtins.list",
+    "builtins.dict",
+    "builtins.set",
+    "builtins.frozenset",
+    "builtins.slice",
+    "builtins.type",
+    "builtins.range",
+    "builtins.enumerate",
+    "datetime.datetime",
+    "datetime.date",
+    "datetime.time",
+    "datetime.timedelta",
+    "datetime.timezone",
+    "collections.OrderedDict",
+    "decimal.Decimal",
+    "uuid.UUID",
+})
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that only allows a safe set of built-in types."""
+
+    def __init__(self, file: typing.IO[bytes], *, allowed: frozenset[str]) -> None:
+        super().__init__(file)
+        self._allowed = allowed
+
+    def find_class(self, module: str, name: str) -> type:
+        key = f"{module}.{name}"
+        if key not in self._allowed:
+            raise DecodeError(
+                f"Unpickling {key!r} is not allowed. Only built-in "
+                f"types are permitted by SafePickleEncoder.",
+                key,
+                None,
+            )
+        return super().find_class(module, name)
+
+
+class SafePickleEncoder(Encoder):
+    """Pickles messages using a restricted unpickler.
+
+    Only a fixed set of built-in Python types are allowed during
+    deserialization, which prevents remote code execution through
+    crafted pickle payloads.
+
+    The default allow-list covers the types typically found in Dramatiq
+    message metadata: ``int``, ``float``, ``str``, ``bytes``, ``list``,
+    ``dict``, ``tuple``, ``set``, ``frozenset``, ``datetime``,
+    ``Decimal``, ``UUID``, and a few others.  You can extend it by
+    passing *extra_allowed* to the constructor.
+
+    Parameters:
+      extra_allowed: An optional set of ``"module.qualname"`` strings
+        for additional types that should be permitted.
+    """
+
+    def __init__(self, *, extra_allowed: typing.Iterable[str] = ()) -> None:
+        self._allowed: frozenset[str] = _SAFE_BUILTINS | frozenset(extra_allowed)
+
+    def encode(self, data: MessageData) -> bytes:
+        return pickle.dumps(data)
+
+    def decode(self, data: bytes) -> MessageData:
+        try:
+            return _RestrictedUnpickler(io.BytesIO(data), allowed=self._allowed).load()
+        except DecodeError:
+            raise
+        except Exception as e:
+            raise DecodeError(
+                "failed to decode data %r" % (data,), data, e
+            ) from None

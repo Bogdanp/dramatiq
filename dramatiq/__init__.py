@@ -22,7 +22,7 @@ import warnings
 from .actor import Actor, actor
 from .broker import Broker, Consumer, MessageProxy, get_broker, set_broker
 from .composition import group, pipeline
-from .encoder import Encoder, JSONEncoder, PickleEncoder
+from .encoder import Encoder, JSONEncoder, PickleEncoder, SafePickleEncoder
 from .errors import (
     ActorNotFound,
     BrokerConnectionError,
@@ -60,6 +60,7 @@ __all__ = [
     "Encoder",
     "JSONEncoder",
     "PickleEncoder",
+    "SafePickleEncoder",
     # Errors
     "DramatiqError",
     "BrokerError",
