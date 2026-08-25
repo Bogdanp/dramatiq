@@ -138,3 +138,37 @@ def test_stub_broker_respects_prefetch(stub_broker, stub_worker):
     assert stub_worker.work_queue.qsize() == 5
     # 10 messages will be left on the broker queue.
     assert stub_broker.queues[do_work.queue_name].qsize() == 10
+
+
+def test_stub_broker_skips_enqueue_when_middleware_raises(stub_broker):
+    # Given a middleware that skips enqueueing every message
+    class SkipEnqueueMiddleware(dramatiq.middleware.Middleware):
+        def before_enqueue(self, broker, message, delay):
+            raise dramatiq.middleware.SkipEnqueue("skip this one")
+
+    stub_broker.add_middleware(SkipEnqueueMiddleware())
+
+    # And an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # Then the message is returned but nothing is enqueued
+    assert message is not None
+    assert stub_broker.queues[do_work.queue_name].qsize() == 0
+
+
+def test_stub_broker_enqueues_when_middleware_does_not_skip(stub_broker):
+    # Given an actor and no skipping middleware
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # When I send that actor a message
+    do_work.send()
+
+    # Then the message is enqueued as usual
+    assert stub_broker.queues[do_work.queue_name].qsize() == 1
