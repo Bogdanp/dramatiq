@@ -129,6 +129,13 @@ class Prometheus(Middleware):
             registry=registry,
         )
 
+    def after_worker_boot(self, broker, worker):
+        # dramatiq's Worker emits "worker_boot" itself, not "process_boot",
+        # so a broker driven directly through the Worker API (rather than
+        # the dramatiq CLI's forked processes, which also emit "process_boot")
+        # never reached after_process_boot and left the metrics below unset.
+        self.after_process_boot(broker)
+
     def after_worker_shutdown(self, broker, worker):
         from prometheus_client import multiprocess
 
