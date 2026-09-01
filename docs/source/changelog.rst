@@ -9,6 +9,40 @@ All notable changes to this project will be documented in this file.
 -------------
 
 
+`2.2.1`_ -- 2026-09-01
+----------------------
+
+Fixed
+^^^^^
+
+* Fixed an issue where Exceptions raised from async Actors would get
+  caught in a reference cycle, preventing them from being immediately freed.
+  This would lead to higher than necessary memory usage until the garbage collector runs.
+  (`#806`_, `@frankie567`_, `#878`_, `@LincolnPuzey`_)
+* In the RabbitMQ Broker, if the RabbitMQ server shuts down,
+  catch the ``ConnectionWrongStateError`` exception that occurs when closing the connection from the Consumer.
+  (`#187`_, `#885`_, `@LincolnPuzey`_, `@davidt99`_)
+
+.. _#806: https://github.com/Bogdanp/dramatiq/pull/806
+.. _@frankie567: https://github.com/frankie567
+.. _#878: https://github.com/Bogdanp/dramatiq/pull/878
+.. _#187: https://github.com/Bogdanp/dramatiq/issues/187
+.. _#885: https://github.com/Bogdanp/dramatiq/pull/885
+
+Added
+^^^^^
+
+* Experimental support for the free-threaded build of Python, for Python 3.14+.
+  At this point, this means that the unit tests are run (and pass) on free-threaded Python.
+  The codebase has not been audited to check for any thread-safety bugs that might be surfaced
+  by running free-threaded Python.
+  Feel free to try experimenting with Dramatiq and free-threaded Python,
+  and if you encounter any problems please open an Issue!
+  (`#813`_, `@LincolnPuzey`_)
+
+.. _#813: https://github.com/Bogdanp/dramatiq/pull/813
+
+
 `2.2.0`_ -- 2026-06-17
 ----------------------
 
@@ -1717,7 +1751,8 @@ Changed
 * Capped prefetch counts to 65k.
 
 
-.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.2.0...HEAD
+.. _Unreleased: https://github.com/Bogdanp/dramatiq/compare/v2.2.1...HEAD
+.. _2.2.1: https://github.com/Bogdanp/dramatiq/compare/v2.2.0...v2.2.1
 .. _2.2.0: https://github.com/Bogdanp/dramatiq/compare/v2.1.0...v2.2.0
 .. _2.1.0: https://github.com/Bogdanp/dramatiq/compare/v2.0.1...v2.1.0
 .. _2.0.1: https://github.com/Bogdanp/dramatiq/compare/v2.0.0...v2.0.1
