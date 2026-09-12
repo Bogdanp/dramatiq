@@ -65,13 +65,13 @@ class Actor(Generic[P, R]):
         self,
         fn: Union[Callable[P, Awaitable[R]], Callable[P, R]],
         *,
-        broker: Broker,
+        broker: Optional[Broker] = None,
         actor_name: str,
         queue_name: str,
         priority: int,
         options: dict[str, Any],
     ) -> None:
-        if actor_name in broker.actors:
+        if broker is not None and actor_name in broker.actors:
             raise ValueError(f"An actor named {actor_name!r} is already registered.")
 
         self.logger = get_logger(fn.__module__ or "_", actor_name)
@@ -81,7 +81,8 @@ class Actor(Generic[P, R]):
         self.queue_name = queue_name
         self.priority = priority
         self.options = options
-        self.broker.declare_actor(self)
+        if self.broker is not None:
+            self.broker.declare_actor(self)
 
     def message(self, *args: P.args, **kwargs: P.kwargs) -> Message[R]:
         """Build a message.  This method is useful if you want to
@@ -176,6 +177,8 @@ class Actor(Generic[P, R]):
             delay = int(delay.total_seconds() * 1000)
 
         message = self.message_with_options(args=args, kwargs=kwargs, **options)
+        if self.broker is None:
+            raise RuntimeError(f"Actor {self.actor_name!r} is not bound to a broker. Call registry.bind(broker) or provide a broker.")
         return self.broker.enqueue(message, delay=delay)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -296,6 +299,19 @@ def actor(
             raise ValueError(
                 "Queue names must start with a letter or an underscore followed "
                 "by any number of letters, digits, dashes or underscores."
+            )
+
+        from .registry import get_registry
+
+        reg = get_registry()
+        if broker is None and reg is not None:
+            return reg.actor(
+                fn,
+                actor_class=actor_class,
+                actor_name=actor_name,
+                queue_name=queue_name,
+                priority=priority,
+                **options,
             )
 
         broker = broker or get_broker()

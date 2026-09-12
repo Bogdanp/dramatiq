@@ -6,7 +6,10 @@ import random
 import subprocess
 import sys
 
-import pylibmc
+try:
+    import pylibmc
+except ImportError:
+    pylibmc = None
 import pytest
 import redis
 
@@ -46,7 +49,7 @@ def check_redis(client):
 def check_memcached(client):
     try:
         client.get_stats()
-    except pylibmc.SomeErrors as e:
+    except ((pylibmc.SomeErrors,) if pylibmc else (Exception,)) as e:
         raise e if CI else pytest.skip("No connection to memcached server.") from None
 
 
@@ -141,7 +144,10 @@ def start_cli():
 
 @pytest.fixture
 def memcached_rate_limiter_backend():
-    backend = rl_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    try:
+        backend = rl_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    except (AttributeError, ImportError):
+        pytest.skip("MemcachedBackend is not available.")
     with backend.pool.reserve() as client:
         check_memcached(client)
         client.flush_all()
@@ -177,7 +183,10 @@ def rate_limiter_backend(request, rate_limiter_backends):
 
 @pytest.fixture
 def memcached_result_backend():
-    backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    try:
+        backend = res_backends.MemcachedBackend(servers=["127.0.0.1"], binary=True)
+    except (AttributeError, ImportError):
+        pytest.skip("MemcachedBackend is not available.")
     with backend.pool.reserve() as client:
         check_memcached(client)
         client.flush_all()
