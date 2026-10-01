@@ -1,7 +1,6 @@
 import pytest
 import dramatiq
-from dramatiq import Registry, enable_registry, disable_registry, get_registry, set_registry, transfer_actors
-from dramatiq.brokers.stub import StubBroker
+from dramatiq import Registry, enable_registry, disable_registry, get_registry, transfer_actors
 
 
 @pytest.fixture

@@ -113,7 +113,6 @@ class Registry:
         actual_class = actor_class or DefaultActor
 
         def decorator(func: Callable) -> Actor:
-            nonlocal actor_name
             name = actor_name or func.__name__
             created_actor = actual_class(
                 func,
