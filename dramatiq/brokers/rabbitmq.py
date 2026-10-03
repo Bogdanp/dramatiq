@@ -33,7 +33,7 @@ from ..common import current_millis, dq_name, q_name, xq_name
 from ..errors import ConnectionClosed, DecodeError, QueueJoinTimeout
 from ..logging import get_logger
 from ..message import Message, get_encoder
-from ..middleware import Middleware
+from ..middleware import Middleware, SkipEnqueue
 
 #: The maximum amount of time a message can be in the dead letter queue.
 DEAD_MESSAGE_TTL = int(os.getenv("dramatiq_dead_message_ttl", 86400000 * 7))
@@ -383,7 +383,11 @@ class RabbitmqBroker(Broker):
             try:
                 self.declare_queue(canonical_queue_name, ensure=True)
                 self.logger.debug("Enqueueing message %r on queue %r.", message.message_id, queue_name)
-                self.emit_before("enqueue", message, delay)
+                try:
+                    self.emit_before("enqueue", message, delay)
+                except SkipEnqueue as e:
+                    self.logger.debug("Skipped enqueueing message %r: %s", message.message_id, e)
+                    return message
                 self.channel.basic_publish(
                     exchange="",
                     routing_key=queue_name,

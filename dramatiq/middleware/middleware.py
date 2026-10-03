@@ -37,6 +37,14 @@ class SkipMessage(MiddlewareError):
     """
 
 
+class SkipEnqueue(MiddlewareError):
+    """An exception that may be raised by Middleware inside the
+    ``before_enqueue`` hook in order to skip enqueueing a message.  The
+    broker's ``enqueue`` returns the message without publishing it and
+    ``after_enqueue`` is not emitted.
+    """
+
+
 class Middleware:
     """Base class for broker middleware.  The default implementations
     for all hooks are no-ops and subclasses may implement whatever
@@ -90,7 +98,13 @@ class Middleware:
         """Called after a delay queue has been declared."""
 
     def before_enqueue(self, broker: Broker, message: Message, delay: int) -> None:
-        """Called before a message is enqueued (including retries)."""
+        """Called before a message is enqueued (including retries).
+
+        Raises:
+          SkipEnqueue: If the message should not be enqueued.  When
+            this is raised, the broker returns the message without
+            publishing it and ``after_enqueue`` is not emitted.
+        """
 
     def after_enqueue(self, broker: Broker, message: Message, delay: int) -> None:
         """Called after a message has been enqueued (including retries)."""

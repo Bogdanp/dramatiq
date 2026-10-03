@@ -8,6 +8,18 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Added
+^^^^^
+
+* Middleware can now raise |SkipEnqueue| from its ``before_enqueue``
+  hook to stop a message from being enqueued.  The broker returns the
+  message without publishing it and ``after_enqueue`` is not emitted.
+  (`#276`_, `#890`_, `@ChrisJr404`_)
+
+.. _#276: https://github.com/Bogdanp/dramatiq/issues/276
+.. _#890: https://github.com/Bogdanp/dramatiq/pull/890
+.. _@ChrisJr404: https://github.com/ChrisJr404
+
 
 `2.2.1`_ -- 2026-09-01
 ----------------------
