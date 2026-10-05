@@ -415,6 +415,11 @@ execution::
   rabbitmq_broker = RabbitmqBroker(host="rabbitmq")
   dramatiq.set_broker(rabbitmq_broker)
 
+If you schedule messages with delays or retries longer than RabbitMQ's
+consumer acknowledgement timeout, pass the ``consumer_timeout`` option so
+they aren't requeued before they run.  See :ref:`consumer-timeouts` for
+details.
+
 Redis Broker
 ^^^^^^^^^^^^
 
