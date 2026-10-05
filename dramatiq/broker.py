@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Iterable, Optional, cast
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, cast
 
 from .errors import ActorNotFound
 from .logging import get_logger
@@ -26,8 +26,6 @@ from .middleware import Middleware, MiddlewareError, default_middleware
 from .results import ResultBackend, Results
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from .actor import Actor
     from .message import Message
 
