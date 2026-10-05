@@ -7,10 +7,7 @@ to test that Dramatiq's types can be "consumed" by user code without type errors
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
-
-if TYPE_CHECKING:
-    from typing_extensions import assert_type
+from typing import ParamSpec, TypeVar, assert_type
 
 import dramatiq
 
