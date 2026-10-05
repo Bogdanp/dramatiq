@@ -80,3 +80,4 @@ of those changes to CLEARTYPE SRL.
 | [@ABolouk](https://github.com/ABolouk)                 | Amirhossein Bolouk Asli|
 | [@JoaoAlmeida20](https://github.com/JoaoAlmeida20)     | João Almeida           |
 | [@albcunha](https://github.com/albcunha)               | Alberto Cunha          |
+| [@HardMax71](https://github.com/HardMax71)             | Max Azatian            |
