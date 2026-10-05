@@ -14,6 +14,7 @@ import dramatiq.worker
 from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import (
     MAX_DECLARE_ATTEMPTS,
+    MAX_ENQUEUE_ATTEMPTS,
     RabbitmqBroker,
     _IgnoreScaryLogs,
 )
@@ -278,6 +279,36 @@ def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reach
 
     # check declare was attempted the max number of times.
     assert mock_declare_queue.call_count == MAX_DECLARE_ATTEMPTS
+
+
+def test_rabbitmq_enqueue_gives_up_when_time_budget_exhausted(rabbitmq_broker):
+    # Given a short enqueue time budget
+    # And a publish that always fails with a connection error, slowly enough
+    # to exhaust that budget on the first attempt
+    def slow_failing_publish(*args, **kwargs):
+        time.sleep(0.05)
+        raise pika.exceptions.AMQPConnectionError
+
+    with (
+        patch("dramatiq.brokers.rabbitmq.MAX_ENQUEUE_DURATION", 10),
+        patch.object(
+            rabbitmq_broker.channel,
+            "basic_publish",
+            side_effect=slow_failing_publish,
+        ) as mock_basic_publish,
+    ):
+        # When I declare and use an actor
+        # Then a ConnectionClosed error should be raised
+        with pytest.raises(dramatiq.errors.ConnectionClosed):
+
+            @dramatiq.actor(queue_name="flaky_queue")
+            def do_work():
+                pass
+
+            do_work.send()
+
+    # check enqueue gave up on the time budget before reaching the attempt limit.
+    assert mock_basic_publish.call_count < MAX_ENQUEUE_ATTEMPTS
 
 
 def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_broker, rabbitmq_worker):
