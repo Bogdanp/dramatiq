@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 80.9.0, < 81"]
+requires = ["setuptools >= 84.0.0, < 85"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
@@ -54,7 +54,7 @@ source = ['dramatiq', 'tests']
 
 [tool.black]
 line-length = 120
-target-version = ["py310", "py311", "py312", "py313", "py314"]
+target-version = ["py311", "py312", "py313", "py314"]
 
 [tool.isort]
 line_length = 120
@@ -69,7 +69,7 @@ add_imports = [
 
 [tool.mypy]
 packages = ["dramatiq", "tests"]
-python_version = "3.10"
+python_version = "3.11"
 pretty = true
 show_column_numbers = true
 show_error_context = true

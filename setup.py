@@ -55,7 +55,7 @@ extra_dependencies = {
         "pika>=1.0,<2.0",
     ],
     "redis": [
-        "redis>=4.0,<9.0",
+        "redis>=5.0.0,<9.0",
     ],
     "watch": [
         "watchdog>=6.0.0",
@@ -87,12 +87,11 @@ setup(
         "dramatiq.results.backends",
     ],
     include_package_data=True,
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     extras_require=extra_dependencies,
     entry_points={"console_scripts": ["dramatiq = dramatiq.__main__:main"]},
     scripts=["bin/dramatiq-gevent"],
     classifiers=[
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
