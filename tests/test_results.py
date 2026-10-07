@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 import dramatiq
+from dramatiq import Worker
 from dramatiq.message import Message
 from dramatiq.middleware import Middleware, SkipMessage
 from dramatiq.results import ResultFailure, ResultMissing, Results, ResultTimeout
@@ -214,6 +215,54 @@ def test_messages_without_actor_not_crashing_lookup_options(stub_broker, redis_r
         options={},
     )
     assert Results(backend=redis_result_backend).after_nack(stub_broker, message) is None
+
+
+def test_results_middleware_stamps_store_results_on_enqueue(stub_broker, stub_result_backend):
+    # Given a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=stub_result_backend))
+
+    # And an actor that stores results
+    @dramatiq.actor(store_results=True)
+    def do_work():
+        return 42
+
+    # When I enqueue a message
+    message = do_work.send()
+
+    # Then store_results is copied onto the message so a worker
+    # without this actor imported can still persist failures
+    assert message.options.get("store_results") is True
+
+
+def test_actor_not_found_stores_exception_when_store_results_is_set(stub_broker, stub_result_backend):
+    # Given a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=stub_result_backend))
+
+    # And an actor that stores results
+    @dramatiq.actor(store_results=True, max_retries=0)
+    def do_work():
+        return 42
+
+    # When I enqueue a message and then remove the actor (as if the
+    # worker process never imported it)
+    message = do_work.send()
+    del stub_broker.actors[do_work.actor_name]
+
+    # And a worker processes that message
+    worker = Worker(stub_broker, worker_threads=1)
+    worker.start()
+    try:
+        stub_broker.join(do_work.queue_name, fail_fast=False)
+        worker.join()
+    finally:
+        worker.stop()
+
+    # Then the missing-actor failure is stored so get_result unblocks
+    with pytest.raises(ResultFailure) as e:
+        stub_result_backend.get_result(message, block=True, timeout=1000)
+
+    assert e.value.orig_exc_type == "ActorNotFound"
+    assert do_work.actor_name in e.value.orig_exc_msg
 
 
 def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):
