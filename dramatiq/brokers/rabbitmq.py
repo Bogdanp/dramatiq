@@ -82,8 +82,8 @@ class RabbitmqBroker(Broker):
         (where lower numbers are higher priorities).
 
     See also:
-      ConnectionParameters_ for a list of all the available connection
-      parameters.
+      :external+pika:class:`pika.ConnectionParameters` for a list of all the available connection
+      parameters that can be passed as kwargs to the ``RabbitmqBroker``.
 
     Parameters:
       confirm_delivery(bool): Wait for RabbitMQ to confirm that
@@ -101,8 +101,6 @@ class RabbitmqBroker(Broker):
         to determine which Rabbit server(s) to connect to.
       **kwargs: The (pika) connection parameters to use to
         determine which Rabbit server to connect to.
-
-    .. _ConnectionParameters: https://pika.readthedocs.io/en/stable/modules/parameters.html
     """
 
     def __init__(
