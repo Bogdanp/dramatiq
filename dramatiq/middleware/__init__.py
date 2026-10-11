@@ -22,7 +22,7 @@ from .asyncio import AsyncIO
 from .callbacks import Callbacks
 from .current_message import CurrentMessage
 from .group_callbacks import GroupCallbacks
-from .middleware import Middleware, MiddlewareError, SkipMessage
+from .middleware import Middleware, MiddlewareError, SkipEnqueue, SkipMessage
 from .pipelines import Pipelines
 from .retries import Retries
 from .shutdown import Shutdown, ShutdownNotifications
@@ -33,6 +33,7 @@ __all__ = [
     # Basics
     "Middleware",
     "MiddlewareError",
+    "SkipEnqueue",
     "SkipMessage",
     # Threading
     "Interrupt",
