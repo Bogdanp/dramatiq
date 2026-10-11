@@ -54,7 +54,7 @@ source = ['dramatiq', 'tests']
 
 [tool.black]
 line-length = 120
-target-version = ["py311", "py312", "py313", "py314"]
+target-version = ["py311", "py312", "py313", "py314", "py315"]
 
 [tool.isort]
 line_length = 120
