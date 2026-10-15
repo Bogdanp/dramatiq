@@ -71,7 +71,8 @@ class RedisBroker(Broker):
 
     Parameters:
       url(str): An optional connection URL.  If both a URL and
-        connection parameters are provided, the URL is used.
+        connection parameters are provided, the URL supplies the
+        address and the extra parameters are still applied.
       middleware(list[Middleware])
       maintenance_chance(int): How many commands out of a million
         should trigger queue maintenance.
@@ -102,8 +103,12 @@ class RedisBroker(Broker):
     ):
         super().__init__(middleware=middleware)
 
-        if url:
-            parameters["connection_pool"] = redis.ConnectionPool.from_url(url)
+        if client is not None:
+            self.client = client
+        elif url:
+            self.client = redis.Redis.from_url(url, **parameters)
+        else:
+            self.client = redis.Redis(**parameters)
 
         self.broker_id = str(uuid4())
         self.namespace = namespace
@@ -111,7 +116,6 @@ class RedisBroker(Broker):
         self.heartbeat_timeout = heartbeat_timeout
         self.dead_message_ttl = dead_message_ttl
         self.queues = set()
-        self.client = client or redis.Redis(**parameters)
         self.scripts = {name: self.client.register_script(script) for name, script in _scripts.items()}
 
     @property

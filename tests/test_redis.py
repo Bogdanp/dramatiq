@@ -321,6 +321,22 @@ def test_redis_broker_can_connect_via_url():
     assert broker.client.ping()
 
 
+def test_redis_broker_url_forwards_connection_parameters():
+    # Given a URL and extra redis-py connection parameters
+    # When I construct a RedisBroker
+    broker = RedisBroker(
+        url="redis://127.0.0.1:6379/0",
+        socket_timeout=5,
+        client_name="dramatiq-test",
+    )
+
+    # Then those parameters should apply to the connection pool
+    # rather than being dropped because the URL path built the pool first.
+    pool_kwargs = broker.client.connection_pool.connection_kwargs
+    assert pool_kwargs.get("socket_timeout") == 5
+    assert pool_kwargs.get("client_name") == "dramatiq-test"
+
+
 def test_redis_broker_can_connect_via_client():
     # Given that I already have redis client in hand
     # When I pass it to RedisBroker
