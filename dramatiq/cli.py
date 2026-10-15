@@ -420,7 +420,8 @@ def worker_process(args, worker_id, logging_pipe, canteen, event):
             running = False
         else:
             logger.warning("Killing worker process...")
-            return sys.exit(RET_KILLED)
+            # sys.exit would wait on non-daemon threads (e.g. the AsyncIO event loop)
+            os._exit(RET_KILLED)
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, termhandler)
@@ -501,7 +502,7 @@ def fork_process(args, fork_id, fork_path, logging_pipe):
         nonlocal stopped
         if stopped:
             logger.warning("Killing fork process...")
-            return sys.exit(RET_KILLED)
+            os._exit(RET_KILLED)
         else:
             logger.info("Stopping fork process...")
             stopped = True
