@@ -20,6 +20,7 @@ from __future__ import annotations
 # Don't depend on *anything* in this module.  The contents of this
 # module can and *will* change without notice.
 import sys
+import threading
 from contextlib import contextmanager
 
 
@@ -36,6 +37,18 @@ class StreamablePipe:
     def __init__(self, pipe, *, encoding="utf-8"):
         self.encoding = encoding
         self.pipe = pipe
+        self._write_lock = threading.Lock()
+
+    def __getstate__(self):
+        return {
+            "encoding": self.encoding,
+            "pipe": self.pipe,
+        }
+
+    def __setstate__(self, state):
+        self.encoding = state["encoding"]
+        self.pipe = state["pipe"]
+        self._write_lock = threading.Lock()
 
     def fileno(self):
         return self.pipe.fileno()
@@ -53,7 +66,10 @@ class StreamablePipe:
         raise NotImplementedError("StreamablePipes cannot be read from!")
 
     def write(self, s):
-        self.pipe.send_bytes(s.encode(self.encoding, errors="replace"))
+        # send_bytes splits large frames into a header and payload write.  Keep
+        # concurrent stderr/stdout writers from interleaving those frames.
+        with self._write_lock:
+            self.pipe.send_bytes(s.encode(self.encoding, errors="replace"))
 
     @property
     def closed(self):
