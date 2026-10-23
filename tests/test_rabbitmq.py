@@ -634,3 +634,25 @@ def test_rabbitmq_queues_only_contains_canonical_name(rabbitmq_broker, rabbitmq_
 
     assert len(rabbitmq_broker.queues) == 1
     assert put.queue_name in rabbitmq_broker.queues
+
+
+def test_rabbitmq_broker_skips_enqueue_when_middleware_raises(rabbitmq_broker):
+    # Given a middleware that skips enqueueing every message
+    class SkipEnqueueMiddleware(dramatiq.middleware.Middleware):
+        def before_enqueue(self, broker, message, delay):
+            raise dramatiq.middleware.SkipEnqueue("skip this one")
+
+    rabbitmq_broker.add_middleware(SkipEnqueueMiddleware())
+
+    # And an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # Then the message is returned but nothing is enqueued
+    assert message is not None
+    queue_count, _, _ = rabbitmq_broker.get_queue_message_counts(do_work.queue_name)
+    assert queue_count == 0
