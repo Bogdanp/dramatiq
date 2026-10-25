@@ -196,3 +196,53 @@ def test_exception_from_actor_doesnt_leak(
     finally:
         # Re-enable GC after test is finished.
         gc.enable()
+
+
+def test_worker_threads_survive_interrupts_raised_while_handling_failures(stub_broker: StubBroker) -> None:
+    # Given a middleware that raises a TimeLimitExceeded interrupt the
+    # first time a message is post-processed
+    class InterruptOnceMiddleware(dramatiq.Middleware):
+        def __init__(self) -> None:
+            self.interrupted = False
+            self.post_processed: list[str] = []
+
+        def after_process_message(self, broker, message, *, result=None, exception=None):
+            if not self.interrupted:
+                self.interrupted = True
+                raise dramatiq.middleware.TimeLimitExceeded()
+
+        def after_ack(self, broker, message):
+            self.post_processed.append(message.message_id)
+
+        after_nack = after_ack
+
+    middleware = InterruptOnceMiddleware()
+    stub_broker.add_middleware(middleware)
+
+    # And an actor that fails on its first call
+    calls = []
+
+    @dramatiq.actor(max_retries=0)
+    def do_work(value):
+        calls.append(value)
+        if value == 1:
+            raise RuntimeError("failed")
+
+    # And a worker with a single worker thread
+    with worker(stub_broker, worker_timeout=100, worker_threads=1) as stub_worker:
+        # When I send that actor two messages
+        first_message = do_work.send(1)
+        second_message = do_work.send(2)
+
+        # And wait for them to be processed
+        stub_broker.join(do_work.queue_name, timeout=5000, fail_fast=False)
+        stub_worker.join()
+
+        # Then both messages should have been processed
+        assert calls == [1, 2]
+
+        # And each message should have been acked or rejected exactly once
+        assert middleware.post_processed == [first_message.message_id, second_message.message_id]
+
+        # And the worker thread should still be alive
+        assert stub_worker.workers[0].is_alive()
