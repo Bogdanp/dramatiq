@@ -21,7 +21,7 @@ import os
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from ..common import current_millis
+from ..common import current_millis, q_name
 from ..logging import get_logger
 from .middleware import Middleware
 
@@ -135,9 +135,13 @@ class Prometheus(Middleware):
         self.logger.debug("Marking process dead...")
         multiprocess.mark_process_dead(os.getpid(), DB_PATH)
 
+    def after_ack(self, broker, message):
+        self._forget_delayed_message(message)
+
     def after_nack(self, broker, message):
         labels = (message.queue_name, message.actor_name)
         self.total_rejected_messages.labels(*labels).inc()
+        self._forget_delayed_message(message)
 
     def after_enqueue(self, broker, message, delay):
         if "retries" in message.options:
@@ -145,16 +149,24 @@ class Prometheus(Middleware):
             self.total_retried_messages.labels(*labels).inc()
 
     def before_delay_message(self, broker, message):
-        labels = (message.queue_name, message.actor_name)
+        if message.message_id in self.delayed_messages:
+            return
+
+        labels = (q_name(message.queue_name), message.actor_name)
         self.delayed_messages.add(message.message_id)
         self.inprogress_delayed_messages.labels(*labels).inc()
 
+    def _forget_delayed_message(self, message):
+        try:
+            self.delayed_messages.remove(message.message_id)
+        except KeyError:
+            return
+
+        labels = (q_name(message.queue_name), message.actor_name)
+        self.inprogress_delayed_messages.labels(*labels).dec()
+
     def before_process_message(self, broker, message):
         labels = (message.queue_name, message.actor_name)
-        if message.message_id in self.delayed_messages:
-            self.delayed_messages.remove(message.message_id)
-            self.inprogress_delayed_messages.labels(*labels).dec()
-
         self.inprogress_messages.labels(*labels).inc()
         self.message_start_times[message.message_id] = current_millis()
 
