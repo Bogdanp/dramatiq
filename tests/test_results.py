@@ -216,6 +216,31 @@ def test_messages_without_actor_not_crashing_lookup_options(stub_broker, redis_r
     assert Results(backend=redis_result_backend).after_nack(stub_broker, message) is None
 
 
+def test_messages_without_actor_store_actor_not_found_exceptions(stub_broker, stub_worker, result_backend):
+    # Given a result backend
+    # And a broker with the results middleware
+    stub_broker.add_middleware(Results(backend=result_backend))
+
+    # And a message for an actor that doesn't exist, that asks for its results to be stored
+    stub_broker.declare_queue("default")
+    message = stub_broker.enqueue(
+        Message(
+            queue_name="default",
+            actor_name="idontexist",
+            args=(),
+            kwargs={},
+            options={"store_results": True},
+        )
+    )
+
+    # When I wait for a result
+    # Then an ActorNotFound failure should be raised instead of timing out
+    with pytest.raises(ResultFailure) as e:
+        result_backend.get_result(message, block=True, timeout=5000)
+
+    assert e.value.orig_exc_type == "ActorNotFound"
+
+
 def test_messages_can_fail_to_get_results_if_there_is_no_backend(stub_broker, stub_worker):
     # Given an actor that doesn't store results
     @dramatiq.actor
