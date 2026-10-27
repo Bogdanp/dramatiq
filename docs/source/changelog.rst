@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Worker threads no longer die when an interrupt, such as |TimeLimitExceeded|,
+  is raised while a failed message is being handled. Previously, each of these
+  would silently kill a worker thread until the worker stopped processing messages.
+  (`#445`_, `@AadiVerma`_)
+
+.. _#445: https://github.com/Bogdanp/dramatiq/issues/445
+.. _@AadiVerma: https://github.com/AadiVerma
 
 `2.2.1`_ -- 2026-09-01
 ----------------------

@@ -31,6 +31,7 @@ from .common import current_millis, iter_queue, join_all, q_name
 from .errors import ActorNotFound, BrokerConnectionError, RateLimitExceeded, Retry
 from .logging import get_logger
 from .middleware import Middleware, SkipMessage
+from .middleware.threading import Interrupt
 from .results.middleware import Results
 
 #: The number of milliseconds to wait before restarting consumers
@@ -532,9 +533,17 @@ class WorkerThread(Thread):
 
             try:
                 item = self.work_queue.get(timeout=self.timeout)
-                self.process_message(item.message)
             except Empty:
                 continue
+
+            try:
+                self.process_message(item.message)
+            except Interrupt:
+                self.logger.error(
+                    "Worker thread was interrupted while handling message %r.",
+                    item.message.message_id,
+                    exc_info=True,
+                )
 
         self.broker.emit_before("worker_thread_shutdown", self)
         self.logger.debug("Worker thread stopped.")
