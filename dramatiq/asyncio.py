@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 import asyncio
-import concurrent.futures
 import functools
 import logging
 import threading
@@ -147,10 +146,7 @@ class EventLoopThread(threading.Thread):
                     # Use a timeout to be able to catch asynchronously
                     # raised dramatiq exceptions (Interrupt).
                     return future.result(timeout=self.interrupt_check_ival)
-                except (
-                    # TODO replace with built-in TimeoutError once 3.10 support dropped.
-                    concurrent.futures.TimeoutError
-                ):
+                except TimeoutError:
                     # NOTE: TimeoutError caught here could be from future.result() timing out (i.e. future not done yet),
                     # or a TimeoutError raised inside the future itself (future is done).
                     if not future.done():

@@ -114,7 +114,7 @@ RabbitMQ
 When running RabbitMQ with a `high availability cluster`_, you can
 pass
 
-* a sequence of pika `connection parameters`_ or
+* a list of dicts of connection parameters (that are passed as kwargs to :external+pika:class:`pika.ConnectionParameters`) or
 * a connection URL with one or more targets split by ``;`` or
 * a list connection URLs
 
@@ -145,7 +145,6 @@ failover if the currently connected node fails.
    )
 
 .. _high availability cluster: https://www.rabbitmq.com/ha.html
-.. _connection parameters: https://pika.readthedocs.io/en/0.12.0/modules/parameters.html
 
 
 Other brokers

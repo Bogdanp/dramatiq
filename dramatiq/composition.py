@@ -202,8 +202,12 @@ class group:
 
     def add_completion_callback(self, message):
         """Adds a completion callback to run once every job in this
-        group has completed.  Each group may have multiple completion
+        group has completed successfully.  Each group may have multiple completion
         callbacks.
+
+        Important:
+          If any job in the group does not complete successfully,
+          the completion callback will not be run.
 
         Warning:
           This functionality is dependent upon the optional |GroupCallbacks|

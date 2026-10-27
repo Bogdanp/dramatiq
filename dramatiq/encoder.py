@@ -66,6 +66,10 @@ class PickleEncoder(Encoder):
     Warning:
       This encoder is not secure against maliciously-constructed data.
       Use it at your own risk.
+      Decoding malicious data can cause **arbitrary code execution**.
+      For more details see the warnings in the `Python pickle documentation`_.
+
+    .. _Python pickle documentation: https://docs.python.org/3/library/pickle.html
     """
 
     def encode(self, data: MessageData) -> bytes:
