@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 import time
 from unittest import mock
 
@@ -340,25 +341,26 @@ def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(red
         redis_broker.idontexist
 
 
-@pytest.mark.parametrize(
-    "exception",
-    [redis.ConnectionError("Connection refused"), redis.TimeoutError("Timeout reading from socket")],
-)
-def test_redis_consumer_treats_socket_errors_as_connection_loss(exception):
-    # Given that I have a Redis broker that never connects
-    broker = RedisBroker(url="redis://127.0.0.1:1/0")
-    consumer = broker.consume("default", prefetch=1, timeout=100)
-    message = Message(queue_name="default", actor_name="do_work", args=(), kwargs={}, options={"redis_message_id": "x"})
+@pytest.mark.parametrize("listening", [False, True], ids=["connection-refused", "socket-timeout"])
+def test_redis_consumer_treats_socket_errors_as_connection_loss(listening):
+    # Given that I have a Redis broker whose server refuses the connection, or accepts it and never answers
+    # (a local Redis answers before the tiny socket_timeout fires, since poll() waits at least 1 ms)
+    with socket.create_server(("127.0.0.1", 0)) as server:
+        port = server.getsockname()[1] if listening else 1
+        broker = RedisBroker(host="127.0.0.1", port=port, socket_timeout=0.00000000001, retry=None)
+        consumer = broker.consume("default", prefetch=1, timeout=100)
+        message = Message(
+            queue_name="default", actor_name="do_work", args=(), kwargs={}, options={"redis_message_id": "x"}
+        )
 
-    # When fetching, acking or nacking fails with a connection or a socket timeout error
-    for method in ("do_fetch", "do_ack", "do_nack"):
-        with mock.patch.object(broker, method, side_effect=exception):
-            # I expect the consumer to report a closed connection either way
-            with pytest.raises(ConnectionClosed):
-                if method == "do_fetch":
-                    next(consumer)
-                else:
-                    getattr(consumer, method[3:])(message)
+        # When I fetch, ack or nack
+        # Then I expect the consumer to report a closed connection either way
+        with pytest.raises(ConnectionClosed):
+            next(consumer)
+        with pytest.raises(ConnectionClosed):
+            consumer.ack(message)
+        with pytest.raises(ConnectionClosed):
+            consumer.nack(message)
 
 
 def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_worker):
