@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* A second ``SIGTERM`` now ends a worker or fork process with ``os._exit``
+  instead of ``sys.exit``, which waited forever on non-daemon threads such
+  as the ``AsyncIO`` middleware's event loop thread while the process kept
+  consuming messages. (`#899`_, `@HardMax71`_)
+
+.. _#899: https://github.com/Bogdanp/dramatiq/issues/899
+.. _@HardMax71: https://github.com/HardMax71
+
 
 `2.2.1`_ -- 2026-09-01
 ----------------------
