@@ -130,6 +130,7 @@ The class hierarchy for middleware exceptions:
     +-- Exception
     |   +-- dramatiq.middleware.MiddlewareError
     |       +-- dramatiq.middleware.SkipMessage
+    |       +-- dramatiq.middleware.SkipEnqueue
     +-- dramatiq.middleware.Interrupt
         +-- dramatiq.middleware.Shutdown
         +-- dramatiq.middleware.TimeLimitExceeded
@@ -138,6 +139,8 @@ The class hierarchy for middleware exceptions:
 .. autoexception:: dramatiq.middleware.MiddlewareError
    :show-inheritance:
 .. autoexception:: dramatiq.middleware.SkipMessage
+   :show-inheritance:
+.. autoexception:: dramatiq.middleware.SkipEnqueue
    :show-inheritance:
 .. autoexception:: dramatiq.middleware.Interrupt
    :show-inheritance:

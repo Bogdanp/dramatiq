@@ -488,3 +488,24 @@ def test_redis_join_race_condition(redis_broker):
 
     assert called
     assert size == [4, 4, 2, 2]
+
+
+def test_redis_broker_skips_enqueue_when_middleware_raises(redis_broker):
+    # Given a middleware that skips enqueueing every message
+    class SkipEnqueueMiddleware(dramatiq.middleware.Middleware):
+        def before_enqueue(self, broker, message, delay):
+            raise dramatiq.middleware.SkipEnqueue("skip this one")
+
+    redis_broker.add_middleware(SkipEnqueueMiddleware())
+
+    # And an actor
+    @dramatiq.actor
+    def do_work():
+        pass
+
+    # When I send that actor a message
+    message = do_work.send()
+
+    # Then the message is returned but nothing is enqueued
+    assert message is not None
+    assert redis_broker.do_qsize(do_work.queue_name) == 0
