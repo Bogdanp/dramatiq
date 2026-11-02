@@ -256,6 +256,82 @@ stay as close as possible to the "native" Dramatiq API.
 .. _flask: http://flask.pocoo.org
 
 
+Application Factory pattern
+---------------------------
+
+The ``@dramatiq.actor`` decorator tries to connect to the broker at
+import time, which is problematic if you want to use the application
+factory pattern. A possible way to overcome this is temporarily use
+a ``StubBroker``, which is then replaced by your real broker when
+its configuration is known:
+
+.. code-block:: python
+
+   # contents of processing/tasks.py
+   import dramatiq
+   from dramatiq.brokers.stub import StubBroker
+
+   dramatiq.set_broker(StubBroker())
+
+   @dramatiq.actor
+   def some_task(message: str):
+       print(f"Received message: {message}")
+
+
+Then you can have a ``setup_broker()`` function which is called
+by both your dramatiq worker process and your client code:
+
+.. code-block:: python
+
+   # contents of processing/broker.py
+   import dramatiq
+   from dramatiq.brokers.redis import RedisBroker
+
+   from .. import config
+
+   # importing the tasks here is crucial, as it will ensure the
+   # stub broker is initialized
+   from . import tasks  # noqa
+
+
+   def setup_broker(settings | None = None) -> None:
+       settings = settings or config.get_settings()
+       if settings.message_broker_dsn is not None:
+           new_broker = RedisBroker(
+               host=settings.message_broker_dsn.host,
+               port=settings.message_broker_dsn.port,
+           )
+           old_broker = dramatiq.get_broker()
+           # reconfigure actors to use the new broker
+           for existing_actor_name in old_broker.get_declared_actors():
+               actor = old_broker.get_actor(existing_actor_name)
+               actor.broker = new_broker
+               new_broker.declare_actor(actor)
+           dramatiq.set_broker(new_broker)
+       else:
+           print("No message broker DSN configured, skipping broker setup")
+
+
+You can start your dramatiq worker like this:
+
+.. code-block:: bash
+
+   dramatiq processing.broker:setup_broker processing.tasks
+
+And you can setup your application factory function like this:
+
+.. code-block:: python
+
+   # contents of webapp.py
+   def create_app_from_settings(settings):
+       setup_broker(settings)
+       app = Starlette()  # or whatever other app
+       # configure your app
+       return app
+
+
+
+
 Operations
 ----------
 
