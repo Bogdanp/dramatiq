@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* The ``dramatiq_delayed_messages_inprogress`` gauge of the |Prometheus| middleware
+  is now decremented once the delayed message is moved to its queue, instead of
+  growing forever when another worker process picked the message up.
+  (`#672`_, `@AadiVerma`_)
+
+.. _#672: https://github.com/Bogdanp/dramatiq/issues/672
+.. _@AadiVerma: https://github.com/AadiVerma
 
 `2.2.1`_ -- 2026-09-01
 ----------------------
