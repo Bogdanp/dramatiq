@@ -37,6 +37,7 @@ from .asyncio import async_to_sync
 from .broker import Broker, get_broker
 from .logging import get_logger
 from .message import Message
+from .registry import Registry, get_registry
 
 #: The regular expression that represents valid queue names.
 _queue_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9._-]*")
@@ -290,7 +291,7 @@ def actor(
     """
 
     def decorator(fn: Callable[..., Union[Awaitable[R], R]]) -> Actor[P, R]:
-        nonlocal actor_name, broker
+        nonlocal actor_name
         actor_name = actor_name or fn.__name__
         if not _queue_name_re.fullmatch(queue_name):
             raise ValueError(
@@ -298,21 +299,28 @@ def actor(
                 "by any number of letters, digits, dashes or underscores."
             )
 
-        broker = broker or get_broker()
-        invalid_options = set(options) - broker.actor_options
-        if invalid_options:
-            invalid_options_list = ", ".join(invalid_options)
-            raise ValueError(
-                "The following actor options are undefined: %s. Did you forget to add a middleware to your Broker?"
-                % invalid_options_list
-            )
+        target_broker: Union[Broker, Registry]
+        if broker is None:
+            registry = get_registry()
+            target_broker = registry if registry is not None else get_broker()
+        else:
+            target_broker = broker
+
+        if not isinstance(target_broker, Registry) or target_broker.broker is not None:
+            invalid_options = set(options) - target_broker.actor_options
+            if invalid_options:
+                invalid_options_list = ", ".join(invalid_options)
+                raise ValueError(
+                    "The following actor options are undefined: %s. Did you forget to add a middleware to your Broker?"
+                    % invalid_options_list
+                )
 
         return actor_class(
             fn,
             actor_name=actor_name,
             queue_name=queue_name,
             priority=priority,
-            broker=broker,
+            broker=target_broker,
             options=options,
         )
 
