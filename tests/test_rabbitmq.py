@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 from threading import Event
 from unittest.mock import Mock, patch
@@ -278,6 +279,81 @@ def test_rabbitmq_broker_stops_retrying_declaring_queues_when_max_attempts_reach
 
     # check declare was attempted the max number of times.
     assert mock_declare_queue.call_count == MAX_DECLARE_ATTEMPTS
+
+
+def test_rabbitmq_broker_ensure_queue_does_not_lose_concurrent_pending_marks():
+    """_ensure_queue used to discard a queue from queues_pending as soon
+    as its own declare call returned, with no synchronization against
+    another thread concurrently marking that same queue pending again
+    (e.g. because _RabbitmqConsumer.__next__ saw a 404 on the delay queue
+    and re-added the canonical queue name to queues_pending while the
+    first thread's declare was still in flight). That lost the concurrent
+    re-declare request: the queue ended up missing from queues_pending
+    even though something had just flagged it as needing to be
+    re-declared, so a real "the queue doesn't exist on the server"
+    condition could go unresolved indefinitely.
+
+    This drives both threads through the real, lock-protected code paths
+    (_ensure_queue and the mark-pending call _RabbitmqConsumer.__next__
+    makes on a 404) rather than mutating queues_pending directly, so it
+    exercises the actual fix.
+
+    Regression test for #794.
+    """
+    # Given a broker with a queue that's already marked pending
+    broker = RabbitmqBroker(host="127.0.0.1")
+    broker.queues.add("flaky_queue")
+    broker.queues_pending.add("flaky_queue")
+
+    declare_started = Event()
+    release_declare = Event()
+
+    def slow_declare_queue(queue_name):
+        # Simulate a slow network round-trip to the RabbitMQ server.
+        declare_started.set()
+        assert release_declare.wait(timeout=5), "test setup timed out"
+
+    with (
+        patch.object(broker, "_declare_queue", side_effect=slow_declare_queue),
+        patch.object(broker, "_declare_dq_queue", return_value=None),
+        patch.object(broker, "_declare_xq_queue", return_value=None),
+    ):
+        # When one thread (e.g. the main-queue ConsumerThread) is in the
+        # middle of declaring "flaky_queue" because it was pending...
+        declaring_thread = threading.Thread(target=broker._ensure_queue, args=("flaky_queue",))
+        declaring_thread.start()
+        assert declare_started.wait(timeout=5), "declare never started"
+
+        # ...and, concurrently, another thread (e.g. the delay-queue
+        # ConsumerThread reacting to a 404) decides the queue needs to be
+        # re-declared and marks it pending again, through the same
+        # lock-protected path _RabbitmqConsumer.__next__ uses...
+        def mark_pending_again():
+            with broker._lock_for_queue("flaky_queue"):
+                broker.queues_pending.add("flaky_queue")
+
+        marking_thread = threading.Thread(target=mark_pending_again)
+        marking_thread.start()
+
+        # Give the marking thread a moment to reach (and block on) the
+        # per-queue lock the declaring thread is holding, so we know
+        # we're genuinely exercising the contended path rather than
+        # racing marking_thread.start() against the assertions below.
+        time.sleep(0.05)
+
+        # ...then the first thread's declare call returns and discards
+        # the queue from queues_pending it observed when it started.
+        release_declare.set()
+        declaring_thread.join(timeout=5)
+        assert not declaring_thread.is_alive(), "declaring thread never finished"
+
+        marking_thread.join(timeout=5)
+        assert not marking_thread.is_alive(), "marking thread never finished"
+
+        # Then the concurrent pending mark should not have been lost: the
+        # queue still needs to be (re-)declared on the server, so it must
+        # still be in queues_pending.
+        assert "flaky_queue" in broker.queues_pending
 
 
 def test_rabbitmq_messages_belonging_to_missing_actors_are_rejected(rabbitmq_broker, rabbitmq_worker):
