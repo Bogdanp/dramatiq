@@ -14,10 +14,12 @@ import dramatiq.worker
 from dramatiq import Message, QueueJoinTimeout, Worker
 from dramatiq.brokers.rabbitmq import (
     MAX_DECLARE_ATTEMPTS,
+    MIN_CONSUMER_TIMEOUT,
     RabbitmqBroker,
     _IgnoreScaryLogs,
 )
 from dramatiq.common import current_millis
+from dramatiq.middleware import Middleware
 
 from .common import (
     RABBITMQ_CREDENTIALS,
@@ -209,6 +211,61 @@ def test_rabbitmq_actors_can_delay_messages_independent_of_each_other(rabbitmq_b
 
         # I expect the latter message to have been run first
         assert results == [2, 1]
+    finally:
+        worker.stop()
+
+
+def test_rabbitmq_consumer_timeout_configures_the_delay_queue_lease():
+    # Given a broker without a consumer_timeout, no re-lease is declared
+    assert RabbitmqBroker(host="127.0.0.1").delay_queue_lease_ms is None
+
+    # Given a broker with a consumer_timeout, the lease is 75% of it
+    broker = RabbitmqBroker(host="127.0.0.1", consumer_timeout=MIN_CONSUMER_TIMEOUT)
+    assert broker.consumer_timeout == MIN_CONSUMER_TIMEOUT
+    assert broker.delay_queue_lease_ms == int(MIN_CONSUMER_TIMEOUT * 0.75)
+
+    # And a consumer_timeout below the 30-minute minimum is rejected
+    with pytest.raises(ValueError):
+        RabbitmqBroker(host="127.0.0.1", consumer_timeout=MIN_CONSUMER_TIMEOUT - 1)
+
+
+def test_rabbitmq_delayed_messages_are_re_leased_before_consumer_timeout(rabbitmq_broker):
+    # Given a broker whose delay-queue lease is far shorter than the delay,
+    # the consumer must re-lease the held message several times before its
+    # eta -- keeping long delays from tripping the consumer-ack timeout.
+    rabbitmq_broker.delay_queue_lease_ms = 1500
+
+    delay_events = []
+
+    class CountDelays(Middleware):
+        def before_delay_message(self, broker, message):
+            delay_events.append(message.message_id)
+
+    rabbitmq_broker.add_middleware(CountDelays())
+
+    run_times = []
+
+    @dramatiq.actor
+    def record():
+        run_times.append(current_millis())
+
+    worker = Worker(rabbitmq_broker, worker_threads=1)
+    try:
+        # When I send a message delayed (5s) well beyond the lease (1.5s)
+        start = current_millis()
+        record.send_with_options(delay=5000)
+        worker.start()
+
+        # join() doesn't wait on unacked/in-flight delayed messages, so poll.
+        deadline = current_millis() + 15000
+        while current_millis() < deadline and not run_times:
+            time.sleep(0.1)
+
+        # Then it runs exactly once, at roughly its eta (not the lease time),
+        assert len(run_times) == 1
+        assert 5000 <= run_times[0] - start <= 9000
+        # and it was re-leased at least once on the way there.
+        assert len(delay_events) >= 2
     finally:
         worker.stop()
 
