@@ -22,7 +22,7 @@ import os
 import time
 from functools import partial
 from itertools import chain
-from threading import Event, local
+from threading import Event, Lock, local
 from typing import Any, Optional, Union
 
 import pika
@@ -150,6 +150,17 @@ class RabbitmqBroker(Broker):
         # 'pending_queues' is the Queues that may not exist in RabbitMQ because we haven't attempted to create them yet.
         # Also, should only contain 'canonical' queue names.
         self.queues_pending: set[str] = set()
+        # One lock per canonical queue name, guarding that queue's entry
+        # in queues_pending. Multiple ConsumerThreads (main queue, delay
+        # queue) and the enqueue() retry path can all mark or clear the
+        # same canonical queue's pending state concurrently; without a
+        # lock, a thread that finishes declaring a queue can unconditionally
+        # discard() a pending mark that another thread added *after* that
+        # declare started, silently losing a genuine "this queue needs to
+        # be (re-)declared" signal. See #794. Per-queue (rather than one
+        # global lock) so that declaring unrelated queues isn't serialized.
+        self._queue_declare_locks: dict[str, Lock] = {}
+        self._queue_declare_locks_lock = Lock()
         self.state = local()
 
     @property
@@ -265,6 +276,16 @@ class RabbitmqBroker(Broker):
         self.declare_queue(queue_name, ensure=True)
         return self.consumer_class(self, queue_name, prefetch, timeout)
 
+    def _lock_for_queue(self, canonical_queue_name: str) -> Lock:
+        """Get (creating if necessary) the lock that guards
+        canonical_queue_name's entry in queues_pending.
+        """
+        with self._queue_declare_locks_lock:
+            lock = self._queue_declare_locks.get(canonical_queue_name)
+            if lock is None:
+                lock = self._queue_declare_locks[canonical_queue_name] = Lock()
+            return lock
+
     def declare_queue(self, queue_name: str, *, ensure: bool = False) -> None:
         """Declare a queue.  Has no effect if a queue with the given
         name already exists.
@@ -297,11 +318,19 @@ class RabbitmqBroker(Broker):
         attempts = 0
         while True:
             try:
-                if canonical_queue_name in self.queues_pending:
-                    self._declare_queue(canonical_queue_name)
-                    self._declare_dq_queue(canonical_queue_name)
-                    self._declare_xq_queue(canonical_queue_name)
-                    self.queues_pending.discard(canonical_queue_name)
+                # Hold this queue's lock across the whole check/declare/
+                # discard sequence so a concurrent thread marking the same
+                # canonical queue pending again (enqueue()'s retry path,
+                # or _RabbitmqConsumer.__next__'s 404 handler) can't have
+                # its signal silently lost between our check and our
+                # discard(). Only this one canonical queue is affected;
+                # other queues declare concurrently as before. See #794.
+                with self._lock_for_queue(canonical_queue_name):
+                    if canonical_queue_name in self.queues_pending:
+                        self._declare_queue(canonical_queue_name)
+                        self._declare_dq_queue(canonical_queue_name)
+                        self._declare_xq_queue(canonical_queue_name)
+                        self.queues_pending.discard(canonical_queue_name)
 
                 break
             except (
@@ -411,7 +440,9 @@ class RabbitmqBroker(Broker):
                 # a message is enqueued.
                 # Note this only happens when confirm_delivery is enabled.
                 if isinstance(e, pika.exceptions.UnroutableError):
-                    self.queues_pending.add(q_name(queue_name))
+                    canonical_queue_name = q_name(queue_name)
+                    with self._lock_for_queue(canonical_queue_name):
+                        self.queues_pending.add(canonical_queue_name)
 
                 attempts += 1
                 if attempts >= MAX_ENQUEUE_ATTEMPTS:
@@ -589,7 +620,9 @@ class _RabbitmqConsumer(Consumer):
             # If the queue disappears, add it to the set of pending queues
             # so that it can be redeclared on when the consumer restarts.
             if getattr(e, "reply_code", None) == 404:
-                self.broker.queues_pending.add(q_name(self.queue_name))
+                canonical_queue_name = q_name(self.queue_name)
+                with self.broker._lock_for_queue(canonical_queue_name):
+                    self.broker.queues_pending.add(canonical_queue_name)
             raise ConnectionClosed(e) from None
 
         try:
