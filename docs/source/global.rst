@@ -36,6 +36,7 @@
 .. |ShutdownNotifications| replace:: :class:`ShutdownNotifications<dramatiq.middleware.ShutdownNotifications>`
 .. |Shutdown| replace:: :class:`Shutdown<dramatiq.middleware.Shutdown>`
 .. |SkipMessage| replace:: :class:`SkipMessage<dramatiq.middleware.SkipMessage>`
+.. |SkipEnqueue| replace:: :class:`SkipEnqueue<dramatiq.middleware.SkipEnqueue>`
 .. |StubBroker_flush_all| replace:: :meth:`StubBroker.flush_all<dramatiq.brokers.stub.StubBroker.flush_all>`
 .. |StubBroker_flush| replace:: :meth:`StubBroker.flush<dramatiq.brokers.stub.StubBroker.flush>`
 .. |StubBroker_join| replace:: :meth:`StubBroker.join<dramatiq.brokers.stub.StubBroker.join>`

@@ -28,7 +28,7 @@ from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, iter_queue, join_queue
 from ..errors import QueueNotFound
 from ..message import Message
-from ..middleware import Middleware
+from ..middleware import Middleware, SkipEnqueue
 
 
 class StubBroker(Broker):
@@ -120,7 +120,11 @@ class StubBroker(Broker):
         if queue_name not in self.queues:
             raise QueueNotFound(queue_name)
 
-        self.emit_before("enqueue", message, delay)
+        try:
+            self.emit_before("enqueue", message, delay)
+        except SkipEnqueue as e:
+            self.logger.debug("Skipped enqueueing message %r: %s", message.message_id, e)
+            return message
         self.queues[queue_name].put(message.encode())
         self.emit_after("enqueue", message, delay)
         return message
