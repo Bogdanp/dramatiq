@@ -65,6 +65,19 @@ class RateLimiterBackend:
         """
         raise NotImplementedError
 
+    def format_key_variants(self, key, variants):  # pragma: no cover
+        """Build a list of related key names from a "base" key name and and a list of
+        distinct "variants" that can act as e.g. name suffixes.
+
+        Parameters:
+          key(str): The base key name.
+          variants(list[str]): Distinct values to incorporate into the resulting names.
+
+        Returns:
+          list[str]: The list of resulting key names.
+        """
+        return [f"{key}@{variant}" for variant in variants]
+
     def incr_and_sum(self, key, keys, amount, maximum, ttl):  # pragma: no cover
         """Atomically increment a key unless the sum of keys is greater
         than the given maximum.
