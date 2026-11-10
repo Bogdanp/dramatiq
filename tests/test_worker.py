@@ -196,3 +196,34 @@ def test_exception_from_actor_doesnt_leak(
     finally:
         # Re-enable GC after test is finished.
         gc.enable()
+
+
+def test_delayed_messages_not_duplicated_when_re_enqueued(stub_broker: StubBroker) -> None:
+    """Test that delayed messages are not duplicated if duplicate deliveries occur
+    from the delay queue (e.g. following worker re-connects or maintenance re-queues).
+    """
+    call_count = 0
+
+    @dramatiq.actor()
+    def process_task():
+        nonlocal call_count
+        call_count += 1
+
+    with worker(stub_broker, worker_timeout=10, worker_threads=2) as stub_worker:
+        # Send a message with a short delay
+        msg = process_task.message_with_options(delay=20)
+        stub_broker.enqueue(msg, delay=20)
+
+        # Simulate a duplicate copy of the same delayed message being delivered
+        # to the worker's delay consumer (as happens during broker maintenance or requeueing)
+        dq_consumer = stub_worker.consumers[f"{process_task.queue_name}.DQ"]
+        duplicate_proxy = dramatiq.MessageProxy(msg.copy(options={"eta": dramatiq.common.current_millis() + 20}))
+        dq_consumer.handle_message(duplicate_proxy)
+
+        time.sleep(0.1)
+        stub_broker.join(process_task.queue_name)
+        stub_worker.join()
+
+    # The task must be executed exactly once, not twice
+    assert call_count == 1
+

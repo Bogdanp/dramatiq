@@ -185,6 +185,16 @@ class RedisBroker(Broker):
         self.emit_after("enqueue", message, delay)
         return message
 
+    def claim_delayed_message(self, message: MessageProxy) -> bool:
+        """Atomically claim a delayed message via Redis SET NX.
+
+        Guarantees that across multiple worker processes, only one worker
+        promotes a delayed message when its eta arrives, even if unacked
+        messages were re-enqueued by Redis queue maintenance.
+        """
+        key = f"{self.namespace}:__claimed_delayed__:{message.message_id}"
+        return bool(self.client.set(key, self.broker_id, nx=True, ex=7 * 86400))
+
     def get_declared_queues(self) -> set[str]:
         """Get all declared queues.
 

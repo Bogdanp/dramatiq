@@ -45,6 +45,13 @@ class StubBroker(Broker):
 
         self.dead_letters_by_queue: defaultdict[str, list[MessageProxy]] = defaultdict(list)
         self.fail_fast_default: bool = fail_fast_default
+        self.claimed_delayed_messages: set[str] = set()
+
+    def claim_delayed_message(self, message: MessageProxy) -> bool:
+        if message.message_id in self.claimed_delayed_messages:
+            return False
+        self.claimed_delayed_messages.add(message.message_id)
+        return True
 
     @property
     def dead_letters(self) -> list[MessageProxy]:
@@ -142,6 +149,7 @@ class StubBroker(Broker):
         # NOTE: do not clear the dead_letters_by_queue to avoid orphaning the references in existing consumers.
         for dlq in self.dead_letters_by_queue.values():
             dlq.clear()
+        self.claimed_delayed_messages.clear()
 
     def join(self, queue_name: str, *, timeout: Optional[int] = None, fail_fast: Optional[bool] = None) -> None:
         """Wait for all the messages on the given queue to be

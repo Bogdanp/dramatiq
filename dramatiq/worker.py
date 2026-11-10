@@ -20,7 +20,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import time
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from functools import lru_cache
 from queue import Empty, PriorityQueue
 from threading import Event, Thread
@@ -292,6 +292,7 @@ class ConsumerThread(Thread):
         self.work_queue = work_queue
         self.worker_timeout = worker_timeout
         self.delay_queue: PriorityQueue[_WorkQueueItem] = PriorityQueue()
+        self.promoted_delayed_ids: OrderedDict[str, None] = OrderedDict()
 
     def run(self) -> None:
         self.logger.debug("Running consumer thread...")
@@ -352,6 +353,28 @@ class ConsumerThread(Thread):
                 self.delay_queue.put(item)
                 self.delay_queue.task_done()
                 break
+
+            if message.message_id in self.promoted_delayed_ids:
+                self.logger.debug(
+                    "Delayed message %r already promoted in this thread. Dropping duplicate.",
+                    message.message_id,
+                )
+                self.post_process_message(message)
+                self.delay_queue.task_done()
+                continue
+
+            if not self.broker.claim_delayed_message(message):
+                self.logger.warning(
+                    "Delayed message %r was already claimed or promoted by another worker. Dropping duplicate.",
+                    message.message_id,
+                )
+                self.post_process_message(message)
+                self.delay_queue.task_done()
+                continue
+
+            self.promoted_delayed_ids[message.message_id] = None
+            if len(self.promoted_delayed_ids) > 10000:
+                self.promoted_delayed_ids.popitem(last=False)
 
             queue_name = q_name(message.queue_name)
             new_message = message.copy(queue_name=queue_name)
