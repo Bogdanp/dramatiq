@@ -8,6 +8,18 @@ All notable changes to this project will be documented in this file.
 `Unreleased`_
 -------------
 
+Fixed
+^^^^^
+
+* Treat ``redis.TimeoutError`` like ``redis.ConnectionError`` in the Redis
+  broker, so a socket timeout while fetching, acking or nacking is reported
+  as a closed connection instead of an unexpected error.
+  (`#894`_, `#895`_, `@HardMax71`_, `@LincolnPuzey`_)
+
+.. _#894: https://github.com/Bogdanp/dramatiq/issues/894
+.. _#895: https://github.com/Bogdanp/dramatiq/pull/895
+.. _@HardMax71: https://github.com/HardMax71
+
 
 `2.2.1`_ -- 2026-09-01
 ----------------------

@@ -7,10 +7,10 @@ import pytest
 import redis
 
 import dramatiq
-from dramatiq import Message, QueueJoinTimeout
+from dramatiq import Message, MessageProxy, QueueJoinTimeout
 from dramatiq.brokers.redis import MAINTENANCE_SCALE, RedisBroker
 from dramatiq.common import current_millis, dq_name, xq_name
-from dramatiq.errors import BrokerConnectionError
+from dramatiq.errors import BrokerConnectionError, ConnectionClosed
 
 from .common import worker
 
@@ -338,6 +338,25 @@ def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(red
     # Then I should get back an attribute error
     with pytest.raises(AttributeError):
         redis_broker.idontexist
+
+
+def test_redis_consumer_treats_socket_timeouts_as_connection_loss(redis_broker):
+    # Given that I have a Redis broker whose client always has socket timeouts
+    slow_redis_broker = RedisBroker(socket_timeout=0.0, retry=None)
+    # And I make a consumer from that broker
+    consumer = slow_redis_broker.consume("default", prefetch=1, timeout=100)
+    message = MessageProxy(
+        Message(queue_name="default", actor_name="do_work", args=(), kwargs={}, options={"redis_message_id": "x"})
+    )
+
+    # When I fetch, ack or nack
+    # Then I expect the consumer to report a closed connection either way
+    with pytest.raises(ConnectionClosed):
+        next(consumer)
+    with pytest.raises(ConnectionClosed):
+        consumer.ack(message)
+    with pytest.raises(ConnectionClosed):
+        consumer.nack(message)
 
 
 def test_redis_consumer_ack_can_retry_on_connection_error(redis_broker, redis_worker):
