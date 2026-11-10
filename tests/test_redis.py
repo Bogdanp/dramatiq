@@ -342,7 +342,7 @@ def test_redis_broker_raises_attribute_error_when_given_an_invalid_attribute(red
 
 def test_redis_consumer_treats_socket_timeouts_as_connection_loss(redis_broker):
     # Given that I have a Redis broker whose client always has socket timeouts
-    slow_redis_broker = RedisBroker(socket_timeout=0.000_000_001, retry=None)
+    slow_redis_broker = RedisBroker(socket_timeout=0.0, retry=None)
     # And I make a consumer from that broker
     consumer = slow_redis_broker.consume("default", prefetch=1, timeout=100)
     message = MessageProxy(
