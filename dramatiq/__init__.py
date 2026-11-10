@@ -40,6 +40,7 @@ from .generic import GenericActor
 from .logging import get_logger
 from .message import Message, get_encoder, set_encoder
 from .middleware import Middleware
+from .registry import Registry, disable_registry, enable_registry, get_registry
 from .worker import ConsumerThread, Worker, WorkerThread
 
 __all__ = [
@@ -47,6 +48,11 @@ __all__ = [
     "Actor",
     "GenericActor",
     "actor",
+    # Registry
+    "Registry",
+    "enable_registry",
+    "get_registry",
+    "disable_registry",
     # Brokers
     "Broker",
     "Consumer",
