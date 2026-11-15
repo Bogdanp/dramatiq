@@ -298,14 +298,25 @@ def actor(
                 "by any number of letters, digits, dashes or underscores."
             )
 
-        broker = broker or get_broker()
-        invalid_options = set(options) - broker.actor_options
-        if invalid_options:
-            invalid_options_list = ", ".join(invalid_options)
-            raise ValueError(
-                "The following actor options are undefined: %s. Did you forget to add a middleware to your Broker?"
-                % invalid_options_list
-            )
+        if broker is None:
+            from .registry import Registry, get_registry
+
+            registry = get_registry()
+            if registry is not None:
+                broker = registry  # type: ignore[assignment]
+            else:
+                broker = get_broker()
+        else:
+            from .registry import Registry
+
+        if not isinstance(broker, Registry) or broker.broker is not None:
+            invalid_options = set(options) - broker.actor_options
+            if invalid_options:
+                invalid_options_list = ", ".join(invalid_options)
+                raise ValueError(
+                    "The following actor options are undefined: %s. Did you forget to add a middleware to your Broker?"
+                    % invalid_options_list
+                )
 
         return actor_class(
             fn,

@@ -77,6 +77,12 @@ def set_broker(broker: Broker) -> None:
     global global_broker
     global_broker = broker
 
+    from .registry import get_registry
+
+    registry = get_registry()
+    if registry is not None and registry.broker is None:
+        registry.bind_broker(broker)
+
 
 class Broker:
     """Base class for broker implementations.
