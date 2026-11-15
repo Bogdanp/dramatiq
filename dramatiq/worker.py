@@ -357,7 +357,11 @@ class ConsumerThread(Thread):
             new_message = message.copy(queue_name=queue_name)
             del new_message.options["eta"]
 
-            self.broker.enqueue(new_message)
+            if self.broker.claim_delayed_message(message):
+                self.broker.enqueue(new_message)
+            else:
+                self.logger.debug("Skipping duplicate delayed message %r.", message.message_id)
+
             self.post_process_message(message)
             self.delay_queue.task_done()
 

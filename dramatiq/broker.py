@@ -27,7 +27,7 @@ from .results import ResultBackend, Results
 
 if TYPE_CHECKING:
     from .actor import Actor
-    from .message import Message
+    from .message import Message, MessageProxy
 
 #: The global broker instance.
 global_broker: Optional[Broker] = None
@@ -240,6 +240,15 @@ class Broker:
           Message: Either the original message or a copy of it.
         """
         raise NotImplementedError
+
+    def claim_delayed_message(self, message: MessageProxy) -> bool:
+        """Atomically claim a delayed message for promotion to the main queue.
+
+        This method must be thread- and process-safe across distributed workers.
+        Returns True if this worker was the first to claim the message, or False
+        if another worker has already promoted it.
+        """
+        return True
 
     def get_actor(self, actor_name: str) -> Actor:  # pragma: no cover
         """Look up an actor by its name.

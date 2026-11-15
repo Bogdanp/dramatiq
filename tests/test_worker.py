@@ -196,3 +196,21 @@ def test_exception_from_actor_doesnt_leak(
     finally:
         # Re-enable GC after test is finished.
         gc.enable()
+
+
+def test_delayed_messages_not_duplicated_when_re_enqueued(stub_broker: StubBroker):
+    executions = []
+
+    @dramatiq.actor
+    def run_task(val):
+        executions.append(val)
+
+    msg = run_task.message_with_options(args=(42,))
+    # Enqueue same message twice with delay to simulate delayed re-delivery
+    stub_broker.enqueue(msg, delay=10)
+    stub_broker.enqueue(msg, delay=10)
+
+    with worker(stub_broker, worker_timeout=10, worker_threads=2):
+        stub_broker.join(run_task.queue_name)
+
+    assert executions == [42]

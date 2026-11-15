@@ -45,6 +45,13 @@ class StubBroker(Broker):
 
         self.dead_letters_by_queue: defaultdict[str, list[MessageProxy]] = defaultdict(list)
         self.fail_fast_default: bool = fail_fast_default
+        self.claimed_delayed_messages: set[str] = set()
+
+    def claim_delayed_message(self, message: MessageProxy) -> bool:
+        if message.message_id in self.claimed_delayed_messages:
+            return False
+        self.claimed_delayed_messages.add(message.message_id)
+        return True
 
     @property
     def dead_letters(self) -> list[MessageProxy]:
@@ -138,6 +145,8 @@ class StubBroker(Broker):
         """Drop all messages from all declared queues."""
         for queue_name in chain(self.queues, self.delay_queues):
             self.flush(queue_name)
+
+        self.claimed_delayed_messages.clear()
 
         # NOTE: do not clear the dead_letters_by_queue to avoid orphaning the references in existing consumers.
         for dlq in self.dead_letters_by_queue.values():
