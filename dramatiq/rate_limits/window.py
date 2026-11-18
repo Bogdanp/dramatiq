@@ -52,7 +52,7 @@ class WindowRateLimiter(RateLimiter):
 
     def _get_keys(self):
         timestamp = int(time.time())
-        return ["%s@%s" % (self.key, timestamp - i) for i in range(self.window)]
+        return self.backend.format_key_variants(self.key, [str(timestamp - i) for i in range(self.window)])
 
     def _acquire(self):
         keys = self._get_keys()
