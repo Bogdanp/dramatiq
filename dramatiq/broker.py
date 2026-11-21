@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, cast
+from typing import TYPE_CHECKING, Any, Generic, Iterable, Optional, Self, TypeVar, cast
 
 from .errors import ActorNotFound
 from .logging import get_logger
@@ -192,7 +192,7 @@ class Broker:
     def close(self) -> None:
         """Close this broker and perform any necessary cleanup actions."""
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 30000) -> Consumer:  # pragma: no cover
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 30000) -> Consumer[Any]:  # pragma: no cover
         """Get an iterator that consumes messages off of the queue.
 
         Raises:
@@ -327,7 +327,10 @@ class Broker:
         raise NotImplementedError()
 
 
-class Consumer:
+_ProxyT = TypeVar("_ProxyT", bound="MessageProxy")
+
+
+class Consumer(Generic[_ProxyT]):
     """Consumers iterate over messages on a queue.
 
     Consumers and their MessageProxies are *not* thread-safe.
@@ -337,7 +340,7 @@ class Consumer:
         """Returns this instance as a Message iterator."""
         return self
 
-    def ack(self, message: MessageProxy) -> None:  # pragma: no cover
+    def ack(self, message: _ProxyT) -> None:  # pragma: no cover
         """Acknowledge that a message has been processed, removing it
         from the broker.
 
@@ -346,7 +349,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def nack(self, message: MessageProxy) -> None:  # pragma: no cover
+    def nack(self, message: _ProxyT) -> None:  # pragma: no cover
         """Move a message to the dead-letter queue.
 
         Parameters:
@@ -354,7 +357,7 @@ class Consumer:
         """
         raise NotImplementedError
 
-    def requeue(self, messages: Iterable[MessageProxy]) -> None:  # pragma: no cover
+    def requeue(self, messages: Iterable[_ProxyT]) -> None:  # pragma: no cover
         """Move unacked messages back to their queues.  This is called
         by consumer threads when they fail or are shut down.  The
         default implementation does nothing.
@@ -363,7 +366,7 @@ class Consumer:
           messages(Iterable[MessageProxy]): The messages to requeue.
         """
 
-    def __next__(self) -> MessageProxy | None:  # pragma: no cover
+    def __next__(self) -> _ProxyT | None:  # pragma: no cover
         """Retrieve the next message off of the queue.
 
         This method should block for a limited amount of time
