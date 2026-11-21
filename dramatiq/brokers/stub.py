@@ -22,7 +22,7 @@ import time
 from collections import defaultdict
 from itertools import chain
 from queue import Empty, Queue
-from typing import Optional
+from typing import Any, Optional
 
 from ..broker import Broker, Consumer, MessageProxy
 from ..common import current_millis, dq_name, iter_queue, join_queue
@@ -43,15 +43,15 @@ class StubBroker(Broker):
     def __init__(self, middleware: Optional[list[Middleware]] = None, *, fail_fast_default: bool = True):
         super().__init__(middleware)
 
-        self.dead_letters_by_queue: defaultdict[str, list[MessageProxy]] = defaultdict(list)
+        self.dead_letters_by_queue: defaultdict[str, list[_StubMessageProxy]] = defaultdict(list)
         self.fail_fast_default: bool = fail_fast_default
 
     @property
-    def dead_letters(self) -> list[MessageProxy]:
+    def dead_letters(self) -> list[_StubMessageProxy]:
         """The dead-lettered messages for all defined queues."""
         return [message for messages in self.dead_letters_by_queue.values() for message in messages]
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 100) -> Consumer:
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 100) -> Consumer[Any]:
         """Create a new consumer for a queue.
 
         Parameters:
@@ -196,8 +196,8 @@ class StubBroker(Broker):
                 return
 
 
-class _StubConsumer(Consumer):
-    def __init__(self, queue, dead_letters, prefetch, timeout):
+class _StubConsumer(Consumer["_StubMessageProxy"]):
+    def __init__(self, queue: Queue, dead_letters: list[_StubMessageProxy], prefetch: int, timeout: int) -> None:
         self.queue = queue
         self.dead_letters = dead_letters
         self.prefetch = prefetch
@@ -206,16 +206,16 @@ class _StubConsumer(Consumer):
         # Use a Semaphore to manage 'slots' for prefetched messages.
         self.prefetch_semaphore = threading.Semaphore(value=prefetch)
 
-    def ack(self, message):
+    def ack(self, message: _StubMessageProxy) -> None:
         self.queue.task_done()
         self.prefetch_semaphore.release()
 
-    def nack(self, message):
+    def nack(self, message: _StubMessageProxy) -> None:
         self.queue.task_done()
         self.dead_letters.append(message)
         self.prefetch_semaphore.release()
 
-    def __next__(self):
+    def __next__(self) -> _StubMessageProxy | None:
         # Reserve a prefetch 'slot' for the message being fetched.
         if not self.prefetch_semaphore.acquire(timeout=self.timeout / 1000):
             return None  # No slot available, return None

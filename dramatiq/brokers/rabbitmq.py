@@ -23,7 +23,7 @@ import time
 from functools import partial
 from itertools import chain
 from threading import Event, local
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 import pika
 import pika.exceptions
@@ -514,8 +514,8 @@ class _IgnoreScaryLogs(logging.Filter):
         return "Broken pipe" not in record.getMessage()
 
 
-class _RabbitmqConsumer(Consumer):
-    def __init__(self, broker, queue_name, prefetch, timeout):
+class _RabbitmqConsumer(Consumer["_RabbitmqMessage"]):
+    def __init__(self, broker: RabbitmqBroker, queue_name: str, prefetch: int, timeout: int) -> None:
         self.broker = broker
         self.queue_name = queue_name
         self.logger = get_logger(__name__, type(self))
@@ -529,14 +529,14 @@ class _RabbitmqConsumer(Consumer):
             # when connection errors occur and the consumer is reset,
             # we don't attempt to send invalid tags to Rabbit since
             # pika doesn't handle this very well.
-            self.known_tags = set()
+            self.known_tags: set[int | None] = set()
         except (
             pika.exceptions.AMQPConnectionError,
             pika.exceptions.AMQPChannelError,
         ) as e:
             raise ConnectionClosed(e) from None
 
-    def ack(self, message):
+    def ack(self, message: _RabbitmqMessage) -> None:
         try:
             self.known_tags.remove(message._tag)
             self.connection.add_callback_threadsafe(
@@ -552,7 +552,7 @@ class _RabbitmqConsumer(Consumer):
         except Exception:  # pragma: no cover
             self.logger.warning("Failed to ack message.", exc_info=True)
 
-    def nack(self, message):
+    def nack(self, message: _RabbitmqMessage) -> None:
         try:
             self.known_tags.remove(message._tag)
             self._nack(message._tag)
@@ -571,15 +571,15 @@ class _RabbitmqConsumer(Consumer):
             partial(self.channel.basic_nack, tag, requeue=False),
         )
 
-    def requeue(self, messages):
+    def requeue(self, messages: Iterable[_RabbitmqMessage]) -> None:
         """RabbitMQ automatically re-enqueues unacked messages when
         consumers disconnect so this is a no-op.
         """
 
-    def __next__(self):
+    def __next__(self) -> _RabbitmqMessage | None:
         try:
-            method, properties, body = next(self.iterator)
-            if method is None:
+            method, _properties, body = next(self.iterator)
+            if method is None or body is None:
                 return None
         except (
             AssertionError,
@@ -607,7 +607,7 @@ class _RabbitmqConsumer(Consumer):
         self.known_tags.add(method.delivery_tag)
         return rmq_message
 
-    def close(self):
+    def close(self) -> None:
         try:
             # Closing the connection doesn't wait for all callbacks to
             # finish processing so we enqueue a final callback and
