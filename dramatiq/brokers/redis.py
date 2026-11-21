@@ -22,7 +22,7 @@ import random
 import time
 from os import path
 from threading import Lock
-from typing import Optional
+from typing import Iterable, Optional
 from uuid import uuid4
 
 import redis
@@ -287,23 +287,23 @@ class RedisBroker(Broker):
         return self._dispatch(command)
 
 
-class _RedisConsumer(Consumer):
-    def __init__(self, broker, queue_name, prefetch, timeout):
+class _RedisConsumer(Consumer[MessageProxy]):
+    def __init__(self, broker: RedisBroker, queue_name: str, prefetch: int, timeout: int) -> None:
         self.logger = get_logger(__name__, type(self))
         self.broker = broker
         self.queue_name = queue_name
         self.prefetch = prefetch
         self.timeout = timeout
 
-        self.message_cache = []
-        self.queued_message_ids = set()
+        self.message_cache: list[bytes] = []
+        self.queued_message_ids: set[str] = set()
         self.misses = 0
 
     @property
-    def outstanding_message_count(self):
+    def outstanding_message_count(self) -> int:
         return len(self.queued_message_ids) + len(self.message_cache)
 
-    def ack(self, message):
+    def ack(self, message: MessageProxy) -> None:
         try:
             # The current queue might be different from message.queue_name
             # if the message has been delayed so we want to ack on the
@@ -314,7 +314,7 @@ class _RedisConsumer(Consumer):
         finally:
             self.queued_message_ids.discard(message.message_id)
 
-    def nack(self, message):
+    def nack(self, message: MessageProxy) -> None:
         try:
             # Same deal as above.
             self.broker.do_nack(self.queue_name, message.options["redis_message_id"])
@@ -323,7 +323,7 @@ class _RedisConsumer(Consumer):
         finally:
             self.queued_message_ids.discard(message.message_id)
 
-    def requeue(self, messages):
+    def requeue(self, messages: Iterable[MessageProxy]) -> None:
         message_ids = [message.options["redis_message_id"] for message in messages]
         if not message_ids:
             return
@@ -331,7 +331,7 @@ class _RedisConsumer(Consumer):
         self.logger.debug("Re-enqueueing %r on queue %r.", message_ids, self.queue_name)
         self.broker.do_requeue(self.queue_name, *message_ids)
 
-    def __next__(self):
+    def __next__(self) -> MessageProxy | None:
         try:
             while True:
                 try:
